@@ -1,0 +1,23 @@
+{
+  "short_name": "RRH EMS",
+  "name": "Radha Real Homes & Sonthillu EMS & CRM",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#0f766e",
+  "display": "standalone",
+  "orientation": "portrait"
+}

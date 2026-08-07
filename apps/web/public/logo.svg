@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+  <!-- Definitions -->
+  <defs>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#FACC15" />
+    </linearGradient>
+    <style>
+      .building { fill: #0F2C41; }
+      .window { fill: #FACC15; }
+      .roof { fill: #1D538D; }
+      .green-base { fill: #3CB34B; }
+    </style>
+  </defs>
+
+  <!-- Sun Background -->
+  <circle cx="200" cy="200" r="140" fill="url(#sunGrad)" />
+
+  <!-- Birds -->
+  <path d="M 290 220 Q 300 210 310 220 Q 320 210 330 220 Q 310 230 290 220 Z" fill="#2d3748" />
+  <path d="M 315 250 Q 320 245 325 250 Q 330 245 335 250 Q 325 255 315 250 Z" fill="#2d3748" />
+
+  <!-- Skyscraper (Back) -->
+  <polygon points="160,70 240,70 240,280 160,280" class="building" />
+  <!-- Skyscraper Top -->
+  <rect x="175" y="50" width="50" height="20" class="building" />
+  <rect x="185" y="35" width="30" height="15" class="building" />
+  <polygon points="150,110 160,110 160,120" class="building" />
+
+  <!-- Left Skyscraper -->
+  <polygon points="110,180 160,180 160,280 110,280" class="building" />
+  <rect x="120" y="165" width="30" height="15" class="building" />
+
+  <!-- Yellow Windows - Main Skyscraper -->
+  <rect x="170" y="90" width="60" height="6" class="window" />
+  <rect x="170" y="110" width="60" height="6" class="window" />
+  <rect x="170" y="130" width="60" height="6" class="window" />
+  <rect x="170" y="150" width="60" height="6" class="window" />
+  <rect x="170" y="170" width="60" height="6" class="window" />
+  <rect x="170" y="190" width="60" height="6" class="window" />
+  <rect x="170" y="210" width="60" height="6" class="window" />
+  <rect x="170" y="230" width="60" height="6" class="window" />
+  <rect x="170" y="250" width="60" height="6" class="window" />
+
+  <!-- Yellow Windows - Left Skyscraper -->
+  <rect x="120" y="195" width="30" height="5" class="window" />
+  <rect x="120" y="215" width="30" height="5" class="window" />
+  <rect x="120" y="235" width="30" height="5" class="window" />
+  <rect x="120" y="255" width="30" height="5" class="window" />
+
+  <!-- Roof (Chevron) -->
+  <path d="M 70 270 L 200 200 L 330 270 L 310 280 L 200 220 L 90 280 Z" class="roof" />
+
+  <!-- Base of the House -->
+  <polygon points="120,270 280,270 280,330 200,420 120,330" class="green-base" />
+
+  <!-- Two blue pillars enclosing the RR -->
+  <rect x="120" y="270" width="25" height="85" class="roof" />
+  <rect x="255" y="270" width="25" height="85" class="roof" />
+  
+  <!-- White Background behind RR -->
+  <polygon points="145,270 255,270 255,350 200,400 145,350" fill="white" />
+
+  <!-- "RR" text geometry -->
+  <!-- First R -->
+  <path d="M 155 270 h 26 c 15 0, 18 5, 18 18 c 0 10, -5 15, -12 17 l 12 35 h -14 l -10 -32 h -6 v 32 h -14 z m 14 14 v 13 h 10 c 5 0, 7 -2, 7 -6.5 c 0 -4.5, -2 -6.5, -7 -6.5 z" class="roof" />
+  <!-- Second R -->
+  <path d="M 210 270 h 26 c 15 0, 18 5, 18 18 c 0 10, -5 15, -12 17 l 12 35 h -14 l -10 -32 h -6 v 32 h -14 z m 14 14 v 13 h 10 c 5 0, 7 -2, 7 -6.5 c 0 -4.5, -2 -6.5, -7 -6.5 z" class="roof" />
+
+  <!-- The large Green Checkmark extending at the bottom -->
+  <path d="M 160 380 L 195 415 L 265 340 L 285 355 L 195 450 L 140 395 Z" class="green-base" stroke="white" stroke-width="4" stroke-linejoin="round" />
+
+  <!-- Bottom Location Ring -->
+  <ellipse cx="200" cy="460" rx="55" ry="12" fill="none" stroke="#3CB34B" stroke-width="6" />
+</svg>

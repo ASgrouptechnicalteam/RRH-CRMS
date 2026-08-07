@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { Roles } from '@rrh-ems/shared';
@@ -65,9 +66,14 @@ app.use('/api/v1/push', pushRoutes);
 // Serve frontend static files from apps/web/dist
 app.use(express.static(path.join(process.cwd(), 'apps/web/dist')));
 
-// Handle React routing, return all unmatched non-API requests to the React app
+// Handle React routing or return basic API status if static files don't exist
 app.get('*', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'apps/web/dist/index.html'));
+  const indexPath = path.join(process.cwd(), 'apps/web/dist/index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).json({ status: 'API is running', message: 'Frontend is hosted separately.' });
+  }
 });
 
 // Global Error Handler

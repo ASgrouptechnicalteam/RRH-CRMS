@@ -100,7 +100,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       }
     } catch (err: any) {
       console.error('[Auth Exception]', err);
-      setErrorMessage('Network Error: Cannot connect to API server at http://localhost:3000');
+      setErrorMessage(`Network Error: Failed to connect to API (${API_BASE_URL}). Check CORS or server status.`);
       setDebugDetails(`Exception: ${err.message || String(err)}`);
     } finally {
       setIsLoading(false);

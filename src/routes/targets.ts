@@ -77,7 +77,7 @@ const ROLE_PRESETS: Record<string, { target_type: string; targets_json: Record<s
     targets_json: { invoicesProcessed: 10, paymentAudits: 1 },
     form_schema_json: generateBasicSchema(['invoicesProcessed', 'paymentAudits'])
   },
-  [Roles.STAFF]: {
+  [Roles.AGENT]: {
     target_type: 'CHECKLIST',
     targets_json: { dailyTaskListCompleted: true, endOfDayCleanup: true },
     form_schema_json: generateBasicSchema([], true)
@@ -93,7 +93,7 @@ router.get('/presets', authenticateToken, async (req: AuthenticatedRequest, res:
 router.get('/my-target', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = req.user!.employeeId;
-    const roleName = req.user!.roles[0] || Roles.STAFF;
+    const roleName = req.user!.roles[0] || Roles.AGENT;
 
     // Priority 1: Employee-Specific Target (if active)
     let empTarget: any = null;
@@ -133,7 +133,7 @@ router.get('/my-target', authenticateToken, async (req: AuthenticatedRequest, re
     }
 
     // Priority 3: System Default Preset Fallback
-    const preset = ROLE_PRESETS[roleName] || ROLE_PRESETS[Roles.STAFF];
+    const preset = ROLE_PRESETS[roleName] || ROLE_PRESETS[Roles.AGENT];
     return res.status(200).json({
       source: 'SYSTEM_PRESET',
       target: {

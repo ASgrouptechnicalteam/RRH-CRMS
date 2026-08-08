@@ -11,7 +11,7 @@ interface DailyReportModalProps {
 
 export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { user, fetchWithAuth } = useAuth();
-  const roleName = user?.roles[0] || 'Staff (generic)';
+  const roleName = user?.roles[0] || 'Agent';
 
   // Dynamic Form State
   const [formSchema, setFormSchema] = useState<any[]>([]);

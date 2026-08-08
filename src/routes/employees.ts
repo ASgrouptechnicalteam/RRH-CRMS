@@ -15,18 +15,31 @@ const prisma = new PrismaClient();
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const roles = req.user!.roles;
-    if (!roles.includes(Roles.MD) && !roles.includes(Roles.HR_MANAGER) && !roles.includes(Roles.ADMIN) && !roles.includes(Roles.MARKETING_DIRECTOR)) {
+    const isMD = roles.includes(Roles.MD);
+    const isAdmin = roles.includes(Roles.ADMIN);
+    const isHR = roles.includes(Roles.HR_MANAGER);
+    const isMarketingDir = roles.includes(Roles.MARKETING_DIRECTOR);
+    const isDigitalManager = roles.includes(Roles.DIGITAL_MARKETING_HEAD);
+
+    if (!isMD && !isAdmin && !isHR && !isMarketingDir && !isDigitalManager) {
       return res.status(403).json({ error: 'Access denied: HR / Management privileges required' });
     }
 
-    const employees = await prisma.employee.findMany({
-      where: {
-        roles: {
-          none: {
-            role: { is_invisible: true },
-          },
+    let whereClause: any = {
+      roles: {
+        none: {
+          role: { is_invisible: true },
         },
       },
+    };
+
+    // Strict Manager Isolation
+    if (!isMD && !isAdmin && !isHR) {
+      whereClause.reporting_manager_id = req.user!.employeeId;
+    }
+
+    const employees = await prisma.employee.findMany({
+      where: whereClause,
       include: {
         branch: true,
         roles: { include: { role: true } },
@@ -99,7 +112,7 @@ router.get('/managers', authenticateToken, async (req: AuthenticatedRequest, res
         roles: {
           some: {
             role: {
-              name: { in: [Roles.MD, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.MARKETING_DIRECTOR] },
+              name: { in: [Roles.MD, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.MARKETING_DIRECTOR, Roles.DIGITAL_MARKETING_HEAD, Roles.CHANNEL_PARTNER_MANAGER] },
             },
           },
         },

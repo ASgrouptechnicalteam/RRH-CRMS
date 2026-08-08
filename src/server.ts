@@ -121,7 +121,8 @@ const bootstrapHostingerDatabase = async () => {
       { name: Roles.DIGITAL_MARKETING_HEAD, is_system: false, is_invisible: false },
       { name: Roles.FINANCE, is_system: false, is_invisible: false },
       { name: Roles.AGENT, is_system: false, is_invisible: false },
-      { name: Roles.STAFF, is_system: false, is_invisible: false },
+      { name: Roles.CHANNEL_PARTNER, is_system: false, is_invisible: false },
+      { name: Roles.DIGITAL_MARKETING_EXECUTIVE, is_system: false, is_invisible: false },
     ];
 
     const roleMap: Record<string, any> = {};

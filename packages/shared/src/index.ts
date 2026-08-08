@@ -11,18 +11,19 @@ export type Company = z.infer<typeof CompanySchema>;
 
 // Roles
 export const Roles = {
-  MD: 'MD',
+  MD: 'Managing director',
   ADMIN: 'Admin (Technical)',
-  MARKETING_DIRECTOR: 'Marketing Director',
-  PROJECT_MANAGER: 'Project Manager',
-  DIGITAL_LEAD_OPERATOR: 'Digital Lead Operator',
-  TELECALLER: 'Telecaller',
-  CHANNEL_PARTNER_MANAGER: 'Channel Partner Manager',
-  DIGITAL_MARKETING_HEAD: 'Digital Marketing Head',
-  HR_MANAGER: 'HR Manager',
-  FINANCE: 'Finance / Accountant',
-  AGENT: 'Agent / Freelancer',
-  STAFF: 'Staff (generic)'
+  MARKETING_DIRECTOR: 'marketing director',
+  PROJECT_MANAGER: 'project managers',
+  DIGITAL_LEAD_OPERATOR: 'Digital lead operator',
+  TELECALLER: 'telecallers',
+  CHANNEL_PARTNER_MANAGER: 'channel partner manager',
+  DIGITAL_MARKETING_HEAD: 'Digital Marketing head(manager)',
+  HR_MANAGER: 'HR',
+  FINANCE: 'accountant',
+  AGENT: 'Agent',
+  CHANNEL_PARTNER: 'channel partners',
+  DIGITAL_MARKETING_EXECUTIVE: 'digital marketing executive'
 } as const;
 
 export type RoleName = typeof Roles[keyof typeof Roles];
@@ -36,8 +37,9 @@ export const DepartmentCodes: Record<string, string> = {
   [Roles.TELECALLER]: 'SL',
   [Roles.CHANNEL_PARTNER_MANAGER]: 'SL',
   [Roles.AGENT]: 'SL',
+  [Roles.CHANNEL_PARTNER]: 'CP',
   [Roles.PROJECT_MANAGER]: 'OP',
-  [Roles.STAFF]: 'OP',
+  [Roles.DIGITAL_MARKETING_EXECUTIVE]: 'MK',
   [Roles.DIGITAL_MARKETING_HEAD]: 'MK',
   [Roles.DIGITAL_LEAD_OPERATOR]: 'MK',
   [Roles.FINANCE]: 'FN',

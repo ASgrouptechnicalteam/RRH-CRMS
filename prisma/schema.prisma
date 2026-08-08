@@ -118,6 +118,10 @@ model Employee {
   refunded_by_me              ExpenseRefund[]            @relation("RefundedBy")
   push_subscriptions          PushSubscription[]
   
+  // Hierarchy Management
+  manager                     Employee?                  @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
+  direct_reports              Employee[]                 @relation("EmployeeManager")
+  
   created_at                  DateTime  @default(now())
   updated_at                  DateTime  @updatedAt
   deleted_at                  DateTime?

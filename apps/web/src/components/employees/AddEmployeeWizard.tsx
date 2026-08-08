@@ -26,7 +26,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [addRole, setAddRole] = useState('Telecaller');
+  const [addRole, setAddRole] = useState('telecallers');
   const [addBranchId, setAddBranchId] = useState<string>('');
   const [initialPassword, setInitialPassword] = useState('Password@123');
 
@@ -176,15 +176,18 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">System Role *</label>
                 <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
-                  <option value="Telecaller">Telecaller (Sales & Leads)</option>
-                  <option value="Field Sales Executive">Field Sales Executive</option>
-                  <option value="Digital Lead Operator">Digital Lead Operator</option>
-                  <option value="Digital Marketing Head">Digital Marketing Head</option>
-                  <option value="Channel Partner Manager">Channel Partner Manager</option>
-                  <option value="Project Manager">Project Manager (Site/Operations)</option>
-                  <option value="HR Manager">HR Manager</option>
-                  <option value="Finance">Finance</option>
-                  <option value="MD">Managing Director (MD)</option>
+                  <option value="telecallers">telecallers</option>
+                  <option value="Agent">Agent</option>
+                  <option value="channel partners">channel partners</option>
+                  <option value="digital marketing executive">digital marketing executive</option>
+                  <option value="Digital lead operator">Digital lead operator</option>
+                  <option value="Digital Marketing head(manager)">Digital Marketing head(manager)</option>
+                  <option value="channel partner manager">channel partner manager</option>
+                  <option value="marketing director">marketing director</option>
+                  <option value="project managers">project managers</option>
+                  <option value="HR">HR</option>
+                  <option value="accountant">accountant</option>
+                  <option value="Managing director">Managing director (MD)</option>
                   <option value="Admin (Technical)">System Admin</option>
                 </select>
               </div>

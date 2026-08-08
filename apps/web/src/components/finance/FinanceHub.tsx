@@ -44,8 +44,8 @@ export const FinanceHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'my' | 'queue'>('my');
   const { isSupported, permission, isSubscribing, subscribe } = usePushNotifications();
 
-  const isFinance = user?.roles?.some(r => ['Finance / Accountant', 'Admin (Technical)'].includes(r));
-  const isMD = user?.roles?.includes('MD');
+  const isFinance = user?.roles?.some(r => ['accountant', 'Admin (Technical)'].includes(r));
+  const isMD = user?.roles?.includes('Managing director');
   const hasQueueAccess = isFinance || isMD;
 
   const fetchMyRefunds = useCallback(async () => {

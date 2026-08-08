@@ -22,8 +22,8 @@ export const TaskManager: React.FC = () => {
   const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canViewTeam = user?.roles.includes('MD') || user?.roles.includes('Marketing Director') || user?.roles.includes('Admin (Technical)') || user?.roles.includes('HR Manager');
-  const canCreateTask = user?.roles.some((r: string) => ['MD', 'HR Manager', 'CRM', 'Admin (Technical)', 'Marketing Director'].includes(r));
+  const canViewTeam = user?.roles.includes('Managing director') || user?.roles.includes('marketing director') || user?.roles.includes('Admin (Technical)') || user?.roles.includes('HR');
+  const canCreateTask = user?.roles.some((r: string) => ['Managing director', 'HR', 'Admin (Technical)', 'marketing director'].includes(r));
 
   const fetchTasks = async () => {
     setIsLoading(true);

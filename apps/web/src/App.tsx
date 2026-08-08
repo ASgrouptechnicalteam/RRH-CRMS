@@ -53,14 +53,14 @@ const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveP
 const DefaultRedirect: React.FC<{ user: import('./context/AuthContext').UserProfile | null }> = ({ user }) => {
   const roles = user?.roles || [];
   
-  if (roles.includes('MD')) return <Navigate to="/dashboard" replace />;
+  if (roles.includes('Managing director')) return <Navigate to="/dashboard" replace />;
   if (roles.includes('Admin (Technical)')) return <Navigate to="/system-control" replace />;
-  if (roles.includes('HR Manager')) return <Navigate to="/hr-hub" replace />;
-  if (roles.includes('Finance / Accountant')) return <Navigate to="/finance" replace />;
-  if (roles.some(r => ['Telecaller', 'Digital Lead Operator', 'Digital Marketing Head'].includes(r))) return <Navigate to="/leads" replace />;
-  if (roles.includes('Channel Partner Manager')) return <Navigate to="/cp" replace />;
-  if (roles.some(r => ['Project Manager', 'Project Manager (Site)'].includes(r))) return <Navigate to="/properties" replace />;
-  if (roles.some(r => ['Agent', 'Agent / Freelancer'].includes(r))) return <Navigate to="/site-visits" replace />;
+  if (roles.includes('HR')) return <Navigate to="/hr-hub" replace />;
+  if (roles.includes('accountant')) return <Navigate to="/finance" replace />;
+  if (roles.some(r => ['telecallers', 'Digital lead operator', 'Digital Marketing head(manager)'].includes(r))) return <Navigate to="/leads" replace />;
+  if (roles.includes('channel partner manager')) return <Navigate to="/cp" replace />;
+  if (roles.some(r => ['project managers'].includes(r))) return <Navigate to="/properties" replace />;
+  if (roles.some(r => ['Agent', 'channel partners'].includes(r))) return <Navigate to="/site-visits" replace />;
   
   return <Navigate to="/tasks" replace />;
 };
@@ -149,13 +149,13 @@ const MainLayout: React.FC = () => {
     return <QRScannerModal />;
   }
 
-  const isMD = user?.roles?.includes('MD');
+  const isMD = user?.roles?.includes('Managing director');
   const isAdmin = user?.roles?.includes('Admin (Technical)');
-  const canManageTargets = user?.roles?.some(r => ['MD', 'Marketing Director', 'Admin (Technical)'].includes(r));
-  const canManageEmployees = user?.roles?.some(r => ['MD', 'HR Manager', 'Admin (Technical)'].includes(r));
+  const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
+  const canManageEmployees = user?.roles?.some(r => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
-    ['MD', 'Admin (Technical)', 'Marketing Director', 'HR Manager', 'Project Manager',
-     'Channel Partner Manager', 'Digital Marketing Head', 'Finance / Accountant'].includes(r)
+    ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
+     'channel partner manager', 'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
 
   return (
@@ -249,7 +249,7 @@ const MainLayout: React.FC = () => {
             <span>Leads & Distribution</span>
           </button>
 
-          {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Project Manager'].includes(r)) && (
+          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'project managers'].includes(r)) && (
             <button
               onClick={() => navigate('/properties')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
@@ -261,7 +261,7 @@ const MainLayout: React.FC = () => {
             </button>
           )}
 
-          {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Channel Partner Manager', 'Project Manager', 'Project Manager (Site)'].includes(r)) && (
+          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'channel partner manager', 'project managers'].includes(r)) && (
             <button
               onClick={() => navigate('/cp')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
@@ -273,7 +273,7 @@ const MainLayout: React.FC = () => {
             </button>
           )}
 
-          {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Telecaller', 'Agent / Freelancer', 'Staff (generic)'].includes(r)) && (
+          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'telecallers', 'Agent', 'digital marketing executive'].includes(r)) && (
             <button
               onClick={() => navigate('/site-visits')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { Roles } from '@rrh-ems/shared';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -258,46 +259,20 @@ router.get('/leaderboard', authenticateToken, async (req: AuthenticatedRequest, 
 });
 
 // GET /api/v1/performance/team - Full team performance view for managers
-// MD/Admin = all employees; Dept Managers = their team members by role group
 router.get('/team', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const roles = req.user!.roles;
 
-    const isMD = roles.includes('MD');
-    const isAdmin = roles.includes('Admin (Technical)');
-    const isMarketingDir = roles.includes('Marketing Director');
-    const isHR = roles.includes('HR Manager');
-    const isPM = roles.includes('Project Manager');
-    const isCPManager = roles.includes('Channel Partner Manager');
-    const isDMHead = roles.includes('Digital Marketing Head');
-    const isFinance = roles.includes('Finance / Accountant');
+    const isMD = roles.includes(Roles.MD);
+    const isAdmin = roles.includes(Roles.ADMIN);
+    const isMarketingDir = roles.includes(Roles.MARKETING_DIRECTOR);
+    const isHR = roles.includes(Roles.HR_MANAGER);
+    const isDMHead = roles.includes(Roles.DIGITAL_MARKETING_HEAD);
 
-    const canViewTeam =
-      isMD || isAdmin || isMarketingDir || isHR || isPM || isCPManager || isDMHead || isFinance;
+    const canViewTeam = isMD || isAdmin || isMarketingDir || isHR || isDMHead;
 
     if (!canViewTeam) {
       return res.status(403).json({ error: 'Access denied: Manager or above permission required.' });
-    }
-
-    // Determine which roles' employees to fetch
-    // MD and Admin see everyone (non-invisible)
-    // Each manager sees employees in their domain
-    let roleFilter: string[] | null = null;
-
-    if (!isMD && !isAdmin) {
-      if (isMarketingDir) {
-        roleFilter = ['Telecaller', 'Digital Lead Operator', 'Digital Marketing Head', 'Channel Partner Manager'];
-      } else if (isHR) {
-        roleFilter = ['Telecaller', 'Project Manager', 'Digital Lead Operator', 'Channel Partner Manager', 'Finance / Accountant', 'Staff (generic)', 'Agent / Freelancer'];
-      } else if (isPM) {
-        roleFilter = ['Staff (generic)', 'Agent / Freelancer'];
-      } else if (isCPManager) {
-        roleFilter = ['Agent / Freelancer'];
-      } else if (isDMHead) {
-        roleFilter = ['Digital Lead Operator', 'Telecaller'];
-      } else if (isFinance) {
-        roleFilter = ['Finance / Accountant'];
-      }
     }
 
     const whereClause: any = {
@@ -305,11 +280,9 @@ router.get('/team', authenticateToken, async (req: AuthenticatedRequest, res: Re
       roles: { none: { role: { is_invisible: true } } },
     };
 
-    if (roleFilter) {
-      whereClause.roles = {
-        some: { role: { name: { in: roleFilter } } },
-        none: { role: { is_invisible: true } },
-      };
+    // Strict Team Isolation: If not MD/Admin/HR, only show direct reports
+    if (!isMD && !isAdmin && !isHR) {
+      whereClause.reporting_manager_id = req.user!.employeeId;
     }
 
     const employees = await p.employee.findMany({

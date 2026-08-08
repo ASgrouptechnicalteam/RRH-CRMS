@@ -28,12 +28,12 @@ export const MobileBottomNav: React.FC = () => {
 
   const isMD = user?.roles?.includes('MD');
   const isAdmin = user?.roles?.includes('Admin (Technical)');
-  const canManageEmployees = user?.roles?.some((r) => ['MD', 'HR Manager', 'Admin (Technical)'].includes(r));
+  const canManageEmployees = user?.roles?.some((r) => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
-    ['MD', 'Admin (Technical)', 'Marketing Director', 'HR Manager', 'Project Manager',
-     'Channel Partner Manager', 'Digital Marketing Head', 'Finance / Accountant'].includes(r)
+    ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
+     'channel partner manager', 'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
-  const canManageTargets = user?.roles?.some(r => ['MD', 'Marketing Director', 'Admin (Technical)'].includes(r));
+  const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
 
   const handleNav = (path: string) => {
     setIsDrawerOpen(false);
@@ -142,7 +142,7 @@ export const MobileBottomNav: React.FC = () => {
           <span className="text-[9px]">Leads</span>
         </button>
 
-        {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Project Manager'].includes(r)) && (
+        {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'project managers'].includes(r)) && (
           <button
             onClick={() => handleNav('/properties')}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
@@ -154,7 +154,7 @@ export const MobileBottomNav: React.FC = () => {
           </button>
         )}
 
-        {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Channel Partner Manager', 'Finance / Accountant'].includes(r)) && (
+        {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'channel partner manager', 'accountant'].includes(r)) && (
           <button
             onClick={() => handleNav('/cp')}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${

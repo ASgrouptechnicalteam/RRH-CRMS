@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API_BASE_URL } from '../../config/api';
+import { API_BASE_URL } from '../../config';
 
 export const GlobalAnnouncementBanner: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);

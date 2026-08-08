@@ -10,7 +10,7 @@ export const HRDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'employees' | 'proposals' | 'attendance'>('employees');
 
-  const canManageEmployees = user?.roles?.some(r => ['MD', 'HR Manager', 'Admin (Technical)'].includes(r));
+  const canManageEmployees = user?.roles?.some(r => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
 
   if (!canManageEmployees) {
     return <Navigate to="/" replace />;

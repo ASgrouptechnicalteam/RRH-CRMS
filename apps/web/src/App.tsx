@@ -9,6 +9,7 @@ import { QRScannerModal } from './components/attendance/QRScannerModal';
 import { DailyReportModal } from './components/reports/DailyReportModal';
 import { NotificationDrawer } from './components/notifications/NotificationDrawer';
 import { ISTClock } from './components/common/ISTClock';
+import { FirstLoginSetup } from './components/auth/FirstLoginSetup';
 import { MDExecutiveDashboard } from './components/dashboards/MDExecutiveDashboard';
 import { TelecallerDashboard } from './components/dashboards/TelecallerDashboard';
 import { PMDashboard } from './components/dashboards/PMDashboard';
@@ -16,8 +17,10 @@ import { StaffDashboard } from './components/dashboards/StaffDashboard';
 import { AgentSiteVisitsDashboard } from './components/dashboards/AgentSiteVisitsDashboard';
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
-import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, TrendingUp, Building, Network, MapPin, ShieldCheck, IndianRupee } from 'lucide-react';
+import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, TrendingUp, Building, Network, MapPin, ShieldCheck, IndianRupee, Bell } from 'lucide-react';
 import { API_BASE_URL } from './config';
+import { useIdleTimer } from './hooks/useIdleTimer';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
@@ -25,6 +28,17 @@ const PropertyManagement = lazy(() => import('./components/properties/PropertyMa
 const ChannelPartnerManagement = lazy(() => import('./components/cp/ChannelPartnerManagement').then(m => ({ default: m.ChannelPartnerManagement })));
 const SiteVisitManagement = lazy(() => import('./components/siteVisits/SiteVisitManagement').then(m => ({ default: m.SiteVisitManagement })));
 const TaskManager = lazy(() => import('./components/tasks/TaskManager').then(m => ({ default: m.TaskManager })));
+
+// Expose a prefetch function for background loading
+export const prefetchMainModules = () => {
+  setTimeout(() => {
+    import('./components/leads/LeadManagement');
+    import('./components/properties/PropertyManagement');
+    import('./components/cp/ChannelPartnerManagement');
+    import('./components/siteVisits/SiteVisitManagement');
+    import('./components/tasks/TaskManager');
+  }, 2000); // 2-second delay to prioritize initial render
+};
 
 // New Consolidated Hubs
 const UserProfile = lazy(() => import('./components/profile/UserProfile').then(m => ({ default: m.UserProfile })));
@@ -35,26 +49,57 @@ const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m =
 // Legacy for standard users
 const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveProposals').then(m => ({ default: m.LateLeaveProposals })));
 
+// Default Redirect based on role
+const DefaultRedirect: React.FC<{ user: import('./context/AuthContext').UserProfile | null }> = ({ user }) => {
+  const roles = user?.roles || [];
+  
+  if (roles.includes('MD')) return <Navigate to="/dashboard" replace />;
+  if (roles.includes('Admin (Technical)')) return <Navigate to="/system-control" replace />;
+  if (roles.includes('HR Manager')) return <Navigate to="/hr-hub" replace />;
+  if (roles.includes('Finance / Accountant')) return <Navigate to="/finance" replace />;
+  if (roles.some(r => ['Telecaller', 'Digital Lead Operator', 'Digital Marketing Head'].includes(r))) return <Navigate to="/leads" replace />;
+  if (roles.includes('Channel Partner Manager')) return <Navigate to="/cp" replace />;
+  if (roles.some(r => ['Project Manager', 'Project Manager (Site)'].includes(r))) return <Navigate to="/properties" replace />;
+  if (roles.some(r => ['Agent', 'Agent / Freelancer'].includes(r))) return <Navigate to="/site-visits" replace />;
+  
+  return <Navigate to="/tasks" replace />;
+};
+
 const MainLayout: React.FC = () => {
   const { user, accessToken, firstLoginDone, attendanceStamped, login, logout, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const activeTab = location.pathname === '/' ? 'overview' : location.pathname.replace('/', '');
+  const activeTab = location.pathname.replace('/', '') || 'dashboard';
   const [apiStatus, setApiStatus] = useState<string>('Checking...');
   const [showReportModal, setShowReportModal] = useState(false);
   const [pendingLogout, setPendingLogout] = useState(false);
+  const { isSupported, permission, isSubscribing, subscribe } = usePushNotifications();
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/health`)
       .then((res) => res.json())
       .then((data) => setApiStatus(data.status))
       .catch(() => setApiStatus('Offline'));
-  }, []);
+      
+    // Prefetch main modules for better performance
+    if (accessToken) {
+      prefetchMainModules();
+    }
+    // Auto-prompt push notifications on login if not already decided
+    if (accessToken && isSupported && permission === 'default') {
+      const timer = setTimeout(() => {
+        subscribe();
+      }, 2000); // Wait 2s after login so it's not immediately jarring
+      return () => clearTimeout(timer);
+    }
+  }, [accessToken, isSupported, permission, subscribe]);
 
   // Attendance & Report Exemption Logic
   const isExemptFromAttendance = user?.attendanceRequired === false || user?.roles?.some((r) => ['MD', 'Admin (Technical)', 'Marketing Director'].includes(r));
   const isExemptFromReport = user?.roles?.some((r) => ['MD', 'HR Manager', 'Admin (Technical)', 'Marketing Director'].includes(r));
   const needsAttendance = accessToken && !attendanceStamped && !isExemptFromAttendance;
+
+  const [showLogoutIntentModal, setShowLogoutIntentModal] = useState(false);
 
   const handleLogoutClick = async () => {
     if (isExemptFromReport) {
@@ -67,14 +112,26 @@ const MainLayout: React.FC = () => {
       if (res.ok && data.report) {
         logout();
       } else {
-        setPendingLogout(true);
-        setShowReportModal(true);
+        setShowLogoutIntentModal(true);
       }
     } catch (e) {
-      setPendingLogout(true);
-      setShowReportModal(true);
+      setShowLogoutIntentModal(true);
     }
   };
+
+  // 30 minutes idle timer (30 * 60 * 1000 ms)
+  useIdleTimer({
+    timeout: 30 * 60 * 1000,
+    onIdle: () => {
+      if (accessToken) {
+        console.log('User inactive for 30 minutes, logging out automatically');
+        // Handle auto-logout. To avoid annoying the user if they were just visiting,
+        // we can just directly logout. But if they haven't submitted a report,
+        // we might lose their report. However, standard timeout behavior is direct logout.
+        logout();
+      }
+    }
+  });
 
   if (!accessToken) {
     return (
@@ -82,6 +139,10 @@ const MainLayout: React.FC = () => {
         <LoginForm />
       </div>
     );
+  }
+
+  if (!firstLoginDone) {
+    return <FirstLoginSetup />;
   }
 
   if (needsAttendance) {
@@ -143,30 +204,47 @@ const MainLayout: React.FC = () => {
         </div>
       </header>
 
+      {/* Push Notification Banner */}
+      {isSupported && permission === 'default' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm z-30 relative">
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-amber-600 animate-bounce" />
+            <span className="text-sm font-semibold text-amber-900">
+              Enable push notifications to receive real-time updates and leads.
+            </span>
+          </div>
+          <button 
+            onClick={subscribe}
+            disabled={isSubscribing}
+            className="w-full sm:w-auto bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-700 transition-colors disabled:opacity-70 whitespace-nowrap"
+          >
+            {isSubscribing ? 'Enabling...' : 'Enable Notifications'}
+          </button>
+        </div>
+      )}
+
       {/* Primary Navigation Bar (Hidden on Mobile, replaced by BottomNav & Drawer) */}
       <div className="hidden md:block bg-white border-b border-slate-200 px-4 sm:px-6 py-2">
         <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-1">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-              activeTab === 'overview' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+              activeTab === 'dashboard' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
 
-          {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Telecaller', 'Agent / Freelancer', 'Digital Lead Operator'].includes(r)) && (
-            <button
-              onClick={() => navigate('/leads')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'leads' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>Leads & Distribution</span>
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/leads')}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
+              activeTab === 'leads' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Leads & Distribution</span>
+          </button>
 
           {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Project Manager'].includes(r)) && (
             <button
@@ -180,7 +258,7 @@ const MainLayout: React.FC = () => {
             </button>
           )}
 
-          {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Channel Partner Manager', 'Finance / Accountant'].includes(r)) && (
+          {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Channel Partner Manager', 'Project Manager', 'Project Manager (Site)'].includes(r)) && (
             <button
               onClick={() => navigate('/cp')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
@@ -288,7 +366,8 @@ const MainLayout: React.FC = () => {
             }
           >
             <Routes>
-              <Route path="/" element={
+              <Route path="/" element={<DefaultRedirect user={user} />} />
+              <Route path="/dashboard" element={
                 (isMD || isAdmin) ? (
                   <MDExecutiveDashboard />
                 ) : user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager'].includes(r)) ? (
@@ -349,6 +428,46 @@ const MainLayout: React.FC = () => {
           if (pendingLogout) logout();
         }}
       />
+
+      {/* Logout Intent Modal */}
+      {showLogoutIntentModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl relative animate-scaleUp">
+            <h3 className="font-bold text-slate-800 text-lg mb-2">Logout Action</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              You haven't submitted your Daily Log. Were you working a full shift, or just visiting/updating?
+            </p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowLogoutIntentModal(false);
+                  setPendingLogout(true);
+                  setShowReportModal(true);
+                }}
+                className="w-full p-3 bg-teal-700 text-white font-bold rounded-xl hover:bg-teal-800 transition-colors shadow-md"
+              >
+                Submit Daily Log & Logout
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutIntentModal(false);
+                  logout();
+                }}
+                className="w-full p-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Just Visiting / Updating (Log out immediately)
+              </button>
+              <button
+                onClick={() => setShowLogoutIntentModal(false)}
+                className="w-full p-2 text-slate-500 font-bold hover:text-slate-700 text-xs"
+              >
+                Cancel Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

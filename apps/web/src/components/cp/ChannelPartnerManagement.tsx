@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { AddCPWizard } from './AddCPWizard';
 
 interface ChannelPartner {
   id: number;
@@ -80,6 +81,7 @@ export const ChannelPartnerManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isMD = user?.roles?.some((r) => ['MD', 'Admin (Technical)'].includes(r));
+  const canViewCommissions = user?.roles?.some((r) => ['MD', 'Admin (Technical)', 'Finance / Accountant'].includes(r));
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -226,13 +228,15 @@ export const ChannelPartnerManagement: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowCalculateModal(true)}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 shadow"
-          >
-            <DollarSign className="w-4 h-4 text-amber-300" />
-            <span>Calculate Deal Commission</span>
-          </button>
+          {canViewCommissions && (
+            <button
+              onClick={() => setShowCalculateModal(true)}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 shadow"
+            >
+              <DollarSign className="w-4 h-4 text-amber-300" />
+              <span>Calculate Deal Commission</span>
+            </button>
+          )}
 
           <button
             onClick={() => setShowRegisterModal(true)}
@@ -256,15 +260,17 @@ export const ChannelPartnerManagement: React.FC = () => {
             CP Directory ({cps.length})
           </button>
 
-          <button
-            onClick={() => setActiveTab('LEDGER')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-              activeTab === 'LEDGER' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5 text-teal-300" />
-            <span>Commission Ledger ({payouts.length})</span>
-          </button>
+          {canViewCommissions && (
+            <button
+              onClick={() => setActiveTab('LEDGER')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+                activeTab === 'LEDGER' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 text-teal-300" />
+              <span>Commission Ledger ({payouts.length})</span>
+            </button>
+          )}
         </div>
 
         {activeTab === 'NETWORK' && (
@@ -319,15 +325,19 @@ export const ChannelPartnerManagement: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 text-center text-xs">
-                    <div className="p-2 bg-slate-50 rounded-xl">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Earned</span>
-                      <span className="font-bold text-emerald-700">₹{(cp.totalEarned / 100000).toFixed(1)}L</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded-xl">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Pending</span>
-                      <span className="font-bold text-amber-700">₹{(cp.pendingAmount / 100000).toFixed(1)}L</span>
-                    </div>
+                  <div className={`grid ${canViewCommissions ? 'grid-cols-3' : 'grid-cols-1'} gap-2 pt-3 border-t border-slate-100 text-center text-xs`}>
+                    {canViewCommissions && (
+                      <>
+                        <div className="p-2 bg-slate-50 rounded-xl">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Earned</span>
+                          <span className="font-bold text-emerald-700">₹{(cp.totalEarned / 100000).toFixed(1)}L</span>
+                        </div>
+                        <div className="p-2 bg-slate-50 rounded-xl">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Pending</span>
+                          <span className="font-bold text-amber-700">₹{(cp.pendingAmount / 100000).toFixed(1)}L</span>
+                        </div>
+                      </>
+                    )}
                     <div className="p-2 bg-slate-50 rounded-xl">
                       <span className="text-[10px] font-bold text-slate-400 uppercase block">Protected</span>
                       <span className="font-bold text-sky-700 flex items-center justify-center gap-0.5">
@@ -411,119 +421,16 @@ export const ChannelPartnerManagement: React.FC = () => {
       )}
 
       {/* Register CP Modal */}
+      {/* Register CP Modal */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowRegisterModal(false)}
-              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-slate-800 text-lg mb-1">Register New Channel Partner</h3>
-            <p className="text-xs text-slate-500 mb-4">Add new Channel Partner with tiering and optional Upline parent CP link</p>
-
-            <form onSubmit={handleRegisterCP} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Firm / Agency Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Royal Realty Networks LLP"
-                  value={firmName}
-                  onChange={(e) => setFirmName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Contact Person *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Rajesh Goud"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phone *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="+91 98888 77777"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Commission Tier *</label>
-                  <select
-                    value={tier}
-                    onChange={(e) => setTier(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 font-bold text-slate-700"
-                  >
-                    <option value="SILVER">Silver (2.0% Base Rate)</option>
-                    <option value="GOLD">Gold (2.5% Rate)</option>
-                    <option value="PLATINUM">Platinum (3.0% Top Rate)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Upline Parent CP</label>
-                  <select
-                    value={uplineCpId}
-                    onChange={(e) => setUplineCpId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 font-semibold text-slate-700"
-                  >
-                    <option value="">None (Direct Master CP)</option>
-                    {cps.map((cp) => (
-                      <option key={cp.id} value={cp.id}>
-                        {cp.firm_name} ({cp.cp_code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">RERA Registration Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. P02400001234"
-                  value={reraNumber}
-                  onChange={(e) => setReraNumber(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowRegisterModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md"
-                >
-                  {isSubmitting ? 'Registering...' : 'Register Channel Partner'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AddCPWizard 
+          onClose={() => setShowRegisterModal(false)}
+          onSuccess={() => {
+            setShowRegisterModal(false);
+            fetchData();
+          }}
+          cps={cps}
+        />
       )}
 
       {/* Calculate Deal Commission Modal */}

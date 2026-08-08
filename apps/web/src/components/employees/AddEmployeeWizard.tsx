@@ -1,0 +1,481 @@
+import React, { useState } from 'react';
+import { 
+  Building2, User, Key, Users, ArrowRight, ArrowLeft, Building, 
+  MapPin, CheckCircle2, FileText, Phone, Mail, GraduationCap, DollarSign, CreditCard, Heart, X, ShieldAlert,
+  CreditCardIcon, Briefcase
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
+import { useToast } from '../../context/ToastContext';
+
+interface AddEmployeeWizardProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  branches: { id: number; name: string }[];
+  managers: { id: number; label: string }[];
+}
+
+export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, onSuccess, branches, managers }) => {
+  const { fetchWithAuth } = useAuth();
+  const { showToast } = useToast();
+  
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Step 1: Basic & Login
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [addRole, setAddRole] = useState('Telecaller');
+  const [addBranchId, setAddBranchId] = useState<string>('');
+  const [initialPassword, setInitialPassword] = useState('Password@123');
+
+  // Step 2: Personal Details
+  const [currentAddress, setCurrentAddress] = useState('');
+  const [permanentAddress, setPermanentAddress] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('O+');
+  const [emergencyContactName, setEmergencyContactName] = useState('');
+  const [emergencyContactRelation, setEmergencyContactRelation] = useState('');
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+
+  // Step 3: Professional Info
+  const [jobTitle, setJobTitle] = useState('');
+  const [department, setDepartment] = useState('Sales & Leads');
+  const [employmentType, setEmploymentType] = useState('FULL_TIME');
+  const [reportingManagerId, setReportingManagerId] = useState<string>('');
+  const [dateOfJoining, setDateOfJoining] = useState(new Date().toISOString().split('T')[0]);
+  const [salaryCtc, setSalaryCtc] = useState('35000');
+  const [backgroundEducation, setBackgroundEducation] = useState('');
+
+  // Step 4: Banking Info
+  const [bankName, setBankName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankIfsc, setBankIfsc] = useState('');
+  const [bankBranch, setBankBranch] = useState('');
+
+  const handleNext = () => setStep(s => Math.min(s + 1, 5));
+  const handleBack = () => setStep(s => Math.max(s - 1, 1));
+
+  const handleSubmit = async () => {
+    if (!fullName || !phone || !addRole || !addBranchId) {
+      showToast('Please fill all required basic details in Step 1', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const payload = {
+        full_name: fullName,
+        phone,
+        email,
+        role_name: addRole,
+        branch_id: addBranchId,
+        initial_password: initialPassword,
+        
+        current_address: currentAddress,
+        permanent_address: permanentAddress,
+        blood_group: bloodGroup,
+        emergency_contact_name: emergencyContactName,
+        emergency_contact_relation: emergencyContactRelation,
+        emergency_contact_phone: emergencyContactPhone,
+        pan_number: panNumber,
+        aadhaar_number: aadhaarNumber,
+
+        job_title: jobTitle,
+        department,
+        employment_type: employmentType,
+        reporting_manager_id: reportingManagerId,
+        date_of_joining: dateOfJoining,
+        salary_ctc: salaryCtc,
+        background_education: backgroundEducation,
+
+        bank_name: bankName,
+        bank_account_number: bankAccountNumber,
+        bank_ifsc: bankIfsc,
+        bank_branch: bankBranch,
+      };
+
+      const res = await fetchWithAuth(`${API_BASE_URL}/employees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Employee Onboarded Successfully! Code: ${data.employee.employee_code}`, 'success');
+        onSuccess();
+      } else {
+        showToast(data.error || 'Failed to onboard employee', 'error');
+      }
+    } catch (e) {
+      showToast('Error connecting to server', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderStepIndicator = () => {
+    const steps = ['Basic Info', 'Personal', 'Professional', 'Banking', 'Review'];
+    return (
+      <div className="flex flex-col gap-4 border-r border-slate-200 pr-6 hidden md:flex w-64 shrink-0">
+        <h3 className="font-bold text-slate-800 text-lg mb-4">Onboard Employee</h3>
+        {steps.map((s, i) => {
+          const isActive = step === i + 1;
+          const isPassed = step > i + 1;
+          return (
+            <div key={s} className={`flex items-center gap-3 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 
+                ${isActive ? 'border-sky-600 text-sky-700 bg-sky-50' : isPassed ? 'border-sky-500 bg-sky-500 text-white' : 'border-slate-300 text-slate-500'}
+              `}>
+                {isPassed ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
+              </div>
+              <span className={`font-semibold text-sm ${isActive ? 'text-sky-900' : 'text-slate-600'}`}>{s}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderStepContent = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Basic & Login Info</h2>
+            <p className="text-slate-500 text-sm">Essential details to create the employee's CRM account.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name *</label>
+                <div className="relative">
+                  <User className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="John Doe" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Primary Phone Number *</label>
+                <div className="relative">
+                  <Phone className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="+91 9876543210" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Official Email Address</label>
+                <div className="relative">
+                  <Mail className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="john.doe@radharealhomes.com" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">System Role *</label>
+                <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                  <option value="Telecaller">Telecaller (Sales & Leads)</option>
+                  <option value="Field Sales Executive">Field Sales Executive</option>
+                  <option value="Digital Lead Operator">Digital Lead Operator</option>
+                  <option value="Digital Marketing Head">Digital Marketing Head</option>
+                  <option value="Channel Partner Manager">Channel Partner Manager</option>
+                  <option value="Project Manager">Project Manager (Site/Operations)</option>
+                  <option value="HR Manager">HR Manager</option>
+                  <option value="Finance">Finance</option>
+                  <option value="MD">Managing Director (MD)</option>
+                  <option value="Admin (Technical)">System Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Branch *</label>
+                <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                  <option value="">-- Select Branch --</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-1 md:col-span-2 p-4 bg-sky-50 border border-sky-100 rounded-xl flex gap-3">
+                <Key className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-bold text-sky-900">Initial Password</h4>
+                  <p className="text-xs text-sky-700 mb-2">The employee will be forced to change this upon their first login.</p>
+                  <input type="text" value={initialPassword} onChange={e => setInitialPassword(e.target.value)} className="p-2 border border-sky-200 rounded-lg w-full max-w-xs text-sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 2:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Personal Details</h2>
+            <p className="text-slate-500 text-sm">You may skip sensitive details. The employee can update them later.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Current Address</label>
+                <textarea value={currentAddress} onChange={e => setCurrentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"></textarea>
+              </div>
+
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Permanent Address</label>
+                <textarea value={permanentAddress} onChange={e => setPermanentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"></textarea>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Blood Group</label>
+                <select value={bloodGroup} onChange={e => setBloodGroup(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                  {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+
+              <div className="col-span-1 md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4 mt-2">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-500" /> Government IDs (Encrypted)
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">PAN Number</label>
+                    <input type="text" value={panNumber} onChange={e => setPanNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono uppercase" placeholder="ABCDE1234F" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Aadhaar Number</label>
+                    <input type="text" value={aadhaarNumber} onChange={e => setAadhaarNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono tracking-widest" placeholder="1234 5678 9012" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-1 md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-rose-500" /> Emergency Contact
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Name</label>
+                    <input type="text" value={emergencyContactName} onChange={e => setEmergencyContactName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Relation</label>
+                    <input type="text" value={emergencyContactRelation} onChange={e => setEmergencyContactRelation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Spouse, Father" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Phone</label>
+                    <input type="text" value={emergencyContactPhone} onChange={e => setEmergencyContactPhone(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Professional Info</h2>
+            <p className="text-slate-500 text-sm">Role, reporting structure, and compensation details.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Job Title</label>
+                <div className="relative">
+                  <Briefcase className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Senior Telecaller" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Department</label>
+                <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                  <option>Sales & Leads</option>
+                  <option>Marketing</option>
+                  <option>Operations</option>
+                  <option>Human Resources</option>
+                  <option>Finance</option>
+                  <option>IT Systems</option>
+                  <option>Executive</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Reporting Manager</label>
+                <select value={reportingManagerId} onChange={e => setReportingManagerId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                  <option value="">-- No Manager (Independent) --</option>
+                  {managers.map(m => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Employment Type</label>
+                <select value={employmentType} onChange={e => setEmploymentType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                  <option value="FULL_TIME">Full Time</option>
+                  <option value="PART_TIME">Part Time</option>
+                  <option value="CONTRACT">Contract</option>
+                  <option value="INTERN">Intern</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Date of Joining</label>
+                <input type="date" value={dateOfJoining} onChange={e => setDateOfJoining(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Annual CTC (₹)</label>
+                <div className="relative">
+                  <DollarSign className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="number" value={salaryCtc} onChange={e => setSalaryCtc(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                </div>
+              </div>
+
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Background / Education</label>
+                <div className="relative">
+                  <GraduationCap className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" value={backgroundEducation} onChange={e => setBackgroundEducation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. B.Tech Computer Science, MBA Marketing" />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Banking Information</h2>
+            <p className="text-slate-500 text-sm">For payroll processing. This data will be encrypted in the database.</p>
+            
+            <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Bank Name</label>
+                <div className="relative">
+                  <Building2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. HDFC Bank" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Account Number</label>
+                <div className="relative">
+                  <CreditCardIcon className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="password" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono tracking-widest" placeholder="●●●●●●●●●●●●" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">IFSC Code</label>
+                  <input type="text" value={bankIfsc} onChange={e => setBankIfsc(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono uppercase" placeholder="HDFC0001234" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Branch Name</label>
+                  <input type="text" value={bankBranch} onChange={e => setBankBranch(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Madhapur" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-sm flex gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <p>You can skip this step and allow the employee to enter these details securely from their profile upon first login.</p>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="text-center">
+              <CheckCircle2 className="w-16 h-16 text-sky-500 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-slate-800">Ready to Onboard</h2>
+              <p className="text-slate-500 text-sm mt-2">Please review the details below before creating the employee account.</p>
+            </div>
+            
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-6 shadow-sm">
+              <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-4">
+                <div>
+                  <div className="text-xs font-bold text-sky-700 bg-sky-100 inline-block px-2 py-1 rounded mb-2">{addRole}</div>
+                  <h3 className="text-xl font-bold text-slate-800">{fullName}</h3>
+                  <p className="text-slate-500 text-sm flex items-center gap-1 mt-1"><Phone className="w-3.5 h-3.5" /> {phone}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-slate-700">{department}</div>
+                  <div className="text-xs text-slate-500">{jobTitle || addRole}</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 text-sm gap-4">
+                <div><span className="text-slate-400 block text-xs">Email</span><span className="font-semibold">{email || 'N/A'}</span></div>
+                <div><span className="text-slate-400 block text-xs">Branch</span><span className="font-semibold">{branches.find(b => b.id.toString() === addBranchId)?.name || 'N/A'}</span></div>
+                <div><span className="text-slate-400 block text-xs">Gov IDs Provided</span><span className="font-semibold">{panNumber || aadhaarNumber ? 'Yes (Encrypted)' : 'No (Pending)'}</span></div>
+                <div><span className="text-slate-400 block text-xs">Bank Details</span><span className="font-semibold">{bankAccountNumber ? 'Yes (Encrypted)' : 'No (Pending)'}</span></div>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-0 md:p-6">
+      <div className="w-full h-full md:h-auto md:max-h-[90vh] max-w-5xl bg-white md:rounded-3xl shadow-2xl flex flex-col relative overflow-hidden animate-scaleUp">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-white sticky top-0 z-10">
+          <h2 className="text-xl font-bold text-slate-800 md:hidden">Onboard Employee</h2>
+          <div className="hidden md:block" />
+          <button onClick={onClose} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex flex-1 overflow-hidden">
+          <div className="hidden md:block p-8 bg-slate-50/50">
+            {renderStepIndicator()}
+          </div>
+          
+          <div className="flex-1 p-6 md:p-10 overflow-y-auto bg-white custom-scrollbar">
+            {renderStepContent()}
+          </div>
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between sticky bottom-0">
+          <button 
+            onClick={handleBack} 
+            disabled={step === 1}
+            className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-0"
+          >
+            Back
+          </button>
+          
+          {step < 5 ? (
+            <button 
+              onClick={handleNext}
+              disabled={step === 1 && (!fullName || !phone || !addBranchId)}
+              className="px-8 py-3 bg-sky-700 text-white font-bold rounded-xl shadow-md hover:bg-sky-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              Continue <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button 
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="px-8 py-3 bg-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+            >
+              {isLoading ? 'Creating...' : 'Create Employee Account'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

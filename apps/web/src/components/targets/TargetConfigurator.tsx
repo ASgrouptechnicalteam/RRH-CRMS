@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Sparkles, Plus, Save, Calendar, User, ShieldCheck, AlertCircle, Bookmark, Trash2 } from 'lucide-react';
+import { Target, Sparkles, Plus, Save, Calendar, User, ShieldCheck, AlertCircle, Bookmark, Trash2, GripVertical, CheckSquare, Type, Hash, AlignLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
+
+type FieldType = 'SHORT_TEXT' | 'LONG_TEXT' | 'COUNT' | 'CHECKLIST';
+
+interface FormField {
+  id: string;
+  type: FieldType;
+  label: string;
+  required: boolean;
+  targetValue?: number;
+}
 
 export const TargetConfigurator: React.FC = () => {
   const { fetchWithAuth } = useAuth();
@@ -14,16 +24,11 @@ export const TargetConfigurator: React.FC = () => {
   // Form State
   const [selectedRole, setSelectedRole] = useState<string>(Roles.TELECALLER);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
-  const [callsMadeTarget, setCallsMadeTarget] = useState('50');
-  const [leadsQualifiedTarget, setLeadsQualifiedTarget] = useState('5');
-  const [siteVisitsTarget, setSiteVisitsTarget] = useState('3');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
 
-  // Dynamic Custom Target Metric Fields
-  const [customFields, setCustomFields] = useState<Array<{ name: string; count: string }>>([]);
-  const [newFieldName, setNewFieldName] = useState('');
-  const [newFieldCount, setNewFieldCount] = useState('1');
+  // Dynamic Google-Form Style Configurator
+  const [formSchema, setFormSchema] = useState<FormField[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,18 +42,27 @@ export const TargetConfigurator: React.FC = () => {
         fetchWithAuth(`${API_BASE_URL}/md/employees`),
       ]);
 
+      let loadedTargets: any[] = [];
+      let loadedPresets: any = {};
+      
       if (targetRes.ok) {
         const d = await targetRes.json();
-        setTargetsList(d.targets || []);
+        loadedTargets = d.targets || [];
+        setTargetsList(loadedTargets);
       }
       if (presetRes.ok) {
         const d = await presetRes.json();
-        setPresets(d.presets || {});
+        loadedPresets = d.presets || {};
+        setPresets(loadedPresets);
       }
       if (empRes.ok) {
         const d = await empRes.json();
         setEmployees(d.employees || []);
       }
+
+      // Initialize the schema for the current role
+      loadSchemaForRole(Roles.TELECALLER, loadedTargets, loadedPresets);
+
     } catch (e) {
       console.error('Failed to load configurator data');
     } finally {
@@ -60,43 +74,84 @@ export const TargetConfigurator: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleAddCustomField = () => {
-    if (!newFieldName.trim()) return;
-    setCustomFields((prev) => [...prev, { name: newFieldName.trim(), count: newFieldCount || '1' }]);
-    setNewFieldName('');
-    setNewFieldCount('1');
+  const loadSchemaForRole = (role: string, currentTargets: any[] = targetsList, currentPresets: any = presets) => {
+    // 1. Try to load from active target first
+    const activeTarget = currentTargets.find(t => t.role_name === role && !t.employee_id);
+    if (activeTarget && activeTarget.form_schema_json && activeTarget.form_schema_json.length > 0) {
+      setFormSchema(activeTarget.form_schema_json);
+      return;
+    }
+    
+    // 2. Try to load from presets
+    const preset = currentPresets[role];
+    if (preset && preset.form_schema_json) {
+      setFormSchema(preset.form_schema_json);
+      return;
+    }
+
+    // 3. Fallback
+    setFormSchema([]);
   };
 
-  const handleRemoveCustomField = (index: number) => {
-    setCustomFields((prev) => prev.filter((_, i) => i !== index));
+  // When role changes, load its default schema
+  useEffect(() => {
+    if (!isLoading) {
+      loadSchemaForRole(selectedRole);
+    }
+  }, [selectedRole]);
+
+  const handleAddField = (type: FieldType) => {
+    const newField: FormField = {
+      id: `field_${Date.now()}`,
+      type,
+      label: 'New Question',
+      required: true,
+    };
+    setFormSchema(prev => [...prev, newField]);
   };
 
-  const handleLoadPresets = () => {
-    const savedCustom = localStorage.getItem(`rrh_preset_${selectedRole}`);
-    let preset = savedCustom ? JSON.parse(savedCustom) : presets[selectedRole];
+  const handleUpdateField = (index: number, updates: Partial<FormField>) => {
+    setFormSchema(prev => {
+      const clone = [...prev];
+      clone[index] = { ...clone[index], ...updates };
+      return clone;
+    });
+  };
 
-    if (preset && preset.targets_json) {
-      if (preset.targets_json.callsMade !== undefined) setCallsMadeTarget(String(preset.targets_json.callsMade));
-      if (preset.targets_json.leadsQualified !== undefined) setLeadsQualifiedTarget(String(preset.targets_json.leadsQualified));
-      if (preset.targets_json.siteVisits !== undefined) setSiteVisitsTarget(String(preset.targets_json.siteVisits));
-      setMessage(`✨ Preset loaded for ${selectedRole}!`);
-      setTimeout(() => setMessage(null), 3000);
+  const handleRemoveField = (index: number) => {
+    setFormSchema(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const moveField = (index: number, direction: 'UP' | 'DOWN') => {
+    if (direction === 'UP' && index === 0) return;
+    if (direction === 'DOWN' && index === formSchema.length - 1) return;
+
+    setFormSchema(prev => {
+      const clone = [...prev];
+      const swapIndex = direction === 'UP' ? index - 1 : index + 1;
+      const temp = clone[index];
+      clone[index] = clone[swapIndex];
+      clone[swapIndex] = temp;
+      return clone;
+    });
+  };
+
+  const getFieldIcon = (type: FieldType) => {
+    switch (type) {
+      case 'SHORT_TEXT': return <Type className="w-4 h-4 text-slate-500" />;
+      case 'LONG_TEXT': return <AlignLeft className="w-4 h-4 text-slate-500" />;
+      case 'COUNT': return <Hash className="w-4 h-4 text-slate-500" />;
+      case 'CHECKLIST': return <CheckSquare className="w-4 h-4 text-slate-500" />;
     }
   };
 
-  const handleSaveCustomPreset = () => {
-    const customPreset = {
-      role_name: selectedRole,
-      target_type: 'COUNT',
-      targets_json: {
-        callsMade: parseInt(callsMadeTarget, 10) || 0,
-        leadsQualified: parseInt(leadsQualifiedTarget, 10) || 0,
-        siteVisits: parseInt(siteVisitsTarget, 10) || 0,
-      },
-    };
-    localStorage.setItem(`rrh_preset_${selectedRole}`, JSON.stringify(customPreset));
-    setMessage(`💾 Custom Preset saved for ${selectedRole}!`);
-    setTimeout(() => setMessage(null), 4000);
+  const getFieldLabel = (type: FieldType) => {
+    switch (type) {
+      case 'SHORT_TEXT': return 'Short Answer';
+      case 'LONG_TEXT': return 'Paragraph';
+      case 'COUNT': return 'Number / Count';
+      case 'CHECKLIST': return 'Checklist Item';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,19 +160,13 @@ export const TargetConfigurator: React.FC = () => {
     setMessage(null);
 
     try {
+      // Re-map the targets_json for legacy compatibility (if form has them)
       const targets_json: Record<string, number> = {};
-      if (selectedRole === Roles.TELECALLER) {
-        targets_json.callsMade = parseInt(callsMadeTarget, 10) || 0;
-        targets_json.leadsQualified = parseInt(leadsQualifiedTarget, 10) || 0;
-      } else if (selectedRole === Roles.PROJECT_MANAGER) {
-        targets_json.siteVisits = parseInt(siteVisitsTarget, 10) || 0;
-      } else {
-        targets_json.callsMade = parseInt(callsMadeTarget, 10) || 0;
-      }
-
-      // Add dynamic custom fields
-      customFields.forEach((cf) => {
-        targets_json[cf.name] = parseInt(cf.count, 10) || 1;
+      formSchema.forEach(field => {
+        if (field.type === 'COUNT') {
+          // Find standard metric keys if they match label roughly (best effort fallback)
+          if (field.label.toLowerCase().includes('call')) targets_json.callsMade = 50; 
+        }
       });
 
       const res = await fetchWithAuth(`${API_BASE_URL}/targets`, {
@@ -126,8 +175,9 @@ export const TargetConfigurator: React.FC = () => {
         body: JSON.stringify({
           role_name: selectedRole,
           employee_id: selectedEmployeeId ? parseInt(selectedEmployeeId, 10) : null,
-          target_type: 'COUNT',
-          targets_json,
+          target_type: 'COUNT', // Legacy, ignored for dynamic
+          targets_json, // Legacy
+          form_schema_json: formSchema,
           start_date: startDate,
           end_date: endDate || null,
         }),
@@ -135,7 +185,7 @@ export const TargetConfigurator: React.FC = () => {
 
       const data = await res.json();
       if (res.ok) {
-        setMessage('✅ Target Configuration Saved Successfully!');
+        setMessage('✅ Dynamic Target Configuration Saved Successfully!');
         fetchData();
         setTimeout(() => setMessage(null), 4000);
       } else {
@@ -152,49 +202,32 @@ export const TargetConfigurator: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
-          <div className="flex items-center gap-2">
-            <Target className="w-6 h-6 text-teal-700" />
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Role & Employee Target Configurator</h3>
-              <p className="text-xs text-slate-500">Configure daily work targets, employee overrides, and custom metrics</p>
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-indigo-50 rounded-xl">
+              <Target className="w-6 h-6 text-indigo-700" />
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleLoadPresets}
-              type="button"
-              className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-            >
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>Load Preset</span>
-            </button>
-
-            <button
-              onClick={handleSaveCustomPreset}
-              type="button"
-              className="px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-            >
-              <Bookmark className="w-4 h-4 text-teal-600" />
-              <span>Save Custom Preset</span>
-            </button>
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">Dynamic Daily Log & Target Configurator</h3>
+              <p className="text-sm text-slate-500">Google-Form style builder for employee daily submissions</p>
+            </div>
           </div>
         </div>
 
         {message && (
-          <div className="mb-4 p-3 bg-slate-100 text-slate-800 text-xs rounded-xl border border-slate-200 font-medium">
+          <div className="mb-4 p-4 bg-emerald-50 text-emerald-800 text-sm rounded-xl border border-emerald-200 font-bold flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-emerald-600" />
             {message}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-slate-50/80 rounded-2xl border border-slate-200">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Target Role</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Target Role</label>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-medium"
+                className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 font-bold text-slate-800 shadow-sm"
               >
                 {Object.values(Roles).map((r) => (
                   <option key={r} value={r}>
@@ -205,15 +238,15 @@ export const TargetConfigurator: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 Specific Employee Override (Optional)
               </label>
               <select
                 value={selectedEmployeeId}
                 onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-medium"
+                className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 font-bold text-slate-800 shadow-sm"
               >
-                <option value="">All Role Employees (Role Target)</option>
+                <option value="">Apply to ALL {selectedRole}s</option>
                 {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
                     {emp.employeeCode} - {emp.roles.join(', ')} ({emp.branch})
@@ -223,132 +256,162 @@ export const TargetConfigurator: React.FC = () => {
             </div>
           </div>
 
-          {/* Standard Metric Inputs */}
-          {selectedRole === Roles.TELECALLER && (
-            <div className="grid grid-cols-2 gap-3 p-4 bg-teal-50/50 rounded-xl border border-teal-100">
-              <div>
-                <label className="block text-[11px] font-bold text-teal-900 uppercase mb-1">Calls Made Target</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={callsMadeTarget}
-                  onChange={(e) => setCallsMadeTarget(e.target.value)}
-                  className="w-full p-2 text-sm bg-white border border-teal-200 rounded-lg font-mono font-bold"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-teal-900 uppercase mb-1">Leads Qualified Target</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={leadsQualifiedTarget}
-                  onChange={(e) => setLeadsQualifiedTarget(e.target.value)}
-                  className="w-full p-2 text-sm bg-white border border-teal-200 rounded-lg font-mono font-bold"
-                />
-              </div>
+          {/* DYNAMIC GOOGLE FORM BUILDER UI */}
+          <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-inner">
+            <div className="bg-slate-800 p-4 flex justify-between items-center text-white">
+              <h4 className="font-bold flex items-center gap-2">
+                <AlignLeft className="w-5 h-5" />
+                Form Schema Builder
+              </h4>
+              <span className="text-xs bg-slate-700 px-3 py-1 rounded-full font-mono">
+                {formSchema.length} Fields Defined
+              </span>
             </div>
-          )}
 
-          {/* Dynamic Custom Target Metric Builder */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-            <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-              <Plus className="w-4 h-4 text-teal-700" /> Add Custom Target Metric / Field
-            </h4>
+            <div className="p-4 space-y-4">
+              {formSchema.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-100">
+                    <Type className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <p className="text-slate-500 font-medium">No fields defined for this role yet.</p>
+                  <p className="text-xs text-slate-400 mt-1">Add fields below to build the submission form.</p>
+                </div>
+              ) : (
+                formSchema.map((field, index) => (
+                  <div key={field.id} className="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-indigo-300 transition-colors">
+                    
+                    {/* Left Drag Handle */}
+                    <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-50 rounded-l-2xl border-r border-slate-100">
+                      <button type="button" onClick={() => moveField(index, 'UP')} disabled={index === 0} className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30">
+                        ▲
+                      </button>
+                      <button type="button" onClick={() => moveField(index, 'DOWN')} disabled={index === formSchema.length - 1} className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30">
+                        ▼
+                      </button>
+                    </div>
 
-            {customFields.map((cf, idx) => (
-              <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs">
-                <span className="font-bold text-slate-800">{cf.name}: <span className="font-mono text-teal-700">{cf.count}</span></span>
-                <button type="button" onClick={() => handleRemoveCustomField(idx)} className="text-red-500 hover:text-red-700">
-                  <Trash2 className="w-4 h-4" />
+                    <div className="ml-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                      <div className="md:col-span-8">
+                        <input
+                          type="text"
+                          value={field.label}
+                          onChange={(e) => handleUpdateField(index, { label: e.target.value })}
+                          className="w-full text-lg font-bold text-slate-800 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-600 focus:outline-none py-1 mb-2 transition-colors"
+                          placeholder="Question Label"
+                        />
+                        
+                        {/* Field Preview rendering */}
+                        <div className="mt-2 flex gap-4">
+                          <div className="opacity-60 pointer-events-none flex-1">
+                            {field.type === 'SHORT_TEXT' && <input type="text" placeholder="Short answer text" className="w-1/2 p-2 border-b border-dashed border-slate-300 bg-transparent" disabled />}
+                            {field.type === 'LONG_TEXT' && <textarea placeholder="Long answer text" className="w-full p-2 border-b border-dashed border-slate-300 bg-transparent resize-none h-10" disabled />}
+                            {field.type === 'COUNT' && <div className="flex items-center gap-2"><input type="number" placeholder="0" className="w-24 p-2 border border-slate-200 rounded bg-slate-50 text-right" disabled /> <span className="text-xs">Count</span></div>}
+                            {field.type === 'CHECKLIST' && <div className="flex items-center gap-2 text-sm"><input type="checkbox" disabled /> Yes / Done</div>}
+                          </div>
+                          {field.type === 'COUNT' && (
+                            <div className="flex-none">
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Target to achieve</label>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                placeholder="Target"
+                                value={field.targetValue || 0}
+                                onChange={(e) => handleUpdateField(index, { targetValue: parseInt(e.target.value, 10) || 0 })}
+                                className="w-24 p-1.5 text-sm border border-slate-200 rounded bg-white"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-4 flex flex-col items-end gap-3 border-l border-slate-100 pl-4">
+                        <div className="flex items-center bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold w-full justify-between">
+                          {getFieldIcon(field.type)}
+                          <span className="text-slate-600 ml-2">{getFieldLabel(field.type)}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 w-full justify-end mt-2">
+                          <label className="flex items-center gap-2 text-sm text-slate-600 font-medium cursor-pointer">
+                            <span>Required</span>
+                            <div className="relative inline-block w-10 align-middle select-none">
+                              <input 
+                                type="checkbox" 
+                                checked={field.required} 
+                                onChange={(e) => handleUpdateField(index, { required: e.target.checked })}
+                                className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                                style={{ right: field.required ? '0' : 'auto', borderColor: field.required ? '#4f46e5' : '#cbd5e1' }}
+                              />
+                              <label className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${field.required ? 'bg-indigo-600' : 'bg-slate-300'}`}></label>
+                            </div>
+                          </label>
+                          <div className="w-px h-6 bg-slate-200"></div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveField(index)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Field"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-100 border-t border-slate-200">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <span className="text-sm font-bold text-slate-500 mr-2">Add Field:</span>
+                <button type="button" onClick={() => handleAddField('SHORT_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                  <Type className="w-4 h-4" /> Short Text
+                </button>
+                <button type="button" onClick={() => handleAddField('LONG_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                  <AlignLeft className="w-4 h-4" /> Paragraph
+                </button>
+                <button type="button" onClick={() => handleAddField('COUNT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                  <Hash className="w-4 h-4" /> Number Count
+                </button>
+                <button type="button" onClick={() => handleAddField('CHECKLIST')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                  <CheckSquare className="w-4 h-4" /> Checklist
                 </button>
               </div>
-            ))}
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Metric Name (e.g. Deals Closed, Property Inspections)"
-                value={newFieldName}
-                onChange={(e) => setNewFieldName(e.target.value)}
-                className="flex-1 p-2 text-xs bg-white border border-slate-200 rounded-lg"
-              />
-              <input
-                type="number"
-                min="1"
-                placeholder="Count"
-                value={newFieldCount}
-                onChange={(e) => setNewFieldCount(e.target.value)}
-                className="w-20 p-2 text-xs bg-white border border-slate-200 rounded-lg font-mono font-bold"
-              />
-              <button
-                type="button"
-                onClick={handleAddCustomField}
-                className="px-3 py-2 bg-teal-700 text-white text-xs font-bold rounded-lg hover:bg-teal-800"
-              >
-                Add Field
-              </button>
             </div>
           </div>
+          {/* END BUILDER */}
 
-          {/* Scheduled Date Range */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Active From</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">End Date (Optional Expiration)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Expires On (Optional)</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl font-mono"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+            disabled={isSubmitting || formSchema.length === 0}
+            className="w-full py-4 bg-indigo-700 hover:bg-indigo-800 text-white text-lg font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" />
-            <span>Save & Schedule Target Configuration</span>
+            <Save className="w-6 h-6" />
+            <span>Publish Dynamic Form for {selectedRole}</span>
           </button>
         </form>
-      </div>
-
-      {/* Target Campaigns History List */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <h4 className="font-bold text-sm text-slate-800 mb-3">Active Target Configurations</h4>
-        {isLoading ? (
-          <p className="text-xs text-slate-400">Loading targets list...</p>
-        ) : targetsList.length === 0 ? (
-          <p className="text-xs text-slate-400">No active targets configured yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {targetsList.map((t) => (
-              <div key={t.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
-                <div>
-                  <span className="font-bold text-teal-800">{t.role_name}</span>
-                  {t.employee && <span className="ml-2 font-mono text-[11px] text-slate-500">({t.employee.employee_code})</span>}
-                  <p className="text-[11px] font-mono text-slate-500 mt-0.5">
-                    Target: {JSON.stringify(t.targets_json)}
-                  </p>
-                </div>
-                <div className="text-right text-[10px] font-mono text-slate-400">
-                  Starts: {new Date(t.start_date).toLocaleDateString()}
-                  {t.end_date && <div>Ends: {new Date(t.end_date).toLocaleDateString()}</div>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

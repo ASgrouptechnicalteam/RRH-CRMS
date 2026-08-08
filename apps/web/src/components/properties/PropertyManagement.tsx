@@ -25,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
+import { AddPropertyWizard } from './AddPropertyWizard';
 
 interface Property {
   id: number;
@@ -504,208 +505,15 @@ export const PropertyManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Add Property Modal */}
+      {/* Add Property Wizard */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-slate-800 text-lg mb-1">Add New Property Listing</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Property will be submitted to Stage 1: PM On-Site Verification
-            </p>
-
-            <form onSubmit={handleCreateProperty} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Property Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 3BHK East-Facing Luxury Villa in Sonthillu County"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Brand Division *</label>
-                  <select
-                    value={brandType}
-                    onChange={(e) => setBrandType(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-bold text-slate-700"
-                  >
-                    <option value="SONTHILLU">Sonthillu (Residential)</option>
-                    <option value="RADHA_REAL_HOMES">Radha Real Homes (Commercial/Plots)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-bold text-slate-700"
-                  >
-                    <option value="VILLA">Villa</option>
-                    <option value="APARTMENT">Apartment</option>
-                    <option value="PLOT">Commercial Plot</option>
-                    <option value="COMMERCIAL">Commercial Building</option>
-                    <option value="FARM_HOUSE">Farm House</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Price (₹ INR) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="18500000"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Area (sq.ft) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="2400"
-                    value={areaSqft}
-                    onChange={(e) => setAreaSqft(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Bedrooms</label>
-                  <input
-                    type="number"
-                    value={bedrooms}
-                    onChange={(e) => setBedrooms(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Bathrooms</label>
-                  <input
-                    type="number"
-                    value={bathrooms}
-                    onChange={(e) => setBathrooms(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Facing</label>
-                  <select
-                    value={facing}
-                    onChange={(e) => setFacing(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold"
-                  >
-                    <option value="EAST">East</option>
-                    <option value="WEST">West</option>
-                    <option value="NORTH">North</option>
-                    <option value="SOUTH">South</option>
-                    <option value="NORTH_EAST">North East</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Location Area *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Miyapur Main Road, Hyderabad"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Full Address</label>
-                <textarea
-                  rows={2}
-                  placeholder="Full site address details..."
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Possession Status</label>
-                  <select
-                    value={possessionStatus}
-                    onChange={(e) => setPossessionStatus(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold"
-                  >
-                    <option value="READY_TO_MOVE">Ready to Move</option>
-                    <option value="UNDER_CONSTRUCTION">Under Construction</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Assign Project Manager</label>
-                  <select
-                    value={assignedPmId}
-                    onChange={(e) => setAssignedPmId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold"
-                  >
-                    <option value="">-- Auto-Assign --</option>
-                    {pms.map((pm: any) => (
-                      <option key={pm.id} value={pm.id}>{pm.full_name || pm.employee_code}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Amenities (Comma Separated)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Gym, Swimming Pool, 24/7 Security"
-                  value={amenities}
-                  onChange={(e) => setAmenities(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit for PM Verification'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AddPropertyWizard 
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            fetchProperties();
+          }}
+        />
       )}
 
       {/* Property Dossier & Verification Pipeline Action Modal */}

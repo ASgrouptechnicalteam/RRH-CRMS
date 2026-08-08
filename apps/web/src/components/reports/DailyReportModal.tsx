@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Send, AlertCircle, X, Mic, MicOff, AlertTriangle } from 'lucide-react';
+import { FileText, Send, AlertCircle, X, Mic, MicOff, AlertTriangle, CheckSquare, Hash, Type, AlignLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
@@ -13,15 +13,15 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
   const { user, fetchWithAuth } = useAuth();
   const roleName = user?.roles[0] || 'Staff (generic)';
 
-  // Form Metric State
-  const [callsMade, setCallsMade] = useState('0');
-  const [siteVisits, setSiteVisits] = useState('0');
-  const [leadsQualified, setLeadsQualified] = useState('0');
+  // Dynamic Form State
+  const [formSchema, setFormSchema] = useState<any[]>([]);
+  const [formResponses, setFormResponses] = useState<Record<string, any>>({});
+  
+  // Base Form State
   const [summaryNotes, setSummaryNotes] = useState('');
   const [belowTargetReason, setBelowTargetReason] = useState('');
 
-  // Target State
-  const [activeTarget, setActiveTarget] = useState<any>(null);
+  // Target Warning State
   const [isBelowTarget, setIsBelowTarget] = useState(false);
   const [missedWarning, setMissedWarning] = useState<string | null>(null);
 
@@ -38,35 +38,53 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
     setHasSpeechSupport(!!SpeechRecognition);
   }, []);
 
-  // Fetch active target on modal open
+  // Fetch active target (schema) on modal open
   useEffect(() => {
     if (isOpen) {
       fetchWithAuth(`${API_BASE_URL}/targets/my-target`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.target && data.target.targets_json) {
-            setActiveTarget(data.target.targets_json);
+          if (data.target && data.target.form_schema_json) {
+            setFormSchema(data.target.form_schema_json);
+            
+            // Initialize Responses
+            const initialResponses: Record<string, any> = {};
+            data.target.form_schema_json.forEach((field: any) => {
+              if (field.type === 'CHECKLIST') {
+                initialResponses[field.id] = false;
+              } else if (field.type === 'COUNT') {
+                initialResponses[field.id] = '';
+              } else {
+                initialResponses[field.id] = '';
+              }
+            });
+            setFormResponses(initialResponses);
           }
         })
-        .catch(() => console.error('Failed to load target'));
+        .catch(() => console.error('Failed to load target schema'));
+    } else {
+      // Reset state when closed
+      setFormSchema([]);
+      setFormResponses({});
+      setSummaryNotes('');
+      setBelowTargetReason('');
     }
   }, [isOpen]);
 
-  // Check for below target counts
+  // Check for below target counts dynamically based on schema targetValues
   useEffect(() => {
-    if (!activeTarget) return;
+    if (!formSchema.length) return;
 
     const warnings: string[] = [];
 
-    if (activeTarget.callsMade !== undefined) {
-      const c = parseInt(callsMade, 10) || 0;
-      if (c < activeTarget.callsMade) warnings.push(`Calls Made (${c}/${activeTarget.callsMade})`);
-    }
-
-    if (activeTarget.siteVisits !== undefined) {
-      const v = parseInt(siteVisits, 10) || 0;
-      if (v < activeTarget.siteVisits) warnings.push(`Site Visits (${v}/${activeTarget.siteVisits})`);
-    }
+    formSchema.forEach(field => {
+      if (field.type === 'COUNT' && field.targetValue && field.targetValue > 0) {
+        const val = parseInt(formResponses[field.id], 10) || 0;
+        if (val < field.targetValue) {
+          warnings.push(`${field.label} (${val}/${field.targetValue})`);
+        }
+      }
+    });
 
     if (warnings.length > 0) {
       setIsBelowTarget(true);
@@ -75,7 +93,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
       setIsBelowTarget(false);
       setMissedWarning(null);
     }
-  }, [callsMade, siteVisits, leadsQualified, activeTarget]);
+  }, [formResponses, formSchema]);
 
   // Voice Dictation Toggle with Duplicate Word Prevention
   const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
@@ -153,14 +171,32 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
       return;
     }
 
+    // Dynamic field validation
+    for (const field of formSchema) {
+      if (field.required) {
+        const val = formResponses[field.id];
+        if (val === '' || val === undefined || val === null || (field.type === 'SHORT_TEXT' && val.trim() === '')) {
+          setErrorMessage(`Field "${field.label}" is required.`);
+          return;
+        }
+      }
+    }
+
     setIsLoading(true);
 
     try {
-      const metrics: Record<string, any> = {
-        callsMade: parseInt(callsMade, 10) || 0,
-        siteVisits: parseInt(siteVisits, 10) || 0,
-        leadsQualified: parseInt(leadsQualified, 10) || 0,
-      };
+      // Map dynamic metrics directly
+      const metrics: Record<string, any> = { ...formResponses };
+
+      // Map to legacy fields for backward compatibility with older DB reports if needed
+      // (The backend looks for these specifically in the legacy target_json logic, but we now use metrics_json)
+      formSchema.forEach(field => {
+        if (field.type === 'COUNT') {
+          if (field.label.toLowerCase().includes('call')) metrics.callsMade = parseInt(formResponses[field.id], 10) || 0;
+          if (field.label.toLowerCase().includes('visit')) metrics.siteVisits = parseInt(formResponses[field.id], 10) || 0;
+          if (field.label.toLowerCase().includes('deal') || field.label.toLowerCase().includes('qualif')) metrics.leadsQualified = parseInt(formResponses[field.id], 10) || 0;
+        }
+      });
 
       const res = await fetchWithAuth(`${API_BASE_URL}/reports/daily`, {
         method: 'POST',
@@ -188,9 +224,13 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
     }
   };
 
+  const handleResponseChange = (id: string, value: any) => {
+    setFormResponses(prev => ({ ...prev, [id]: value }));
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 animate-scaleUp relative max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 animate-scaleUp relative max-h-[90vh] flex flex-col">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
@@ -198,77 +238,115 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
           <X className="w-5 h-5" />
         </button>
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 shrink-0">
           <div className="w-14 h-14 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
             <FileText className="w-7 h-7" />
           </div>
           <h2 className="text-2xl font-bold text-slate-800">Daily Work Log</h2>
-          <p className="text-xs text-slate-500 mt-1">Submit today's work summary to unlock your logout gate</p>
+          <p className="text-xs text-slate-500 mt-1">Complete your required role checklist and metrics</p>
         </div>
 
         {errorMessage && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm font-semibold rounded-xl border border-red-200 flex items-center gap-2 shrink-0">
+            <AlertCircle className="w-5 h-5 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs sticky top-0 z-10 backdrop-blur-md">
             <span className="text-slate-500 font-medium">Reporting Role:</span>
             <span className="font-bold text-teal-800 bg-teal-100/70 px-2.5 py-0.5 rounded-md">{roleName}</span>
           </div>
 
-          {/* Metric Inputs */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Calls Made</label>
-              <input
-                type="number"
-                min="0"
-                value={callsMade}
-                onChange={(e) => setCallsMade(e.target.value)}
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-mono"
-              />
-              {activeTarget?.callsMade && (
-                <span className="text-[10px] text-slate-400 font-mono">Target: {activeTarget.callsMade}</span>
-              )}
+          {/* DYNAMIC FORM RENDERING */}
+          {formSchema.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              No specific metrics configured for your role. Proceed to submit your summary.
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Site Visits</label>
-              <input
-                type="number"
-                min="0"
-                value={siteVisits}
-                onChange={(e) => setSiteVisits(e.target.value)}
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-mono"
-              />
-              {activeTarget?.siteVisits && (
-                <span className="text-[10px] text-slate-400 font-mono">Target: {activeTarget.siteVisits}</span>
-              )}
+          ) : (
+            <div className="space-y-4">
+              {formSchema.map((field) => (
+                <div key={field.id} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-teal-300 transition-colors">
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3">
+                    {field.type === 'SHORT_TEXT' && <Type className="w-4 h-4 text-teal-600" />}
+                    {field.type === 'LONG_TEXT' && <AlignLeft className="w-4 h-4 text-teal-600" />}
+                    {field.type === 'COUNT' && <Hash className="w-4 h-4 text-teal-600" />}
+                    {field.type === 'CHECKLIST' && <CheckSquare className="w-4 h-4 text-teal-600" />}
+                    
+                    <span>{field.label}</span>
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    
+                    {field.type === 'COUNT' && field.targetValue > 0 && (
+                      <span className="ml-auto text-[10px] uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded font-mono">
+                        Target: {field.targetValue}
+                      </span>
+                    )}
+                  </label>
+
+                  <div>
+                    {field.type === 'SHORT_TEXT' && (
+                      <input
+                        type="text"
+                        value={formResponses[field.id] || ''}
+                        onChange={(e) => handleResponseChange(field.id, e.target.value)}
+                        required={field.required}
+                        className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                        placeholder="Your answer..."
+                      />
+                    )}
+
+                    {field.type === 'LONG_TEXT' && (
+                      <textarea
+                        value={formResponses[field.id] || ''}
+                        onChange={(e) => handleResponseChange(field.id, e.target.value)}
+                        required={field.required}
+                        rows={3}
+                        className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                        placeholder="Provide details..."
+                      />
+                    )}
+
+                    {field.type === 'COUNT' && (
+                      <input
+                        type="number"
+                        min="0"
+                        value={formResponses[field.id] ?? ''}
+                        onChange={(e) => handleResponseChange(field.id, e.target.value)}
+                        required={field.required}
+                        className="w-32 p-3 text-lg font-mono text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                        placeholder="0"
+                      />
+                    )}
+
+                    {field.type === 'CHECKLIST' && (
+                      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-teal-50 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={!!formResponses[field.id]}
+                          onChange={(e) => handleResponseChange(field.id, e.target.checked)}
+                          required={field.required && !formResponses[field.id]} // Standard HTML5 validation hack for required checkbox
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span className="text-sm text-slate-700 font-medium">Mark as completed</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Leads Qualified</label>
-              <input
-                type="number"
-                min="0"
-                value={leadsQualified}
-                onChange={(e) => setLeadsQualified(e.target.value)}
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-mono"
-              />
-            </div>
-          </div>
+          )}
 
           {/* Sub-Target Warning & Reason Box */}
           {isBelowTarget && (
-            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
-              <div className="flex items-center gap-2 text-amber-800 text-xs font-bold">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <div className="p-5 bg-amber-50 rounded-2xl border border-amber-200 space-y-3 shadow-inner">
+              <div className="flex items-center gap-2 text-amber-800 text-sm font-bold">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
                 <span>{missedWarning}</span>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-amber-900 mb-1">
-                  Reason for Missing Target (Minimum 15 characters required) *
+                <label className="block text-sm font-bold text-amber-900 mb-1.5">
+                  Reason for Missing Target (Min 15 characters) <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={belowTargetReason}
@@ -276,31 +354,36 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                   required
                   rows={2}
                   placeholder="Explain why target was missed (e.g. Spent 3 hours on client site visit and contract review...)"
-                  className="w-full p-2.5 text-xs bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  className="w-full p-3 text-sm bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
                 />
-                <span className="text-[10px] text-amber-700 font-mono">
-                  Length: {belowTargetReason.length} / 15 chars min
-                </span>
+                <div className="text-right mt-1">
+                  <span className={`text-[11px] font-mono font-bold ${belowTargetReason.length < 15 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    Length: {belowTargetReason.length} / 15
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
           {/* Always-Visible Summary Text Area + Mic Dictation Button */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-700">Work Accomplished Summary</label>
+          <div className="pt-2 border-t border-slate-100 mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-bold text-slate-800">
+                General Work Accomplished Summary
+                <span className="text-red-500 ml-1">*</span>
+              </label>
 
               {/* Silent Fallback: Mic button only renders if browser speech recognition is supported */}
               {hasSpeechSupport && (
                 <button
                   type="button"
                   onClick={toggleVoiceDictation}
-                  className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
-                    isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm border ${
+                    isListening ? 'bg-red-500 text-white border-red-600 animate-pulse' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'
                   }`}
                   title={isListening ? 'Stop Listening' : 'Speak to Dictate Notes'}
                 >
-                  {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   <span>{isListening ? 'Listening...' : 'Voice Dictate'}</span>
                 </button>
               )}
@@ -310,26 +393,29 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
               value={summaryNotes}
               onChange={(e) => setSummaryNotes(e.target.value)}
               required
+              minLength={5}
               rows={3}
               placeholder="Describe key tasks completed, follow-ups, or accomplishments today..."
               className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 focus:bg-white"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Submit Report & Unlock Logout</span>
-              </>
-            )}
-          </button>
+          <div className="pt-4 sticky bottom-0 bg-white pb-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 bg-teal-700 hover:bg-teal-800 text-white font-bold text-lg rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {isLoading ? (
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  <span>Submit Final Log & Unlock Logout</span>
+                </>
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>

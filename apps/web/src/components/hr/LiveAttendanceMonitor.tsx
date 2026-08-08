@@ -9,8 +9,7 @@ interface AttendanceLog {
   status: string;
   source: string;
   employee: {
-    first_name: string;
-    last_name: string;
+    full_name: string;
     employee_code: string;
   };
 }
@@ -91,7 +90,7 @@ export const LiveAttendanceMonitor: React.FC = () => {
           <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
             <div>
               <div className="font-bold text-slate-800">
-                {log.employee.first_name} {log.employee.last_name}
+                {log.employee.full_name}
               </div>
               <div className="text-xs text-slate-500 font-mono mt-0.5">
                 {log.employee.employee_code}

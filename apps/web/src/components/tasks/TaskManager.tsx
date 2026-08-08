@@ -23,6 +23,7 @@ export const TaskManager: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canViewTeam = user?.roles.includes('MD') || user?.roles.includes('Marketing Director') || user?.roles.includes('Admin (Technical)') || user?.roles.includes('HR Manager');
+  const canCreateTask = user?.roles.some((r: string) => ['MD', 'HR Manager', 'CRM', 'Admin (Technical)', 'Marketing Director'].includes(r));
 
   const fetchTasks = async () => {
     setIsLoading(true);
@@ -216,13 +217,15 @@ export const TaskManager: React.FC = () => {
           )}
         </div>
 
-        <button
-          onClick={() => setIsCreating(true)}
-          className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Task</span>
-        </button>
+        {canCreateTask && (
+          <button
+            onClick={() => setIsCreating(true)}
+            className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Task</span>
+          </button>
+        )}
       </div>
 
       {/* Filter Status Tabs */}

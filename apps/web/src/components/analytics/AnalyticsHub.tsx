@@ -8,7 +8,7 @@ import { Navigate } from 'react-router-dom';
 export const AnalyticsHub: React.FC = () => {
   const { user } = useAuth();
   
-  const canManageTargets = user?.roles?.some(r => ['MD', 'Marketing Director', 'Admin (Technical)'].includes(r));
+  const canManageTargets = user?.roles?.some(r => ['MD'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
     ['MD', 'Admin (Technical)', 'Marketing Director', 'HR Manager', 'Project Manager',
      'Channel Partner Manager', 'Digital Marketing Head', 'Finance / Accountant'].includes(r)

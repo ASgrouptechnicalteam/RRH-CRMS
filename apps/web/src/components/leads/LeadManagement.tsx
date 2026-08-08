@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
+import { AddLeadWizard } from './AddLeadWizard';
 
 interface Lead {
   id: number;
@@ -108,6 +109,8 @@ export const LeadManagement: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [source, setSource] = useState('MANUAL_ENTRY');
+  const [cpName, setCpName] = useState('');
+  const [projectName, setProjectName] = useState('');
   const [propertyType, setPropertyType] = useState('RESIDENTIAL_VILLA');
   const [budgetMax, setBudgetMax] = useState('15000000');
   const [preferredLocation, setPreferredLocation] = useState('Miyapur / Gachibowli');
@@ -229,6 +232,12 @@ export const LeadManagement: React.FC = () => {
     if (!customerName || !phone) return;
 
     setIsSubmitting(true);
+    
+    let finalNotes = notes;
+    if (source === 'CHANNEL_PARTNER') {
+      finalNotes = `[Source: Channel Partner - ${cpName || 'N/A'} / Project: ${projectName || 'N/A'}]\n${notes}`;
+    }
+
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/leads`, {
         method: 'POST',
@@ -241,7 +250,7 @@ export const LeadManagement: React.FC = () => {
           property_type_preference: propertyType,
           budget_max: parseFloat(budgetMax) || null,
           preferred_location: preferredLocation,
-          notes,
+          notes: finalNotes,
         }),
       });
 
@@ -516,126 +525,14 @@ export const LeadManagement: React.FC = () => {
 
       {/* Add Lead Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-slate-800 text-lg mb-1">Create New Lead Entry</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Lead will be auto-distributed using the Performance-Weighted Distribution Engine
-            </p>
-
-            <form onSubmit={handleCreateLead} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Customer Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh Reddy"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phone Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="+91 98765 43210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Email (Optional)</label>
-                  <input
-                    type="email"
-                    placeholder="customer@gmail.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Property Type</label>
-                  <select
-                    value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold text-slate-700"
-                  >
-                    <option value="RESIDENTIAL_VILLA">Residential Villa (Sonthillu)</option>
-                    <option value="APARTMENT">Apartment (Sonthillu)</option>
-                    <option value="COMMERCIAL_PLOT">Commercial Plot (Radha Real Homes)</option>
-                    <option value="AGRICULTURAL_LAND">Agricultural Land</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Max Budget (₹ INR)</label>
-                  <input
-                    type="number"
-                    placeholder="15000000"
-                    value={budgetMax}
-                    onChange={(e) => setBudgetMax(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Preferred Location</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Miyapur, Gachibowli, Tarnaka"
-                  value={preferredLocation}
-                  onChange={(e) => setPreferredLocation(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Initial Requirement Notes</label>
-                <textarea
-                  rows={2}
-                  placeholder="Customer looking for 3BHK East-facing Villa..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md"
-                >
-                  {isSubmitting ? 'Registering & Distributing...' : 'Create & Auto-Distribute'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AddLeadWizard 
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            fetchLeads();
+          }}
+          users={[]} // pass empty array for now, not strictly used in lead wizard logic
+        />
       )}
 
       {/* Lead Detail Dossier Modal */}

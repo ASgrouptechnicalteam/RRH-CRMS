@@ -53,7 +53,7 @@ export const MDExecutiveDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-teal-400" />
-            <h2 className="text-xl font-black tracking-tight">Founder & CEO Command Center</h2>
+            <h2 className="text-xl font-black tracking-tight">Founder & MD Command Center</h2>
           </div>
           <p className="text-xs text-teal-200/80">
             Real-time executive oversight across lead intake, closed deals, property verification pipeline, and team attendance.
@@ -121,7 +121,7 @@ export const MDExecutiveDashboard: React.FC = () => {
           </div>
           <div className="text-2xl font-black text-slate-900 group-hover:text-amber-900 transition-colors">{execMetrics?.totalPropertiesCount ?? 0} Properties</div>
           <span className="text-[10px] text-amber-600 font-bold">
-            {execMetrics?.livePropertiesCount ?? 0} LIVE • {execMetrics?.pendingApprovalPropertiesCount ?? 0} CEO Approval
+            {execMetrics?.livePropertiesCount ?? 0} LIVE • {execMetrics?.pendingApprovalPropertiesCount ?? 0} MD Approval
           </span>
         </div>
 

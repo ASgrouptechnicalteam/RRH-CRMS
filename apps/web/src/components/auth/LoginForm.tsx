@@ -17,13 +17,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [debugDetails, setDebugDetails] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [isVisitingPurpose, setIsVisitingPurpose] = useState(false);
 
   const handleCodeChange = (val: string) => {
     const formatted = val.toUpperCase().trim();
     setEmployeeCode(formatted);
 
     if (formatted && !EMPLOYEE_CODE_REGEX.test(formatted)) {
-      setCodeError('Format must be RRH-XX-000 (e.g. RRH-EX-001)');
+      setCodeError('Format must be RRH-<DEPT>-000 (e.g. RRH-ADMIN-001)');
     } else {
       setCodeError(null);
     }
@@ -40,7 +41,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     }
 
     if (!EMPLOYEE_CODE_REGEX.test(employeeCode)) {
-      setCodeError('Invalid format. Expected: RRH-XX-000 (e.g. RRH-EX-001)');
+      setCodeError('Invalid format. Expected: RRH-<DEPT>-000 (e.g. RRH-ADMIN-001)');
       return;
     }
 
@@ -74,15 +75,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
       if (!res.ok) {
         const errorText = responseJson?.error || responseJson?.message || responseText;
-        const debugInfo = `HTTP ${res.status} (${res.statusText}) | Response: ${errorText || 'Empty Response'}`;
-        setDebugDetails(debugInfo);
-
         if (res.status === 404) {
-          setErrorMessage('Error 404: Auth login route not found on server.');
-        } else if (res.status === 401) {
-          setErrorMessage(errorText || 'Invalid credentials or inactive account.');
+          setErrorMessage('System authentication is temporarily unavailable.');
         } else {
-          setErrorMessage(`Server Error (${res.status}): ${errorText || 'Authentication failed'}`);
+          setErrorMessage(errorText || 'Authentication failed. Please check your credentials and try again.');
         }
         return;
       }
@@ -91,6 +87,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
       // Authenticate inside AuthContext!
       if (responseJson.accessToken && responseJson.user) {
+        if (isVisitingPurpose) {
+          localStorage.setItem('rrh_visiting_purpose', 'true');
+        } else {
+          localStorage.removeItem('rrh_visiting_purpose');
+        }
         login(responseJson.user, responseJson.accessToken);
       }
 
@@ -100,8 +101,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       }
     } catch (err: any) {
       console.error('[Auth Exception]', err);
-      setErrorMessage(`Network Error: Failed to connect to API (${API_BASE_URL}). Check CORS or server status.`);
-      setDebugDetails(`Exception: ${err.message || String(err)}`);
+      setErrorMessage(`Network Error: Failed to connect to server.`);
     } finally {
       setIsLoading(false);
     }
@@ -128,15 +128,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             <span>{errorMessage}</span>
           </div>
 
-          {debugDetails && (
-            <div className="mt-2 pt-2 border-t border-red-200/60 font-mono text-[11px] text-red-900 bg-red-100/50 p-2 rounded-xl break-all flex items-start gap-1.5">
-              <Bug className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-600" />
-              <div>
-                <span className="font-bold uppercase tracking-wider block text-[10px] text-red-700">Diagnostic Logs:</span>
-                {debugDetails}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -155,8 +146,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               type="text"
               value={employeeCode}
               onChange={(e) => handleCodeChange(e.target.value)}
-              placeholder="e.g. RRH-EX-001"
-              maxLength={10}
+              placeholder="e.g. RRH-ADMIN-001"
+              maxLength={15}
               className={`w-full pl-10 pr-4 py-3 bg-slate-50 border ${
                 codeError ? 'border-red-400 focus:ring-red-400' : 'border-slate-200 focus:ring-teal-600'
               } rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all font-mono tracking-wide placeholder:font-sans placeholder:tracking-normal text-slate-800 font-bold`}
@@ -166,7 +157,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             <p className="text-xs text-red-600 mt-1.5 font-medium">{codeError}</p>
           ) : (
             <p className="text-[11px] text-slate-400 mt-1">
-              Format: <span className="font-mono text-slate-600">RRH-&lt;DEPT_CODE&gt;-&lt;3-DIGITS&gt;</span>
+              Format: <span className="font-mono text-slate-600">RRH-&lt;DEPT&gt;-&lt;3-DIGITS&gt;</span>
             </p>
           )}
         </div>
@@ -195,6 +186,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+        </div>
+
+        {/* Visiting Purpose Checkbox */}
+        <div className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            id="visitingPurpose"
+            checked={isVisitingPurpose}
+            onChange={(e) => setIsVisitingPurpose(e.target.checked)}
+            className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+          />
+          <label htmlFor="visitingPurpose" className="text-xs text-slate-600 font-medium">
+            I am logging in just for visiting/viewing purpose
+          </label>
         </div>
 
         {/* Submit Button */}

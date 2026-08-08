@@ -24,7 +24,7 @@ export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const activeTab = location.pathname === '/' ? 'overview' : location.pathname.replace('/', '');
+  const activeTab = location.pathname.replace('/', '') || 'dashboard';
 
   const isMD = user?.roles?.includes('MD');
   const isAdmin = user?.roles?.includes('Admin (Technical)');
@@ -123,26 +123,24 @@ export const MobileBottomNav: React.FC = () => {
       {/* Main Bottom Nav Bar (Max 5 Icons) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-between text-white shadow-2xl">
         <button
-          onClick={() => handleNav('/')}
+          onClick={() => handleNav('/dashboard')}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-            activeTab === 'overview' ? 'text-teal-400 font-extrabold bg-teal-950/60' : 'text-slate-400 hover:text-slate-200'
+            activeTab === 'dashboard' ? 'text-teal-400 font-extrabold bg-teal-950/60' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <CheckCircle2 className="w-5 h-5" />
           <span className="text-[9px]">Home</span>
         </button>
 
-        {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Telecaller', 'Agent / Freelancer', 'Digital Lead Operator'].includes(r)) && (
-          <button
-            onClick={() => handleNav('/leads')}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-              activeTab === 'leads' ? 'text-teal-400 font-extrabold bg-teal-950/60' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-[9px]">Leads</span>
-          </button>
-        )}
+        <button
+          onClick={() => handleNav('/leads')}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
+            activeTab === 'leads' ? 'text-teal-400 font-extrabold bg-teal-950/60' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-[9px]">Leads</span>
+        </button>
 
         {user?.roles?.some(r => ['MD', 'Admin (Technical)', 'Marketing Director', 'Project Manager'].includes(r)) && (
           <button

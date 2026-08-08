@@ -273,7 +273,7 @@ export const SiteVisitManagement: React.FC = () => {
       {isLoading ? (
         <div className="py-12 text-center text-xs text-slate-400">Loading site visit bookings...</div>
       ) : visits.length === 0 ? (
-        <div className="py-12 text-center text-xs text-slate-400">No site visits currently scheduled. Book site visits directly inside Lead Dossiers!</div>
+        <div className="py-12 text-center text-xs text-slate-400">No site visits currently scheduled. Book site visits directly inside Lead Details/div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {visits.map((visit) => (

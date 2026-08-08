@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 const p = prisma as any;
 
 // Helper to generate basic schema for roles
-const generateBasicSchema = (metrics: string[], hasChecklist = false) => {
+const generateBasicSchema = (metrics: string[], hasChecklist = false): any[] => {
   const schema = metrics.map((m) => ({
     id: m,
     label: m.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),

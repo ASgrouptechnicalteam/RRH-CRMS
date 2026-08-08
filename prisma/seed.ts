@@ -18,10 +18,10 @@ const INITIAL_BRANCHES = [
   { name: 'Tarnaka Branch' },
 ];
 
-const DEFAULT_PASSWORD = 'Password@123';
+const DEFAULT_PASSWORD = 'Radhareal@123';
 
 async function main() {
-  console.log('🌱 Seeding Full Team for Radha Real Homes & Sonthillu...');
+  console.log('🌱 Seeding Admin Team for Radha Real Homes & Sonthillu...');
 
   // 1. Create or Update Company
   const company = await prisma.company.upsert({
@@ -80,62 +80,14 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
 
-  // 4. Seed Full Employee Roster across all departments
+  // 4. Seed Admin
   const initialEmployees = [
     {
-      roleName: Roles.MD,
-      employeeCode: 'RRH-EX-001',
-      branchId: createdBranches[0]?.id,
-      attendanceRequired: false,
-    },
-    {
       roleName: Roles.ADMIN,
-      employeeCode: 'RRH-EX-002',
+      employeeCode: 'RRH-ADMIN-001',
       branchId: createdBranches[0]?.id,
       attendanceRequired: false,
-    },
-    {
-      roleName: Roles.HR_MANAGER,
-      employeeCode: 'RRH-HR-001',
-      branchId: createdBranches[1]?.id || createdBranches[0]?.id,
-      attendanceRequired: false,
-    },
-    {
-      roleName: Roles.TELECALLER,
-      employeeCode: 'RRH-SL-001',
-      branchId: createdBranches[0]?.id,
-      attendanceRequired: true,
-    },
-    {
-      roleName: Roles.TELECALLER,
-      employeeCode: 'RRH-SL-002',
-      branchId: createdBranches[1]?.id || createdBranches[0]?.id,
-      attendanceRequired: true,
-    },
-    {
-      roleName: Roles.DIGITAL_LEAD_OPERATOR,
-      employeeCode: 'RRH-MK-001',
-      branchId: createdBranches[0]?.id,
-      attendanceRequired: true,
-    },
-    {
-      roleName: Roles.CHANNEL_PARTNER_MANAGER,
-      employeeCode: 'RRH-MK-002',
-      branchId: createdBranches[1]?.id || createdBranches[0]?.id,
-      attendanceRequired: true,
-    },
-    {
-      roleName: Roles.PROJECT_MANAGER,
-      employeeCode: 'RRH-OP-001',
-      branchId: createdBranches[0]?.id,
-      attendanceRequired: true,
-    },
-    {
-      roleName: Roles.FINANCE,
-      employeeCode: 'RRH-FN-001',
-      branchId: createdBranches[1]?.id || createdBranches[0]?.id,
-      attendanceRequired: true,
-    },
+    }
   ];
 
   for (const empData of initialEmployees) {

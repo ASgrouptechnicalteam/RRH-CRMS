@@ -87,14 +87,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Auto-seed Hostinger MySQL Database on startup if empty
 const bootstrapHostingerDatabase = async () => {
   try {
-    const empCount = await p.employee.count();
-    if (empCount > 0) {
-      console.log(`[database]: Connected to Hostinger MySQL (${empCount} active employee records loaded)`);
-      return;
-    }
-
-    console.log('[database]: Seeding Hostinger MySQL database with full team roster...');
-
     const company = await p.company.upsert({
       where: { code: 'RRH' },
       update: { name: 'Radha Real Homes' },
@@ -134,6 +126,14 @@ const bootstrapHostingerDatabase = async () => {
       });
       roleMap[rDef.name] = role;
     }
+
+    const empCount = await p.employee.count();
+    if (empCount > 0) {
+      console.log(`[database]: Connected to Hostinger MySQL (${empCount} active employee records loaded)`);
+      return;
+    }
+
+    console.log('[database]: Seeding Hostinger MySQL database with full team roster...');
 
     const passwordHash = await bcrypt.hash('Radhareal@123', 12);
 

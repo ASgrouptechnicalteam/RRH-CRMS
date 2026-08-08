@@ -6,7 +6,7 @@ type UseIdleTimerProps = {
 };
 
 export const useIdleTimer = ({ timeout, onIdle }: UseIdleTimerProps) => {
-  const timeoutId = useRef<NodeJS.Timeout | null>(null);
+  const timeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetTimer = () => {
     if (timeoutId.current) {

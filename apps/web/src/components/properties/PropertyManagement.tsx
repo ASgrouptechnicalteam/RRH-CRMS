@@ -345,8 +345,8 @@ export const PropertyManagement: React.FC = () => {
       </div>
 
       {/* Brand Separation Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div className="flex flex-wrap items-center gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200 w-full md:w-auto">
           <button
             onClick={() => setBrandTab('ALL')}
             className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
@@ -373,12 +373,12 @@ export const PropertyManagement: React.FC = () => {
             }`}
           >
             <Building className="w-3.5 h-3.5 text-amber-300" />
-            <span>Radha Real Homes (Plots & Commercial)</span>
+            <span>Radha Real Homes</span>
           </button>
         </div>
 
         {/* Search & Filter */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full md:w-auto">
           {isPM && (
             <select
               value={viewMode}

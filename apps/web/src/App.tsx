@@ -21,7 +21,7 @@ import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, Tren
 import { API_BASE_URL } from './config';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { usePushNotifications } from './hooks/usePushNotifications';
-
+import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
 const PropertyManagement = lazy(() => import('./components/properties/PropertyManagement').then(m => ({ default: m.PropertyManagement })));
@@ -203,6 +203,9 @@ const MainLayout: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Global Image Banner */}
+      <GlobalAnnouncementBanner />
 
       {/* Push Notification Banner */}
       {isSupported && permission === 'default' && (

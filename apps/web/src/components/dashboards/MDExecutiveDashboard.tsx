@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { PerformanceHistoryTimeline } from '../performance/PerformanceHistoryTimeline';
+import { BannerControlWidget } from './BannerControlWidget';
 
 export const MDExecutiveDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -138,6 +139,11 @@ export const MDExecutiveDashboard: React.FC = () => {
             {execMetrics?.attendanceExceptionsCount ?? 0} Attendance Exceptions
           </span>
         </div>
+      </div>
+
+      {/* Global Image Banner Management */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <BannerControlWidget />
       </div>
 
       {/* Analytics Charts Section */}

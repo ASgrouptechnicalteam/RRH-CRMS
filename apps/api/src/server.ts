@@ -26,6 +26,7 @@ import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
 import expenseRefundRoutes from './routes/expenseRefunds';
 import pushRoutes from './routes/pushSubscriptions';
+import announcementRoutes from './routes/announcement';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -62,6 +63,7 @@ app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/expense-refunds', expenseRefundRoutes);
 app.use('/api/v1/push', pushRoutes);
+app.use('/api/v1/announcement', announcementRoutes);
 
 // Serve frontend static files from apps/web/dist
 app.use(express.static(path.join(process.cwd(), 'apps/web/dist')));

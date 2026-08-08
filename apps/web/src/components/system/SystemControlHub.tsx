@@ -4,6 +4,7 @@ import { MDControlDashboard } from '../md/MDControlDashboard';
 import { AdminAnalyticsPortal } from '../admin/AdminAnalyticsPortal';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { BannerControlWidget } from '../dashboards/BannerControlWidget';
 
 export const SystemControlHub: React.FC = () => {
   const { user } = useAuth();
@@ -66,6 +67,11 @@ export const SystemControlHub: React.FC = () => {
       <div className="mt-6">
         {activeTab === 'md' && isMD && <MDControlDashboard />}
         {activeTab === 'admin' && isAdmin && <AdminAnalyticsPortal />}
+      </div>
+
+      {/* Global Image Banner Management */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <BannerControlWidget />
       </div>
     </div>
   );

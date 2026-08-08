@@ -14,8 +14,22 @@ async function main() {
   await prisma.dailyTarget.deleteMany({});
   await prisma.employeeQrCode.deleteMany({});
   
-  // We keep the main Roles, Branches, Shifts, and Employees so you can still log in!
-  console.log('Sample data successfully wiped!');
+  await prisma.employeeRole.deleteMany({
+    where: { employee: { employee_code: { not: 'RRH-ADMIN-001' } } }
+  });
+  await prisma.employeePermissionOverride.deleteMany({
+    where: { employee: { employee_code: { not: 'RRH-ADMIN-001' } } }
+  });
+  await prisma.employee.deleteMany({
+    where: { employee_code: { not: 'RRH-ADMIN-001' } }
+  });
+  
+  // Wipe everything else
+  await prisma.channelPartner.deleteMany({});
+  await prisma.property.deleteMany({});
+  await prisma.project.deleteMany({});
+  
+  console.log('Sample data and old employees (except Admin) successfully wiped from production database!');
 }
 
 main()

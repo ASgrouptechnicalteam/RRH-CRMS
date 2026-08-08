@@ -21,6 +21,8 @@ model Company {
   leads               Lead[]
   properties          Property[]
   channel_partners    ChannelPartner[]
+  announcement_image_url String?    @db.Text
+  announcement_active    Boolean    @default(false)
   
   created_at          DateTime   @default(now())
   updated_at          DateTime   @updatedAt

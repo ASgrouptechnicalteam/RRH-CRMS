@@ -4,74 +4,12 @@ import bcrypt from 'bcryptjs';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { Roles, DepartmentCodes } from '@rrh-ems/shared';
 import { notifyEmployee } from '../utils/notifyEmployee';
+import { encryptData, decryptData } from '../utils/crypto';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Helper to seed and update full employee roster across departments
-const ensureFullTeamSeeded = async (companyId: number, branchId: number | null) => {
-  const passwordHash = await bcrypt.hash('Password@123', 12);
-  const effectiveBranchId = branchId || 1;
-  const teamDef = [
-    { code: 'RRH-EX-001', role: Roles.MD, name: 'Radha Krishna (MD)', dept: 'Executive', title: 'Managing Director', salary: 150000, exempt: true },
-    { code: 'RRH-EX-002', role: Roles.ADMIN, name: 'System Technical Admin', dept: 'IT Systems', title: 'Technical Administrator', salary: 120000, exempt: true },
-    { code: 'RRH-HR-001', role: Roles.HR_MANAGER, name: 'Sunitha Varma (HR)', dept: 'Human Resources', title: 'HR Manager', salary: 75000, exempt: true },
-    { code: 'RRH-SL-001', role: Roles.TELECALLER, name: 'Praveen Kumar', dept: 'Sales & Leads', title: 'Senior Telecaller Lead', salary: 35000, exempt: false },
-    { code: 'RRH-SL-002', role: Roles.TELECALLER, name: 'Anusha Reddy', dept: 'Sales & Leads', title: 'Lead Qualification Agent', salary: 32000, exempt: false },
-    { code: 'RRH-MK-001', role: Roles.DIGITAL_LEAD_OPERATOR, name: 'Karthik Rao', dept: 'Marketing', title: 'Digital Marketing Operator', salary: 45000, exempt: false },
-    { code: 'RRH-MK-002', role: Roles.CHANNEL_PARTNER_MANAGER, name: 'Vikram Sharma', dept: 'Marketing', title: 'Channel Partner Manager', salary: 55000, exempt: false },
-    { code: 'RRH-OP-001', role: Roles.PROJECT_MANAGER, name: 'Srinivas Raju', dept: 'Operations', title: 'Site Project Director', salary: 65000, exempt: false },
-    { code: 'RRH-FN-001', role: Roles.FINANCE, name: 'Meenakshi Iyer', dept: 'Finance', title: 'Senior Accounts Manager', salary: 60000, exempt: false },
-  ];
 
-  for (const item of teamDef) {
-    const role = await prisma.role.findUnique({ where: { name: item.role } });
-    if (!role) continue;
-
-    const existing = await prisma.employee.findUnique({
-      where: { employee_code: item.code },
-      include: { roles: true },
-    });
-
-    if (!existing) {
-      await prisma.employee.create({
-        data: {
-          employee_code: item.code,
-          full_name: item.name,
-          company_id: companyId,
-          branch_id: effectiveBranchId,
-          password_hash: passwordHash,
-          status: 'ACTIVE',
-          attendance_required: !item.exempt,
-          first_login_done: true,
-          job_title: item.title,
-          department: item.dept,
-          employment_type: 'FULL_TIME',
-          salary_ctc: item.salary,
-          phone: item.code === 'RRH-EX-001' ? '+91 99887 76655' : '+91 98765 43210',
-          email: `${item.code.toLowerCase()}@radharealhomes.com`,
-          roles: {
-            create: { role_id: role.id },
-          },
-        },
-      });
-    } else {
-      // Ensure existing MD & HR records have full names, titles, and departments populated!
-      await prisma.employee.update({
-        where: { id: existing.id },
-        data: {
-          full_name: existing.full_name || item.name,
-          job_title: existing.job_title || item.title,
-          department: existing.department || item.dept,
-          phone: existing.phone || (item.code === 'RRH-EX-001' ? '+91 99887 76655' : '+91 98765 43210'),
-          email: existing.email || `${item.code.toLowerCase()}@radharealhomes.com`,
-          salary_ctc: existing.salary_ctc || item.salary,
-          attendance_required: !item.exempt,
-        },
-      });
-    }
-  }
-};
 
 // GET /api/v1/employees - List all active/inactive employees (Admin invisible filtered)
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -80,9 +18,6 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
     if (!roles.includes(Roles.MD) && !roles.includes(Roles.HR_MANAGER) && !roles.includes(Roles.ADMIN) && !roles.includes(Roles.MARKETING_DIRECTOR)) {
       return res.status(403).json({ error: 'Access denied: HR / Management privileges required' });
     }
-
-    // Always run team sync to ensure MD and HR are fully populated with industrial details
-    await ensureFullTeamSeeded(req.user!.companyId, req.user!.branchId);
 
     const employees = await prisma.employee.findMany({
       where: {
@@ -102,7 +37,7 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
     const formatted = employees.map((emp) => ({
       id: emp.id,
       employeeCode: emp.employee_code,
-      fullName: emp.full_name || (emp.employee_code === 'RRH-EX-001' ? 'Radha Krishna (MD)' : emp.employee_code === 'RRH-HR-001' ? 'Sunitha Varma (HR)' : emp.employee_code),
+      fullName: emp.full_name || emp.employee_code,
       branchId: emp.branch_id,
       branch: emp.branch?.name || 'All Branches',
       status: emp.status,
@@ -111,31 +46,30 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
       roles: emp.roles.map((r) => r.role.name),
       createdAt: emp.created_at,
 
-      // Industrial Details
-      phone: emp.phone || '+91 98765 43210',
+      phone: emp.phone || '',
       secondaryPhone: emp.secondary_phone || '',
       whatsappNumber: emp.whatsapp_number || '',
-      email: emp.email || `${emp.employee_code.toLowerCase()}@radharealhomes.com`,
-      bloodGroup: emp.blood_group || 'O+',
+      email: emp.email || '',
+      bloodGroup: emp.blood_group || '',
       socialLinks: emp.social_links || '',
-      currentAddress: emp.current_address || 'Hyderabad, Telangana',
-      permanentAddress: emp.permanent_address || 'Hyderabad, Telangana',
-      emergencyContactName: emp.emergency_contact_name || 'Emergency Support',
-      emergencyContactRelation: emp.emergency_contact_relation || 'Family',
-      emergencyContactPhone: emp.emergency_contact_phone || '+91 99887 76655',
-      panNumber: emp.pan_number || 'ABCDE1234F',
-      aadhaarNumber: emp.aadhaar_number || '1234 5678 9012',
-      bankName: emp.bank_name || 'HDFC Bank',
-      bankAccountNumber: emp.bank_account_number || '50100234567890',
-      bankIfsc: emp.bank_ifsc || 'HDFC0001234',
-      bankBranch: emp.bank_branch || 'Miyapur Branch',
-      jobTitle: emp.job_title || (emp.roles[0]?.role.name === 'MD' ? 'Managing Director' : emp.roles[0]?.role.name === 'HR Manager' ? 'HR Manager' : 'Staff Member'),
-      department: emp.department || (emp.roles[0]?.role.name === 'MD' ? 'Executive' : emp.roles[0]?.role.name === 'HR Manager' ? 'Human Resources' : 'Operations'),
+      currentAddress: emp.current_address || '',
+      permanentAddress: emp.permanent_address || '',
+      emergencyContactName: emp.emergency_contact_name || '',
+      emergencyContactRelation: emp.emergency_contact_relation || '',
+      emergencyContactPhone: emp.emergency_contact_phone || '',
+      panNumber: emp.pan_number || '',
+      aadhaarNumber: emp.aadhaar_number || '',
+      bankName: emp.bank_name || '',
+      bankAccountNumber: emp.bank_account_number || '',
+      bankIfsc: emp.bank_ifsc || '',
+      bankBranch: emp.bank_branch || '',
+      jobTitle: emp.job_title || '',
+      department: emp.department || '',
       employmentType: emp.employment_type || 'FULL_TIME',
       reportingManagerId: emp.reporting_manager_id,
-      dateOfJoining: emp.date_of_joining ? emp.date_of_joining.toISOString().split('T')[0] : '2026-01-01',
-      salaryCtc: emp.salary_ctc || 35000,
-      backgroundEducation: emp.background_education || 'Graduate',
+      dateOfJoining: emp.date_of_joining ? emp.date_of_joining.toISOString().split('T')[0] : '',
+      salaryCtc: emp.salary_ctc || null,
+      backgroundEducation: emp.background_education || '',
     }));
 
     return res.status(200).json({ employees: formatted });
@@ -234,9 +168,16 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
 
     const deptCode = DepartmentCodes[role_name] || 'EX';
 
-    const count = await prisma.employee.count();
-    const nextSeq = String(count + 1).padStart(3, '0');
-    const employeeCode = `RRH-${deptCode}-${nextSeq}`;
+    let employeeCode = '';
+    let isUnique = false;
+    while (!isUnique) {
+      const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+      employeeCode = `RRH-${deptCode}-${randomNum}`;
+      const existing = await prisma.employee.findFirst({ where: { employee_code: employeeCode } });
+      if (!existing) {
+        isUnique = true;
+      }
+    }
 
     const role = await prisma.role.findUnique({
       where: { name: role_name },
@@ -246,7 +187,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
       return res.status(400).json({ error: 'Invalid role specified' });
     }
 
-    const passwordHash = await bcrypt.hash(initial_password || 'Password@123', 12);
+    const passwordHash = await bcrypt.hash(initial_password || 'Radhareal@123', 12);
     const isExempt = [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(role_name as any);
 
     const newEmp = await prisma.employee.create({
@@ -264,12 +205,12 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
         emergency_contact_name,
         emergency_contact_relation,
         emergency_contact_phone,
-        pan_number,
-        aadhaar_number,
-        bank_name,
-        bank_account_number,
-        bank_ifsc,
-        bank_branch,
+        pan_number: encryptData(pan_number),
+        aadhaar_number: encryptData(aadhaar_number),
+        bank_name: encryptData(bank_name),
+        bank_account_number: encryptData(bank_account_number),
+        bank_ifsc: encryptData(bank_ifsc),
+        bank_branch: encryptData(bank_branch),
         job_title: job_title || role_name,
         department: department || 'Operations',
         employment_type: employment_type || 'FULL_TIME',
@@ -282,7 +223,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
         password_hash: passwordHash,
         status: 'ACTIVE',
         attendance_required: !isExempt,
-        first_login_done: true,
+        first_login_done: false,
         roles: {
           create: {
             role_id: role.id,
@@ -305,7 +246,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
         status: newEmp.status,
         attendanceRequired: newEmp.attendance_required,
         roles: newEmp.roles.map((r) => r.role.name),
-        defaultPassword: initial_password || 'Password@123',
+        defaultPassword: initial_password || 'Radhareal@123',
       },
     });
   } catch (error) {
@@ -448,13 +389,13 @@ router.post('/:id/reset-password', authenticateToken, async (req: AuthenticatedR
     }
 
     const employeeId = parseInt(req.params.id, 10);
-    const newHash = await bcrypt.hash('Password@123', 12);
+    const newHash = await bcrypt.hash('Radhareal@123', 12);
 
     await prisma.employee.update({
       where: { id: employeeId },
       data: {
         password_hash: newHash,
-        first_login_done: true,
+        first_login_done: false,
       },
     });
 

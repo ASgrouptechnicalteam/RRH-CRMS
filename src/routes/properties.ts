@@ -75,6 +75,7 @@ router.post('/', authenticateToken, validateRequestBody(PropertyCreateSchema), a
       amenities,
       possession_status,
       assigned_pm_id,
+      details,
     } = req.body;
 
     const companyId = req.user?.companyId || (req.user as any)?.company_id || 1;
@@ -114,6 +115,7 @@ router.post('/', authenticateToken, validateRequestBody(PropertyCreateSchema), a
         facing: facing || null,
         amenities: amenities || null,
         possession_status: possession_status || null,
+        details: details || null,
         assigned_pm_id: finalPmId,
         status: 'PENDING_VERIFICATION',
         created_by_id: employeeId,

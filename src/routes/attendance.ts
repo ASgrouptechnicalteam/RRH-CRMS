@@ -228,8 +228,7 @@ router.get(
         include: {
           employee: {
             select: {
-              first_name: true,
-              last_name: true,
+              full_name: true,
               employee_code: true,
             },
           },

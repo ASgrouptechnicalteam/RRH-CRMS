@@ -45,7 +45,7 @@ export const DepartmentCodes: Record<string, string> = {
 };
 
 // Employee Code Regex: e.g. RRH-EX-001 (MD), RRH-EX-002 (Admin), RRH-HR-001 (HR), RRH-SL-001 (Sales/Telecaller)
-export const EMPLOYEE_CODE_REGEX = /^RRH-[A-Z]{2}-\d{3}$/;
+export const EMPLOYEE_CODE_REGEX = /^RRH-[A-Z]{2,5}-\d{3,5}$/;
 
 
 // Login Request Schema
@@ -57,7 +57,7 @@ export const LoginSchema = z.object({
     .min(1, 'Employee ID is required')
     .regex(
       EMPLOYEE_CODE_REGEX,
-      'Invalid Employee ID format. Expected format: RRH-XX-000 (e.g. RRH-MD-001)'
+      'Invalid Employee ID format. Expected format: RRH-XX-000'
     ),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
@@ -147,6 +147,7 @@ export const DailyTargetSetSchema = z.object({
   employee_id: z.number().int().optional().nullable(),
   target_type: z.enum(['COUNT', 'CHECKLIST']),
   targets_json: z.record(z.any()),
+  form_schema_json: z.array(z.any()).optional(),
   start_date: z.string().optional(),
   end_date: z.string().optional().nullable(),
 });
@@ -254,7 +255,10 @@ export const PropertyCreateSchema = z.object({
   title: z.string().min(3, 'Title is required'),
   description: z.string().optional(),
   brand_type: z.enum(['SONTHILLU', 'RADHA_REAL_HOMES']),
-  category: z.enum(['VILLA', 'APARTMENT', 'PLOT', 'COMMERCIAL', 'FARM_HOUSE']),
+  category: z.enum([
+    'APARTMENT', 'INDEPENDENT_HOUSE', 'DUPLEX', 'INDEPENDENT_FLOOR', 
+    'VILLA', 'PENTHOUSE', 'STUDIO', 'PLOT', 'FARM_HOUSE', 'AGRICULTURAL_LAND'
+  ]),
   price: z.number().positive('Price must be greater than 0'),
   area_sqft: z.number().positive('Area in sqft is required'),
   location: z.string().min(2, 'Location is required'),
@@ -265,6 +269,7 @@ export const PropertyCreateSchema = z.object({
   amenities: z.string().optional(),
   possession_status: z.enum(['READY_TO_MOVE', 'UNDER_CONSTRUCTION']).optional(),
   assigned_pm_id: z.number().int().optional().nullable(),
+  details: z.any().optional(), // Flexible JSON payload for specific property details
 });
 
 export type PropertyCreateInput = z.infer<typeof PropertyCreateSchema>;

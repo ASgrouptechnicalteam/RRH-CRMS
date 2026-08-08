@@ -242,6 +242,7 @@ model DailyReport {
   closed_deal_count     Int      @default(0)
   target_met            Boolean  @default(true)
   below_target_reason   String?
+  metrics_json          Json?    // Stores the submitted dynamic Google-Form-style metrics
   
   employee              Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   
@@ -280,11 +281,13 @@ model DailyTarget {
   role_name         String
   employee_id       Int?
   target_date       DateTime @default(now())
-  calls_target      Int      @default(0)
-  site_visits_target Int     @default(0)
+  calls_target        Int      @default(0)
+  site_visits_target  Int     @default(0)
   closed_deals_target Int    @default(0)
   
-  employee          Employee? @relation(fields: [employee_id], references: [id])
+  form_schema_json    Json?    // Stores the MD-configured Google-Form-style fields template
+  
+  employee            Employee? @relation(fields: [employee_id], references: [id])
   
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
@@ -386,7 +389,7 @@ model Property {
   title                 String
   description           String?   @db.Text
   brand_type            String    @default("SONTHILLU") // SONTHILLU (Residential), RADHA_REAL_HOMES (Commercial/Plots)
-  category              String    @default("VILLA") // VILLA, APARTMENT, PLOT, COMMERCIAL, FARM_HOUSE
+  category              String    @default("VILLA") // APARTMENT, INDEPENDENT_HOUSE, DUPLEX, INDEPENDENT_FLOOR, VILLA, PENTHOUSE, STUDIO, PLOT, FARM_HOUSE, AGRICULTURAL_LAND
   price                 Float
   area_sqft             Float
   location              String
@@ -394,6 +397,7 @@ model Property {
   bedrooms              Int?
   bathrooms             Int?
   facing                String?   // EAST, WEST, NORTH, SOUTH, NORTH_EAST, SOUTH_EAST
+  details               Json?     // Stores granular, property-type specific details (e.g., BHK config, plot dimensions, soil type)
   status                String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, PENDING_DM_POLISH, PENDING_MD_APPROVAL, LIVE, REJECTED
   assigned_pm_id        Int?
   created_by_id         Int

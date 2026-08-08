@@ -34,7 +34,7 @@ router.get('/all-team-tasks', authenticateToken, async (req: AuthenticatedReques
         data: { status: 'OVERDUE' },
       });
 
-      // Send alert to MD (RRH-EX-001) & Assignee
+      // Send alert to MD / System Admin & Assignee
       const mdEmp = await p.employee.findFirst({
         where: { roles: { some: { role: { name: Roles.MD } } } },
       });

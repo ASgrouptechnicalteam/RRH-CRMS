@@ -10,116 +10,10 @@ const router = Router();
 const prisma = new PrismaClient();
 const p = prisma as any;
 
-// Helper to auto-seed Hostinger MySQL DB if empty on login attempt
-const autoSeedHostinger = async () => {
-  try {
-    const empCount = await p.employee.count();
-    if (empCount > 0) return;
-
-    console.log('🌱 Empty Hostinger Database Detected! Auto-seeding Full Enterprise Team...');
-
-    const company = await p.company.upsert({
-      where: { code: 'RRH' },
-      update: { name: 'Radha Real Homes' },
-      create: { name: 'Radha Real Homes', code: 'RRH', property_type_group: 'RADHA_REAL_HOMES' },
-    });
-
-    const mainBranch =
-      (await p.branch.findFirst({ where: { company_id: company.id, name: 'Miyapur (Main Branch)' } })) ||
-      (await p.branch.create({ data: { company_id: company.id, name: 'Miyapur (Main Branch)' } }));
-
-    const secondaryBranch =
-      (await p.branch.findFirst({ where: { company_id: company.id, name: 'Tarnaka Branch' } })) ||
-      (await p.branch.create({ data: { company_id: company.id, name: 'Tarnaka Branch' } }));
-
-    const rolesToSeed = [
-      { name: Roles.MD, is_system: true, is_invisible: false },
-      { name: Roles.ADMIN, is_system: true, is_invisible: true },
-      { name: Roles.HR_MANAGER, is_system: false, is_invisible: false },
-      { name: Roles.MARKETING_DIRECTOR, is_system: false, is_invisible: false },
-      { name: Roles.PROJECT_MANAGER, is_system: false, is_invisible: false },
-      { name: Roles.DIGITAL_LEAD_OPERATOR, is_system: false, is_invisible: false },
-      { name: Roles.TELECALLER, is_system: false, is_invisible: false },
-      { name: Roles.CHANNEL_PARTNER_MANAGER, is_system: false, is_invisible: false },
-      { name: Roles.DIGITAL_MARKETING_HEAD, is_system: false, is_invisible: false },
-      { name: Roles.FINANCE, is_system: false, is_invisible: false },
-      { name: Roles.AGENT, is_system: false, is_invisible: false },
-      { name: Roles.STAFF, is_system: false, is_invisible: false },
-    ];
-
-    const roleMap: Record<string, any> = {};
-    for (const rDef of rolesToSeed) {
-      const role = await p.role.upsert({
-        where: { name: rDef.name },
-        update: { is_invisible: rDef.is_invisible, is_system: rDef.is_system },
-        create: rDef,
-      });
-      roleMap[rDef.name] = role;
-    }
-
-    const passwordHash = await bcrypt.hash('Password@123', 12);
-
-    const initialEmployees = [
-      { roleName: Roles.MD, code: 'RRH-EX-001', name: 'Radha Krishna (MD)', phone: '+91 99887 76655', email: 'rrh-ex-001@radharealhomes.com', dept: 'Executive Management', title: 'Managing Director', salary: 150000, exempt: true, branchId: mainBranch.id },
-      { roleName: Roles.ADMIN, code: 'RRH-EX-002', name: 'System Technical Admin', phone: '+91 99887 76644', email: 'rrh-ex-002@radharealhomes.com', dept: 'IT Systems', title: 'Technical Administrator', salary: 120000, exempt: true, branchId: mainBranch.id },
-      { roleName: Roles.HR_MANAGER, code: 'RRH-HR-001', name: 'Sunitha Varma (HR)', phone: '+91 98765 43210', email: 'rrh-hr-001@radharealhomes.com', dept: 'Human Resources', title: 'HR Operations Manager', salary: 75000, exempt: true, branchId: secondaryBranch.id },
-      { roleName: Roles.TELECALLER, code: 'RRH-SL-001', name: 'Praveen Kumar', phone: '+91 98765 11111', email: 'rrh-sl-001@radharealhomes.com', dept: 'Sales & Leads', title: 'Senior Lead Telecaller', salary: 35000, exempt: false, branchId: mainBranch.id },
-      { roleName: Roles.TELECALLER, code: 'RRH-SL-002', name: 'Anusha Reddy', phone: '+91 98765 22222', email: 'rrh-sl-002@radharealhomes.com', dept: 'Sales & Leads', title: 'Lead Qualification Agent', salary: 32000, exempt: false, branchId: secondaryBranch.id },
-      { roleName: Roles.DIGITAL_LEAD_OPERATOR, code: 'RRH-MK-001', name: 'Karthik Rao', phone: '+91 98765 33333', email: 'rrh-mk-001@radharealhomes.com', dept: 'Marketing', title: 'Digital Marketing Operator', salary: 45000, exempt: false, branchId: mainBranch.id },
-      { roleName: Roles.CHANNEL_PARTNER_MANAGER, code: 'RRH-MK-002', name: 'Vikram Sharma', phone: '+91 98765 44444', email: 'rrh-mk-002@radharealhomes.com', dept: 'Marketing', title: 'Channel Partner Manager', salary: 55000, exempt: false, branchId: secondaryBranch.id },
-      { roleName: Roles.PROJECT_MANAGER, code: 'RRH-OP-001', name: 'Srinivas Raju', phone: '+91 98765 55555', email: 'rrh-op-001@radharealhomes.com', dept: 'Operations', title: 'Site Operations Director', salary: 65000, exempt: false, branchId: mainBranch.id },
-      { roleName: Roles.FINANCE, code: 'RRH-FN-001', name: 'Meenakshi Iyer', phone: '+91 98765 66666', email: 'rrh-fn-001@radharealhomes.com', dept: 'Finance', title: 'Senior Accounts Manager', salary: 60000, exempt: false, branchId: secondaryBranch.id },
-    ];
-
-    for (const empDef of initialEmployees) {
-      await p.employee.create({
-        data: {
-          employee_code: empDef.code,
-          full_name: empDef.name,
-          phone: empDef.phone,
-          email: empDef.email,
-          company_id: company.id,
-          branch_id: empDef.branchId,
-          password_hash: passwordHash,
-          status: 'ACTIVE',
-          attendance_required: !empDef.exempt,
-          first_login_done: true,
-          job_title: empDef.title,
-          department: empDef.dept,
-          employment_type: 'FULL_TIME',
-          salary_ctc: empDef.salary,
-          current_address: 'Flat 402, Royal Residency, Miyapur, Hyderabad, TS - 500049',
-          permanent_address: 'Plot 88, Green Meadows, Hyderabad, TS - 500081',
-          blood_group: 'O+',
-          pan_number: `${empDef.code.substring(4, 7)}DE1234F`,
-          aadhaar_number: '123456789012',
-          bank_name: 'HDFC Bank',
-          bank_account_number: '5010023456789',
-          bank_ifsc: 'HDFC0001234',
-          bank_branch: 'Miyapur Main',
-          emergency_contact_name: 'Emergency Contact',
-          emergency_contact_relation: 'Spouse',
-          emergency_contact_phone: '+91 99887 76600',
-          background_education: 'B.Tech / MBA (First Class)',
-          date_of_joining: new Date('2024-01-15T00:00:00.000Z'),
-          roles: {
-            create: { role_id: roleMap[empDef.roleName].id },
-          },
-        },
-      });
-    }
-
-    console.log('🎉 Hostinger MySQL Database Auto-Seeded Successfully on First Login!');
-  } catch (err: any) {
-    console.error('Auto seed error:', err);
-  }
-};
 
 // POST /api/v1/auth/login
 router.post('/login', validateRequestBody(LoginSchema), async (req, res: Response) => {
   try {
-    // Auto-seed Hostinger database if empty before processing login
-    await autoSeedHostinger();
 
     const { employee_code, password } = req.body;
 
@@ -212,7 +106,7 @@ router.post('/login', validateRequestBody(LoginSchema), async (req, res: Respons
         employeeCode: employee.employee_code,
         fullName: employee.full_name,
         department: employee.department,
-        company: employee.company.name,
+        company: employee.company?.name || 'RRH EMS',
         branch: employee.branch?.name || 'All Branches',
         roles: roleNames,
         permissions,

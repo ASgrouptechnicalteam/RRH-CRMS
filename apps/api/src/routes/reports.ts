@@ -70,6 +70,7 @@ router.post('/daily', authenticateToken, validateRequestBody(DailyReportSchema),
         closed_deal_count: deals,
         target_met: !isBelowTarget,
         below_target_reason: isBelowTarget ? below_target_reason : null,
+        metrics_json: metrics || null,
       },
     });
 

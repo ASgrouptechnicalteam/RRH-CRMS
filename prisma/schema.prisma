@@ -117,6 +117,7 @@ model Employee {
   md_refunds                  ExpenseRefund[]            @relation("MDReviews")
   refunded_by_me              ExpenseRefund[]            @relation("RefundedBy")
   push_subscriptions          PushSubscription[]
+  auth_sessions               AuthSession[]
   
   // Hierarchy Management
   manager                     Employee?                  @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
@@ -627,4 +628,27 @@ model PushSubscription {
 
   @@index([employee_id])
   @@unique([employee_id, endpoint(length: 200)])
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTHENTICATION SESSIONS — Phase 1 Stage 1
+// ─────────────────────────────────────────────────────────────
+
+model AuthSession {
+  id                 Int       @id @default(autoincrement())
+  employee_id        Int
+  family_token       String    // Uniquely identifies the original login session / token family
+  refresh_token_hash String    // Hashed current valid refresh token
+  consumed           Boolean   @default(false)
+  revoked            Boolean   @default(false)
+  revocation_reason  String?
+  expires_at         DateTime
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  employee           Employee  @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
+  @@index([employee_id])
+  @@index([family_token])
+  @@index([refresh_token_hash])
 }

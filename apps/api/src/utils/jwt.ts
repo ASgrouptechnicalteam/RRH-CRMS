@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev-secret-access-token';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-secret-refresh-token';
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET as string;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string;
 
 export interface TokenPayload {
   employeeId: number;

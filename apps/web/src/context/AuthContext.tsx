@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 export interface UserProfile {
   id: number;
@@ -32,9 +33,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [accessToken, setAccessToken] = useState<string | null>(() => {
-    return localStorage.getItem('rrh_token') || null;
-  });
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  // Silent refresh on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      // If we have a user stored but no access token in memory, try to refresh
+      const savedUser = localStorage.getItem('rrh_user');
+      if (savedUser && !accessToken) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            // Credentials 'include' ensures the httpOnly refresh cookie is sent
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            setAccessToken(data.accessToken);
+          } else {
+            // Refresh failed, meaning session is dead
+            logout();
+          }
+        } catch (err) {
+          console.error('Silent refresh failed', err);
+          logout();
+        }
+      }
+    };
+    initAuth();
+  }, []);
 
   const [firstLoginDone, setFirstLoginDoneState] = useState<boolean>(() => {
     if (!user) return true;
@@ -49,7 +78,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isDone = Boolean(userData.firstLoginDone);
     setFirstLoginDoneState(isDone);
     localStorage.setItem('rrh_user', JSON.stringify({ ...userData, firstLoginDone: isDone }));
-    localStorage.setItem('rrh_token', token);
   };
 
   const logout = () => {
@@ -57,7 +85,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAccessToken(null);
     setAttendanceStamped(false);
     localStorage.removeItem('rrh_user');
-    localStorage.removeItem('rrh_token');
   };
 
   const setFirstLoginDone = (done: boolean) => {

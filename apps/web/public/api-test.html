@@ -43,16 +43,16 @@
 
   <div class="sticky-bar">
     <div>
-      <label style="margin:0">Base URL</label>
-      <input id="apiBase" value="http://localhost:3000/api/v1" style="width:220px" />
+      <label for="apiBase" style="margin:0">Base URL</label>
+      <input id="apiBase" value="http://localhost:3000/api/v1" style="width:220px" title="Base URL" />
     </div>
     <div>
-      <label style="margin:0">Code</label>
-      <input id="empCode" value="RRH-EX-001" style="width:110px" />
+      <label for="empCode" style="margin:0">Code</label>
+      <input id="empCode" value="RRH-EX-001" style="width:110px" title="Code" />
     </div>
     <div>
-      <label style="margin:0">Password</label>
-      <input id="password" type="password" style="width:110px" placeholder="password" />
+      <label for="password" style="margin:0">Password</label>
+      <input id="password" type="password" style="width:110px" placeholder="password" title="Password" />
     </div>
     <button class="run" onclick="doLogin()">🔑 Login</button>
     <span id="tokenStatus" class="token-no">❌ Not logged in</span>
@@ -62,8 +62,8 @@
   <!-- 1. CHANGE PASSWORD -->
   <div class="section" id="sec_changepw">
     <h2>1. Change Password <span class="badge pending" id="badge_changepw">PENDING</span></h2>
-    <label>Body</label>
-    <textarea id="body_changepw">{
+    <label for="body_changepw">Body</label>
+    <textarea id="body_changepw" aria-label="Change Password Payload" title="Change Password Payload">{
   "current_password": "Admin@1234",
   "new_password": "Admin@12345"
 }</textarea>
@@ -74,7 +74,7 @@
   <!-- 2. LEAD CREATE -->
   <div class="section" id="sec_lead">
     <h2>2. Create Lead <span class="badge pending" id="badge_lead">PENDING</span></h2>
-    <textarea id="body_lead">{
+    <textarea id="body_lead" aria-label="Create Lead Payload" title="Create Lead Payload">{
   "customer_name": "Rajesh Sharma",
   "phone": "9876543211",
   "email": "rajesh@test.com",
@@ -91,9 +91,9 @@
   <!-- 3. LEAD STATUS UPDATE -->
   <div class="section" id="sec_leadstatus">
     <h2>3. Lead Status Update <span class="badge pending" id="badge_leadstatus">PENDING</span></h2>
-    <label>Lead ID (from test above)</label>
-    <input id="leadId" value="1" style="width:80px" />
-    <textarea id="body_leadstatus">{
+    <label for="leadId">Lead ID (from test above)</label>
+    <input id="leadId" value="1" style="width:80px" title="Lead ID" />
+    <textarea id="body_leadstatus" aria-label="Lead Status Update Payload" title="Lead Status Update Payload">{
   "status": "CONTACTED",
   "notes": "Called customer, interested in Miyapur villa"
 }</textarea>
@@ -104,7 +104,7 @@
   <!-- 4. LEAD REASSIGN -->
   <div class="section" id="sec_leadreassign">
     <h2>4. Lead Manual Reassign <span class="badge pending" id="badge_leadreassign">PENDING</span></h2>
-    <textarea id="body_leadreassign" aria-label="Lead Reassign Request Payload">{
+    <textarea id="body_leadreassign" aria-label="Lead Reassign Request Payload" title="Lead Reassign Request Payload">{
   "assigned_to_id": 5,
   "reason": "Customer requested different agent"
 }</textarea>
@@ -115,7 +115,7 @@
   <!-- 5. SITE VISIT BOOKING -->
   <div class="section" id="sec_sitevisit">
     <h2>5. Site Visit Booking <span class="badge pending" id="badge_sitevisit">PENDING</span></h2>
-    <textarea id="body_sitevisit">{
+    <textarea id="body_sitevisit" aria-label="Site Visit Booking Payload" title="Site Visit Booking Payload">{
   "lead_id": 1,
   "scheduled_date": "2026-08-10T10:00:00.000Z",
   "notes": "Client wants to visit Miyapur villa on Saturday morning"
@@ -127,7 +127,7 @@
   <!-- 6. PROPERTY CREATE -->
   <div class="section" id="sec_property">
     <h2>6. Create Property <span class="badge pending" id="badge_property">PENDING</span></h2>
-    <textarea id="body_property">{
+    <textarea id="body_property" aria-label="Create Property Payload" title="Create Property Payload">{
   "title": "Sonthillu Luxury Villa Block B",
   "brand_type": "SONTHILLU",
   "category": "VILLA",
@@ -147,7 +147,7 @@
   <!-- 7. TARGET CONFIGURATOR -->
   <div class="section" id="sec_target">
     <h2>7. Set Daily Target <span class="badge pending" id="badge_target">PENDING</span></h2>
-    <textarea id="body_target">{
+    <textarea id="body_target" aria-label="Set Daily Target Payload" title="Set Daily Target Payload">{
   "role_name": "Telecaller",
   "employee_id": null,
   "target_type": "COUNT",
@@ -161,7 +161,7 @@
   <!-- 8. DAILY REPORT -->
   <div class="section" id="sec_report">
     <h2>8. Daily Report Submit <span class="badge pending" id="badge_report">PENDING</span></h2>
-    <textarea id="body_report">{
+    <textarea id="body_report" aria-label="Daily Report Submit Payload" title="Daily Report Submit Payload">{
   "role_name": "Telecaller",
   "metrics": { "callsMade": 45, "siteVisits": 3, "leadsQualified": 4 },
   "summary_notes": "Good day — connected with 45 clients, 4 qualified leads generated",
@@ -174,7 +174,7 @@
   <!-- 9. TASK CREATE -->
   <div class="section" id="sec_task">
     <h2>9. Create Task <span class="badge pending" id="badge_task">PENDING</span></h2>
-    <textarea id="body_task">{
+    <textarea id="body_task" aria-label="Create Task Payload" title="Create Task Payload">{
   "title": "Follow up with Rajesh Sharma",
   "description": "Call back the client about Miyapur villa site visit confirmation",
   "assignee_id": 4,
@@ -188,9 +188,9 @@
   <!-- 10. TASK STATUS UPDATE -->
   <div class="section" id="sec_taskstatus">
     <h2>10. Task Status Update <span class="badge pending" id="badge_taskstatus">PENDING</span></h2>
-    <label>Task ID</label>
-    <input id="taskId" value="1" style="width:80px" />
-    <textarea id="body_taskstatus">{
+    <label for="taskId">Task ID</label>
+    <input id="taskId" value="1" style="width:80px" title="Task ID" />
+    <textarea id="body_taskstatus" aria-label="Task Status Update Payload" title="Task Status Update Payload">{
   "status": "IN_PROGRESS"
 }</textarea>
     <button class="run" onclick="runTestDynamic('PATCH','/tasks/'+document.getElementById('taskId').value+'/status','body_taskstatus','res_taskstatus','badge_taskstatus')">▶ PATCH /tasks/:id/status</button>
@@ -200,7 +200,7 @@
   <!-- 11. LATE PROPOSAL -->
   <div class="section" id="sec_late">
     <h2>11. Late Arrival Proposal <span class="badge pending" id="badge_late">PENDING</span></h2>
-    <textarea id="body_late">{
+    <textarea id="body_late" aria-label="Late Arrival Proposal Payload" title="Late Arrival Proposal Payload">{
   "date": "2026-08-07",
   "expected_time": "10:30",
   "reason": "Doctor appointment in the morning, will be late by 1 hour"
@@ -212,7 +212,7 @@
   <!-- 12. CHANNEL PARTNER CREATE -->
   <div class="section" id="sec_cp">
     <h2>12. Create Channel Partner <span class="badge pending" id="badge_cp">PENDING</span></h2>
-    <textarea id="body_cp">{
+    <textarea id="body_cp" aria-label="Create Channel Partner Payload" title="Create Channel Partner Payload">{
   "firm_name": "Sai Properties Hyderabad",
   "contact_name": "Suresh Babu",
   "phone": "9876500001",

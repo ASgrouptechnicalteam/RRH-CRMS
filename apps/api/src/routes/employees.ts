@@ -1,10 +1,10 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { Roles, DepartmentCodes } from '@rrh-ems/shared';
+import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
+import { Roles, DepartmentCodes, Permissions } from '@rrh-ems/shared';
 import { notifyEmployee } from '../utils/notifyEmployee';
-import { encryptData, decryptData } from '../utils/crypto';
+import { encryptData } from '../utils/crypto';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -12,18 +12,12 @@ const prisma = new PrismaClient();
 
 
 // GET /api/v1/employees - List all active/inactive employees (Admin invisible filtered)
-router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_READ]), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const roles = req.user!.roles;
     const isMD = roles.includes(Roles.MD);
     const isAdmin = roles.includes(Roles.ADMIN);
     const isHR = roles.includes(Roles.HR_MANAGER);
-    const isMarketingDir = roles.includes(Roles.MARKETING_DIRECTOR);
-    const isDigitalManager = roles.includes(Roles.DIGITAL_MARKETING_HEAD);
-
-    if (!isMD && !isAdmin && !isHR && !isMarketingDir && !isDigitalManager) {
-      return res.status(403).json({ error: 'Access denied: HR / Management privileges required' });
-    }
 
     let whereClause: any = {
       roles: {
@@ -81,9 +75,22 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
       employmentType: emp.employment_type || 'FULL_TIME',
       reportingManagerId: emp.reporting_manager_id,
       dateOfJoining: emp.date_of_joining ? emp.date_of_joining.toISOString().split('T')[0] : '',
-      salaryCtc: emp.salary_ctc || null,
       backgroundEducation: emp.background_education || '',
     }));
+
+    // SENSITIVE DATA FILTERING (Stage 2)
+    const canViewSensitive = req.user?.permissions?.includes(Permissions.EMPLOYEES_VIEW_SENSITIVE) || false;
+    if (!canViewSensitive) {
+      formatted.forEach((emp: any) => {
+        delete emp.panNumber;
+        delete emp.aadhaarNumber;
+        delete emp.bankName;
+        delete emp.bankAccountNumber;
+        delete emp.bankIfsc;
+        delete emp.bankBranch;
+        delete emp.salaryCtc;
+      });
+    }
 
     return res.status(200).json({ employees: formatted });
   } catch (error) {
@@ -137,12 +144,8 @@ router.get('/managers', authenticateToken, async (req: AuthenticatedRequest, res
 });
 
 // POST /api/v1/employees - Add new employee with all 20 industrial fields
-router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_CREATE]), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = req.user!.roles;
-    if (!roles.includes(Roles.MD) && !roles.includes(Roles.HR_MANAGER) && !roles.includes(Roles.ADMIN)) {
-      return res.status(403).json({ error: 'Access denied: HR / Management privileges required' });
-    }
 
     const {
       full_name,
@@ -269,12 +272,9 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
 });
 
 // PATCH /api/v1/employees/:id - Update employee status, branch, roles or any profile detail
-router.patch('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/:id', authenticateToken, requirePermission([Permissions.EMPLOYEES_UPDATE]), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = req.user!.roles;
-    if (!roles.includes(Roles.MD) && !roles.includes(Roles.HR_MANAGER) && !roles.includes(Roles.ADMIN)) {
-      return res.status(403).json({ error: 'Access denied: HR / Management privileges required' });
-    }
+    const canViewSensitive = req.user?.permissions?.includes(Permissions.EMPLOYEES_VIEW_SENSITIVE) || false;
 
     const employeeId = parseInt(req.params.id, 10);
     const body = req.body;
@@ -292,18 +292,35 @@ router.patch('/:id', authenticateToken, async (req: AuthenticatedRequest, res: R
     if (body.emergency_contact_name !== undefined) updateData.emergency_contact_name = body.emergency_contact_name;
     if (body.emergency_contact_relation !== undefined) updateData.emergency_contact_relation = body.emergency_contact_relation;
     if (body.emergency_contact_phone !== undefined) updateData.emergency_contact_phone = body.emergency_contact_phone;
-    if (body.pan_number !== undefined) updateData.pan_number = body.pan_number;
-    if (body.aadhaar_number !== undefined) updateData.aadhaar_number = body.aadhaar_number;
-    if (body.bank_name !== undefined) updateData.bank_name = body.bank_name;
-    if (body.bank_account_number !== undefined) updateData.bank_account_number = body.bank_account_number;
-    if (body.bank_ifsc !== undefined) updateData.bank_ifsc = body.bank_ifsc;
-    if (body.bank_branch !== undefined) updateData.bank_branch = body.bank_branch;
+    
+    // Reject attempt to modify sensitive fields if unauthorized (BEFORE generic auth)
+    if (!canViewSensitive) {
+      if (
+        body.pan_number !== undefined ||
+        body.aadhaar_number !== undefined ||
+        body.bank_name !== undefined ||
+        body.bank_account_number !== undefined ||
+        body.bank_ifsc !== undefined ||
+        body.bank_branch !== undefined ||
+        body.salary_ctc !== undefined
+      ) {
+        return res.status(403).json({ error: 'Cannot modify sensitive fields' });
+      }
+    } else {
+      if (body.pan_number !== undefined) updateData.pan_number = body.pan_number;
+      if (body.aadhaar_number !== undefined) updateData.aadhaar_number = body.aadhaar_number;
+      if (body.bank_name !== undefined) updateData.bank_name = body.bank_name;
+      if (body.bank_account_number !== undefined) updateData.bank_account_number = body.bank_account_number;
+      if (body.bank_ifsc !== undefined) updateData.bank_ifsc = body.bank_ifsc;
+      if (body.bank_branch !== undefined) updateData.bank_branch = body.bank_branch;
+      if (body.salary_ctc !== undefined) updateData.salary_ctc = parseFloat(body.salary_ctc);
+    }
+
     if (body.job_title !== undefined) updateData.job_title = body.job_title;
     if (body.department !== undefined) updateData.department = body.department;
     if (body.employment_type !== undefined) updateData.employment_type = body.employment_type;
     if (body.reporting_manager_id !== undefined) updateData.reporting_manager_id = body.reporting_manager_id ? parseInt(body.reporting_manager_id, 10) : null;
     if (body.date_of_joining !== undefined) updateData.date_of_joining = new Date(body.date_of_joining);
-    if (body.salary_ctc !== undefined) updateData.salary_ctc = parseFloat(body.salary_ctc);
     if (body.background_education !== undefined) updateData.background_education = body.background_education;
     if (body.branch_id !== undefined) updateData.branch_id = parseInt(body.branch_id, 10);
     if (body.status !== undefined) updateData.status = body.status;
@@ -394,13 +411,8 @@ router.patch('/:id', authenticateToken, async (req: AuthenticatedRequest, res: R
 });
 
 // POST /api/v1/employees/:id/reset-password - Admin 1-click Password Reset
-router.post('/:id/reset-password', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/:id/reset-password', authenticateToken, requirePermission([Permissions.EMPLOYEES_RESET_PASSWORD]), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = req.user!.roles;
-    if (!roles.includes(Roles.MD) && !roles.includes(Roles.HR_MANAGER) && !roles.includes(Roles.ADMIN)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const employeeId = parseInt(req.params.id, 10);
     const newHash = await bcrypt.hash('Radhareal@123', 12);
 

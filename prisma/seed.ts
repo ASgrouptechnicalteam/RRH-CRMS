@@ -79,6 +79,43 @@ async function main() {
     roleMap[roleDef.name] = role;
   }
 
+  console.log('🔒 Seeding canonical RBAC permissions...');
+  // Import dynamically to avoid top-level issues if shared isn't built yet, though seed.ts already imports from it
+  const sharedModule = await import('@rrh-ems/shared');
+  const Permissions = sharedModule.Permissions || {};
+  const RolePermissionsMatrix = sharedModule.RolePermissionsMatrix || {};
+
+  const allPerms = Object.values(Permissions);
+  for (const permName of allPerms) {
+    if (typeof permName === 'string') {
+      await prisma.permission.upsert({
+        where: { name: permName },
+        update: {},
+        create: { name: permName }
+      });
+    }
+  }
+
+  // Clear existing role permissions to ensure exact sync
+  await prisma.rolePermission.deleteMany({});
+  
+  for (const [roleName, permissions] of Object.entries(RolePermissionsMatrix)) {
+    const roleRecord = roleMap[roleName];
+    if (roleRecord && Array.isArray(permissions)) {
+      for (const perm of permissions) {
+        const permRecord = await prisma.permission.findUnique({ where: { name: perm } });
+        if (permRecord) {
+          await prisma.rolePermission.create({
+            data: {
+              role_id: roleRecord.id,
+              permission_id: permRecord.id
+            }
+          });
+        }
+      }
+    }
+  }
+
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
 
   // 4. Seed Admin

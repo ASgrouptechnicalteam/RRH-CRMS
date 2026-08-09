@@ -46,6 +46,237 @@ export const DepartmentCodes: Record<string, string> = {
   [Roles.MARKETING_DIRECTOR]: 'MK',
 };
 
+// Canonical Permissions Model (Phase 1 - Stage 2 Blueprint Section 7)
+export const Permissions = {
+  EMPLOYEES_CREATE: 'employees.create',
+  EMPLOYEES_READ: 'employees.read',
+  EMPLOYEES_UPDATE: 'employees.update',
+  EMPLOYEES_DELETE: 'employees.delete',
+  EMPLOYEES_VIEW_SENSITIVE: 'employees.view_sensitive',
+  EMPLOYEES_MANAGE_DEFAULT_ALL: 'employees.manage_default:all',
+  EMPLOYEES_RESET_PASSWORD: 'employees.reset_password',
+  
+  LEADS_CREATE: 'leads.create',
+  LEADS_READ: 'leads.read',
+  LEADS_UPDATE: 'leads.update',
+  LEADS_DELETE: 'leads.delete',
+  LEADS_ASSIGN: 'leads.assign',
+  LEADS_BULK_UPLOAD: 'leads.bulk_upload',
+  LEADS_DISTRIBUTION_MONITOR: 'leads.distribution_monitor',
+  LEADS_WHATSAPP_PROPOSAL: 'leads.whatsapp_proposal',
+  
+  PROPERTIES_CREATE: 'properties.create',
+  PROPERTIES_READ: 'properties.read',
+  PROPERTIES_UPDATE: 'properties.update',
+  PROPERTIES_DELETE: 'properties.delete',
+  PROPERTIES_VERIFY: 'properties.verify',
+  PROPERTIES_DM_POLISH: 'properties.dm_polish',
+  PROPERTIES_MD_APPROVE: 'properties.md_approve',
+  
+  SITE_VISITS_CREATE: 'site_visits.create',
+  SITE_VISITS_READ: 'site_visits.read',
+  SITE_VISITS_VERIFY: 'site_visits.verify',
+  SITE_VISITS_ASSIGN_AGENT: 'site_visits.assign_agent',
+  SITE_VISITS_COMPLETE: 'site_visits.complete',
+  
+  CHANNEL_PARTNERS_CREATE: 'channel_partners.create',
+  CHANNEL_PARTNERS_READ: 'channel_partners.read',
+  CHANNEL_PARTNERS_UPDATE: 'channel_partners.update',
+  CHANNEL_PARTNERS_CALCULATE_COMMISSION: 'channel_partners.calculate_commission',
+  CHANNEL_PARTNERS_PROTECT_LEAD: 'channel_partners.protect_lead',
+  CHANNEL_PARTNERS_PAYOUTS_READ: 'channel_partners.payouts.read',
+  CHANNEL_PARTNERS_PAYOUTS_APPROVE: 'channel_partners.payouts.approve',
+  
+  TASKS_CREATE: 'tasks.create',
+  TASKS_READ: 'tasks.read',
+  TASKS_UPDATE: 'tasks.update',
+  TASKS_ASSIGN: 'tasks.assign',
+  
+  ATTENDANCE_READ_OWN: 'attendance.read_own',
+  ATTENDANCE_SCAN: 'attendance.scan',
+  ATTENDANCE_LATE_PROPOSAL: 'attendance.late_proposal',
+  ATTENDANCE_LEAVE_PROPOSAL: 'attendance.leave_proposal',
+  ATTENDANCE_PROPOSALS_QUEUE: 'attendance.proposals_queue',
+  ATTENDANCE_LIVE_MONITOR: 'attendance.live_monitor',
+  
+  REPORTS_CREATE: 'reports.create',
+  REPORTS_READ_OWN: 'reports.read_own',
+  REPORTS_READ_TEAM: 'reports.read_team',
+  REPORTS_TARGETS_CONFIGURE: 'reports.targets.configure',
+  
+  EXPENSES_CREATE: 'expenses.create',
+  EXPENSES_READ_OWN: 'expenses.read_own',
+  EXPENSES_REVIEW: 'expenses.review',
+  EXPENSES_MD_APPROVE: 'expenses.md_approve',
+  EXPENSES_MARK_REFUNDED: 'expenses.mark_refunded',
+  
+  PERFORMANCE_READ_OWN: 'performance.read_own',
+  PERFORMANCE_READ_TEAM: 'performance.read_team',
+  PERFORMANCE_HISTORY: 'performance.history',
+  
+  ADMIN_SYSTEM_METRICS: 'admin.system_metrics',
+  ADMIN_AUDIT_LOGS: 'admin.audit_logs',
+  ADMIN_SECURITY_ALERTS: 'admin.security_alerts',
+  ADMIN_EMERGENCY_LOCKDOWN: 'admin.emergency_lockdown',
+  
+  PUBLIC_PROPERTIES_READ: 'public.properties.read',
+  PUBLIC_LEADS_CREATE: 'public.leads.create',
+} as const;
+
+export type Permission = typeof Permissions[keyof typeof Permissions];
+
+const ALL_PERMISSIONS = Object.values(Permissions);
+
+// Role -> Permission Matrix (Phase 1 - Stage 2 Blueprint Section 8)
+export const RolePermissionsMatrix: Record<RoleName, string[]> = {
+  [Roles.MD]: ALL_PERMISSIONS, // MD gets all permissions
+  
+  [Roles.ADMIN]: [
+    Permissions.ADMIN_SYSTEM_METRICS,
+    Permissions.ADMIN_AUDIT_LOGS,
+    Permissions.ADMIN_SECURITY_ALERTS,
+    Permissions.ADMIN_EMERGENCY_LOCKDOWN,
+    Permissions.EMPLOYEES_CREATE,
+    Permissions.EMPLOYEES_READ,
+    Permissions.EMPLOYEES_UPDATE,
+    Permissions.EMPLOYEES_RESET_PASSWORD,
+    // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
+  ],
+  
+  [Roles.HR_MANAGER]: [
+    Permissions.EMPLOYEES_CREATE,
+    Permissions.EMPLOYEES_READ,
+    Permissions.EMPLOYEES_UPDATE,
+    Permissions.EMPLOYEES_RESET_PASSWORD,
+    Permissions.EMPLOYEES_VIEW_SENSITIVE,
+    Permissions.ATTENDANCE_PROPOSALS_QUEUE,
+    Permissions.ATTENDANCE_LIVE_MONITOR,
+    Permissions.TASKS_CREATE,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
+    Permissions.TASKS_ASSIGN,
+    Permissions.REPORTS_READ_TEAM,
+    Permissions.PERFORMANCE_READ_TEAM,
+  ],
+  
+  [Roles.FINANCE]: [
+    Permissions.EXPENSES_REVIEW,
+    Permissions.EXPENSES_MARK_REFUNDED,
+    Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
+    Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION,
+    Permissions.EMPLOYEES_VIEW_SENSITIVE, // Finance receives authorized sensitive fields
+  ],
+  
+  [Roles.MARKETING_DIRECTOR]: [
+    Permissions.LEADS_CREATE,
+    Permissions.LEADS_READ,
+    Permissions.LEADS_UPDATE,
+    Permissions.LEADS_DELETE,
+    Permissions.LEADS_ASSIGN,
+    Permissions.LEADS_BULK_UPLOAD,
+    Permissions.PROPERTIES_DM_POLISH,
+    Permissions.PROPERTIES_MD_APPROVE, // Per Section 8 participation
+    Permissions.SITE_VISITS_READ,
+    Permissions.REPORTS_TARGETS_CONFIGURE,
+    Permissions.REPORTS_READ_TEAM,
+    Permissions.PERFORMANCE_READ_TEAM,
+    Permissions.CHANNEL_PARTNERS_READ,
+  ],
+  
+  [Roles.PROJECT_MANAGER]: [
+    Permissions.PROPERTIES_VERIFY,
+    Permissions.PROPERTIES_READ,
+    Permissions.SITE_VISITS_READ,
+    Permissions.SITE_VISITS_ASSIGN_AGENT,
+    Permissions.TASKS_CREATE,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
+    Permissions.TASKS_ASSIGN,
+    Permissions.LEADS_READ,
+    Permissions.REPORTS_READ_OWN,
+  ],
+  
+  [Roles.DIGITAL_LEAD_OPERATOR]: [
+    Permissions.LEADS_CREATE,
+    Permissions.LEADS_READ,
+    Permissions.LEADS_UPDATE,
+    Permissions.LEADS_ASSIGN,
+    Permissions.LEADS_BULK_UPLOAD,
+    Permissions.LEADS_DISTRIBUTION_MONITOR,
+    Permissions.SITE_VISITS_CREATE,
+    Permissions.SITE_VISITS_VERIFY,
+    Permissions.CHANNEL_PARTNERS_READ,
+    Permissions.REPORTS_TARGETS_CONFIGURE,
+  ],
+  
+  [Roles.TELECALLER]: [
+    Permissions.LEADS_READ,
+    Permissions.LEADS_UPDATE,
+    Permissions.LEADS_WHATSAPP_PROPOSAL,
+    Permissions.SITE_VISITS_CREATE,
+    Permissions.SITE_VISITS_READ,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
+    Permissions.ATTENDANCE_READ_OWN,
+    Permissions.ATTENDANCE_SCAN,
+    Permissions.ATTENDANCE_LATE_PROPOSAL,
+    Permissions.ATTENDANCE_LEAVE_PROPOSAL,
+    Permissions.REPORTS_CREATE,
+    Permissions.REPORTS_READ_OWN,
+    Permissions.PERFORMANCE_READ_OWN,
+  ],
+  
+  [Roles.CHANNEL_PARTNER_MANAGER]: [
+    Permissions.CHANNEL_PARTNERS_CREATE,
+    Permissions.CHANNEL_PARTNERS_READ,
+    Permissions.CHANNEL_PARTNERS_UPDATE,
+    Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION,
+    Permissions.CHANNEL_PARTNERS_PROTECT_LEAD,
+    Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
+    Permissions.PERFORMANCE_READ_TEAM,
+  ],
+  
+  [Roles.DIGITAL_MARKETING_HEAD]: [
+    Permissions.PROPERTIES_DM_POLISH,
+    Permissions.PROPERTIES_READ,
+    Permissions.LEADS_READ,
+    Permissions.REPORTS_TARGETS_CONFIGURE,
+    Permissions.PERFORMANCE_READ_TEAM,
+  ],
+  
+  [Roles.AGENT]: [
+    Permissions.SITE_VISITS_READ,
+    Permissions.SITE_VISITS_COMPLETE,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
+    Permissions.ATTENDANCE_READ_OWN,
+    Permissions.ATTENDANCE_SCAN,
+    Permissions.REPORTS_CREATE,
+    Permissions.REPORTS_READ_OWN,
+    Permissions.PERFORMANCE_READ_OWN,
+  ],
+  
+  [Roles.CHANNEL_PARTNER]: [
+    Permissions.CHANNEL_PARTNERS_READ,
+    Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
+    Permissions.LEADS_READ,
+    Permissions.SITE_VISITS_READ,
+  ],
+  
+  [Roles.DIGITAL_MARKETING_EXECUTIVE]: [
+    Permissions.LEADS_READ,
+    Permissions.LEADS_UPDATE,
+    Permissions.SITE_VISITS_READ,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
+    Permissions.REPORTS_CREATE,
+    Permissions.REPORTS_READ_OWN,
+    Permissions.ATTENDANCE_READ_OWN,
+    Permissions.ATTENDANCE_SCAN,
+    Permissions.PERFORMANCE_READ_OWN,
+  ]
+};
+
 // Employee Code Regex: e.g. RRH-EX-001 (MD), RRH-EX-002 (Admin), RRH-HR-001 (HR), RRH-SL-001 (Sales/Telecaller)
 export const EMPLOYEE_CODE_REGEX = /^RRH-[A-Z]{2,5}-\d{3,5}$/;
 

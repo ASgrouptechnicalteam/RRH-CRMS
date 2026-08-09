@@ -278,11 +278,31 @@ router.post('/refresh', async (req, res: Response) => {
         return { error: 'Session compromised', status: 401 };
       }
 
-      // Mark old token as consumed
-      await tx.authSession.update({
-        where: { id: session.id },
+      // Mark old token as consumed ATOMICALLY
+      const updateResult = await tx.authSession.updateMany({
+        where: { id: session.id, consumed: false },
         data: { consumed: true }
       });
+
+      if (updateResult.count === 0) {
+        // Concurrent refresh race condition: another request just consumed it!
+        await tx.authSession.updateMany({
+          where: { family_token: session.family_token },
+          data: { revoked: true, revocation_reason: 'REFRESH_TOKEN_REUSE_DETECTED' }
+        });
+        
+        await tx.auditEvent.create({
+          data: {
+            actor_id: session.employee_id,
+            action: 'SECURITY_ALERT',
+            entity_type: 'TOKEN_FAMILY_REVOKED',
+            entity_id: session.employee_id,
+            new_value: `Refresh token reuse detected`
+          }
+        });
+        
+        return { error: 'Session compromised', status: 401 };
+      }
 
       return { session };
     });

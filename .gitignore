@@ -7,6 +7,9 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 .env
+.env.test
+.env.*
+!.env.example
 dist/
 uploads/
 .DS_Store

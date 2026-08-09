@@ -43,3 +43,23 @@ export const requireRole = (allowedRoles: string[]) => {
     next();
   };
 };
+
+export const requirePermission = (requiredPermissions: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthenticated', code: 'UNAUTHORIZED' });
+    }
+
+    if (!req.user.permissions || !Array.isArray(req.user.permissions)) {
+      return res.status(403).json({ error: 'Forbidden', code: 'FORBIDDEN' });
+    }
+
+    const userPermissions = req.user.permissions;
+    const hasPermission = requiredPermissions.some((perm) => userPermissions.includes(perm));
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Forbidden', code: 'FORBIDDEN' });
+    }
+
+    next();
+  };
+};

@@ -33,6 +33,9 @@ const port = process.env.PORT || 3000;
 const prisma = new PrismaClient();
 const p = prisma as any;
 
+// Proxy Awareness for Rate Limiting (Render architecture)
+app.set('trust proxy', 1);
+
 // Security Middlewares
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
 app.use(cors({ origin: process.env.APP_URL || 'http://localhost:5173', credentials: true }));
@@ -197,7 +200,23 @@ const bootstrapHostingerDatabase = async () => {
   }
 };
 
-const server = app.listen(port, () => {
-  console.log(`[server]: API running at http://localhost:${port}`);
-  bootstrapHostingerDatabase();
-});
+// Ensure required JWT secrets are present before starting
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_ACCESS_SECRET || process.env.JWT_ACCESS_SECRET.length < 32) {
+    console.error('FATAL: JWT_ACCESS_SECRET is missing or too short for production.');
+    process.exit(1);
+  }
+  if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET.length < 32) {
+    console.error('FATAL: JWT_REFRESH_SECRET is missing or too short for production.');
+    process.exit(1);
+  }
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  const server = app.listen(port, () => {
+    console.log(`[server]: API running at http://localhost:${port}`);
+    bootstrapHostingerDatabase();
+  });
+}
+
+export default app;

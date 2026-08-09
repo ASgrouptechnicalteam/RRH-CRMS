@@ -22,7 +22,15 @@ const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
 const VAPID_EMAIL   = process.env.VAPID_EMAIL        || 'mailto:admin@radharealhomes.com';
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
-  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+  try {
+    webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'test') {
+      throw err; // Fail strictly in production
+    }
+    // In test environment, ignore invalid VAPID keys gracefully
+    console.warn('[WebPush] Invalid VAPID credentials skipped in test environment.');
+  }
 }
 
 export interface NotifyPayload {

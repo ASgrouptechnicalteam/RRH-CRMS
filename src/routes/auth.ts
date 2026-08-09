@@ -1,10 +1,13 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { LoginSchema, ChangePasswordSchema, Roles } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
+import { loginRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -12,9 +15,8 @@ const p = prisma as any;
 
 
 // POST /api/v1/auth/login
-router.post('/login', validateRequestBody(LoginSchema), async (req, res: Response) => {
+router.post('/login', loginRateLimiter, validateRequestBody(LoginSchema), async (req, res: Response) => {
   try {
-
     const { employee_code, password } = req.body;
 
     // Find active employee by employee_code
@@ -41,10 +43,10 @@ router.post('/login', validateRequestBody(LoginSchema), async (req, res: Respons
           action: 'SECURITY_ALERT',
           entity_type: 'AUTH_FAILED',
           entity_id: 0,
-          new_value: `Attempted login with invalid/inactive code: ${employee_code}`
+          new_value: `Attempted login with invalid/inactive code`
         }
       });
-      return res.status(401).json({ error: 'Invalid employee ID or account inactive' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, employee.password_hash);
@@ -55,10 +57,10 @@ router.post('/login', validateRequestBody(LoginSchema), async (req, res: Respons
           action: 'SECURITY_ALERT',
           entity_type: 'AUTH_FAILED',
           entity_id: employee.id,
-          new_value: `Invalid password attempt for ${employee_code}`
+          new_value: `Invalid password attempt`
         }
       });
-      return res.status(401).json({ error: 'Invalid password' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const roleNames = employee.roles.map((r: any) => r.role.name);
@@ -87,12 +89,28 @@ router.post('/login', validateRequestBody(LoginSchema), async (req, res: Respons
 
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken(tokenPayload);
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const familyToken = crypto.randomUUID();
+
+    await p.authSession.create({
+      data: {
+        employee_id: employee.id,
+        family_token: familyToken,
+        refresh_token_hash: refreshTokenHash,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      }
+    });
+
+    // Reset rate limiter on success
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'UNKNOWN_IP';
+    loginRateLimiter.resetKey(ip as string);
 
     // Set httpOnly refresh cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -215,9 +233,143 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+// POST /api/v1/auth/refresh
+router.post('/refresh', async (req, res: Response) => {
+  try {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'Refresh token required', code: 'UNAUTHORIZED' });
+    }
+
+    try {
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token', code: 'TOKEN_EXPIRED' });
+    }
+
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    
+    // Find session inside transaction to prevent concurrent refresh races
+    const result = await p.$transaction(async (tx: any) => {
+      const session = await tx.authSession.findFirst({
+        where: { refresh_token_hash: refreshTokenHash }
+      });
+
+      if (!session) return { error: 'Invalid session', status: 401 };
+      if (session.revoked) return { error: 'Session revoked', status: 401 };
+
+      if (session.consumed) {
+        // Reuse detection!
+        await tx.authSession.updateMany({
+          where: { family_token: session.family_token },
+          data: { revoked: true, revocation_reason: 'REFRESH_TOKEN_REUSE_DETECTED' }
+        });
+        
+        await tx.auditEvent.create({
+          data: {
+            actor_id: session.employee_id,
+            action: 'SECURITY_ALERT',
+            entity_type: 'TOKEN_FAMILY_REVOKED',
+            entity_id: session.employee_id,
+            new_value: `Refresh token reuse detected`
+          }
+        });
+        
+        return { error: 'Session compromised', status: 401 };
+      }
+
+      // Mark old token as consumed
+      await tx.authSession.update({
+        where: { id: session.id },
+        data: { consumed: true }
+      });
+
+      return { session };
+    });
+
+    if (result.error) {
+      res.clearCookie('refreshToken');
+      return res.status(result.status).json({ error: result.error, code: 'UNAUTHORIZED' });
+    }
+
+    const session = result.session;
+
+    // Fetch employee for fresh permissions
+    const employee = await p.employee.findUnique({
+      where: { id: session.employee_id },
+      include: {
+        roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+        permission_overrides: { include: { permission: true } },
+      }
+    });
+
+    if (!employee || employee.status !== 'ACTIVE') {
+      res.clearCookie('refreshToken');
+      return res.status(401).json({ error: 'Account inactive', code: 'UNAUTHORIZED' });
+    }
+
+    const roleNames = employee.roles.map((r: any) => r.role.name);
+    const permissionsSet = new Set<string>();
+    employee.roles.forEach((r: any) => {
+      if (r.role.permissions) {
+        r.role.permissions.forEach((rp: any) => permissionsSet.add(rp.permission.name));
+      }
+    });
+    if (employee.permission_overrides) {
+      employee.permission_overrides.forEach((po: any) => {
+        if (po.is_granted) permissionsSet.add(po.permission.name);
+        else permissionsSet.delete(po.permission.name);
+      });
+    }
+
+    const tokenPayload = {
+      employeeId: employee.id,
+      employeeCode: employee.employee_code,
+      companyId: employee.company_id,
+      branchId: employee.branch_id,
+      roles: roleNames,
+      permissions: Array.from(permissionsSet),
+    };
+
+    const newAccessToken = generateAccessToken(tokenPayload);
+    const newRefreshToken = generateRefreshToken(tokenPayload);
+    const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+
+    await p.authSession.create({
+      data: {
+        employee_id: employee.id,
+        family_token: session.family_token,
+        refresh_token_hash: newRefreshTokenHash,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      }
+    });
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error('Refresh error:', error);
+    return res.status(500).json({ error: 'Refresh failed' });
+  }
+});
+
 // POST /api/v1/auth/logout
-router.post('/logout', (req, res: Response) => {
-  res.clearCookie('refreshToken');
+router.post('/logout', async (req, res: Response) => {
+  const { refreshToken } = req.cookies;
+  if (refreshToken) {
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    await p.authSession.updateMany({
+      where: { refresh_token_hash: refreshTokenHash },
+      data: { revoked: true, revocation_reason: 'LOGGED_OUT' }
+    });
+  }
+  res.clearCookie('refreshToken', { path: '/' });
   return res.status(200).json({ message: 'Logged out successfully' });
 });
 

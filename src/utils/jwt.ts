@@ -1,7 +1,12 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET as string;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string;
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
+  throw new Error('FATAL: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be provided.');
+}
 
 export interface TokenPayload {
   employeeId: number;
@@ -17,7 +22,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
 };
 
 export const generateRefreshToken = (payload: TokenPayload): string => {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '7d', jwtid: crypto.randomUUID() });
 };
 
 export const verifyAccessToken = (token: string): TokenPayload => {

@@ -198,9 +198,15 @@ router.get(
   requireRole([Roles.HR_MANAGER, Roles.MD]),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const companyEmployees = await p.employee.findMany({
+        where: { company_id: req.user!.companyId },
+        select: { id: true }
+      });
+
       const proposals = await p.auditEvent.findMany({
         where: {
           action: 'SUBMIT_LATE_PROPOSAL',
+          actor_id: { in: companyEmployees.map((e: any) => e.id) }
         },
         orderBy: { created_at: 'desc' },
         take: 20,
@@ -224,6 +230,7 @@ router.get(
 
       // Fetch all attendance logs that occurred today
       const allLogs = await p.attendanceLog.findMany({
+        where: { employee: { company_id: req.user!.companyId } },
         orderBy: { check_in_at: 'desc' },
         include: {
           employee: {

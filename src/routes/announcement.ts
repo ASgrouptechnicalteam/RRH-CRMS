@@ -45,7 +45,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
     const { imageUrl, active } = req.body;
 
     const updatedCompany = await p.company.update({
-      where: { code: 'RRH' },
+      where: { id: req.user!.companyId },
       data: {
         announcement_image_url: imageUrl,
         announcement_active: active,

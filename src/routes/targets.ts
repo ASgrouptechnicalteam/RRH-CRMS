@@ -2,7 +2,10 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
-import { DailyTargetSetSchema, Roles } from '@rrh-ems/shared';
+import { DailyTargetSetSchema, Roles, Permissions } from '@rrh-ems/shared';
+import { requireAuthz } from '../middleware/authz';
+import { can } from '../authz/authorization';
+import { getDownstreamEmployeeIds } from '../utils/hierarchy';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -77,11 +80,6 @@ const ROLE_PRESETS: Record<string, { target_type: string; targets_json: Record<s
     targets_json: { invoicesProcessed: 10, paymentAudits: 1 },
     form_schema_json: generateBasicSchema(['invoicesProcessed', 'paymentAudits'])
   },
-  [Roles.AGENT]: {
-    target_type: 'CHECKLIST',
-    targets_json: { dailyTaskListCompleted: true, endOfDayCleanup: true },
-    form_schema_json: generateBasicSchema([], true)
-  },
 };
 
 // GET /api/v1/targets/presets - Get 1-click default preset suggestions
@@ -93,7 +91,7 @@ router.get('/presets', authenticateToken, async (req: AuthenticatedRequest, res:
 router.get('/my-target', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = req.user!.employeeId;
-    const roleName = req.user!.roles[0] || Roles.AGENT;
+    const roleName = req.user!.roles[0];
 
     // Priority 1: Employee-Specific Target (if active)
     let empTarget: any = null;
@@ -101,6 +99,7 @@ router.get('/my-target', authenticateToken, async (req: AuthenticatedRequest, re
       empTarget = await p.dailyTarget.findFirst({
         where: {
           employee_id: employeeId,
+          company_id: req.user!.companyId,
         },
         orderBy: { created_at: 'desc' },
       });
@@ -120,6 +119,7 @@ router.get('/my-target', authenticateToken, async (req: AuthenticatedRequest, re
         where: {
           role_name: roleName,
           employee_id: null,
+          company_id: req.user!.companyId,
         },
         orderBy: { created_at: 'desc' },
       });
@@ -133,11 +133,16 @@ router.get('/my-target', authenticateToken, async (req: AuthenticatedRequest, re
     }
 
     // Priority 3: System Default Preset Fallback
-    const preset = ROLE_PRESETS[roleName] || ROLE_PRESETS[Roles.AGENT];
+    const preset = ROLE_PRESETS[roleName] || {
+      target_type: 'COUNT',
+      targets_json: {},
+      form_schema_json: generateBasicSchema([])
+    };
+    
     return res.status(200).json({
       source: 'SYSTEM_PRESET',
       target: {
-        role_name: roleName,
+        role_name: roleName || 'UNKNOWN',
         target_type: preset.target_type,
         targets_json: preset.targets_json,
         form_schema_json: preset.form_schema_json,
@@ -160,6 +165,7 @@ router.get('/all', authenticateToken, async (req: AuthenticatedRequest, res: Res
     let targets: any[] = [];
     if (p.dailyTarget) {
       targets = await p.dailyTarget.findMany({
+        where: { company_id: req.user!.companyId },
         include: { employee: true },
         orderBy: { created_at: 'desc' },
       });
@@ -172,20 +178,35 @@ router.get('/all', authenticateToken, async (req: AuthenticatedRequest, res: Res
 });
 
 // POST /api/v1/targets - Set/Update Target (MD & Marketing Director)
-router.post('/', authenticateToken, validateRequestBody(DailyTargetSetSchema), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, requireAuthz(Permissions.REPORTS_TARGETS_CONFIGURE), validateRequestBody(DailyTargetSetSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = req.user!.roles;
-    if (!roles.includes(Roles.MD) && !roles.includes(Roles.MARKETING_DIRECTOR) && !roles.includes(Roles.ADMIN)) {
-      return res.status(403).json({ error: 'Access denied: MD or Marketing Director permission required.' });
-    }
-
     const { role_name, employee_id, target_type, targets_json, form_schema_json } = req.body;
     const creatorId = req.user!.employeeId;
+
+    if (employee_id) {
+      const targetEmployee = await p.employee.findUnique({
+        where: { id: employee_id }
+      });
+      if (!targetEmployee) {
+        return res.status(404).json({ error: 'Target employee not found' });
+      }
+
+      if (!can(req.user!, Permissions.REPORTS_TARGETS_CONFIGURE, targetEmployee)) {
+        return res.status(403).json({ error: 'Forbidden: Cannot configure targets for this employee' });
+      }
+      
+      const downstreamIds = await getDownstreamEmployeeIds(req.user!.companyId, req.user!.employeeId);
+      const isMDOrAdmin = req.user!.roles.some((r) => [Roles.MD, Roles.ADMIN].includes(r as any));
+      if (!isMDOrAdmin && !downstreamIds.includes(employee_id)) {
+        return res.status(403).json({ error: 'Forbidden: Employee is not within your reporting hierarchy' });
+      }
+    }
 
     let newTarget: any = null;
     if (p.dailyTarget) {
       newTarget = await p.dailyTarget.create({
         data: {
+          company_id: req.user!.companyId,
           role_name,
           employee_id: employee_id || null,
           calls_target: targets_json?.callsMade || 50,

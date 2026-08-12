@@ -2,20 +2,19 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
-import { TaskCreateSchema, TaskUpdateStatusSchema, Roles } from '@rrh-ems/shared';
+import { TaskCreateSchema, TaskUpdateStatusSchema, Roles, Permissions } from '@rrh-ems/shared';
 import { notifyEmployee } from '../utils/notifyEmployee';
+import { requireAuthz } from '../middleware/authz';
+import { can } from '../authz/authorization';
+import { getDownstreamEmployeeIds } from '../utils/hierarchy';
 
 const router = Router();
 const prisma = new PrismaClient();
 const p = prisma as any;
 
 // GET /api/v1/tasks/all-team-tasks - MD & Management View of All Employee Tasks
-router.get('/all-team-tasks', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/all-team-tasks', authenticateToken, requireAuthz(Permissions.REPORTS_READ_TEAM), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = req.user!.roles;
-    if (!roles.includes(Roles.MD) && !roles.includes(Roles.MARKETING_DIRECTOR) && !roles.includes(Roles.ADMIN) && !roles.includes(Roles.HR_MANAGER)) {
-      return res.status(403).json({ error: 'Access denied: Management permission required.' });
-    }
 
     const now = new Date();
 
@@ -24,6 +23,7 @@ router.get('/all-team-tasks', authenticateToken, async (req: AuthenticatedReques
       where: {
         status: { in: ['PENDING', 'IN_PROGRESS'] },
         target_date: { lt: now },
+        assignee: { company_id: req.user!.companyId }
       },
       include: { assignee: true },
     });
@@ -36,7 +36,10 @@ router.get('/all-team-tasks', authenticateToken, async (req: AuthenticatedReques
 
       // Send alert to MD / System Admin & Assignee
       const mdEmp = await p.employee.findFirst({
-        where: { roles: { some: { role: { name: Roles.MD } } } },
+        where: { 
+          roles: { some: { role: { name: Roles.MD } } },
+          company_id: req.user!.companyId 
+        },
       });
 
       if (mdEmp) {
@@ -52,6 +55,7 @@ router.get('/all-team-tasks', authenticateToken, async (req: AuthenticatedReques
     }
 
     const allTasks = await p.task.findMany({
+      where: { assignee: { company_id: req.user!.companyId } },
       include: { assignee: true },
       orderBy: [{ target_date: 'asc' }],
     });
@@ -124,7 +128,7 @@ router.post('/', authenticateToken, validateRequestBody(TaskCreateSchema), async
 });
 
 // PATCH /api/v1/tasks/:id/status - Update Task Status & Cheer-up Event
-router.patch('/:id/status', authenticateToken, validateRequestBody(TaskUpdateStatusSchema), async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/:id/status', authenticateToken, requireAuthz(Permissions.TASKS_UPDATE), validateRequestBody(TaskUpdateStatusSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const taskId = parseInt(req.params.id, 10);
     const { status } = req.body;
@@ -132,14 +136,20 @@ router.patch('/:id/status', authenticateToken, validateRequestBody(TaskUpdateSta
 
     const existingTask = await p.task.findUnique({
       where: { id: taskId },
+      include: { assignee: { select: { company_id: true } } }
     });
 
-    const isManagement = req.user!.roles.some((r) =>
-      [Roles.MD, Roles.ADMIN, Roles.HR_MANAGER, Roles.MARKETING_DIRECTOR].includes(r as any)
-    );
+    if (!existingTask) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
 
-    if (!existingTask || (!isManagement && existingTask.assignee_id !== employeeId)) {
-      return res.status(404).json({ error: 'Task not found or access denied' });
+    // Embed context for authorization.ts
+    existingTask.company_id = existingTask.assignee?.company_id;
+    const downstreamIds = await getDownstreamEmployeeIds(req.user!.companyId, employeeId);
+    existingTask._isSubordinate = downstreamIds.includes(existingTask.assignee_id);
+
+    if (!can(req.user!, Permissions.TASKS_UPDATE, existingTask)) {
+      return res.status(403).json({ error: 'Forbidden: Cannot update this task' });
     }
 
     const isCompleting = status === 'COMPLETED' && existingTask.status !== 'COMPLETED';

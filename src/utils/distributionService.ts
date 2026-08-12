@@ -42,7 +42,7 @@ export const findBestAssigneeForLead = async (
       }
     }
 
-    // 1. Fetch all active Telecallers, Agents, and Sales Lead candidates
+    // 1. Fetch all active Telecallers candidates
     const telecallers = await p.employee.findMany({
       where: {
         company_id: companyId,
@@ -50,7 +50,7 @@ export const findBestAssigneeForLead = async (
         roles: {
           some: {
             role: {
-              name: { in: [Roles.TELECALLER, Roles.AGENT] },
+              name: Roles.TELECALLER,
             },
           },
         },
@@ -62,19 +62,9 @@ export const findBestAssigneeForLead = async (
     });
 
     if (telecallers.length === 0) {
-      // Fallback: search any active non-admin employee
-      const fallbackEmp = await p.employee.findFirst({
-        where: { company_id: companyId, status: 'ACTIVE' },
-      });
-      if (!fallbackEmp) return null;
-      return {
-        employeeId: fallbackEmp.id,
-        employeeCode: fallbackEmp.employee_code,
-        name: fallbackEmp.full_name || fallbackEmp.employee_code,
-        weight: 50,
-        activeLeadCount: 0,
-        isNewJoiner: false,
-      };
+      // Safe Fallback: If no eligible Telecallers exist, safely return null.
+      // This allows the Lead Service to place the Lead in the 'NEW' (Unassigned) pool.
+      return null;
     }
 
     const candidates: DistributionCandidate[] = [];

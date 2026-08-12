@@ -9,6 +9,7 @@ export interface UserProfile {
   company: string;
   branch: string;
   roles: string[];
+  permissions?: string[];
   attendanceRequired: boolean;
   firstLoginDone: boolean;
 }

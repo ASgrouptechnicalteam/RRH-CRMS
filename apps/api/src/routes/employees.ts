@@ -1,10 +1,13 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { requireAuthz } from '../middleware/authz';
 import { Roles, DepartmentCodes, Permissions } from '@rrh-ems/shared';
+import { can } from '../authz/authorization';
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { encryptData } from '../utils/crypto';
+import { buildEmployeeScope } from '../authz/dataScope';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -12,25 +15,9 @@ const prisma = new PrismaClient();
 
 
 // GET /api/v1/employees - List all active/inactive employees (Admin invisible filtered)
-router.get('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_READ]), async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = req.user!.roles;
-    const isMD = roles.includes(Roles.MD);
-    const isAdmin = roles.includes(Roles.ADMIN);
-    const isHR = roles.includes(Roles.HR_MANAGER);
-
-    let whereClause: any = {
-      roles: {
-        none: {
-          role: { is_invisible: true },
-        },
-      },
-    };
-
-    // Strict Manager Isolation
-    if (!isMD && !isAdmin && !isHR) {
-      whereClause.reporting_manager_id = req.user!.employeeId;
-    }
+    const whereClause = await buildEmployeeScope(req.user!);
 
     const employees = await prisma.employee.findMany({
       where: whereClause,
@@ -79,7 +66,7 @@ router.get('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_READ
     }));
 
     // SENSITIVE DATA FILTERING (Stage 2)
-    const canViewSensitive = req.user?.permissions?.includes(Permissions.EMPLOYEES_VIEW_SENSITIVE) || false;
+    const canViewSensitive = can(req.user!, Permissions.EMPLOYEES_VIEW_SENSITIVE);
     if (!canViewSensitive) {
       formatted.forEach((emp: any) => {
         delete emp.panNumber;
@@ -116,6 +103,7 @@ router.get('/managers', authenticateToken, async (req: AuthenticatedRequest, res
   try {
     const managers = await prisma.employee.findMany({
       where: {
+        company_id: req.user!.companyId,
         roles: {
           some: {
             role: {
@@ -144,7 +132,7 @@ router.get('/managers', authenticateToken, async (req: AuthenticatedRequest, res
 });
 
 // POST /api/v1/employees - Add new employee with all 20 industrial fields
-router.post('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_CREATE]), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), async (req: AuthenticatedRequest, res: Response) => {
   try {
 
     const {
@@ -181,6 +169,29 @@ router.post('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_CRE
     if (!role_name || !branch_id || !full_name || !phone) {
       return res.status(400).json({ error: 'Full Name, Primary Phone, Role, and Branch are required fields' });
     }
+
+    const userRoles = req.user!.roles;
+    const isUserAdmin = userRoles.includes(Roles.ADMIN as any);
+    const isUserMD = userRoles.includes(Roles.MD as any);
+
+    if (role_name === Roles.ADMIN && !isUserAdmin) {
+      return res.status(403).json({ error: 'Forbidden: Only ADMIN can create ADMIN accounts' });
+    }
+    if (role_name === Roles.MD && !isUserAdmin && !isUserMD) {
+      return res.status(403).json({ error: 'Forbidden: Only ADMIN or MD can create MD accounts' });
+    }
+
+    const parsedBranchId = parseInt(branch_id, 10);
+    const branch = await prisma.branch.findUnique({ where: { id: parsedBranchId } });
+    if (!branch) {
+      return res.status(404).json({ error: 'Branch not found' });
+    }
+    if (!isUserAdmin && branch.company_id !== req.user!.companyId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot create employee in another company\'s branch' });
+    }
+    
+    // Resolve target company ID (Admin can specify, otherwise forced to actor's company)
+    const targetCompanyId = (isUserAdmin && req.body.company_id) ? parseInt(req.body.company_id, 10) : req.user!.companyId;
 
     const deptCode = DepartmentCodes[role_name] || 'EX';
 
@@ -234,8 +245,8 @@ router.post('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_CRE
         date_of_joining: date_of_joining ? new Date(date_of_joining) : new Date(),
         salary_ctc: salary_ctc ? parseFloat(salary_ctc) : 35000,
         background_education,
-        company_id: req.user!.companyId,
-        branch_id: parseInt(branch_id, 10),
+        company_id: targetCompanyId,
+        branch_id: parsedBranchId,
         password_hash: passwordHash,
         status: 'ACTIVE',
         attendance_required: !isExempt,
@@ -272,12 +283,36 @@ router.post('/', authenticateToken, requirePermission([Permissions.EMPLOYEES_CRE
 });
 
 // PATCH /api/v1/employees/:id - Update employee status, branch, roles or any profile detail
-router.patch('/:id', authenticateToken, requirePermission([Permissions.EMPLOYEES_UPDATE]), async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/:id', authenticateToken, requireAuthz(Permissions.EMPLOYEES_UPDATE), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const canViewSensitive = req.user?.permissions?.includes(Permissions.EMPLOYEES_VIEW_SENSITIVE) || false;
-
     const employeeId = parseInt(req.params.id, 10);
+    const targetEmployee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!targetEmployee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Phase 4: Record-level and company-level authorization
+    if (!can(req.user!, Permissions.EMPLOYEES_UPDATE, targetEmployee)) {
+      return res.status(403).json({ error: 'Forbidden: Cannot update an employee outside your company' });
+    }
+
+    const canViewSensitive = can(req.user!, Permissions.EMPLOYEES_VIEW_SENSITIVE, targetEmployee);
     const body = req.body;
+
+    // Privilege Escalation Check: Prevent self-promotion or assigning Admin/MD roles unless authorized
+    if (body.role_name) {
+      if (employeeId === req.user!.employeeId && body.role_name !== targetEmployee.job_title) {
+        return res.status(403).json({ error: 'Forbidden: Cannot self-promote or change own role' });
+      }
+      
+      if (body.role_name === Roles.ADMIN && !req.user!.roles.includes(Roles.ADMIN)) {
+        return res.status(403).json({ error: 'Forbidden: Only Admin can assign Admin role' });
+      }
+      
+      if (body.role_name === Roles.MD && !req.user!.roles.includes(Roles.ADMIN) && !req.user!.roles.includes(Roles.MD)) {
+        return res.status(403).json({ error: 'Forbidden: Only MD or Admin can assign MD role' });
+      }
+    }
 
     const updateData: any = {};
     if (body.full_name !== undefined) updateData.full_name = body.full_name;
@@ -411,9 +446,18 @@ router.patch('/:id', authenticateToken, requirePermission([Permissions.EMPLOYEES
 });
 
 // POST /api/v1/employees/:id/reset-password - Admin 1-click Password Reset
-router.post('/:id/reset-password', authenticateToken, requirePermission([Permissions.EMPLOYEES_RESET_PASSWORD]), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/:id/reset-password', authenticateToken, requireAuthz(Permissions.EMPLOYEES_RESET_PASSWORD), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = parseInt(req.params.id, 10);
+    const targetEmployee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!targetEmployee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    if (!can(req.user!, Permissions.EMPLOYEES_RESET_PASSWORD, targetEmployee)) {
+      return res.status(403).json({ error: 'Forbidden: Cannot reset password for employee outside your company' });
+    }
+
     const newHash = await bcrypt.hash('Radhareal@123', 12);
 
     await prisma.employee.update({

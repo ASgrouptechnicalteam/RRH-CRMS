@@ -1,7 +1,8 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
-import { Roles } from '@rrh-ems/shared';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { requireAuthz } from '../middleware/authz';
+import { Roles, Permissions } from '@rrh-ems/shared';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -11,7 +12,7 @@ const p = prisma as any;
 router.get(
   '/employees',
   authenticateToken,
-  requireRole([Roles.MD]),
+  requireAuthz(Permissions.EMPLOYEES_READ),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const employees = await p.employee.findMany({
@@ -60,7 +61,7 @@ router.get(
 router.patch(
   '/employees/:id/attendance-requirement',
   authenticateToken,
-  requireRole([Roles.MD]),
+  requireAuthz(Permissions.EMPLOYEES_UPDATE),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const targetId = parseInt(req.params.id, 10);
@@ -116,7 +117,7 @@ router.patch(
 );
 
 // GET /api/v1/md/executive-metrics - Real DB Metrics Aggregator for MD Executive Dashboard
-router.get('/executive-metrics', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/executive-metrics', authenticateToken, requireAuthz(Permissions.ADMIN_SYSTEM_METRICS), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const companyId = req.user?.companyId || (req.user as any)?.company_id || 1;
 

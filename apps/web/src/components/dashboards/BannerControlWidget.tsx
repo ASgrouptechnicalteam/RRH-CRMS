@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Image, ToggleLeft, ToggleRight, Check } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 export const BannerControlWidget: React.FC = () => {
+  const { accessToken } = useAuth();
   const [imageUrl, setImageUrl] = useState('');
   const [active, setActive] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,7 +28,7 @@ export const BannerControlWidget: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ imageUrl, active }),
       });

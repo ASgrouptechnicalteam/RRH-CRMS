@@ -13,3 +13,10 @@ node_modules/
 dist/
 uploads/
 .DS_Store
+# Generated TypeScript/Vite files
+*.tsbuildinfo
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
+# Private AI development / phase planning
+docs/roadmap/
+docs/transformation/

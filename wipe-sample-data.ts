@@ -27,7 +27,7 @@ async function main() {
   // Wipe everything else
   await prisma.channelPartner.deleteMany({});
   await prisma.property.deleteMany({});
-  await prisma.project.deleteMany({});
+
   
   console.log('Sample data and old employees (except Admin) successfully wiped from production database!');
 }

@@ -7,8 +7,11 @@ import {
   CPCommissionCalculateSchema,
   CPTierRates,
   CPOverrideRate,
+  Permissions,
 } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
+import { requireAuthz } from '../middleware/authz';
+import { can } from '../authz/authorization';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -75,7 +78,12 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 });
 
 // POST /api/v1/cp - Register New Channel Partner
-router.post('/', authenticateToken, validateRequestBody(CPCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
+router.post(
+  '/', 
+  authenticateToken, 
+  requireAuthz(Permissions.CHANNEL_PARTNERS_CREATE), 
+  validateRequestBody(CPCreateSchema), 
+  async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       firm_name,
@@ -123,10 +131,11 @@ router.post('/', authenticateToken, validateRequestBody(CPCreateSchema), async (
   }
 });
 
-// POST /api/v1/cp/calculate-commission - Hierarchical MLM Commission Engine
+// POST /api/v1/cp/calculate-commission - Calculate Hierarchical Commission (Level 1 & 2)
 router.post(
   '/calculate-commission',
   authenticateToken,
+  requireAuthz(Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION),
   validateRequestBody(CPCommissionCalculateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -139,6 +148,10 @@ router.post(
 
       if (!directCP) {
         return res.status(404).json({ error: 'Channel Partner not found' });
+      }
+
+      if (!can(req.user!, Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION, directCP)) {
+        return res.status(403).json({ error: 'Forbidden: Cannot calculate commission for a Channel Partner outside your scope' });
       }
 
       const createdPayouts = [];
@@ -204,6 +217,7 @@ router.post(
 router.get('/payouts', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const payouts = await p.cPPayout.findMany({
+      where: { cp: { company_id: req.user!.companyId } },
       include: {
         cp: { select: { id: true, cp_code: true, firm_name: true, contact_name: true, tier: true } },
         approved_by: { select: { id: true, employee_code: true, full_name: true } },
@@ -222,15 +236,22 @@ router.get('/payouts', authenticateToken, async (req: AuthenticatedRequest, res:
 router.post(
   '/payouts/:id/approve',
   authenticateToken,
-  requireRole([Roles.MD, Roles.ADMIN]),
+  requireAuthz(Permissions.CHANNEL_PARTNERS_PAYOUTS_APPROVE),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const payoutId = parseInt(req.params.id, 10);
       const employeeId = req.user?.employeeId || (req.user as any)?.userId || (req.user as any)?.id || 1;
 
-      const payout = await p.cPPayout.findUnique({ where: { id: payoutId } });
+      const payout = await p.cPPayout.findUnique({ 
+        where: { id: payoutId },
+        include: { cp: true } 
+      });
       if (!payout) {
         return res.status(404).json({ error: 'Payout record not found' });
+      }
+
+      if (!can(req.user!, Permissions.CHANNEL_PARTNERS_PAYOUTS_APPROVE, payout.cp)) {
+        return res.status(403).json({ error: 'Forbidden: Cannot approve payout for a Channel Partner outside your scope' });
       }
 
       const updated = await p.cPPayout.update({
@@ -254,8 +275,12 @@ router.post(
   }
 );
 
-// POST /api/v1/cp/protect-lead - Create 60-Day Client Anti-Poaching Lock
-router.post('/protect-lead', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+// POST /api/v1/cp/protect-lead - Create a 90-day CP Protection Lock
+router.post(
+  '/protect-lead',
+  authenticateToken,
+  requireRole([Roles.CHANNEL_PARTNER]), // Only the CP themselves can claim protection (or you could expand it)
+  async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { lead_id, cp_id } = req.body;
 

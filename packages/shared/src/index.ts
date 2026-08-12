@@ -65,6 +65,12 @@ export const Permissions = {
   LEADS_DISTRIBUTION_MONITOR: 'leads.distribution_monitor',
   LEADS_WHATSAPP_PROPOSAL: 'leads.whatsapp_proposal',
   
+  CUSTOMERS_CREATE: 'customers.create',
+  CUSTOMERS_READ: 'customers.read',
+  CUSTOMERS_UPDATE: 'customers.update',
+  CUSTOMERS_DELETE: 'customers.delete',
+  CUSTOMERS_CONVERT: 'customers.convert',
+  
   PROPERTIES_CREATE: 'properties.create',
   PROPERTIES_READ: 'properties.read',
   PROPERTIES_UPDATE: 'properties.update',
@@ -78,6 +84,17 @@ export const Permissions = {
   SITE_VISITS_VERIFY: 'site_visits.verify',
   SITE_VISITS_ASSIGN_AGENT: 'site_visits.assign_agent',
   SITE_VISITS_COMPLETE: 'site_visits.complete',
+  
+  BOOKINGS_CREATE: 'bookings.create',
+  BOOKINGS_READ: 'bookings.read',
+  BOOKINGS_UPDATE: 'bookings.update',
+  BOOKINGS_CANCEL: 'bookings.cancel',
+  BOOKINGS_CONFIRM: 'bookings.confirm',
+  
+  PAYMENTS_CREATE: 'payments.create',
+  PAYMENTS_READ: 'payments.read',
+  PAYMENTS_UPDATE: 'payments.update',
+  PAYMENTS_CANCEL: 'payments.cancel',
   
   CHANNEL_PARTNERS_CREATE: 'channel_partners.create',
   CHANNEL_PARTNERS_READ: 'channel_partners.read',
@@ -140,6 +157,20 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.EMPLOYEES_READ,
     Permissions.EMPLOYEES_UPDATE,
     Permissions.EMPLOYEES_RESET_PASSWORD,
+    Permissions.CUSTOMERS_CREATE,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.CUSTOMERS_DELETE,
+    Permissions.CUSTOMERS_CONVERT,
+    Permissions.BOOKINGS_CREATE,
+    Permissions.BOOKINGS_READ,
+    Permissions.BOOKINGS_UPDATE,
+    Permissions.BOOKINGS_CANCEL,
+    Permissions.BOOKINGS_CONFIRM,
+    Permissions.PAYMENTS_CREATE,
+    Permissions.PAYMENTS_READ,
+    Permissions.PAYMENTS_UPDATE,
+    Permissions.PAYMENTS_CANCEL,
     // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
   ],
   
@@ -165,6 +196,13 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
     Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION,
     Permissions.EMPLOYEES_VIEW_SENSITIVE, // Finance receives authorized sensitive fields
+    Permissions.BOOKINGS_READ,
+    Permissions.BOOKINGS_CONFIRM,
+    Permissions.BOOKINGS_CANCEL,
+    Permissions.PAYMENTS_CREATE,
+    Permissions.PAYMENTS_READ,
+    Permissions.PAYMENTS_UPDATE,
+    Permissions.PAYMENTS_CANCEL,
   ],
   
   [Roles.MARKETING_DIRECTOR]: [
@@ -174,6 +212,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.LEADS_DELETE,
     Permissions.LEADS_ASSIGN,
     Permissions.LEADS_BULK_UPLOAD,
+    Permissions.CUSTOMERS_CREATE,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.CUSTOMERS_DELETE,
+    Permissions.CUSTOMERS_CONVERT,
     Permissions.PROPERTIES_DM_POLISH,
     Permissions.PROPERTIES_MD_APPROVE, // Per Section 8 participation
     Permissions.SITE_VISITS_READ,
@@ -181,9 +224,12 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_READ_TEAM,
     Permissions.PERFORMANCE_READ_TEAM,
     Permissions.CHANNEL_PARTNERS_READ,
+    Permissions.BOOKINGS_READ,
+    Permissions.PAYMENTS_READ,
   ],
   
   [Roles.PROJECT_MANAGER]: [
+    Permissions.PROPERTIES_CREATE,
     Permissions.PROPERTIES_VERIFY,
     Permissions.PROPERTIES_READ,
     Permissions.SITE_VISITS_READ,
@@ -193,7 +239,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.TASKS_UPDATE,
     Permissions.TASKS_ASSIGN,
     Permissions.LEADS_READ,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
     Permissions.REPORTS_READ_OWN,
+    Permissions.BOOKINGS_READ,
+    Permissions.PAYMENTS_READ,
   ],
   
   [Roles.DIGITAL_LEAD_OPERATOR]: [
@@ -203,16 +253,29 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.LEADS_ASSIGN,
     Permissions.LEADS_BULK_UPLOAD,
     Permissions.LEADS_DISTRIBUTION_MONITOR,
+    Permissions.CUSTOMERS_CREATE,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.CUSTOMERS_DELETE,
+    Permissions.CUSTOMERS_CONVERT,
     Permissions.SITE_VISITS_CREATE,
     Permissions.SITE_VISITS_VERIFY,
     Permissions.CHANNEL_PARTNERS_READ,
     Permissions.REPORTS_TARGETS_CONFIGURE,
+    Permissions.BOOKINGS_CREATE,
+    Permissions.BOOKINGS_READ,
+    Permissions.BOOKINGS_UPDATE,
+    Permissions.PAYMENTS_CREATE,
+    Permissions.PAYMENTS_READ,
   ],
   
   [Roles.TELECALLER]: [
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
     Permissions.LEADS_WHATSAPP_PROPOSAL,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.CUSTOMERS_CONVERT,
     Permissions.SITE_VISITS_CREATE,
     Permissions.SITE_VISITS_READ,
     Permissions.TASKS_READ,
@@ -224,6 +287,8 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_CREATE,
     Permissions.REPORTS_READ_OWN,
     Permissions.PERFORMANCE_READ_OWN,
+    Permissions.BOOKINGS_READ,
+    Permissions.PAYMENTS_READ,
   ],
   
   [Roles.CHANNEL_PARTNER_MANAGER]: [
@@ -247,6 +312,9 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
   [Roles.AGENT]: [
     Permissions.SITE_VISITS_READ,
     Permissions.SITE_VISITS_COMPLETE,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.CUSTOMERS_CONVERT,
     Permissions.TASKS_READ,
     Permissions.TASKS_UPDATE,
     Permissions.ATTENDANCE_READ_OWN,
@@ -254,6 +322,8 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_CREATE,
     Permissions.REPORTS_READ_OWN,
     Permissions.PERFORMANCE_READ_OWN,
+    Permissions.BOOKINGS_READ,
+    Permissions.PAYMENTS_READ,
   ],
   
   [Roles.CHANNEL_PARTNER]: [
@@ -468,6 +538,10 @@ export const LeadReassignSchema = z.object({
 
 export type LeadReassignInput = z.infer<typeof LeadReassignSchema>;
 
+export const AddPropertyInterestSchema = z.object({
+  property_id: z.number().int().positive(),
+});
+
 // Property Constants & Schemas
 export const PropertyStatus = {
   PENDING_VERIFICATION: 'PENDING_VERIFICATION',
@@ -531,6 +605,43 @@ export const PropertyMDApprovalSchema = z.object({
 
 export type PropertyMDApprovalInput = z.infer<typeof PropertyMDApprovalSchema>;
 
+// Expense Refund Constants & Schemas
+export const ExpenseRefundStatus = {
+  PENDING: 'PENDING',
+  ACCOUNTANT_APPROVED: 'ACCOUNTANT_APPROVED',
+  MD_APPROVED: 'MD_APPROVED',
+  REFUNDED: 'REFUNDED',
+  REJECTED_BY_ACCOUNTANT: 'REJECTED_BY_ACCOUNTANT',
+  REJECTED_BY_MD: 'REJECTED_BY_MD',
+} as const;
+
+export type ExpenseRefundStatusType = typeof ExpenseRefundStatus[keyof typeof ExpenseRefundStatus];
+
+export const ExpenseRefundCreateSchema = z.object({
+  purpose: z.string().min(3, 'Purpose is required'),
+  amount: z.number().positive('Amount must be greater than 0'),
+});
+
+export type ExpenseRefundCreateInput = z.infer<typeof ExpenseRefundCreateSchema>;
+
+export const ExpenseRefundAccountantReviewSchema = z.object({
+  decision: z.enum(['APPROVE', 'REJECT']),
+  note: z.string().optional(),
+});
+
+export type ExpenseRefundAccountantReviewInput = z.infer<typeof ExpenseRefundAccountantReviewSchema>;
+
+export const ExpenseRefundMDReviewSchema = z.object({
+  decision: z.enum(['APPROVE', 'REJECT']),
+  note: z.string().optional(),
+});
+
+export type ExpenseRefundMDReviewInput = z.infer<typeof ExpenseRefundMDReviewSchema>;
+
+export const ExpenseRefundMarkRefundedSchema = z.object({});
+
+export type ExpenseRefundMarkRefundedInput = z.infer<typeof ExpenseRefundMarkRefundedSchema>;
+
 // Channel Partner & Incentive Constants
 export const CPTier = {
   SILVER: 'SILVER', // 2.0% Base Rate
@@ -571,9 +682,24 @@ export const CPCommissionCalculateSchema = z.object({
 
 export type CPCommissionCalculateInput = z.infer<typeof CPCommissionCalculateSchema>;
 
+// ─────────────────────────────────────────────────────────────
+// CUSTOMER SCHEMAS
+// ─────────────────────────────────────────────────────────────
 
+export const CustomerCreateSchema = z.object({
+  first_name: z.string().min(2),
+  last_name: z.string().optional(),
+  phone: z.string().min(10),
+  email: z.string().email().optional(),
+  status: z.string().default('ACTIVE'),
+  source: z.string().default('MANUAL_ENTRY'),
+  assigned_to_id: z.number().optional(),
+});
 
-
-
-
-
+export const CustomerUpdateSchema = z.object({
+  first_name: z.string().min(2).optional(),
+  last_name: z.string().optional(),
+  phone: z.string().min(10).optional(),
+  email: z.string().email().optional(),
+  status: z.string().optional(),
+});

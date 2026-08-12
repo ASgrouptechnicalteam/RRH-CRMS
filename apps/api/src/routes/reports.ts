@@ -26,6 +26,7 @@ router.post('/daily', authenticateToken, validateRequestBody(DailyReportSchema),
     if (p.dailyTarget) {
       activeTarget = await p.dailyTarget.findFirst({
         where: {
+          company_id: req.user!.companyId,
           OR: [{ employee_id: employeeId }, { role_name: role_name || 'Telecaller', employee_id: null }],
         },
         orderBy: [{ employee_id: 'desc' }, { created_at: 'desc' }],

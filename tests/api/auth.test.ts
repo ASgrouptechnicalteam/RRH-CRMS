@@ -88,11 +88,12 @@ describe('Phase 1 - Authentication & Session Security', () => {
 
   // 3. Rate limiting and 4. Limiter reset
   it('should rate limit after 5 failed attempts and reset on success', async () => {
-    // We already failed 2 times on testIp1. Let's fail 3 more times.
-    for (let i = 0; i < 3; i++) {
+    // This test now explicitly fails 5 times independently to prevent reliance on previous tests
+    for (let i = 0; i < 5; i++) {
       await request(app)
         .post('/api/v1/auth/login')
         .set('X-Forwarded-For', testIp1)
+        .set('x-strict-rate-limit', 'true')
         .send({ employee_code: 'RRH-ADMIN-001', password: 'wrongpassword' });
     }
 
@@ -100,6 +101,7 @@ describe('Phase 1 - Authentication & Session Security', () => {
     const rateLimitedRes = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', testIp1)
+      .set('x-strict-rate-limit', 'true')
       .send({ employee_code: 'RRH-ADMIN-001', password: 'wrongpassword' });
 
     expect(rateLimitedRes.status).toBe(429);
@@ -109,6 +111,7 @@ describe('Phase 1 - Authentication & Session Security', () => {
     const otherIpRes = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', testIp2)
+      .set('x-strict-rate-limit', 'true')
       .send({ employee_code: 'RRH-ADMIN-001', password: 'wrongpassword' });
 
     expect(otherIpRes.status).toBe(401);
@@ -126,6 +129,7 @@ describe('Phase 1 - Authentication & Session Security', () => {
       await request(app)
         .post('/api/v1/auth/login')
         .set('X-Forwarded-For', testIp2)
+        .set('x-strict-rate-limit', 'true')
         .send({ employee_code: 'RRH-ADMIN-001', password: 'wrongpassword' });
     }
 
@@ -133,21 +137,22 @@ describe('Phase 1 - Authentication & Session Security', () => {
     const successRes = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', testIp2)
+      .set('x-strict-rate-limit', 'true')
       .send({ employee_code: 'RRH-ADMIN-001', password: 'Radhareal@123' }); // default password
 
     expect(successRes.status).toBe(200);
     expect(successRes.body.accessToken).toBeDefined();
     
     // Save cookie for later tests
-    const cookies = successRes.headers['set-cookie'];
-    expect(cookies).toBeDefined();
-    const refreshTokenCookie = cookies.find((c: string) => c.startsWith('refreshToken='));
+    const cookies = Array.isArray(successRes.headers['set-cookie']) ? successRes.headers['set-cookie'] : [successRes.headers['set-cookie']];
+    expect(cookies[0]).toBeDefined();
+    const refreshTokenCookie = cookies.find((c: string) => c?.startsWith('refreshToken='));
     expect(refreshTokenCookie).toBeDefined();
     validRefreshTokenCookie = refreshTokenCookie;
 
     // Fail 2 times on testIp2
-    await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', testIp2).send({ employee_code: 'RRH-XXX-999', password: 'wrongpassword' });
-    const checkRes = await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', testIp2).send({ employee_code: 'RRH-XXX-999', password: 'wrongpassword' });
+    await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', testIp2).set('x-strict-rate-limit', 'true').send({ employee_code: 'RRH-XXX-999', password: 'wrongpassword' });
+    const checkRes = await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', testIp2).set('x-strict-rate-limit', 'true').send({ employee_code: 'RRH-XXX-999', password: 'wrongpassword' });
     
     // If reset didn't work, we'd be at 6 failures and this would be 429. Since it worked, it's 401.
     expect(checkRes.status).toBe(401);
@@ -177,8 +182,8 @@ describe('Phase 1 - Authentication & Session Security', () => {
     expect(res.status).toBe(200);
     expect(res.body.accessToken).toBeDefined();
     
-    const cookies = res.headers['set-cookie'];
-    rotatedRefreshTokenCookie = cookies.find((c: string) => c.startsWith('refreshToken='));
+    const cookies = Array.isArray(res.headers['set-cookie']) ? res.headers['set-cookie'] : [res.headers['set-cookie']];
+    rotatedRefreshTokenCookie = cookies.find((c: string) => c?.startsWith('refreshToken='));
     
     expect(rotatedRefreshTokenCookie).toBeDefined();
     expect(rotatedRefreshTokenCookie).not.toEqual(validRefreshTokenCookie);
@@ -212,7 +217,9 @@ describe('Phase 1 - Authentication & Session Security', () => {
       .set('X-Forwarded-For', '192.168.1.103')
       .send({ employee_code: 'RRH-ADMIN-001', password: 'Radhareal@123' });
     
-    const tokenCookie = loginRes.headers['set-cookie'].find((c: string) => c.startsWith('refreshToken='));
+    const rawCookie1 = loginRes.headers['set-cookie'];
+    const cookies1 = Array.isArray(rawCookie1) ? rawCookie1 : [rawCookie1];
+    const tokenCookie = cookies1.find((c: string) => c?.startsWith('refreshToken='));
 
     // Fire two requests concurrently
     const [res1, res2] = await Promise.all([
@@ -234,7 +241,9 @@ describe('Phase 1 - Authentication & Session Security', () => {
       .set('X-Forwarded-For', '192.168.1.104')
       .send({ employee_code: 'RRH-ADMIN-001', password: 'Radhareal@123' });
     
-    const tokenCookie = loginRes.headers['set-cookie'].find((c: string) => c.startsWith('refreshToken='));
+    const rawCookie2 = loginRes.headers['set-cookie'];
+    const cookies2 = Array.isArray(rawCookie2) ? rawCookie2 : [rawCookie2];
+    const tokenCookie = cookies2.find((c: string) => c?.startsWith('refreshToken='));
 
     // Logout
     const logoutRes = await request(app)

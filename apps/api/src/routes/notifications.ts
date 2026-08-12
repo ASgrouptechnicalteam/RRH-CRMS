@@ -35,8 +35,12 @@ router.patch('/:id/read', authenticateToken, async (req: AuthenticatedRequest, r
       where: { id: notificationId },
     });
 
-    if (!notification || (notification.employee_id !== userId && notification.user_id !== userId)) {
+    if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    if (notification.employee_id !== userId && notification.user_id !== userId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot access another user\'s notification' });
     }
 
     const updated = await p.notification.update({

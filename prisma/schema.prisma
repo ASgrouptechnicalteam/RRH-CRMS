@@ -11,162 +11,172 @@ datasource db {
 }
 
 model Company {
-  id                  Int        @id @default(autoincrement())
+  id                  Int    @id @default(autoincrement())
   name                String
-  code                String     @unique
-  property_type_group String     @default("RADHA_REAL_HOMES")
-  
-  branches            Branch[]
-  employees           Employee[]
-  leads               Lead[]
-  properties          Property[]
-  channel_partners    ChannelPartner[]
-  announcement_image_url String?    @db.Text
-  announcement_active    Boolean    @default(false)
-  
-  created_at          DateTime   @default(now())
-  updated_at          DateTime   @updatedAt
-  deleted_at          DateTime?
+  code                String @unique
+  property_type_group String @default("RADHA_REAL_HOMES")
+
+  branches               Branch[]
+  employees              Employee[]
+  leads                  Lead[]
+  customers              Customer[]
+  properties             Property[]
+  channel_partners       ChannelPartner[]
+  daily_targets          DailyTarget[]
+  bookings               Booking[]
+  payments               Payment[]
+  announcement_image_url String?          @db.Text
+  announcement_active    Boolean          @default(false)
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
 }
 
 model Branch {
-  id         Int        @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   company_id Int
   name       String
-  
+
   company    Company    @relation(fields: [company_id], references: [id])
   employees  Employee[]
   leads      Lead[]
+  customers  Customer[]
   properties Property[]
-  
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
+  bookings   Booking[]
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
   deleted_at DateTime?
-  
+
   @@index([company_id])
 }
 
 model Employee {
-  id                          Int       @id @default(autoincrement())
-  employee_code               String    @unique
-  company_id                  Int
-  branch_id                   Int?
-  password_hash               String
-  status                      String    @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
-  attendance_required         Boolean   @default(true)
-  first_login_done            Boolean   @default(false)
-  
+  id                  Int     @id @default(autoincrement())
+  employee_code       String  @unique
+  company_id          Int
+  branch_id           Int?
+  password_hash       String
+  status              String  @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  attendance_required Boolean @default(true)
+  first_login_done    Boolean @default(false)
+
   // 1. Personal Details
-  full_name                   String?
-  phone                       String?
-  secondary_phone             String?
-  whatsapp_number             String?
-  email                       String?
-  blood_group                 String?
-  social_links                String?   // LinkedIn, Twitter, Instagram
+  full_name       String?
+  phone           String?
+  secondary_phone String?
+  whatsapp_number String?
+  email           String?
+  blood_group     String?
+  social_links    String? // LinkedIn, Twitter, Instagram
 
   // 2. Address & Emergency Contacts
-  current_address             String?
-  permanent_address           String?
-  emergency_contact_name      String?
-  emergency_contact_relation  String?
-  emergency_contact_phone     String?
+  current_address            String?
+  permanent_address          String?
+  emergency_contact_name     String?
+  emergency_contact_relation String?
+  emergency_contact_phone    String?
 
   // 3. Government KYC & Payroll Bank Details
-  pan_number                  String?
-  aadhaar_number              String?
-  bank_name                   String?
-  bank_account_number         String?
-  bank_ifsc                   String?
-  bank_branch                 String?
+  pan_number          String?
+  aadhaar_number      String?
+  bank_name           String?
+  bank_account_number String?
+  bank_ifsc           String?
+  bank_branch         String?
 
   // 4. Employment & Professional Details
-  job_title                   String?
-  department                  String?   // Sales & Leads, Marketing, Operations, Finance, HR
-  employment_type             String?   @default("FULL_TIME") // FULL_TIME, PART_TIME, CONTRACT, INTERN
-  reporting_manager_id        Int?
-  date_of_joining             DateTime?
-  salary_ctc                  Float?    // Monthly Base Compensation (INR ₹)
-  background_education        String?   // Qualifications, Degrees & Certifications
+  job_title            String?
+  department           String? // Sales & Leads, Marketing, Operations, Finance, HR
+  employment_type      String?   @default("FULL_TIME") // FULL_TIME, PART_TIME, CONTRACT, INTERN
+  reporting_manager_id Int?
+  date_of_joining      DateTime?
+  salary_ctc           Float? // Monthly Base Compensation (INR ₹)
+  background_education String? // Qualifications, Degrees & Certifications
 
-  company                     Company   @relation(fields: [company_id], references: [id])
-  branch                      Branch?   @relation(fields: [branch_id], references: [id])
-  
-  roles                       EmployeeRole[]
-  permission_overrides        EmployeePermissionOverride[]
-  qr_codes                    EmployeeQrCode[]
-  attendance_logs             AttendanceLog[]
-  daily_reports               DailyReport[]
-  assigned_tasks              Task[]                     @relation("AssignedTasks")
-  notifications               Notification[]
-  performance_snapshots       PerformanceSnapshot[]
-  daily_targets               DailyTarget[]
-  assigned_leads              Lead[]                     @relation("AssignedLeads")
-  created_leads               Lead[]                     @relation("CreatedLeads")
-  lead_activities             LeadActivity[]
-  assigned_properties         Property[]                 @relation("AssignedPMProperties")
-  created_properties          Property[]                 @relation("CreatedProperties")
-  property_images             PropertyImage[]
-  property_verification_logs  PropertyVerificationLog[]
-  approved_cp_payouts         CPPayout[]                 @relation("ApprovedCPPayouts")
-  telecaller_bookings         SiteVisitBooking[]         @relation("TelecallerBookings")
-  pm_bookings                 SiteVisitBooking[]         @relation("PMBookings")
-  agent_bookings              SiteVisitBooking[]         @relation("AgentBookings")
-  expense_refunds             ExpenseRefund[]            @relation("SubmittedRefunds")
-  accountant_refunds          ExpenseRefund[]            @relation("AccountantReviews")
-  md_refunds                  ExpenseRefund[]            @relation("MDReviews")
-  refunded_by_me              ExpenseRefund[]            @relation("RefundedBy")
-  push_subscriptions          PushSubscription[]
-  auth_sessions               AuthSession[]
-  
+  company Company @relation(fields: [company_id], references: [id])
+  branch  Branch? @relation(fields: [branch_id], references: [id])
+
+  roles                      EmployeeRole[]
+  permission_overrides       EmployeePermissionOverride[]
+  qr_codes                   EmployeeQrCode[]
+  attendance_logs            AttendanceLog[]
+  daily_reports              DailyReport[]
+  assigned_tasks             Task[]                       @relation("AssignedTasks")
+  notifications              Notification[]
+  performance_snapshots      PerformanceSnapshot[]
+  daily_targets              DailyTarget[]
+  assigned_leads             Lead[]                       @relation("AssignedLeads")
+  created_leads              Lead[]                       @relation("CreatedLeads")
+  assigned_customers         Customer[]                   @relation("AssignedCustomers")
+  lead_activities            LeadActivity[]
+  assigned_properties        Property[]                   @relation("AssignedPMProperties")
+  created_properties         Property[]                   @relation("CreatedProperties")
+  property_images            PropertyImage[]
+  property_verification_logs PropertyVerificationLog[]
+  approved_cp_payouts        CPPayout[]                   @relation("ApprovedCPPayouts")
+  telecaller_bookings        SiteVisitBooking[]           @relation("TelecallerBookings")
+  pm_bookings                SiteVisitBooking[]           @relation("PMBookings")
+  agent_bookings             SiteVisitBooking[]           @relation("AgentBookings")
+  expense_refunds            ExpenseRefund[]              @relation("SubmittedRefunds")
+  accountant_refunds         ExpenseRefund[]              @relation("AccountantReviews")
+  md_refunds                 ExpenseRefund[]              @relation("MDReviews")
+  refunded_by_me             ExpenseRefund[]              @relation("RefundedBy")
+  created_property_interests LeadPropertyInterest[]
+  assigned_bookings          Booking[]                    @relation("AssignedBookings")
+  recorded_payments          Payment[]                    @relation("RecordedPayments")
+  push_subscriptions         PushSubscription[]
+  auth_sessions              AuthSession[]
+
   // Hierarchy Management
-  manager                     Employee?                  @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
-  direct_reports              Employee[]                 @relation("EmployeeManager")
-  
-  created_at                  DateTime  @default(now())
-  updated_at                  DateTime  @updatedAt
-  deleted_at                  DateTime?
-  
+  manager        Employee?  @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
+  direct_reports Employee[] @relation("EmployeeManager")
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
   @@index([company_id])
   @@index([branch_id])
 }
 
 model Role {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  is_system   Boolean   @default(false)
-  is_invisible Boolean  @default(false)
-  
+  id           Int     @id @default(autoincrement())
+  name         String  @unique
+  is_system    Boolean @default(false)
+  is_invisible Boolean @default(false)
+
   permissions RolePermission[]
   employees   EmployeeRole[]
 }
 
 model Permission {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   description String?
-  
-  roles       RolePermission[]
-  overrides   EmployeePermissionOverride[]
+
+  roles     RolePermission[]
+  overrides EmployeePermissionOverride[]
 }
 
 model RolePermission {
   role_id       Int
   permission_id Int
-  
-  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
-  
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
   @@id([role_id, permission_id])
 }
 
 model EmployeeRole {
   employee_id Int
   role_id     Int
-  
-  employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  role        Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  role     Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
   @@id([employee_id, role_id])
 }
 
@@ -174,10 +184,10 @@ model EmployeePermissionOverride {
   employee_id   Int
   permission_id Int
   is_granted    Boolean
-  
-  employee      Employee   @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
-  
+
+  employee   Employee   @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
   @@id([employee_id, permission_id])
 }
 
@@ -187,9 +197,9 @@ model EmployeeQrCode {
   qr_token     String    @unique
   generated_at DateTime  @default(now())
   expires_at   DateTime?
-  
-  employee     Employee  @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
   @@index([employee_id])
 }
 
@@ -198,27 +208,27 @@ model AttendanceLog {
   employee_id  Int
   check_in_at  DateTime  @default(now())
   check_out_at DateTime?
-  status       String    // PRESENT, LATE, HALF_DAY, ABSENT, APPROVED_LATE
+  status       String // PRESENT, LATE, HALF_DAY, ABSENT, APPROVED_LATE
   source       String    @default("QR_SCAN") // QR_SCAN, SYSTEM_AUTO, MANUAL
   notes        String?
-  
-  employee     Employee  @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
   @@index([employee_id])
 }
 
 model AttendanceProposal {
-  id            Int       @id @default(autoincrement())
-  employee_id   Int
-  type          String    // LATE_CHECKIN, LEAVE_DAY
-  target_date   DateTime
-  reason        String
-  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  reviewed_by   Int?
-  reviewed_at   DateTime?
-  
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  id          Int       @id @default(autoincrement())
+  employee_id Int
+  type        String // LATE_CHECKIN, LEAVE_DAY
+  target_date DateTime
+  reason      String
+  status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewed_by Int?
+  reviewed_at DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model Task {
@@ -230,127 +240,131 @@ model Task {
   status       String    @default("PENDING") // PENDING, COMPLETED, OVERDUE
   created_by   Int
   completed_at DateTime?
-  
-  assignee     Employee  @relation("AssignedTasks", fields: [assignee_id], references: [id], onDelete: Cascade)
-  
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-  
+
+  assignee Employee @relation("AssignedTasks", fields: [assignee_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   @@index([assignee_id])
 }
 
 model DailyReport {
-  id                    Int      @id @default(autoincrement())
-  employee_id           Int
-  submitted_at          DateTime @default(now())
-  summary               String
-  call_count            Int      @default(0)
-  site_visit_count      Int      @default(0)
-  closed_deal_count     Int      @default(0)
-  target_met            Boolean  @default(true)
-  below_target_reason   String?
-  metrics_json          Json?    // Stores the submitted dynamic Google-Form-style metrics
-  
-  employee              Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  
+  id                  Int      @id @default(autoincrement())
+  employee_id         Int
+  submitted_at        DateTime @default(now())
+  summary             String
+  call_count          Int      @default(0)
+  site_visit_count    Int      @default(0)
+  closed_deal_count   Int      @default(0)
+  target_met          Boolean  @default(true)
+  below_target_reason String?
+  metrics_json        Json? // Stores the submitted dynamic Google-Form-style metrics
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
   @@index([employee_id])
 }
 
 model AuditEvent {
   id          Int      @id @default(autoincrement())
   actor_id    Int
-  action      String   // LOGIN, QR_SCAN, DAILY_REPORT_SUBMIT, BELOW_TARGET_SUBMIT, UNINFORMED_ABSENT, PERMISSION_CHANGE
+  action      String // LOGIN, QR_SCAN, DAILY_REPORT_SUBMIT, BELOW_TARGET_SUBMIT, UNINFORMED_ABSENT, PERMISSION_CHANGE
   entity_type String
   entity_id   Int
   old_value   String?
   new_value   String?
   created_at  DateTime @default(now())
-  
+
   @@index([actor_id])
 }
 
 model Notification {
   id          Int      @id @default(autoincrement())
   employee_id Int
-  type        String   // TARGET_ASSIGNED, TASK_OVERDUE, PROPOSAL_APPROVED, SYSTEM_ALERT
+  type        String // TARGET_ASSIGNED, TASK_OVERDUE, PROPOSAL_APPROVED, SYSTEM_ALERT
   title       String
   message     String
   is_read     Boolean  @default(false)
   created_at  DateTime @default(now())
-  
-  employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
   @@index([employee_id])
 }
 
 model DailyTarget {
-  id                Int      @id @default(autoincrement())
-  role_name         String
-  employee_id       Int?
-  target_date       DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  company_id          Int      @default(1)
+  role_name           String
+  employee_id         Int?
+  target_date         DateTime @default(now())
   calls_target        Int      @default(0)
-  site_visits_target  Int     @default(0)
-  closed_deals_target Int    @default(0)
-  
-  form_schema_json    Json?    // Stores the MD-configured Google-Form-style fields template
-  
-  employee            Employee? @relation(fields: [employee_id], references: [id])
-  
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  
+  site_visits_target  Int      @default(0)
+  closed_deals_target Int      @default(0)
+
+  form_schema_json Json? // Stores the MD-configured Google-Form-style fields template
+
+  employee Employee? @relation(fields: [employee_id], references: [id])
+  company  Company   @relation(fields: [company_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   @@index([role_name])
   @@index([employee_id])
 }
 
 model PerformanceSnapshot {
-  id                Int      @id @default(autoincrement())
-  employee_id       Int
-  snapshot_date     DateTime @default(now())
-  score             Float    @default(50.0)
-  tasks_completed   Int      @default(0)
-  on_time_logins    Int      @default(0)
-  late_logins       Int      @default(0)
-  sub_target_reports Int     @default(0)
-  uninformed_absences Int    @default(0)
-  
-  employee          Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  
+  id                  Int      @id @default(autoincrement())
+  employee_id         Int
+  snapshot_date       DateTime @default(now())
+  score               Float    @default(50.0)
+  tasks_completed     Int      @default(0)
+  on_time_logins      Int      @default(0)
+  late_logins         Int      @default(0)
+  sub_target_reports  Int      @default(0)
+  uninformed_absences Int      @default(0)
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
   @@index([employee_id])
 }
 
 model Lead {
-  id                        Int       @id @default(autoincrement())
-  lead_code                 String    @unique
-  company_id                Int
-  branch_id                 Int?
-  customer_name             String
-  phone                     String
-  email                     String?
-  source                    String    @default("MANUAL_ENTRY") // MANUAL_ENTRY, BULK_UPLOAD, WEBSITE, FACEBOOK_ADS, GOOGLE_ADS, WALK_IN, REFERRAL
-  status                    String    @default("NEW") // NEW, ASSIGNED, CONTACTED, QUALIFIED, SITE_VISIT_SCHEDULED, NEGOTIATION, WON, LOST, RECOVERED_TO_POOL
-  assigned_to_id            Int?
-  assigned_at               DateTime?
-  assignment_type           String?   // PERFORMANCE_WEIGHTED, MANUAL_OVERRIDE, PROJECT_PM_PREFERENCE
-  property_type_preference  String?   // RESIDENTIAL_VILLA, APARTMENT, COMMERCIAL_PLOT, AGRICULTURAL_LAND
-  budget_min                Float?
-  budget_max                Float?
-  preferred_location        String?
-  notes                     String?   @db.Text
-  created_by_id             Int
-  last_contacted_at         DateTime?
-  
-  company                   Company   @relation(fields: [company_id], references: [id])
-  branch                    Branch?   @relation(fields: [branch_id], references: [id])
-  assigned_to               Employee? @relation("AssignedLeads", fields: [assigned_to_id], references: [id])
-  created_by                Employee  @relation("CreatedLeads", fields: [created_by_id], references: [id])
-  activities                LeadActivity[]
-  matching_requirement      LeadMatchingRequirement?
-  protection_lock           LeadProtectionLock?
-  site_visits               SiteVisitBooking[]
-  
-  created_at                DateTime  @default(now())
-  updated_at                DateTime  @updatedAt
+  id                       Int       @id @default(autoincrement())
+  lead_code                String    @unique
+  company_id               Int
+  branch_id                Int?
+  customer_name            String
+  phone                    String
+  email                    String?
+  source                   String    @default("MANUAL_ENTRY") // MANUAL_ENTRY, BULK_UPLOAD, WEBSITE, FACEBOOK_ADS, GOOGLE_ADS, WALK_IN, REFERRAL
+  status                   String    @default("NEW") // NEW, ASSIGNED, CONTACTED, QUALIFIED, SITE_VISIT_SCHEDULED, NEGOTIATION, WON, LOST, RECOVERED_TO_POOL
+  assigned_to_id           Int?
+  assigned_at              DateTime?
+  assignment_type          String? // PERFORMANCE_WEIGHTED, MANUAL_OVERRIDE, PROJECT_PM_PREFERENCE
+  property_type_preference String? // RESIDENTIAL_VILLA, APARTMENT, COMMERCIAL_PLOT, AGRICULTURAL_LAND
+  budget_min               Float?
+  budget_max               Float?
+  preferred_location       String?
+  notes                    String?   @db.Text
+  created_by_id            Int
+  last_contacted_at        DateTime?
+
+  company              Company                  @relation(fields: [company_id], references: [id])
+  branch               Branch?                  @relation(fields: [branch_id], references: [id])
+  assigned_to          Employee?                @relation("AssignedLeads", fields: [assigned_to_id], references: [id])
+  created_by           Employee                 @relation("CreatedLeads", fields: [created_by_id], references: [id])
+  activities           LeadActivity[]
+  matching_requirement LeadMatchingRequirement?
+  protection_lock      LeadProtectionLock?
+  site_visits          SiteVisitBooking[]
+  property_interests   LeadPropertyInterest[]
+  converted_customer   Customer?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([company_id])
   @@index([branch_id])
@@ -359,73 +373,93 @@ model Lead {
 }
 
 model LeadActivity {
-  id            Int      @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   lead_id       Int
   actor_id      Int
-  activity_type String   // LEAD_CREATED, ASSIGNED_TO_AGENT, STATUS_CHANGED, CALL_LOGGED, SITE_VISIT_BOOKED, NOTE_ADDED, RECOVERED_TO_POOL
-  notes         String?  @db.Text
-  
-  lead          Lead     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
-  actor         Employee @relation(fields: [actor_id], references: [id])
-  
-  created_at    DateTime @default(now())
+  activity_type String // LEAD_CREATED, ASSIGNED_TO_AGENT, STATUS_CHANGED, CALL_LOGGED, SITE_VISIT_BOOKED, NOTE_ADDED, RECOVERED_TO_POOL
+  notes         String? @db.Text
+
+  lead  Lead     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  actor Employee @relation(fields: [actor_id], references: [id])
+
+  created_at DateTime @default(now())
 
   @@index([lead_id])
   @@index([actor_id])
 }
 
 model LeadMatchingRequirement {
-  id            Int      @id @default(autoincrement())
-  lead_id       Int      @unique
+  id            Int     @id @default(autoincrement())
+  lead_id       Int     @unique
   property_type String
   location      String
   max_budget    Float
   min_bedrooms  Int?
-  is_active     Boolean  @default(true)
-  
-  lead          Lead     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
-  
-  created_at    DateTime @default(now())
+  is_active     Boolean @default(true)
+
+  lead Lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+}
+
+model LeadPropertyInterest {
+  id          Int      @id @default(autoincrement())
+  lead_id     Int
+  property_id Int
+  is_active   Boolean  @default(true)
+  created_by  Int // Employee ID who added this interest
+  created_at  DateTime @default(now())
+
+  lead     Lead     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
+  creator  Employee @relation(fields: [created_by], references: [id])
+
+  @@unique([lead_id, property_id])
+  @@index([property_id])
+  @@index([created_by])
 }
 
 model Property {
-  id                    Int       @id @default(autoincrement())
-  property_code         String    @unique
-  company_id            Int
-  branch_id             Int?
-  title                 String
-  description           String?   @db.Text
-  brand_type            String    @default("SONTHILLU") // SONTHILLU (Residential), RADHA_REAL_HOMES (Commercial/Plots)
-  category              String    @default("VILLA") // APARTMENT, INDEPENDENT_HOUSE, DUPLEX, INDEPENDENT_FLOOR, VILLA, PENTHOUSE, STUDIO, PLOT, FARM_HOUSE, AGRICULTURAL_LAND
-  price                 Float
-  area_sqft             Float
-  location              String
-  address               String?   @db.Text
-  bedrooms              Int?
-  bathrooms             Int?
-  facing                String?   // EAST, WEST, NORTH, SOUTH, NORTH_EAST, SOUTH_EAST
-  details               Json?     // Stores granular, property-type specific details (e.g., BHK config, plot dimensions, soil type)
-  status                String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, PENDING_DM_POLISH, PENDING_MD_APPROVAL, LIVE, REJECTED
-  assigned_pm_id        Int?
-  created_by_id         Int
-  verified_by_pm_at     DateTime?
-  dm_polished_at        DateTime?
-  md_approved_at        DateTime?
-  rejection_reason      String?   @db.Text
-  seo_title             String?
-  seo_keywords          String?
-  amenities             String?   @db.Text
-  possession_status     String?   // READY_TO_MOVE, UNDER_CONSTRUCTION
+  id                Int       @id @default(autoincrement())
+  property_code     String    @unique
+  company_id        Int
+  branch_id         Int?
+  title             String
+  description       String?   @db.Text
+  brand_type        String    @default("SONTHILLU") // SONTHILLU (Residential), RADHA_REAL_HOMES (Commercial/Plots)
+  category          String    @default("VILLA") // APARTMENT, INDEPENDENT_HOUSE, DUPLEX, INDEPENDENT_FLOOR, VILLA, PENTHOUSE, STUDIO, PLOT, FARM_HOUSE, AGRICULTURAL_LAND
+  price             Float
+  area_sqft         Float
+  location          String
+  address           String?   @db.Text
+  bedrooms          Int?
+  bathrooms         Int?
+  facing            String? // EAST, WEST, NORTH, SOUTH, NORTH_EAST, SOUTH_EAST
+  details           Json? // Stores granular, property-type specific details (e.g., BHK config, plot dimensions, soil type)
+  status            String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, PENDING_DM_POLISH, PENDING_MD_APPROVAL, LIVE, REJECTED
+  assigned_pm_id    Int?
+  created_by_id     Int
+  verified_by_pm_at DateTime?
+  dm_polished_at    DateTime?
+  md_approved_at    DateTime?
+  rejection_reason  String?   @db.Text
+  seo_title         String?
+  seo_keywords      String?
+  amenities         String?   @db.Text
+  possession_status String? // READY_TO_MOVE, UNDER_CONSTRUCTION
 
-  company               Company   @relation(fields: [company_id], references: [id])
-  branch                Branch?   @relation(fields: [branch_id], references: [id])
-  assigned_pm           Employee? @relation("AssignedPMProperties", fields: [assigned_pm_id], references: [id])
-  created_by            Employee  @relation("CreatedProperties", fields: [created_by_id], references: [id])
-  images                PropertyImage[]
-  verification_logs     PropertyVerificationLog[]
+  company           Company                   @relation(fields: [company_id], references: [id])
+  branch            Branch?                   @relation(fields: [branch_id], references: [id])
+  assigned_pm       Employee?                 @relation("AssignedPMProperties", fields: [assigned_pm_id], references: [id])
+  created_by        Employee                  @relation("CreatedProperties", fields: [created_by_id], references: [id])
+  images            PropertyImage[]
+  verification_logs PropertyVerificationLog[]
+  interested_leads  LeadPropertyInterest[]
+  site_visits       SiteVisitBooking[]
+  bookings          Booking[]
 
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([company_id])
   @@index([brand_type])
@@ -434,62 +468,62 @@ model Property {
 }
 
 model PropertyImage {
-  id            Int      @id @default(autoincrement())
-  property_id   Int
-  image_url     String
-  is_primary    Boolean  @default(false)
+  id             Int     @id @default(autoincrement())
+  property_id    Int
+  image_url      String
+  is_primary     Boolean @default(false)
   uploaded_by_id Int
-  
-  property      Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
-  uploaded_by   Employee @relation(fields: [uploaded_by_id], references: [id])
-  
-  created_at    DateTime @default(now())
+
+  property    Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
+  uploaded_by Employee @relation(fields: [uploaded_by_id], references: [id])
+
+  created_at DateTime @default(now())
 
   @@index([property_id])
 }
 
 model PropertyVerificationLog {
-  id            Int      @id @default(autoincrement())
-  property_id   Int
-  actor_id      Int
-  from_status   String
-  to_status     String
-  notes         String?  @db.Text
-  
-  property      Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
-  actor         Employee @relation(fields: [actor_id], references: [id])
-  
-  created_at    DateTime @default(now())
+  id          Int     @id @default(autoincrement())
+  property_id Int
+  actor_id    Int
+  from_status String
+  to_status   String
+  notes       String? @db.Text
+
+  property Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
+  actor    Employee @relation(fields: [actor_id], references: [id])
+
+  created_at DateTime @default(now())
 
   @@index([property_id])
   @@index([actor_id])
 }
 
 model ChannelPartner {
-  id                    Int       @id @default(autoincrement())
-  cp_code               String    @unique
-  company_id            Int
-  firm_name             String
-  contact_name          String
-  phone                 String
-  email                 String?
-  tier                  String    @default("SILVER") // SILVER (2.0%), GOLD (2.5%), PLATINUM (3.0%)
-  upline_cp_id          Int?
-  rera_number           String?
-  pan_number            String?
-  bank_name             String?
-  bank_account_number   String?
-  bank_ifsc             String?
-  status                String    @default("ACTIVE") // ACTIVE, SUSPENDED
+  id                  Int     @id @default(autoincrement())
+  cp_code             String  @unique
+  company_id          Int
+  firm_name           String
+  contact_name        String
+  phone               String
+  email               String?
+  tier                String  @default("SILVER") // SILVER (2.0%), GOLD (2.5%), PLATINUM (3.0%)
+  upline_cp_id        Int?
+  rera_number         String?
+  pan_number          String?
+  bank_name           String?
+  bank_account_number String?
+  bank_ifsc           String?
+  status              String  @default("ACTIVE") // ACTIVE, SUSPENDED
 
-  company               Company   @relation(fields: [company_id], references: [id])
-  upline_cp             ChannelPartner? @relation("CPUpline", fields: [upline_cp_id], references: [id])
-  downline_cps          ChannelPartner[] @relation("CPUpline")
-  payouts               CPPayout[]
-  protection_locks      LeadProtectionLock[]
+  company          Company              @relation(fields: [company_id], references: [id])
+  upline_cp        ChannelPartner?      @relation("CPUpline", fields: [upline_cp_id], references: [id])
+  downline_cps     ChannelPartner[]     @relation("CPUpline")
+  payouts          CPPayout[]
+  protection_locks LeadProtectionLock[]
 
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([company_id])
   @@index([tier])
@@ -497,42 +531,42 @@ model ChannelPartner {
 }
 
 model CPPayout {
-  id                    Int       @id @default(autoincrement())
-  payout_code           String    @unique
-  cp_id                 Int
-  lead_id               Int?
-  property_id           Int?
-  deal_amount           Float
-  tier_rate_percent     Float
-  commission_amount     Float
-  level                 Int       @default(1) // 1 = Direct CP, 2 = Upline CP Override
-  status                String    @default("PENDING_MD_APPROVAL") // PENDING_MD_APPROVAL, APPROVED, DISBURSED, REJECTED
-  approved_by_id        Int?
-  approved_at           DateTime?
-  disbursed_at          DateTime?
-  notes                 String?   @db.Text
+  id                Int       @id @default(autoincrement())
+  payout_code       String    @unique
+  cp_id             Int
+  lead_id           Int?
+  property_id       Int?
+  deal_amount       Float
+  tier_rate_percent Float
+  commission_amount Float
+  level             Int       @default(1) // 1 = Direct CP, 2 = Upline CP Override
+  status            String    @default("PENDING_MD_APPROVAL") // PENDING_MD_APPROVAL, APPROVED, DISBURSED, REJECTED
+  approved_by_id    Int?
+  approved_at       DateTime?
+  disbursed_at      DateTime?
+  notes             String?   @db.Text
 
-  cp                    ChannelPartner @relation(fields: [cp_id], references: [id])
-  approved_by           Employee?      @relation("ApprovedCPPayouts", fields: [approved_by_id], references: [id])
+  cp          ChannelPartner @relation(fields: [cp_id], references: [id])
+  approved_by Employee?      @relation("ApprovedCPPayouts", fields: [approved_by_id], references: [id])
 
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([cp_id])
   @@index([status])
 }
 
 model LeadProtectionLock {
-  id                    Int       @id @default(autoincrement())
-  lead_id               Int       @unique
-  cp_id                 Int
-  protected_until       DateTime
-  lock_status           String    @default("ACTIVE") // ACTIVE, EXPIRED, WAIVED
+  id              Int      @id @default(autoincrement())
+  lead_id         Int      @unique
+  cp_id           Int
+  protected_until DateTime
+  lock_status     String   @default("ACTIVE") // ACTIVE, EXPIRED, WAIVED
 
-  cp                    ChannelPartner @relation(fields: [cp_id], references: [id], onDelete: Cascade)
-  lead                  Lead           @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  cp   ChannelPartner @relation(fields: [cp_id], references: [id], onDelete: Cascade)
+  lead Lead           @relation(fields: [lead_id], references: [id], onDelete: Cascade)
 
-  created_at            DateTime  @default(now())
+  created_at DateTime @default(now())
 
   @@index([cp_id])
   @@index([protected_until])
@@ -551,17 +585,18 @@ model SiteVisitBooking {
   // PENDING_VERIFICATION, CONFIRMED, ASSIGNED_TO_AGENT, COMPLETED, RESCHEDULED, CANCELLED
   verification_call_notes String?   @db.Text
   feedback_notes          String?   @db.Text
-  rating                  String?   // HOT_INTERESTED, WARM, COLD, NOT_INTERESTED
+  rating                  String? // HOT_INTERESTED, WARM, COLD, NOT_INTERESTED
   proof_photo_url         String?
   completed_at            DateTime?
 
-  lead                    Lead      @relation(fields: [lead_id], references: [id], onDelete: Cascade)
-  telecaller              Employee  @relation("TelecallerBookings", fields: [telecaller_id], references: [id])
-  project_manager         Employee? @relation("PMBookings", fields: [project_manager_id], references: [id])
-  assigned_agent          Employee? @relation("AgentBookings", fields: [assigned_agent_id], references: [id])
+  lead            Lead      @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  property        Property? @relation(fields: [property_id], references: [id], onDelete: SetNull)
+  telecaller      Employee  @relation("TelecallerBookings", fields: [telecaller_id], references: [id])
+  project_manager Employee? @relation("PMBookings", fields: [project_manager_id], references: [id])
+  assigned_agent  Employee? @relation("AgentBookings", fields: [assigned_agent_id], references: [id])
 
-  created_at              DateTime  @default(now())
-  updated_at              DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([lead_id])
   @@index([telecaller_id])
@@ -570,46 +605,44 @@ model SiteVisitBooking {
   @@index([status])
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // EXPENSE REFUND — Petty Cash Reimbursement Workflow
 // ─────────────────────────────────────────────────────────────
 
 model ExpenseRefund {
-  id                     Int       @id @default(autoincrement())
-  employee_id            Int
-  company_id             Int
-  purpose                String    @db.Text
-  amount                 Float
-  proof_image_url        String?   // Relative path on server e.g. /uploads/expense-proofs/123.jpg
-  status                 String    @default("PENDING")
+  id              Int     @id @default(autoincrement())
+  employee_id     Int
+  company_id      Int
+  purpose         String  @db.Text
+  amount          Float
+  proof_image_url String? // Relative path on server e.g. /uploads/expense-proofs/123.jpg
+  status          String  @default("PENDING")
   // PENDING → ACCOUNTANT_APPROVED → MD_APPROVED → REFUNDED
   // REJECTED_BY_ACCOUNTANT | REJECTED_BY_MD
 
-  accountant_id          Int?      // Finance / Accountant employee id
+  accountant_id          Int? // Finance / Accountant employee id
   accountant_note        String?
   accountant_reviewed_at DateTime?
 
-  md_id                  Int?      // MD employee id
-  md_note                String?
-  md_reviewed_at         DateTime?
+  md_id          Int? // MD employee id
+  md_note        String?
+  md_reviewed_at DateTime?
 
-  refunded_at            DateTime?
-  refunded_by            Int?
+  refunded_at DateTime?
+  refunded_by Int?
 
-  employee               Employee  @relation("SubmittedRefunds",  fields: [employee_id],  references: [id], onDelete: Cascade)
-  accountant             Employee? @relation("AccountantReviews", fields: [accountant_id], references: [id])
-  md                     Employee? @relation("MDReviews",         fields: [md_id],         references: [id])
-  refunded_by_emp        Employee? @relation("RefundedBy",        fields: [refunded_by],   references: [id])
+  employee        Employee  @relation("SubmittedRefunds", fields: [employee_id], references: [id], onDelete: Cascade)
+  accountant      Employee? @relation("AccountantReviews", fields: [accountant_id], references: [id])
+  md              Employee? @relation("MDReviews", fields: [md_id], references: [id])
+  refunded_by_emp Employee? @relation("RefundedBy", fields: [refunded_by], references: [id])
 
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([employee_id])
   @@index([status])
   @@index([company_id])
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // PUSH SUBSCRIPTIONS — Web Push (PWA) per device per employee
@@ -621,13 +654,13 @@ model PushSubscription {
   endpoint    String   @db.Text
   p256dh      String   @db.Text
   auth        String
-  user_agent  String?  // For diagnostics
+  user_agent  String? // For diagnostics
   created_at  DateTime @default(now())
 
-  employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
 
-  @@index([employee_id])
   @@unique([employee_id, endpoint(length: 200)])
+  @@index([employee_id])
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -635,20 +668,122 @@ model PushSubscription {
 // ─────────────────────────────────────────────────────────────
 
 model AuthSession {
-  id                 Int       @id @default(autoincrement())
+  id                 Int      @id @default(autoincrement())
   employee_id        Int
-  family_token       String    // Uniquely identifies the original login session / token family
-  refresh_token_hash String    // Hashed current valid refresh token
-  consumed           Boolean   @default(false)
-  revoked            Boolean   @default(false)
+  family_token       String // Uniquely identifies the original login session / token family
+  refresh_token_hash String // Hashed current valid refresh token
+  consumed           Boolean  @default(false)
+  revoked            Boolean  @default(false)
   revocation_reason  String?
   expires_at         DateTime
-  created_at         DateTime  @default(now())
-  updated_at         DateTime  @updatedAt
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
 
-  employee           Employee  @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
 
   @@index([employee_id])
   @@index([family_token])
   @@index([refresh_token_hash])
+}
+
+// ─────────────────────────────────────────────────────────────
+// CUSTOMER 360 FOUNDATION — Phase 3
+// ─────────────────────────────────────────────────────────────
+
+model Customer {
+  id            Int    @id @default(autoincrement())
+  customer_code String @unique
+  company_id    Int
+  branch_id     Int?
+
+  first_name String
+  last_name  String?
+  phone      String
+  email      String?
+
+  status String @default("ACTIVE") // ACTIVE, INACTIVE, BLACKLISTED
+  source String @default("MANUAL_ENTRY")
+
+  assigned_to_id Int?
+  origin_lead_id Int? @unique
+
+  company     Company   @relation(fields: [company_id], references: [id])
+  branch      Branch?   @relation(fields: [branch_id], references: [id])
+  assigned_to Employee? @relation("AssignedCustomers", fields: [assigned_to_id], references: [id])
+  origin_lead Lead?     @relation(fields: [origin_lead_id], references: [id])
+  bookings    Booking[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([company_id])
+  @@index([branch_id])
+  @@index([assigned_to_id])
+}
+
+// ─────────────────────────────────────────────────────────────
+// PHASE 5: BOOKING AND PAYMENT (COMMERCIAL TRANSACTIONS)
+// ─────────────────────────────────────────────────────────────
+
+model Booking {
+  id                   Int    @id @default(autoincrement())
+  booking_code         String @unique
+  company_id           Int
+  branch_id            Int?
+  customer_id          Int
+  property_id          Int
+  assigned_employee_id Int?
+
+  status String @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+
+  agreed_price   Float
+  booking_amount Float
+  balance_amount Float
+  booking_date   DateTime @default(now())
+
+  notes String? @db.Text
+
+  company           Company   @relation(fields: [company_id], references: [id])
+  branch            Branch?   @relation(fields: [branch_id], references: [id])
+  customer          Customer  @relation(fields: [customer_id], references: [id])
+  property          Property  @relation(fields: [property_id], references: [id])
+  assigned_employee Employee? @relation("AssignedBookings", fields: [assigned_employee_id], references: [id])
+
+  payments Payment[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([company_id])
+  @@index([customer_id])
+  @@index([property_id])
+  @@index([status])
+}
+
+model Payment {
+  id           Int    @id @default(autoincrement())
+  payment_code String @unique
+  company_id   Int
+  booking_id   Int
+
+  amount           Float
+  payment_method   String // CASH, CHEQUE, BANK_TRANSFER, ONLINE
+  reference_number String? // Cheque number or transaction ID
+  payment_date     DateTime @default(now())
+
+  status String  @default("PENDING") // PENDING, SUCCESS, FAILED, REFUNDED
+  notes  String? @db.Text
+
+  recorded_by_id Int
+
+  company     Company  @relation(fields: [company_id], references: [id])
+  booking     Booking  @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  recorded_by Employee @relation("RecordedPayments", fields: [recorded_by_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([company_id])
+  @@index([booking_id])
+  @@index([status])
 }

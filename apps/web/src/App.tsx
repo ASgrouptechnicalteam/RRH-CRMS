@@ -14,7 +14,7 @@ import { MDExecutiveDashboard } from './components/dashboards/MDExecutiveDashboa
 import { TelecallerDashboard } from './components/dashboards/TelecallerDashboard';
 import { PMDashboard } from './components/dashboards/PMDashboard';
 import { StaffDashboard } from './components/dashboards/StaffDashboard';
-import { AgentSiteVisitsDashboard } from './components/dashboards/AgentSiteVisitsDashboard';
+
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
 import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, TrendingUp, Building, Network, MapPin, ShieldCheck, IndianRupee, Bell } from 'lucide-react';
@@ -24,19 +24,24 @@ import { usePushNotifications } from './hooks/usePushNotifications';
 import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
+const CustomerManagement = lazy(() => import('./components/customers/CustomerManagement').then(m => ({ default: m.CustomerManagement })));
 const PropertyManagement = lazy(() => import('./components/properties/PropertyManagement').then(m => ({ default: m.PropertyManagement })));
 const ChannelPartnerManagement = lazy(() => import('./components/cp/ChannelPartnerManagement').then(m => ({ default: m.ChannelPartnerManagement })));
 const SiteVisitManagement = lazy(() => import('./components/siteVisits/SiteVisitManagement').then(m => ({ default: m.SiteVisitManagement })));
 const TaskManager = lazy(() => import('./components/tasks/TaskManager').then(m => ({ default: m.TaskManager })));
+const BookingManagement = lazy(() => import('./components/commercial/BookingManagement').then(m => ({ default: m.BookingManagement })));
+const BookingDossier = lazy(() => import('./components/commercial/BookingDossier').then(m => ({ default: m.BookingDossier })));
 
 // Expose a prefetch function for background loading
 export const prefetchMainModules = () => {
   setTimeout(() => {
     import('./components/leads/LeadManagement');
+    import('./components/customers/CustomerManagement');
     import('./components/properties/PropertyManagement');
     import('./components/cp/ChannelPartnerManagement');
     import('./components/siteVisits/SiteVisitManagement');
     import('./components/tasks/TaskManager');
+    import('./components/commercial/BookingManagement');
   }, 2000); // 2-second delay to prioritize initial render
 };
 
@@ -249,6 +254,18 @@ const MainLayout: React.FC = () => {
             <span>Leads & Distribution</span>
           </button>
 
+          {user?.permissions?.includes('CUSTOMERS_READ') && (
+            <button
+              onClick={() => navigate('/customers')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
+                activeTab === 'customers' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Building className="w-4 h-4 text-indigo-500" />
+              <span>Customers</span>
+            </button>
+          )}
+
           {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'project managers'].includes(r)) && (
             <button
               onClick={() => navigate('/properties')}
@@ -344,6 +361,18 @@ const MainLayout: React.FC = () => {
             </button>
           )}
 
+          {user?.permissions?.includes('BOOKINGS_READ') && (
+            <button
+              onClick={() => navigate('/bookings')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
+                activeTab === 'bookings' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <FileText className="w-4 h-4 text-purple-500" />
+              <span>Bookings</span>
+            </button>
+          )}
+
           {/* Finance — visible to all, Finance/MD get extra queue tab */}
           <button
             onClick={() => navigate('/finance')}
@@ -375,8 +404,6 @@ const MainLayout: React.FC = () => {
                   <MDExecutiveDashboard />
                 ) : user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager'].includes(r)) ? (
                   <PMDashboard />
-                ) : user?.roles?.some((r) => ['Agent / Freelancer', 'Agent'].includes(r)) ? (
-                  <AgentSiteVisitsDashboard />
                 ) : user?.roles?.some((r) => ['Telecaller'].includes(r)) ? (
                   <TelecallerDashboard />
                 ) : (
@@ -385,10 +412,13 @@ const MainLayout: React.FC = () => {
               } />
 
               <Route path="/leads" element={<LeadManagement />} />
+              <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
               <Route path="/properties" element={<PropertyManagement />} />
               <Route path="/cp" element={<ChannelPartnerManagement />} />
               <Route path="/site-visits" element={<SiteVisitManagement />} />
               <Route path="/tasks" element={<TaskManager />} />
+              <Route path="/bookings" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingManagement /> : <Navigate to="/" replace />} />
+              <Route path="/bookings/:id" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingDossier /> : <Navigate to="/" replace />} />
               <Route path="/profile" element={<UserProfile />} />
               
               {/* Consolidated Hubs */}

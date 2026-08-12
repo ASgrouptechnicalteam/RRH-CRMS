@@ -22,11 +22,14 @@ import leadRoutes from './routes/leads';
 import propertyRoutes from './routes/properties';
 import cpRoutes from './routes/cp';
 import siteVisitRoutes from './routes/siteVisits';
+import customerRoutes from './routes/customers';
 import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
 import expenseRefundRoutes from './routes/expenseRefunds';
 import pushRoutes from './routes/pushSubscriptions';
 import announcementRoutes from './routes/announcement';
+import bookingRoutes from './routes/booking.routes';
+import paymentRoutes from './routes/payment.routes';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -59,6 +62,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/targets', targetRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/leads', leadRoutes);
+app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/properties', propertyRoutes);
 app.use('/api/v1/cp', cpRoutes);
 app.use('/api/v1/site-visits', siteVisitRoutes);
@@ -67,6 +71,8 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/expense-refunds', expenseRefundRoutes);
 app.use('/api/v1/push', pushRoutes);
 app.use('/api/v1/announcement', announcementRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/payments', paymentRoutes);
 
 // Serve frontend static files from apps/web/dist
 app.use(express.static(path.join(process.cwd(), 'apps/web/dist')));

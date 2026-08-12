@@ -11,5 +11,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
+  "files": [],
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" }
+  ],
   "exclude": ["node_modules", "dist"]
 }

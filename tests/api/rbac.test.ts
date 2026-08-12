@@ -28,11 +28,13 @@ describe('Phase 1 Stage 2 - Central RBAC & Authorization (P0 Matrix)', () => {
     console.log('[RBAC SETUP] 1 DONE setupDeterministicTestUsers');
 
     // 3. Authenticate as authoritative roles
-    const getAuth = async (code: string) => {
-      const res = await request(app).post('/api/v1/auth/login').send({
-        employee_code: code,
-        password: 'Password@123',
-      });
+    const getAuth = async (code: string, idx: number) => {
+      const res = await request(app).post('/api/v1/auth/login')
+        .set('X-Forwarded-For', `192.168.4.${idx}`) // Unique IP range to avoid rate limits
+        .send({
+          employee_code: code,
+          password: 'Password@123',
+        });
       return res.body.accessToken;
     };
 
@@ -40,10 +42,10 @@ describe('Phase 1 Stage 2 - Central RBAC & Authorization (P0 Matrix)', () => {
 
     console.log('[RBAC SETUP] 2 START Concurrent Logins');
     [mdToken, adminToken, hrToken, telecallerToken] = await Promise.all([
-      getAuth(getCode(Roles.MD)),
-      getAuth(getCode(Roles.ADMIN)),
-      getAuth(getCode(Roles.HR_MANAGER)),
-      getAuth(getCode(Roles.TELECALLER))
+      getAuth(getCode(Roles.MD), 1),
+      getAuth(getCode(Roles.ADMIN), 2),
+      getAuth(getCode(Roles.HR_MANAGER), 3),
+      getAuth(getCode(Roles.TELECALLER), 4)
     ]);
     console.log('[RBAC SETUP] 5 DONE Concurrent Logins');
 

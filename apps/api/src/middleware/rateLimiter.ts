@@ -6,6 +6,7 @@ const p = prisma as any;
 
 export const loginRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
+  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
   max: 5, // Limit each IP to 5 login requests per window
   message: { error: 'Too many login attempts from this IP, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
   standardHeaders: true, 

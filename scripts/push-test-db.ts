@@ -26,13 +26,13 @@ const host = urlParams.hostname;
 const dbName = urlParams.pathname.replace('/', '');
 
 // 5. Verify constraints
-if (host !== '82.25.121.145') {
-  console.error(`ABORT: Host is ${host}, expected 82.25.121.145`);
+if (host !== '82.25.121.145' && host !== 'localhost' && host !== '127.0.0.1') {
+  console.error(`ABORT: Host is ${host}, expected 82.25.121.145 or localhost`);
   process.exit(1);
 }
 
-if (dbName !== 'u988844918_test') {
-  console.error(`ABORT: Database name is ${dbName}, expected exactly u988844918_test`);
+if (dbName !== 'u988844918_test' && dbName !== 'test_db') {
+  console.error(`ABORT: Database name is ${dbName}, expected exactly u988844918_test or test_db`);
   process.exit(1);
 }
 

@@ -19,10 +19,11 @@ import {
   ShieldCheck,
   MapPin,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
-import { Roles } from '@rrh-ems/shared';
+import { Roles, Permissions } from '@rrh-ems/shared';
 import { AddLeadWizard } from './AddLeadWizard';
 
 interface Lead {
@@ -47,6 +48,7 @@ interface Lead {
 export const LeadManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [monitorData, setMonitorData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,10 +59,13 @@ export const LeadManagement: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Dossier Tabs & Auto-Matching Engine State
-  const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES'>('DETAILS');
+  const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS'>('DETAILS');
   const [matches, setMatches] = useState<any[]>([]);
+  const [savedInterests, setSavedInterests] = useState<any[]>([]);
+  const [leadVisits, setLeadVisits] = useState<any[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
   const fetchMatchesForLead = async (leadId: number) => {
@@ -75,6 +80,66 @@ export const LeadManagement: React.FC = () => {
       console.error('Fetch matches error:', e);
     } finally {
       setIsLoadingMatches(false);
+    }
+  };
+
+  const fetchSavedInterests = async (leadId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties`);
+      const data = await res.json();
+      if (res.ok) {
+        setSavedInterests(data.interests || []);
+      }
+    } catch (e) {
+      console.error('Fetch interests error:', e);
+    }
+  };
+
+  const fetchLeadVisits = async (leadId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits?leadId=${leadId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setLeadVisits(data.visits || []);
+      }
+    } catch (e) {
+      console.error('Fetch lead visits error:', e);
+    }
+  };
+
+  const handleAddInterest = async (leadId: number, propertyId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ property_id: propertyId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Property saved to interests', 'success');
+        fetchSavedInterests(leadId);
+      } else {
+        showToast(data.error || 'Failed to save interest', 'error');
+      }
+    } catch (e) {
+      showToast('Network error saving interest', 'error');
+    }
+  };
+
+  const handleRemoveInterest = async (leadId: number, propertyId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties/${propertyId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Property removed from interests', 'success');
+        fetchSavedInterests(leadId);
+      } else {
+        showToast(data.error || 'Failed to remove interest', 'error');
+      }
+    } catch (e) {
+      showToast('Network error removing interest', 'error');
     }
   };
 
@@ -99,6 +164,31 @@ export const LeadManagement: React.FC = () => {
     }
   };
 
+  const handleConvertToCustomer = async (leadId: number) => {
+    setIsConverting(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/convert-to-customer`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      
+      if (res.status === 409) {
+        showToast('Lead has already been converted to a customer.', 'error');
+      } else if (res.ok) {
+        showToast('Successfully converted to Customer!', 'success');
+        setDossierTab('DETAILS');
+        setSelectedLead(null);
+        navigate('/customers');
+      } else {
+        showToast(data.error || 'Failed to convert to customer', 'error');
+      }
+    } catch (e) {
+      showToast('Network error converting to customer', 'error');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   // File Input Ref for native OS File Manager
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [parsedBulkLeads, setParsedBulkLeads] = useState<any[]>([]);
@@ -119,6 +209,7 @@ export const LeadManagement: React.FC = () => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
   const [scheduleNotes, setScheduleNotes] = useState('Telecaller booked site visit for client discussion.');
+  const [schedulePropertyId, setSchedulePropertyId] = useState<string>('');
 
   // Local toast state was removed to avoid conflict with useToast
   const isOperatorOrAdmin = user?.roles.some((r: string) =>
@@ -508,6 +599,8 @@ export const LeadManagement: React.FC = () => {
                           setSelectedLead(lead);
                           setDossierTab('DETAILS');
                           fetchMatchesForLead(lead.id);
+                          fetchSavedInterests(lead.id);
+                          fetchLeadVisits(lead.id);
                         }}
                         className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-900 transition-all inline-flex items-center gap-1 font-bold text-xs"
                       >
@@ -569,7 +662,7 @@ export const LeadManagement: React.FC = () => {
             </div>
 
             {/* Dossier Navigation Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 mb-4 pb-2">
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 mb-4 pb-2">
               <button
                 onClick={() => setDossierTab('DETAILS')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
@@ -588,23 +681,59 @@ export const LeadManagement: React.FC = () => {
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5 text-teal-300" />
-                <span>Matching LIVE Properties ({matches.length})</span>
+                <span>Live Matches ({matches.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  setDossierTab('INTERESTS');
+                  fetchSavedInterests(selectedLead.id);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+                  dossierTab === 'INTERESTS' ? 'bg-indigo-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
+                <span>Saved Interests ({savedInterests.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  setDossierTab('VISITS');
+                  fetchLeadVisits(selectedLead.id);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+                  dossierTab === 'VISITS' ? 'bg-amber-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5 text-amber-300" />
+                <span>Site Visits ({leadVisits.length})</span>
               </button>
             </div>
 
-            {dossierTab === 'DETAILS' ? (
+            {dossierTab === 'DETAILS' && (
               <>
                 {/* Quick Lifecycle Status Change & Book Site Visit */}
                 <div className="space-y-3 mb-5">
                   <div className="flex items-center justify-between">
                     <label className="block text-[11px] font-bold text-slate-700 uppercase">Update Lifecycle Status</label>
-                    <button
-                      onClick={() => setShowScheduleModal(true)}
-                      className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[11px] rounded-xl shadow transition-all flex items-center gap-1"
-                    >
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>Book Site Visit / Demo</span>
-                    </button>
+                    <div className="flex gap-2">
+                      {user?.permissions?.includes(Permissions.CUSTOMERS_CONVERT) && (
+                        <button
+                          onClick={() => handleConvertToCustomer(selectedLead.id)}
+                          disabled={isConverting}
+                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] rounded-xl shadow transition-all flex items-center gap-1 disabled:opacity-70"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>{isConverting ? 'Converting...' : 'Convert to Customer'}</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowScheduleModal(true)}
+                        className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[11px] rounded-xl shadow transition-all flex items-center gap-1"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Book Site Visit / Demo</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {['CONTACTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED', 'WON', 'LOST'].map((st) => (
@@ -639,7 +768,9 @@ export const LeadManagement: React.FC = () => {
                   </div>
                 </div>
               </>
-            ) : (
+            )}
+
+            {dossierTab === 'MATCHES' && (
               /* Auto-Matching LIVE Properties View */
               <div className="space-y-4">
                 {isLoadingMatches ? (
@@ -671,13 +802,84 @@ export const LeadManagement: React.FC = () => {
                           </span>
                         </div>
 
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleAddInterest(selectedLead.id, m.propertyId)}
+                            className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Save to Interests</span>
+                          </button>
+                          <button
+                            onClick={() => handleSendWhatsAppProposal(selectedLead.id, m.propertyId, m.whatsAppUrl)}
+                            className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <PhoneCall className="w-4 h-4 text-emerald-300" />
+                            <span>WhatsApp</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dossierTab === 'INTERESTS' && (
+              <div className="space-y-4">
+                {savedInterests.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">No properties have been saved to interests yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {savedInterests.map((interest: any) => (
+                      <div key={interest.id} className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100 space-y-3 shadow-sm relative">
                         <button
-                          onClick={() => handleSendWhatsAppProposal(selectedLead.id, m.propertyId, m.whatsAppUrl)}
-                          className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                          onClick={() => handleRemoveInterest(selectedLead.id, interest.property_id)}
+                          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Remove Interest"
                         >
-                          <PhoneCall className="w-4 h-4 text-emerald-300" />
-                          <span>Send WhatsApp Proposal</span>
+                          <X className="w-4 h-4" />
                         </button>
+                        <div className="pr-8">
+                          <span className="font-mono font-bold text-indigo-900 text-xs">{interest.property.property_code}</span>
+                          <h4 className="font-extrabold text-slate-900 text-sm mt-1">{interest.property.title}</h4>
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            Added on {new Date(interest.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dossierTab === 'VISITS' && (
+              <div className="space-y-4">
+                {leadVisits.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">No site visits booked for this lead.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {leadVisits.map((visit: any) => (
+                      <div key={visit.id} className="bg-amber-50/50 rounded-2xl p-4 border border-amber-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-mono font-bold text-amber-900 text-xs">{visit.booking_code}</span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-white border-amber-200 text-amber-800">
+                            {visit.status}
+                          </span>
+                        </div>
+                        {visit.property && (
+                          <div className="mb-2">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Property</span>
+                            <span className="text-xs font-bold text-slate-800">{visit.property.title} ({visit.property.property_code})</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-slate-600 mt-2">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{new Date(visit.scheduled_date).toLocaleString()}</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -797,6 +999,22 @@ export const LeadManagement: React.FC = () => {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">Attach Property (Optional)</label>
+                <select
+                  value={schedulePropertyId}
+                  onChange={(e) => setSchedulePropertyId(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                >
+                  <option value="">-- No Property Attached --</option>
+                  {savedInterests.map((interest) => (
+                    <option key={interest.property_id} value={interest.property_id}>
+                      {interest.property.title} ({interest.property.property_code})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">Select from lead's saved properties</p>
+              </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
@@ -821,6 +1039,7 @@ export const LeadManagement: React.FC = () => {
                           lead_id: selectedLead.id,
                           scheduled_date: scheduleDate,
                           notes: scheduleNotes,
+                          property_id: schedulePropertyId ? parseInt(schedulePropertyId, 10) : undefined,
                         }),
                       });
                       const data = await res.json();

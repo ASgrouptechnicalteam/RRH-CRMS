@@ -33,6 +33,7 @@ interface SiteVisit {
   telecaller: { id: number; employee_code: string; full_name: string; phone: string };
   project_manager?: { id: number; employee_code: string; full_name: string; phone: string };
   assigned_agent?: { id: number; employee_code: string; full_name: string; phone: string };
+  property?: { id: number; property_code: string; title: string; status: string };
 }
 
 const VISIT_STAGES = [
@@ -306,6 +307,12 @@ export const SiteVisitManagement: React.FC = () => {
                   <div className="text-[11px] text-slate-500">
                     <span className="font-bold text-slate-700">Telecaller:</span> {visit.telecaller?.full_name}
                   </div>
+
+                  {visit.property && (
+                    <div className="text-[11px] text-slate-500">
+                      <span className="font-bold text-slate-700">Property:</span> {visit.property.title} ({visit.property.property_code})
+                    </div>
+                  )}
 
                   {visit.project_manager && (
                     <div className="text-[11px] text-slate-500">

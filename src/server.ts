@@ -35,6 +35,7 @@ import bookingRoutes from './routes/booking.routes';
 import paymentRoutes from './routes/payment.routes';
 import documentRoutes from './routes/documents';
 import integrationRoutes from './routes/integration.routes';
+import complaintRoutes from './routes/complaint.routes';
 
 import { PortalWorker } from './services/portalWorker';
 
@@ -85,6 +86,7 @@ app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/documents', documentRoutes);
 app.use('/api/v1/integration', integrationRoutes);
+app.use('/api/v1/complaints', complaintRoutes);
 
 // Serve frontend static files from apps/web/dist
 app.use(express.static(path.join(process.cwd(), 'apps/web/dist')));

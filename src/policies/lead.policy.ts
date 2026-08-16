@@ -50,7 +50,21 @@ export class LeadPolicy {
    */
   static canMutate(user: TokenPayload, lead: Lead): boolean {
     // Currently, mutation rules are identical to view rules for assigned users.
-    return this.canView(user, lead);
+    // Management can mutate any lead in their company
+    if (this.isManagement(user)) {
+        return lead.company_id === user.companyId;
+    }
+
+    // Telecallers/Agents: can ONLY mutate leads assigned to their own employeeId
+    // or leads they created. Cross-company access is always denied.
+    if (
+        lead.assigned_to_id === user.employeeId ||
+        lead.created_by_id === user.employeeId
+    ) {
+        return lead.company_id === user.companyId;
+    }
+
+    return false;
   }
 
   /**
@@ -64,5 +78,36 @@ export class LeadPolicy {
     }
 
     return this.isManagement(user);
+  }
+
+  /** Returns the list of valid status transitions from the given current status.
+   * Lead workflow: NEW -> ASSIGNED -> CONTACTED -> QUALIFIED -> SITE_VISIT_SCHEDULED -> WON
+   * Any transition not in this map is illegal.
+   */
+  static getValidTransitions(status: string): string[] {
+    const map: Record<string, string[]> = {
+      NEW: ['ASSIGNED'],
+      ASSIGNED: ['CONTACTED'],
+      CONTACTED: ['QUALIFIED'],
+      QUALIFIED: ['SITE_VISIT_SCHEDULED'],
+      SITE_VISIT_SCHEDULED: ['WON'],
+      WON: [], // WON is terminal
+      NEW: [], // Special case for initial creation
+    };
+    return map[status] || [];
+  }
+
+  /** Validates that a status transition is legal according to the lead workflow.
+   * Returns the AppError if invalid, or null if valid.
+   */
+  static validateTransition(currentStatus: string, newStatus: string): { valid: boolean; error?: AppError } {
+    if (currentStatus === newStatus) {
+      return { valid: true };
+    }
+    const valid = this.getValidTransitions(currentStatus);
+    if (valid.includes(newStatus)) {
+      return { valid: true };
+    }
+    return { valid: false, error: new AppError(409, `Invalid lead status transition: ${currentStatus} → ${newStatus}`) };
   }
 }

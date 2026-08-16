@@ -1,9 +1,56 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { verifyAccessToken, TokenPayload } from '../utils/jwt';
 
 export interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
 }
+
+export interface ServiceRequest extends Request {
+  service?: { service: string };
+}
+
+const timingSafeEqual = (a: string, b: string): boolean => {
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+};
+
+/**
+ * Service-to-service authentication for Portal callbacks.
+ * Validates a Service Bearer Secret against PORTAL_CRM_SECRET (constant-time comparison).
+ * Does NOT require a user JWT — service tokens do not carry user identity.
+ */
+export const authenticateServiceToken = (req: ServiceRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({
+      error: 'Service token required',
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  const expected = process.env.PORTAL_CRM_SECRET;
+  if (!expected) {
+    return res.status(500).json({
+      error: 'Service secret not configured',
+      code: 'SERVER_ERROR',
+    });
+  }
+
+  if (!timingSafeEqual(token, expected)) {
+    return res.status(401).json({
+      error: 'Invalid service token',
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  req.service = { service: 'portal' };
+  next();
+};
 
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];

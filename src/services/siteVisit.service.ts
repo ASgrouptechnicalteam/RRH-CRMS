@@ -64,6 +64,21 @@ export class SiteVisitService {
       throw { status: 403, message: 'Forbidden: Missing site_visits.create permission or Lead is not in your company' };
     }
 
+    if (data.opportunity_id) {
+      const opportunity = await p.opportunity.findUnique({ where: { id: data.opportunity_id } });
+      if (!opportunity) {
+        throw { status: 404, message: 'Opportunity not found' };
+      }
+      if (opportunity.company_id !== user.companyId) {
+        throw { status: 403, message: 'Forbidden: Opportunity belongs to another company' };
+      }
+      if (opportunity.lead_id !== data.lead_id) {
+        throw { status: 400, message: 'Opportunity does not belong to the specified Lead' };
+      }
+      // Note: If property_id is provided in data and opportunity has one, they don't strictly have to match,
+      // but the property must belong to the same company (validated below).
+    }
+
     const bookingCode = await this.generateNextBookingCode();
 
     // Auto-assign Project Manager based on Property
@@ -116,6 +131,10 @@ export class SiteVisitService {
         status: 'PENDING_VERIFICATION',
         verification_call_notes: data.notes || 'Booked by telecaller. Awaiting verification call.',
       };
+
+      if (data.opportunity_id) {
+        bookingData.opportunity = { connect: { id: data.opportunity_id } };
+      }
 
       if (data.property_id) {
         bookingData.property = { connect: { id: data.property_id } };
@@ -291,11 +310,14 @@ export class SiteVisitService {
         },
       });
 
-      const nextLeadStatus = rating === 'HOT_INTERESTED' ? 'QUALIFIED' : rating === 'WARM' ? 'NEGOTIATION' : 'CONTACTED';
-      await tx.lead.update({
-        where: { id: visit.lead_id },
-        data: { status: nextLeadStatus },
-      });
+      // Only update Lead.status if it's not already OPPORTUNITY_OPEN or WON
+      if (!['WON', 'OPPORTUNITY_OPEN'].includes(visit.lead.status)) {
+        const nextLeadStatus = rating === 'HOT_INTERESTED' ? 'QUALIFIED' : rating === 'WARM' ? 'NEGOTIATION' : 'CONTACTED';
+        await tx.lead.update({
+          where: { id: visit.lead_id },
+          data: { status: nextLeadStatus },
+        });
+      }
 
       await tx.leadActivity.create({
         data: {

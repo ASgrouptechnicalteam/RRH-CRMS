@@ -165,10 +165,6 @@ router.get('/executive-metrics', authenticateToken, requireAuthz(Permissions.ADM
     const totalExemptOrStamped = Number(stampedEmpsRes[0]?.count || 0);
     const attendanceExceptionsCount = Math.max(0, totalEmployeesCount - totalExemptOrStamped);
 
-    // 5. Channel Partners Count
-    const cpCountRes: any = await p.$queryRaw`SELECT COUNT(*) as count FROM ChannelPartner WHERE company_id = ${companyId}`;
-    const totalCPCount = Number(cpCountRes[0]?.count || 0);
-
     return res.status(200).json({
       totalLeadsCount,
       totalClosedDeals,
@@ -179,7 +175,6 @@ router.get('/executive-metrics', authenticateToken, requireAuthz(Permissions.ADM
       pendingVerificationPropertiesCount,
       totalEmployeesCount,
       attendanceExceptionsCount,
-      totalCPCount,
     });
   } catch (error: any) {
     console.error('Fetch executive metrics error:', error);

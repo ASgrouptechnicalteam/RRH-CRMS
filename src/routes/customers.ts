@@ -1,11 +1,14 @@
 import { Router, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Roles, Permissions, CustomerCreateSchema, CustomerUpdateSchema } from '@rrh-ems/shared';
+import { Roles, Permissions, CustomerCreateSchema, CustomerUpdateSchema, CustomerKycWriteSchema } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
 import { CustomerService, AppError } from '../services/customer.service';
+import { KycService } from '../services/kyc.service';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 const handleServiceError = (error: any, res: Response) => {
   if (error instanceof AppError) {
@@ -66,6 +69,28 @@ router.patch(
       return res.status(200).json({
         message: 'Customer updated successfully',
         ...result,
+      });
+    } catch (error: any) {
+      return handleServiceError(error, res);
+    }
+  }
+);
+
+// PUT /api/v1/customers/:id/kyc - Write/update customer KYC (Phase 11 Packet 3C)
+// CRM-internal write path. PAN/Aadhaar are encrypted at rest and NEVER leave CRMS.
+router.put(
+  '/:id/kyc',
+  authenticateToken,
+  requireAuthz(Permissions.CUSTOMERS_KYC_WRITE, async (req) => {
+    return await prisma.customer.findUnique({ where: { id: parseInt(req.params.id, 10) } });
+  }),
+  validateRequestBody(CustomerKycWriteSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const result = await KycService.writeCustomerKyc(req.user!, parseInt(req.params.id), req.body);
+      return res.status(200).json({
+        message: 'Customer KYC updated successfully',
+        customer: result,
       });
     } catch (error: any) {
       return handleServiceError(error, res);

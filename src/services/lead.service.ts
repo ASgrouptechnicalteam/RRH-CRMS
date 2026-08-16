@@ -48,6 +48,16 @@ export class LeadService {
     });
   }
 
+  static async getLeadById(user: TokenPayload, leadId: number) {
+    const lead = await p.lead.findUnique({
+      where: { id: leadId }
+    });
+    if (!lead || lead.company_id !== user.companyId) {
+      return null;
+    }
+    return lead;
+  }
+
   static async getDistributionMonitor(companyId: number) {
     const telecallers = await p.employee.findMany({
       where: {
@@ -111,9 +121,48 @@ export class LeadService {
     return { totalLeadsCount, unassignedCount, telecallers: monitorData };
   }
 
+  static calculateLeadScore(leadData: any): number {
+    let score = 0;
+    // Base score based on source
+    if (leadData.source === 'WALK_IN' || leadData.source === 'REFERRAL') score += 20;
+    else if (leadData.source === 'WEBSITE') score += 10;
+    
+    // Profile completeness
+    if (leadData.email) score += 10;
+    if (leadData.budget_min && leadData.budget_max) score += 15;
+    if (leadData.preferred_location) score += 10;
+    if (leadData.property_type_preference) score += 5;
+    
+    return score;
+  }
+
   static async createLead(user: TokenPayload, dto: any) {
+    // 1. DUPLICATE DETECTION (Same Company Only)
+    if (!dto.phone) {
+      throw new AppError(400, 'Phone number is required for lead creation.');
+    }
+    const existingLead = await p.lead.findFirst({
+      where: {
+        company_id: user.companyId,
+        OR: [
+          { phone: dto.phone },
+          ...(dto.email ? [{ email: dto.email }] : [])
+        ]
+      }
+    });
+
+    if (existingLead) {
+      throw new AppError(409, `Duplicate lead detected. Lead ${existingLead.lead_code} already exists with this phone or email.`);
+    }
+
     const leadCode = await this.generateNextLeadCode();
     const bestAssignee = await findBestAssigneeForLead(user.companyId);
+
+    // 2. DETERMINISTIC LEAD SCORING
+    const leadScore = this.calculateLeadScore(dto);
+
+    // 3. SLA BREACH CONFIGURATION (e.g. 2 hours from creation to first contact)
+    const slaBreachAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
     return await p.$transaction(async (tx: any) => {
       const lead = await tx.lead.create({
@@ -135,6 +184,12 @@ export class LeadService {
           preferred_location: dto.preferred_location || null,
           notes: dto.notes || null,
           created_by_id: user.employeeId,
+          campaign: dto.campaign || null,
+          utm_source: dto.utm_source || null,
+          utm_medium: dto.utm_medium || null,
+          utm_campaign: dto.utm_campaign || null,
+          lead_score: leadScore,
+          sla_breach_at: slaBreachAt,
         },
       });
 
@@ -478,5 +533,22 @@ export class LeadService {
     });
 
     return interests;
+  }
+
+  static async getLeadTasks(user: TokenPayload, leadId: number) {
+    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    if (!lead) throw new AppError(404, 'Lead not found');
+
+    if (!can(user, Permissions.LEADS_READ, lead)) {
+      throw new AppError(403, 'Forbidden: You do not have permission to read this lead');
+    }
+
+    const tasks = await p.task.findMany({
+      where: { lead_id: leadId },
+      include: { assignee: { select: { id: true, full_name: true, employee_code: true } } },
+      orderBy: [{ target_date: 'asc' }],
+    });
+
+    return tasks;
   }
 }

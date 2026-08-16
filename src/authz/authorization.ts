@@ -5,6 +5,9 @@ import { LeadPolicy } from '../policies/lead.policy';
 import { SiteVisitPolicy } from '../policies/siteVisit.policy';
 import { ExpenseRefundPolicy } from '../policies/expenseRefund.policy';
 import { TaskPolicy } from '../policies/task.policy';
+import { ProjectPolicy } from '../policies/project.policy';
+import { DocumentPolicy } from '../policies/document.policy';
+import { KycPolicy } from '../policies/kyc.policy';
 
 /**
  * Centralized Authorization Engine (Phase 1)
@@ -17,7 +20,7 @@ import { TaskPolicy } from '../policies/task.policy';
 export const can = (user: TokenPayload, action: Permission, resource?: any): boolean => {
   // 1. Basic Permission Check
   // All internal employees (except those with specific overrides) rely on RBAC permissions.
-  // Channel Partners have an implicitly different scope.
+
   const hasBasePermission = (user.permissions || []).includes(action);
 
   // If they don't even have the base permission to attempt this action, reject early.
@@ -26,39 +29,19 @@ export const can = (user: TokenPayload, action: Permission, resource?: any): boo
     return false;
   }
 
-  // 2. Channel Partner Isolation Check
-  if (user.roles.includes(Roles.CHANNEL_PARTNER)) {
-    // Channel Partners are EXTERNAL. They are strictly isolated.
-    
-    // They cannot read internal employee lists/details
-    if (
-      action === Permissions.EMPLOYEES_READ ||
-      action === Permissions.EMPLOYEES_VIEW_SENSITIVE ||
-      action === Permissions.EMPLOYEES_UPDATE
-    ) {
-      return false;
-    }
-
-    // They can only read their own CP data
-    if (action === Permissions.CHANNEL_PARTNERS_READ && resource) {
-      if (resource.id !== user.employeeId) {
-        return false;
-      }
-    }
-
-    // They can only view leads explicitly linked to them (as source or partner)
-    if (action === Permissions.LEADS_READ && resource) {
-      // Future scope: explicit linking check. For now, deny unrestricted lead reads.
-      // If no resource is provided, we can't authorize. 
-      if (!resource.id) return false;
-      // In current schema, leads don't explicitly belong to CP yet, so deny all resource-specific lead reads for CP to be safe
-      return false;
-    }
-  }
-
   // 3. Object-Level Resource Scope Check
   if (resource) {
     switch (action) {
+      // -- PROJECTS --
+      case Permissions.PROJECTS_READ:
+        return ProjectPolicy.canRead(user, resource);
+
+      case Permissions.PROJECTS_UPDATE:
+        return ProjectPolicy.canUpdate(user, resource);
+
+      case Permissions.PROJECTS_DELETE:
+        return ProjectPolicy.canDelete(user, resource);
+
       // -- PROPERTIES --
       case Permissions.PROPERTIES_UPDATE:
       case Permissions.PROPERTIES_DELETE:
@@ -116,6 +99,24 @@ export const can = (user: TokenPayload, action: Permission, resource?: any): boo
       case Permissions.TASKS_UPDATE:
         if (!resource) return false;
         return TaskPolicy.canMutateSync(user, resource);
+
+      // -- DOCUMENTS --
+      case Permissions.DOCUMENTS_READ:
+        if (!resource) return true;
+        return DocumentPolicy.canView(user, resource);
+
+      case Permissions.DOCUMENTS_VERIFY:
+        if (!resource) return true;
+        return DocumentPolicy.canVerify(user, resource);
+
+      case Permissions.DOCUMENTS_DELETE:
+        if (!resource) return true;
+        return DocumentPolicy.canDelete(user, resource);
+
+      // -- CUSTOMER KYC (Phase 11 Packet 3C) --
+      case Permissions.CUSTOMERS_KYC_WRITE:
+        if (!resource) return false;
+        return KycPolicy.canWrite(user, resource);
 
       // Add other cases as needed
       default:

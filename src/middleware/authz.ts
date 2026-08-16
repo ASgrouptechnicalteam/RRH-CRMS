@@ -41,8 +41,7 @@ export const requireAuthz = (
 
       next();
     } catch (err) {
-      console.error('Authorization middleware error:', err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(err);
     }
   };
 };

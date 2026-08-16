@@ -98,8 +98,39 @@ router.get('/my-tasks', authenticateToken, async (req: AuthenticatedRequest, res
 // POST /api/v1/tasks - Create new task
 router.post('/', authenticateToken, validateRequestBody(TaskCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { title, description, assignee_id, priority, deadline } = req.body;
+    const { title, description, assignee_id, priority, deadline, lead_id, opportunity_id } = req.body;
     const creatorId = req.user!.employeeId;
+
+    // Validate Assignee Company Isolation
+    const assignee = await p.employee.findUnique({ where: { id: assignee_id } });
+    if (!assignee || assignee.company_id !== req.user!.companyId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot assign tasks outside your company.' });
+    }
+
+    // Validate Lead Access if lead_id is provided
+    if (lead_id) {
+      const existingLead = await p.lead.findUnique({ where: { id: lead_id } });
+      if (!existingLead) {
+        return res.status(404).json({ error: 'Lead not found.' });
+      }
+      if (!can(req.user!, Permissions.LEADS_UPDATE, existingLead)) {
+        return res.status(403).json({ error: 'Forbidden: You do not have permission to attach tasks to this lead.' });
+      }
+    }
+
+    // Validate Opportunity Access if opportunity_id is provided
+    if (opportunity_id) {
+      const existingOpp = await p.opportunity.findUnique({ where: { id: opportunity_id } });
+      if (!existingOpp) {
+        return res.status(404).json({ error: 'Opportunity not found.' });
+      }
+      if (existingOpp.company_id !== req.user!.companyId) {
+        return res.status(403).json({ error: 'Forbidden: Opportunity belongs to another company.' });
+      }
+      if (lead_id && existingOpp.lead_id !== lead_id) {
+        return res.status(400).json({ error: 'Opportunity does not belong to the specified Lead.' });
+      }
+    }
 
     const task = await p.task.create({
       data: {
@@ -109,6 +140,8 @@ router.post('/', authenticateToken, validateRequestBody(TaskCreateSchema), async
         created_by: creatorId,
         status: 'PENDING',
         target_date: deadline ? new Date(deadline) : new Date(Date.now() + 86400000),
+        lead_id: lead_id || null,
+        opportunity_id: opportunity_id || null,
       },
     });
 

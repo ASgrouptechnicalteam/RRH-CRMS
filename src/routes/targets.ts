@@ -65,11 +65,6 @@ const ROLE_PRESETS: Record<string, { target_type: string; targets_json: Record<s
     targets_json: { adSpendMonitored: 1, contentPosts: 3, leadsGenerated: 20 },
     form_schema_json: generateBasicSchema(['adSpendMonitored', 'contentPosts', 'leadsGenerated'])
   },
-  [Roles.CHANNEL_PARTNER_MANAGER]: {
-    target_type: 'COUNT',
-    targets_json: { cpMeetings: 8, newCpOnboarded: 1 },
-    form_schema_json: generateBasicSchema(['cpMeetings', 'newCpOnboarded'])
-  },
   [Roles.HR_MANAGER]: {
     target_type: 'COUNT',
     targets_json: { interviewsConducted: 5, attendanceQueueCleared: 1 },

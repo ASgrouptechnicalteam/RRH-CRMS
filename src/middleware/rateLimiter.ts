@@ -4,6 +4,24 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const p = prisma as any;
 
+export const publicReadLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  max: 120, // 120 public read requests per IP per minute
+  message: { error: 'Too many requests from this IP, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const publicWriteLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  max: 10, // 10 public lead submissions per IP per minute
+  message: { error: 'Too many submissions from this IP, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export const loginRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',

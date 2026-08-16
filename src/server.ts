@@ -20,7 +20,10 @@ import targetRoutes from './routes/targets';
 import employeeRoutes from './routes/employees';
 import leadRoutes from './routes/leads';
 import propertyRoutes from './routes/properties';
-import cpRoutes from './routes/cp';
+import opportunityRoutes from './routes/opportunities';
+import installmentRoutes from './routes/installment.routes';
+import projectRoutes from './routes/projects';
+
 import siteVisitRoutes from './routes/siteVisits';
 import customerRoutes from './routes/customers';
 import publicRoutes from './routes/public';
@@ -30,6 +33,10 @@ import pushRoutes from './routes/pushSubscriptions';
 import announcementRoutes from './routes/announcement';
 import bookingRoutes from './routes/booking.routes';
 import paymentRoutes from './routes/payment.routes';
+import documentRoutes from './routes/documents';
+import integrationRoutes from './routes/integration.routes';
+
+import { PortalWorker } from './services/portalWorker';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -64,7 +71,10 @@ app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/leads', leadRoutes);
 app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/properties', propertyRoutes);
-app.use('/api/v1/cp', cpRoutes);
+app.use('/api/v1/opportunities', opportunityRoutes);
+app.use('/api/v1/installments', installmentRoutes);
+app.use('/api/v1/projects', projectRoutes);
+
 app.use('/api/v1/site-visits', siteVisitRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
@@ -73,6 +83,8 @@ app.use('/api/v1/push', pushRoutes);
 app.use('/api/v1/announcement', announcementRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/documents', documentRoutes);
+app.use('/api/v1/integration', integrationRoutes);
 
 // Serve frontend static files from apps/web/dist
 app.use(express.static(path.join(process.cwd(), 'apps/web/dist')));
@@ -89,6 +101,12 @@ app.get('*', (req, res) => {
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err && (err.name === 'AppError' || err.statusCode || err.status)) {
+    return res.status(err.statusCode || err.status || 400).json({ error: err.message });
+  }
+  if (err && err.name === 'ZodError') {
+    return res.status(400).json({ error: 'Validation failed', details: err.errors });
+  }
   console.error(err.stack);
   res.status(500).json({ error: 'Internal Server Error' });
 });
@@ -118,11 +136,11 @@ const bootstrapHostingerDatabase = async () => {
       { name: Roles.PROJECT_MANAGER, is_system: false, is_invisible: false },
       { name: Roles.DIGITAL_LEAD_OPERATOR, is_system: false, is_invisible: false },
       { name: Roles.TELECALLER, is_system: false, is_invisible: false },
-      { name: Roles.CHANNEL_PARTNER_MANAGER, is_system: false, is_invisible: false },
+
       { name: Roles.DIGITAL_MARKETING_HEAD, is_system: false, is_invisible: false },
       { name: Roles.FINANCE, is_system: false, is_invisible: false },
       { name: Roles.AGENT, is_system: false, is_invisible: false },
-      { name: Roles.CHANNEL_PARTNER, is_system: false, is_invisible: false },
+
       { name: Roles.DIGITAL_MARKETING_EXECUTIVE, is_system: false, is_invisible: false },
     ];
 
@@ -216,12 +234,19 @@ if (process.env.NODE_ENV === 'production') {
     console.error('FATAL: JWT_REFRESH_SECRET is missing or too short for production.');
     process.exit(1);
   }
+  if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length < 32) {
+    console.error('FATAL: ENCRYPTION_KEY is missing or too short for production. KYC data cannot be encrypted safely.');
+    process.exit(1);
+  }
 }
 
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(port, () => {
     console.log(`[server]: API running at http://localhost:${port}`);
     bootstrapHostingerDatabase();
+    // Portal worker is DISABLED by default (PORTAL_WORKER_ENABLED=false).
+    // Enable explicitly when the Customer Portal is available.
+    PortalWorker.start();
   });
 }
 

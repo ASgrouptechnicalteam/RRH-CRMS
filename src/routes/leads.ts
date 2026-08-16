@@ -4,6 +4,7 @@ import { requireAuthz } from '../middleware/authz';
 import { Roles, LeadCreateSchema, LeadStatusUpdateSchema, LeadReassignSchema, Permissions, AddPropertyInterestSchema } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
 import { LeadService, AppError } from '../services/lead.service';
+import { OpportunityService } from '../services/opportunity.service';
 
 const router = Router();
 
@@ -17,7 +18,11 @@ const handleServiceError = (error: any, res: Response) => {
 };
 
 // GET /api/v1/leads - Fetch leads list (Role-aware)
-router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get(
+  '/',
+  authenticateToken,
+  requireAuthz(Permissions.LEADS_READ),
+  async (req: AuthenticatedRequest, res: Response) => {
   try {
     const leads = await LeadService.getLeads(req.user!);
     return res.status(200).json({ leads });
@@ -27,7 +32,11 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 });
 
 // GET /api/v1/leads/distribution-monitor - Telecaller load & intake monitor
-router.get('/distribution-monitor', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get(
+  '/distribution-monitor',
+  authenticateToken,
+  requireAuthz(Permissions.LEADS_DISTRIBUTION_MONITOR),
+  async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = await LeadService.getDistributionMonitor(req.user!.companyId);
     return res.status(200).json(data);
@@ -154,6 +163,22 @@ router.get('/:id/matches', authenticateToken, async (req: AuthenticatedRequest, 
   }
 });
 
+// GET /api/v1/leads/:id/opportunities
+router.get('/:id/opportunities', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const leadId = parseInt(req.params.id, 10);
+    // Enforce Lead read authorization (ensure Lead belongs to company, etc)
+    const existingLead = await LeadService.getLeadById(req.user!, leadId);
+    if (!existingLead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+    const opportunities = await OpportunityService.getOpportunitiesByLead(req.user!, leadId);
+    return res.status(200).json({ opportunities });
+  } catch (error: any) {
+    return handleServiceError(error, res);
+  }
+});
+
 // POST /api/v1/leads/:id/whatsapp-proposal/:propertyId - Send WhatsApp Proposal Payload & Log Activity
 router.post(
   '/:id/whatsapp-proposal/:propertyId',
@@ -229,6 +254,23 @@ router.get(
       const interests = await LeadService.getPropertyInterests(req.user!, leadId);
 
       return res.status(200).json({ interests });
+    } catch (error: any) {
+      return handleServiceError(error, res);
+    }
+  }
+);
+
+// GET /api/v1/leads/:id/tasks - Get tasks associated with the lead
+router.get(
+  '/:id/tasks',
+  authenticateToken,
+  requireAuthz(Permissions.LEADS_READ),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const leadId = parseInt(req.params.id, 10);
+      const tasks = await LeadService.getLeadTasks(req.user!, leadId);
+
+      return res.status(200).json({ tasks });
     } catch (error: any) {
       return handleServiceError(error, res);
     }

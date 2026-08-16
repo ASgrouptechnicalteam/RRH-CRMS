@@ -14,11 +14,12 @@ export class AppError extends Error {
 }
 
 export class CustomerService {
-  private static async generateNextCustomerCode(): Promise<string> {
+  private static async generateNextCustomerCode(tx: any = p): Promise<string> {
     const currentYear = new Date().getFullYear();
-    const count = await p.customer.count();
+    const count = await tx.customer.count();
     const sequentialNum = (count + 1).toString().padStart(4, '0');
-    return `RRH-CUST-${currentYear}-${sequentialNum}`;
+    const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `RRH-CUST-${currentYear}-${sequentialNum}-${randomHex}`;
   }
 
   static async getCustomers(user: TokenPayload) {
@@ -132,6 +133,10 @@ export class CustomerService {
           email: lead.email,
           status: 'ACTIVE',
           source: lead.source,
+          campaign: lead.campaign,
+          utm_source: lead.utm_source,
+          utm_medium: lead.utm_medium,
+          utm_campaign: lead.utm_campaign,
           assigned_to_id: lead.assigned_to_id,
           origin_lead_id: lead.id,
         },
@@ -154,5 +159,51 @@ export class CustomerService {
 
       return customer;
     });
+  }
+
+  static async upsertFromLead(user: TokenPayload, leadId: number, tx: any) {
+    const lead = await tx.lead.findUnique({ where: { id: leadId, company_id: user.companyId } });
+    if (!lead) {
+      throw new AppError(404, 'Lead not found or access denied');
+    }
+
+    // 1. Check if it already exists (idempotency)
+    let customer = await tx.customer.findUnique({ where: { origin_lead_id: lead.id } });
+    if (customer) {
+      return customer;
+    }
+
+    const customerCode = await this.generateNextCustomerCode(tx);
+    const nameParts = lead.customer_name.split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+    try {
+      customer = await tx.customer.create({
+        data: {
+          customer_code: customerCode,
+          company_id: user.companyId,
+          branch_id: lead.branch_id,
+          first_name: firstName,
+          last_name: lastName,
+          phone: lead.phone,
+          email: lead.email,
+          status: 'ACTIVE',
+          source: lead.source,
+          assigned_to_id: lead.assigned_to_id,
+          origin_lead_id: lead.id,
+        },
+      });
+      return customer;
+    } catch (error: any) {
+      // 2. Handle concurrent creation conflict via origin_lead_id @unique constraint
+      if (error.code === 'P2002' && error.meta?.target?.includes('origin_lead_id')) {
+        const existing = await tx.customer.findUnique({ where: { origin_lead_id: lead.id } });
+        if (existing) {
+          return existing;
+        }
+      }
+      throw error;
+    }
   }
 }

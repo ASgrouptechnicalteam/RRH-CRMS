@@ -1,8 +1,3 @@
-// IMPORTANT: This file has been modified for Phase 12 Packet 12-1 attribution propagation.
-// The following changes were made:
-// - Added source/campaign/utm_* propagation from Opportunity to Booking
-// - All other existing functionality is preserved
-
 import { PrismaClient, Opportunity, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { OpportunityPolicy } from '../policies/opportunity.policy';
@@ -13,7 +8,6 @@ import { CustomerService } from './customer.service';
 import { BookingService } from './booking.service';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
 
 export class OpportunityService {
   /**
@@ -141,8 +135,8 @@ export class OpportunityService {
     }
 
     // Validate Property
-    if (property_id) {
-      const property = await prisma.property.findUnique({ where: { id: data.property_id }, include: { project: true } });
+    if (data.property_id) {
+      const property = await prisma.property.findUnique({ where: { id: data.property_id } });
       if (!property || property.company_id !== user.companyId) {
         throw new AppError(403, 'Cross-company Property association not allowed');
       }
@@ -180,7 +174,7 @@ export class OpportunityService {
     });
 
     // Check visibility via OpportunityPolicy
-    return opps.filter(opp => OpportunityPolicy.canView(opp as any));
+    return opps.filter(opp => OpportunityPolicy.canView(user, opp as any));
   }
 
   /**
@@ -337,13 +331,13 @@ export class OpportunityService {
   }
 
   /**
-   * 3b. Get Opportunity Stage History with computed duration
+   * 4b. Get Opportunity Stage History with computed duration
    */
   static async getOpportunityHistory(user: TokenPayload, opportunityId: number) {
     const opp = await prisma.opportunity.findUnique({ where: { id: opportunityId } });
     if (!opp) throw new AppError(404, 'Opportunity not found');
 
-    if (!OpportunityPolicy.canView(opp as any)) {
+    if (!OpportunityPolicy.canView(user, opp)) {
       throw new AppError(403, 'Unauthorized to view this Opportunity history');
     }
 
@@ -390,7 +384,7 @@ export class OpportunityService {
 
     if (!opp) throw new AppError(404, 'Opportunity not found');
 
-    if (!OpportunityPolicy.canView(opp as any)) {
+    if (!OpportunityPolicy.canView(user, opp as any)) {
       throw new AppError(403, 'Unauthorized to view this Opportunity');
     }
 
@@ -503,6 +497,61 @@ export class OpportunityService {
   }
 
   /**
+   * 7. Conversion & Stage Analytics (Company + Policy Scoped)
+   * Stage aging is computed from OpportunityHistory timestamps (exited_at - created_at).
+   */
+  static async getConversionMetrics(user: TokenPayload) {
+    const policyWhere = OpportunityPolicy.canList(user);
+
+    // Get IDs of opportunities the user can see (scoped at DB level)
+    const visibleOpps = await prisma.opportunity.findMany({
+      where: policyWhere,
+      select: { id: true },
+    });
+    const visibleIds = visibleOpps.map(o => o.id);
+
+    if (visibleIds.length === 0) {
+      return { stageAging: {}, transitionCount: 0, stageTransitions: {} };
+    }
+
+    // Fetch all history records for visible opportunities
+    const allHistory = await prisma.opportunityHistory.findMany({
+      where: { opportunity_id: { in: visibleIds } },
+      orderBy: { created_at: 'asc' },
+    });
+
+    // --- Stage Aging: average time spent in each stage ---
+    const stageDurations: Record<string, number[]> = {};
+    allHistory.forEach(h => {
+      if (h.exited_at && h.to_stage) {
+        const durationMs = new Date(h.exited_at).getTime() - new Date(h.created_at).getTime();
+        const durationMinutes = Math.round(durationMs / 60000);
+        if (!stageDurations[h.to_stage]) stageDurations[h.to_stage] = [];
+        stageDurations[h.to_stage].push(durationMinutes);
+      }
+    });
+
+    const stageAging: Record<string, { avgMinutes: number; count: number }> = {};
+    for (const [stage, durations] of Object.entries(stageDurations)) {
+      const avg = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
+      stageAging[stage] = { avgMinutes: avg, count: durations.length };
+    }
+
+    // --- Transition counts per stage pair ---
+    const stageTransitions: Record<string, number> = {};
+    allHistory.forEach(h => {
+      const key = `${h.from_stage || 'NONE'} → ${h.to_stage}`;
+      stageTransitions[key] = (stageTransitions[key] || 0) + 1;
+    });
+
+    return {
+      stageAging,
+      transitionCount: allHistory.length,
+      stageTransitions,
+    };
+  }
+
+  /**
    * Phase 9 Packet 3 - Opportunity -> Customer -> Booking Integration
    * Convert an Opportunity into a Booking atomically.
    */
@@ -546,11 +595,8 @@ export class OpportunityService {
         ...dto,
         customer_id: customer.id,
         property_id: opp.property_id,
-        source: opp.source,
-        campaign: opp.campaign,
-        utm_source: opp.utm_source,
-        utm_medium: opp.utm_medium,
-        utm_campaign: opp.utm_campaign,
+        // Override any provided amounts with the agreed opportunity value if needed, 
+        // but typically DTO provides exact booking token/agreed price.
       };
       
       const booking = await BookingService.createBooking(user, bookingDto, tx);
@@ -570,3 +616,4 @@ export class OpportunityService {
     });
   }
 }
+

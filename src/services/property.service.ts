@@ -1,15 +1,35 @@
 import { PrismaClient, Property } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
-import { Roles } from '@rrh-ems/shared';
+import { Roles, PropertyAvailabilityType } from '@rrh-ems/shared';
 import { can } from '../authz/authorization';
 import { Permissions } from '@rrh-ems/shared';
 import { WorkflowEngine } from '../workflows/workflowEngine';
 import { WorkflowDomain } from '../workflows/types';
 import { PropertyPolicy } from '../policies/property.policy';
 import { buildPropertyScope } from '../authz/dataScope';
+import { slugify, generateUniqueSlug } from '../utils/slugify';
 
 const prisma = new PrismaClient();
 const p = prisma as any;
+
+/**
+ * Derives the public-facing availability status from internal property state.
+ * AVAILABLE: LIVE and no active lock
+ * RESERVED: LOCKED with an active (non-expired) lock
+ * SOLD: BOOKED or SOLD
+ * UNAVAILABLE: PENDING_*, REJECTED, or any other internal state
+ *
+ * Expired locks resolve to AVAILABLE — the property is effectively free inventory.
+ */
+export function deriveAvailability(property: { status: string; locked_until: Date | null }): PropertyAvailabilityType {
+  if (property.status === 'LIVE') return 'AVAILABLE';
+  if (property.status === 'LOCKED') {
+    if (property.locked_until && property.locked_until < new Date()) return 'AVAILABLE';
+    return 'RESERVED';
+  }
+  if (property.status === 'BOOKED' || property.status === 'SOLD') return 'SOLD';
+  return 'UNAVAILABLE';
+}
 
 export class PropertyService {
   private static async generateNextPropertyCode(): Promise<string> {
@@ -19,7 +39,7 @@ export class PropertyService {
     return `RRH-PR-${currentYear}-${seq}`;
   }
 
-  static async listProperties(user: TokenPayload, filters: { brand?: string; status?: string }) {
+  static async listProperties(user: TokenPayload, filters: { brand?: string; status?: string; project_id?: number }) {
     const whereCondition = await buildPropertyScope(user);
     
     if (filters.brand) {
@@ -27,6 +47,9 @@ export class PropertyService {
     }
     if (filters.status) {
       whereCondition.status = filters.status;
+    }
+    if (filters.project_id) {
+      whereCondition.project_id = filters.project_id;
     }
 
     return await p.property.findMany({
@@ -53,6 +76,15 @@ export class PropertyService {
     const branchId = user.branchId || 1;
     const employeeId = user.employeeId || 1;
 
+    if (data.project_id) {
+      const project = await p.project.findFirst({
+        where: { id: data.project_id, company_id: companyId }
+      });
+      if (!project) {
+        throw { status: 400, message: 'Invalid or unauthorized project reference' };
+      }
+    }
+
     const propertyCode = await this.generateNextPropertyCode();
 
     let finalPmId = data.assigned_pm_id;
@@ -68,6 +100,12 @@ export class PropertyService {
     }
 
     return await p.$transaction(async (tx: any) => {
+      const baseSlug = slugify(`${data.title} ${data.location} ${data.category}`);
+      const slug = await generateUniqueSlug(baseSlug, companyId, async (s: string, cId: number) => {
+        const existing = await tx.property.findFirst({ where: { slug: s, company_id: cId } });
+        return !!existing;
+      });
+
       const property = await tx.property.create({
         data: {
           property_code: propertyCode,
@@ -83,6 +121,7 @@ export class PropertyService {
           address: data.address || null,
           bedrooms: data.bedrooms ? Number(data.bedrooms) : null,
           bathrooms: data.bathrooms ? Number(data.bathrooms) : null,
+          project_id: data.project_id || null,
           facing: data.facing || null,
           amenities: data.amenities || null,
           possession_status: data.possession_status || null,
@@ -90,6 +129,16 @@ export class PropertyService {
           assigned_pm_id: finalPmId,
           status: 'PENDING_VERIFICATION',
           created_by_id: employeeId,
+          // WR-2: Structured location fields
+          state: data.state || null,
+          city: data.city || null,
+          locality: data.locality || null,
+          pincode: data.pincode || null,
+          latitude: data.latitude != null ? Number(data.latitude) : null,
+          longitude: data.longitude != null ? Number(data.longitude) : null,
+          listing_type: data.listing_type || 'NEW',
+          // WR-6: SEO slug
+          slug,
         },
       });
 
@@ -114,6 +163,67 @@ export class PropertyService {
       });
 
       return property;
+    });
+  }
+
+  static async updateProperty(user: TokenPayload, propertyId: number, data: any) {
+    if (!can(user, Permissions.PROPERTIES_UPDATE)) {
+      throw { status: 403, message: 'Forbidden: Missing properties.update permission' };
+    }
+
+    const companyId = user.companyId || 1;
+
+    // Validate that the property exists and belongs to the allowed scope
+    const whereCondition = await buildPropertyScope(user);
+    const property = await p.property.findFirst({
+      where: {
+        id: propertyId,
+        ...whereCondition,
+      }
+    });
+
+    if (!property) throw { status: 404, message: 'Property not found or unauthorized' };
+
+    // Validate project_id cross-company reference if provided
+    if (data.project_id) {
+      const project = await p.project.findFirst({
+        where: { id: data.project_id, company_id: companyId }
+      });
+      if (!project) throw { status: 400, message: 'Invalid or unauthorized project reference' };
+    }
+
+    if (data.assigned_pm_id && data.assigned_pm_id !== property.assigned_pm_id) {
+      const pm = await p.employee.findFirst({
+        where: { id: data.assigned_pm_id, company_id: companyId }
+      });
+      if (!pm) throw { status: 400, message: 'Invalid assigned_pm_id or does not belong to your company' };
+    }
+
+    // Explicitly exclude workflow fields
+    const safeData: any = {};
+    const safeKeys = [
+      'title', 'description', 'brand_type', 'category', 'price', 'area_sqft', 
+      'location', 'address', 'bedrooms', 'bathrooms', 'facing', 'amenities', 
+      'possession_status', 'assigned_pm_id', 'project_id', 'details',
+      // WR-2: Structured location fields
+      'state', 'city', 'locality', 'pincode', 'latitude', 'longitude', 'listing_type'
+    ];
+
+    for (const key of safeKeys) {
+      if (data[key] !== undefined) {
+        if (key === 'bedrooms' || key === 'bathrooms') {
+          safeData[key] = data[key] ? Number(data[key]) : null;
+        } else if (key === 'latitude' || key === 'longitude') {
+          safeData[key] = data[key] != null ? Number(data[key]) : null;
+        } else {
+          safeData[key] = data[key];
+        }
+      }
+    }
+
+    return await p.property.update({
+      where: { id: propertyId },
+      data: safeData,
     });
   }
 
@@ -263,6 +373,55 @@ export class PropertyService {
       });
 
       return updated;
+    });
+  }
+
+  static async togglePublication(user: TokenPayload, propertyId: number, companyId: number, isPublished: boolean) {
+    if (!can(user, Permissions.PROPERTIES_UPDATE)) {
+      throw { status: 403, message: 'Forbidden: Missing properties.update permission' };
+    }
+
+    const property = await p.property.findFirst({
+      where: { id: propertyId, company_id: user.companyId },
+    });
+    if (!property) throw { status: 404, message: 'Property not found or unauthorized' };
+
+    if (companyId !== user.companyId) {
+      throw { status: 403, message: 'Cannot publish to a different company' };
+    }
+
+    const publication = await p.propertyPublication.upsert({
+      where: {
+        property_id_company_id: { property_id: propertyId, company_id: companyId },
+      },
+      update: {
+        is_published: isPublished,
+        published_at: isPublished ? new Date() : null,
+      },
+      create: {
+        property_id: propertyId,
+        company_id: companyId,
+        is_published: isPublished,
+        published_at: isPublished ? new Date() : null,
+      },
+    });
+
+    return publication;
+  }
+
+  static async getPublications(user: TokenPayload, propertyId: number) {
+    if (!can(user, Permissions.PROPERTIES_READ)) {
+      throw { status: 403, message: 'Forbidden: Missing properties.read permission' };
+    }
+
+    const property = await p.property.findFirst({
+      where: { id: propertyId, company_id: user.companyId },
+    });
+    if (!property) throw { status: 404, message: 'Property not found or unauthorized' };
+
+    return await p.propertyPublication.findMany({
+      where: { property_id: propertyId },
+      include: { company: { select: { id: true, name: true, code: true } } },
     });
   }
 }

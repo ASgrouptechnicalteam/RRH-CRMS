@@ -211,7 +211,7 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
     it('distribution monitor should exclude AGENT workloads entirely', async () => {
       const res = await request(app)
         .get('/api/v1/leads/distribution-monitor')
-        .set('Authorization', `Bearer ${adminToken}`);
+        .set('Authorization', `Bearer ${mdToken}`);
         
       expect(res.status).toBe(200);
       const telecallers = res.body.telecallers;

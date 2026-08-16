@@ -137,6 +137,12 @@ export const Permissions = {
   DOCUMENTS_READ: 'documents.read',
   DOCUMENTS_VERIFY: 'documents.verify',
   DOCUMENTS_DELETE: 'documents.delete',
+  COMPLAINTS_CREATE: 'complaints.create',
+  COMPLAINTS_READ: 'complaints.read',
+  COMPLAINTS_UPDATE: 'complaints.update',
+  COMPLAINTS_ASSIGN: 'complaints.assign',
+  COMPLAINTS_RESOLVE: 'complaints.resolve',
+  COMPLAINTS_CLOSE: 'complaints.close',
 } as const;
 
 export type Permission = typeof Permissions[keyof typeof Permissions];
@@ -177,6 +183,12 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.DOCUMENTS_READ,
     Permissions.DOCUMENTS_VERIFY,
     Permissions.DOCUMENTS_DELETE,
+    Permissions.COMPLAINTS_CREATE,
+    Permissions.COMPLAINTS_READ,
+    Permissions.COMPLAINTS_UPDATE,
+    Permissions.COMPLAINTS_ASSIGN,
+    Permissions.COMPLAINTS_RESOLVE,
+    Permissions.COMPLAINTS_CLOSE,
     // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
   ],
   
@@ -213,9 +225,10 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.DOCUMENTS_READ,
     Permissions.DOCUMENTS_VERIFY,
     Permissions.CUSTOMERS_KYC_WRITE,
+    Permissions.COMPLAINTS_READ,
   ],
   
-  [Roles.MARKETING_DIRECTOR]: [
+[Roles.MARKETING_DIRECTOR]: [
     Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
@@ -262,6 +275,12 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.PAYMENTS_READ,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_READ,
+    Permissions.COMPLAINTS_CREATE,
+    Permissions.COMPLAINTS_READ,
+    Permissions.COMPLAINTS_UPDATE,
+    Permissions.COMPLAINTS_ASSIGN,
+    Permissions.COMPLAINTS_RESOLVE,
+    Permissions.COMPLAINTS_CLOSE,
   ],
   
   [Roles.DIGITAL_LEAD_OPERATOR]: [
@@ -286,6 +305,8 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.PAYMENTS_READ,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_READ,
+    Permissions.COMPLAINTS_READ,
+    Permissions.COMPLAINTS_UPDATE,
   ],
   
   [Roles.TELECALLER]: [
@@ -336,6 +357,12 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
     Permissions.DOCUMENTS_READ,
+    Permissions.COMPLAINTS_CREATE,
+    Permissions.COMPLAINTS_READ,
+    Permissions.COMPLAINTS_UPDATE,
+    Permissions.COMPLAINTS_ASSIGN,
+    Permissions.COMPLAINTS_RESOLVE,
+    Permissions.COMPLAINTS_CLOSE,
   ],
   
   [Roles.DIGITAL_MARKETING_EXECUTIVE]: [

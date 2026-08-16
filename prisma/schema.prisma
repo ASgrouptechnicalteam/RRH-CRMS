@@ -16,7 +16,7 @@ model Company {
   code                String @unique
   property_type_group String @default("RADHA_REAL_HOMES")
 
-  branches                Branch[]
+branches                Branch[]
   employees               Employee[]
   leads                   Lead[]
   opportunities           Opportunity[]
@@ -26,7 +26,8 @@ model Company {
   daily_targets           DailyTarget[]
   bookings                Booking[]
   payments                Payment[]
-documents     Document[]
+  documents     Document[]
+  complaints      Complaint[]
   
   booking_portal_mappings BookingPortalMapping[]
   integration_events      IntegrationEvent[]
@@ -149,6 +150,7 @@ model Employee {
   // Hierarchy Management
   manager        Employee?  @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
   direct_reports Employee[] @relation("EmployeeManager")
+  complaints      Complaint[] @relation("AssignedComplaints")
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -542,6 +544,7 @@ model Property {
   bookings          Booking[]
   opportunities     Opportunity[]
   documents         Document[]
+  complaints      Complaint[] @relation("PropertyComplaints")
 
   locked_until         DateTime?
   locked_by_booking_id Int?      @unique
@@ -730,8 +733,45 @@ model AuthSession {
   @@index([refresh_token_hash])
 }
 
+model Complaint {
+  id                Int     @id @default(autoincrement())
+  complaint_code    String  @unique
+  company_id        Int
+  customer_id       Int
+  booking_id        Int?    // nullable — optional linkage to a Booking
+  property_id       Int?    // nullable — optional linkage; derivable from Booking.property_id
+  title             String
+  description       String? // nullable Text
+  category          String? // nullable
+  priority          String  @default("MEDIUM") // LOW | MEDIUM | HIGH
+  status            String  @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED | CLOSED | REOPENED
+  assigned_employee_id Int? // nullable — foreign key to Employee
+  resolution_description String? // nullable Text
+  resolved_by       Int?    // nullable — foreign key to Employee (who resolved)
+  resolved_at       DateTime? // nullable — when complaint was resolved
+  closed_at         DateTime? // nullable — when complaint was closed
+  closure_reason    String? // nullable — controlled vocabulary: RESOLVED, CUSTOMER_UNSATISFIED, NOT_APPLICABLE, CUSTOMER_WITHDRAWN
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  company     Company   @relation(fields: [company_id], references: [id])
+  customer    Customer  @relation("CustomerComplaints", fields: [customer_id], references: [id])
+  booking     Booking?  @relation("BookingComplaints", fields: [booking_id], references: [id], onDelete: SetNull)
+  property    Property? @relation("PropertyComplaints", fields: [property_id], references: [id], onDelete: SetNull)
+  assigned_employee Employee? @relation("AssignedComplaints", fields: [assigned_employee_id], references: [id], onDelete: SetNull)
+
+  @@index([company_id])
+  @@index([customer_id])
+  @@index([booking_id])
+  @@index([property_id])
+  @@index([status])
+  @@index([priority])
+  @@index([assigned_employee_id])
+  @@index([created_at])
+}
+
 // ─────────────────────────────────────────────────────────────
-// CUSTOMER 360 FOUNDATION — Phase 3
+// COMPLAINT MANAGEMENT — Phase 14-1
 // ─────────────────────────────────────────────────────────────
 
 model Customer {
@@ -762,6 +802,7 @@ model Customer {
   bookings      Booking[]
   documents     Document[]
   notifications CustomerNotification[]
+complaints      Complaint[] @relation("CustomerComplaints")
 
   pan_number     String? // Encrypted at rest (AES-256-CBC via encryptData) — Phase 11 Packet 3C
   aadhaar_number String? // Encrypted at rest (AES-256-CBC via encryptData) — Phase 11 Packet 3C
@@ -821,6 +862,7 @@ model Booking {
   opportunity     Opportunity?
   locked_property Property?     @relation("PropertyLock")
   documents       Document[]
+  complaints      Complaint[] @relation("BookingComplaints")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

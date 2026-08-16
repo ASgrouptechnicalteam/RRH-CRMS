@@ -1,0 +1,126 @@
+ell. 
+●​
+Current market: Telangana; planned future expansion to other states. 
+●​
+Separate logo, branding, content and customer account system. 
+3.2 Sonthillu 
+●​
+Residential/housing-oriented company. 
+●​
+Handles own houses, villas, apartments/flats and related residential inventory. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+Resale is supported; owners can submit property for Sonthillu to market/sell. 
+●​
+Separate logo, branding, content and customer account system. 
+3.3 Connected ecosystem 
+●​
+Cross-branding is approved by the owner. 
+●​
+Cross-brand references should appear in footer, About and relevant contextual discovery moments, not dominate 
+the UI. 
+●​
+If a visitor is looking for a category primarily handled by the other company, the site may provide a contextual link to 
+that company. 
+●​
+A property can be associated with both companies and published independently per company. 
+4. Product Goals & Non-Goals 
+Goals 
+●​
+Launch two professional real-estate websites. 
+●​
+Make discovery the central experience. 
+●​
+Provide familiar industry-standard Normal Search. 
+●​
+Provide AI Search as a differentiator. 
+●​
+Provide property/project pages that convert browsing into enquiries. 
+●​
+Support seller/resale submission into CRM. 
+●​
+Provide shortlist, compare and multi-property enquiry. 
+●​
+Make search recommendations a production feature. 
+●​
+Provide separate website admin panels for analytics/configuration. 
+●​
+Keep CRM as business/property source of truth. 
+●​
+Build for future expansion without overbuilding V1. 
+Non-goals for V1 
+●​
+Rental marketplace. 
+●​
+Direct seller-to-customer contact. 
+●​
+Public seller identity. 
+●​
+Replicating CRM operational workflows in the website. 
+●​
+Full ML recommendation stack from day one. 
+●​
+Running large AI inference on Hostinger Business. 
+●​
+Duplicating authoritative property records in both website databases. 
+●​
+Overly complex personalization before enough behavioral data exists. 
+5. Personas & Actors 
+Actor 
+Goals 
+System 
+Anonymous visitor 
+Search, browse, compare, enquire 
+Public website 
+RRH customer 
+Save/search/enquire efficiently 
+RRH account 
+Sonthillu customer 
+Save/search/enquire efficiently 
+Sonthillu account 
+Seller/owner 
+Submit property for review 
+Website → CRM 
+Project Manager 
+Verify/enrich seller submission, site visit 
+CRM 
+Digital Marketing 
+Review photos/content/presentation 
+CRM 
+MD/approver 
+Final approval before publication 
+CRM 
+RRH website admin 
+Monitor search/AI/recommendations/content 
+RRH Admin 
+Sonthillu website admin 
+Monitor search/AI/recommendations/content 
+Sonthillu Admin 
+CRM/API 
+Authoritative business/property data 
+RRH-CRMS 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+6. Confirmed Business Rules 
+1. Rentals are not a website offering. 
+2. Sold and Reserved inventory cannot be live/public. 
+3. Inventory availability includes Available, Reserved and Sold. 
+4. Project lifecycle and inventory availability must be modeled separately. 
+5. New vs Resale is an explicit search dimension. 
+6. Source type is internal and never public by default. 
+7. The same physical property/project may be associated with RRH and Sonthillu. 
+8. Publication is independently controlled per company. 
+9. Exact property location is not public; approximate location is used. 
+10. CRM site verification can capture current latitude, longitude, accuracy, timestamp and employee identity. 
+11. Seller identity/contact details are never exposed to customers. 
+12. Prices are negotiable; do not present them as falsely fixed rates. 
+13. Price ranges may be displayed such as ₹45L – ₹53L. 
+14. RERA can be shown as a public verified indicator where applicable; detailed documents remain internal. 
+15. Logged-in customers can provide only preferred contact time when identity is already known. 
+16. Guests can login or use a guest enquiry form. 
+17. Both Request a Call and Call Now are available. 
+18. Users can enquire about multiple selected properties in one ac

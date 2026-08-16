@@ -61,11 +61,9 @@ async function main() {
     { name: Roles.PROJECT_MANAGER, is_system: false, is_invisible: false },
     { name: Roles.DIGITAL_LEAD_OPERATOR, is_system: false, is_invisible: false },
     { name: Roles.TELECALLER, is_system: false, is_invisible: false },
-    { name: Roles.CHANNEL_PARTNER_MANAGER, is_system: false, is_invisible: false },
     { name: Roles.DIGITAL_MARKETING_HEAD, is_system: false, is_invisible: false },
     { name: Roles.FINANCE, is_system: false, is_invisible: false },
     { name: Roles.AGENT, is_system: false, is_invisible: false },
-    { name: Roles.CHANNEL_PARTNER, is_system: false, is_invisible: false },
     { name: Roles.DIGITAL_MARKETING_EXECUTIVE, is_system: false, is_invisible: false },
   ];
 

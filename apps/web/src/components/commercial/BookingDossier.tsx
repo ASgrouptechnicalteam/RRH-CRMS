@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { ArrowLeft, CheckCircle, XCircle, IndianRupee, FileText, User, MapPin } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, IndianRupee, FileText, User, MapPin, Clock } from 'lucide-react';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { useToast } from '../../context/ToastContext';
 
@@ -12,6 +12,7 @@ export const BookingDossier: React.FC = () => {
   const { fetchWithAuth, user } = useAuth();
   const { showToast } = useToast();
   const [booking, setBooking] = useState<any>(null);
+  const [handoff, setHandoff] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -23,7 +24,11 @@ export const BookingDossier: React.FC = () => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/bookings/${id}`);
       if (res.ok) {
-        setBooking(await res.json());
+        const data = await res.json();
+        setBooking(data);
+        if (data.status === 'CONFIRMED') {
+          fetchHandoffStatus();
+        }
       } else {
         showToast('Failed to load booking details', 'error');
         navigate('/bookings');
@@ -32,6 +37,18 @@ export const BookingDossier: React.FC = () => {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHandoffStatus = async () => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/bookings/${id}/handoff-status`);
+      if (res.ok) {
+        const data = await res.json();
+        setHandoff(data);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -69,6 +86,16 @@ export const BookingDossier: React.FC = () => {
               Booking {booking.booking_code}
             </h2>
             <p className="text-xs text-slate-500 mt-1">Status: <strong className="text-slate-700">{booking.status}</strong></p>
+            {handoff && (
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Portal: <strong className={
+                  handoff.handoff_status === 'ACTIVE' ? 'text-green-600' :
+                  handoff.handoff_status === 'FAILED' ? 'text-red-600' :
+                  'text-amber-600'
+                }>{handoff.handoff_status}</strong>
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             {booking.status === 'PENDING' && user?.permissions?.includes('BOOKINGS_CONFIRM') && (

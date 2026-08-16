@@ -18,7 +18,7 @@ const CreateBookingSchema = z.object({
 });
 
 const UpdateBookingStatusSchema = z.object({
-  status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED']),
+  status: z.enum(['TOKEN_RECEIVED', 'CONFIRMED', 'CANCELLED', 'COMPLETED']),
 });
 
 // Routes
@@ -50,6 +50,19 @@ router.get(
   }
 );
 
+router.get(
+  '/:id/handoff-status',
+  requireAuthz(Permissions.BOOKINGS_READ as any),
+  async (req: any, res, next) => {
+    try {
+      const handoff = await BookingService.getHandoffStatus(req.user, parseInt(req.params.id, 10));
+      res.json(handoff);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.post(
   '/',
   requireAuthz(Permissions.BOOKINGS_CREATE as any),
@@ -64,18 +77,41 @@ router.post(
   }
 );
 
+router.post(
+  '/:id/confirm',
+  requireAuthz(Permissions.BOOKINGS_CONFIRM as any),
+  async (req: any, res, next) => {
+    try {
+      const booking = await BookingService.confirmBooking(req.user, parseInt(req.params.id, 10));
+      res.json(booking);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/:id/cancel',
+  requireAuthz(Permissions.BOOKINGS_CANCEL as any),
+  async (req: any, res, next) => {
+    try {
+      const booking = await BookingService.cancelBooking(req.user, parseInt(req.params.id, 10));
+      res.json(booking);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.put(
   '/:id/status',
-  requireAuthz(Permissions.BOOKINGS_CONFIRM as any), // We'll simplify and say CONFIRM permission covers this, or we can check specific status inside service
+  // Use BOOKINGS_UPDATE as base for this generic facade, 
+  // the service layer enforces specific permissions (like CONFIRM/CANCEL)
+  requireAuthz(Permissions.BOOKINGS_UPDATE as any), 
   async (req: any, res, next) => {
     try {
       const { status } = UpdateBookingStatusSchema.parse(req.body);
       
-      // Additional permission check if cancelling
-      if (status === 'CANCELLED' && !req.user.permissions.includes(Permissions.BOOKINGS_CANCEL)) {
-        return res.status(403).json({ error: 'Permission denied to cancel booking' });
-      }
-
       const booking = await BookingService.updateBookingStatus(req.user, parseInt(req.params.id, 10), status);
       res.json(booking);
     } catch (error) {

@@ -1,0 +1,883 @@
+RRH-CRMS REQUIREMENTS 
+FOR RRH + SONTHILLU WEBSITES 
+CRM → Website data, Website → CRM data, business rules and publication requirements 
+Version 1.0 • Discussion-derived working specification 
+14 August 2026 
+Purpose: define the CRM-side information and integration requirements for the two public websites. This document 
+records confirmed decisions from the planning discussion. Where an exact CRM field, API route or enum was not 
+discussed, it is marked as needing repository verification rather than guessed. 
+ 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+1. Document Control 
+Item 
+Value 
+Purpose 
+Define what RRH-CRMS must provide to the RRH and Sonthillu 
+websites and what the websites must send back. 
+Consumers 
+RRH website and Sonthillu website 
+CRM 
+RRH-CRMS 
+Property source of truth 
+RRH-CRMS 
+Customer accounts 
+Separate RRH and Sonthillu customer databases/accounts 
+Website content language 
+English 
+AI Search language 
+Multilingual and mixed-language 
+Public availability rule 
+Reserved and Sold inventory are not live public listings 
+Document status 
+Working requirements; final field/API names must be reconciled with 
+actual CRM 
+ 
+1.1 Rules for interpreting this document 
+●​
+CONFIRMED = explicitly decided in the discussion. 
+●​
+PROPOSED/CONCEPTUAL = structure needed to implement confirmed behavior; exact implementation must 
+match CRM. 
+●​
+TBD = not specified yet; must be verified before development. 
+●​
+No technical assumption should override an existing CRM business rule. 
+2. Business Scope Relevant to CRM 
+2.1 RRH 
+●​
+Commercial properties, agricultural land, open plots and related real-estate categories. 
+●​
+Rentals are not handled. 
+●​
+Both company/own inventory and resale/owner-submitted properties are supported. 
+●​
+Current operating geography is Telangana; the model must support future state expansion. 
+2.2 Sonthillu 
+●​
+Residential/housing properties including apartments/flats, independent houses and villas. 
+●​
+Rentals are not handled. 
+●​
+Both company/own inventory and resale/owner-submitted properties are supported. 
+●​
+Current operating geography is Telangana; the model must support future state expansion. 
+2.3 Connected brands 
+●​
+RRH and Sonthillu are separate companies/brands with separate domains, branding and customer accounts. 
+●​
+They are connected through the same CRM ecosystem. 
+●​
+Cross-branding is approved by the owner. 
+●​
+A property can be associated with both companies, and publication can be independent per brand. 
+3. System Boundary 
+RRH Website​
+    │  Secure API​
+    ▼​
+RRH-CRMS​
+    ▲​
+    │  Secure API​
+    │​
+Sonthillu Website​
+​
+CRM owns:​
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+- authoritative property/project data​
+- lifecycle and availability​
+- verification​
+- publication approval​
+- internal/source/seller information​
+- business workflows​
+​
+Websites own:​
+- public presentation​
+- public search experience​
+- customer account experience​
+- AI Search interface​
+- recommendations​
+- public enquiries​
+- website analytics​
+ 
+Websites must not directly read/write the CRM database. Any website search index/cache is derived data and must not 
+become a competing business source of truth. 
+4. CRM → Website Requirements 
+4.1 Live inventory eligibility 
+●​
+The website API must return only properties that the current brand is authorized to publish. 
+●​
+The property must have completed the CRM approval/publication requirements for that brand. 
+●​
+The property must be currently Available to appear as live purchasable inventory. 
+●​
+Reserved properties must not be returned as live inventory. 
+●​
+Sold properties must not be returned as live inventory. 
+●​
+Draft, rejected, review-only or otherwise unpublished records must not be exposed. 
+●​
+Brand scoping must be enforced server-side, not only by frontend filtering. 
+●​
+Seller identity and internal source type must not be part of public website payloads. 
+4.2 Independent brand publication 
+Property A​
+  RRH publication     = Published​
+  Sonthillu publication = Not Published​
+​
+Property B​
+  RRH publication     = Published​
+  Sonthillu publication = Published​
+ 
+The CRM must be capable of this independent publication model because a shared physical property/project may be 
+handled by both companies. 
+4.3 Public property information 
+Data group 
+Website requirement 
+Internal-only? 
+Identity 
+Stable property ID/reference, title, slug 
+No, safe fields only 
+Classification 
+Property type/category, New/Resale 
+No 
+Company association 
+Brand-specific public eligibility 
+Controlled 
+Price 
+Minimum and maximum/price range in INR 
+No 
+Location 
+State/city/locality + safe public location 
+No 
+Exact location 
+Exact address/coordinates 
+Yes 
+Size 
+Built-up/carpet/plot area/acreage as 
+applicable 
+No 
+Specifications 
+BHK, floor, facing, road width, etc. where 
+applicable 
+Usually no 
+Amenities/features 
+Applicable public amenities 
+Usually no 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+RERA 
+Public verified badge/status as approved 
+Public subset 
+RERA documents 
+Detailed documents/checks 
+Yes 
+Media 
+Approved photos/videos 
+Safe public media 
+Availability 
+Live inventory only when Available 
+Internal states retained in CRM 
+Verification 
+Safe public badge/indicator 
+Detailed checks internal 
+Source type 
+Owner/company/channel-partner origin 
+Yes 
+Seller details 
+Seller identity/contact 
+Yes 
+Internal notes/approval 
+CRM-only notes/comments 
+Yes 
+ 
+5. Property & Project Data Requirements 
+5.1 Property taxonomy 
+The exact canonical taxonomy must be read from the current CRM. The websites need stable IDs plus safe public 
+labels. 
+Brand 
+Known categories from the discussion 
+RRH 
+Commercial; Agricultural Land; Open Plots; other RRH categories; 
+New and Resale variants 
+Sonthillu 
+Apartments/Flats; Independent Houses; Villas; other residential 
+categories; New and Resale variants 
+ 
+5.2 Standalone + project inventory 
+●​
+Support standalone properties. 
+●​
+Support projects/developments. 
+●​
+Apartment projects may contain towers/buildings, floors and units. 
+●​
+Plot projects/layouts may contain individual plots. 
+●​
+Project pages require project-level data plus current available inventory. 
+●​
+The exact project/unit model must be reconciled with existing CRM tables/models. 
+5.3 Conceptual hierarchy 
+Project​
+  ├── Project information​
+  ├── Location​
+  ├── Project/construction status​
+  ├── Amenities​
+  └── Inventory​
+       ├── Unit/Plot A → Available​
+       ├── Unit/Plot B → Reserved​
+       └── Unit/Plot C → Sold​
+ 
+6. Status & Publication Requirements 
+6.1 Public availability 
+Inventory state 
+CRM retains? 
+Live public listing? 
+Available 
+Yes 
+Yes, if published/approved for brand 
+Reserved 
+Yes 
+No 
+Sold 
+Yes 
+No 
+ 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+6.2 Separate concepts 
+Availability, project lifecycle/construction status and website publication should remain separate concepts. Exact enum 
+names must be taken from the existing CRM. 
+Conceptual:​
+availabilityStatus = AVAILABLE | RESERVED | SOLD​
+projectStatus      = existing CRM project lifecycle​
+constructionStatus = existing CRM construction lifecycle​
+publicationStatus  = existing CRM publication/approval lifecycle​
+ 
+6.3 Publication prerequisites 
+●​
+Required CRM verification complete. 
+●​
+Required Project Manager/site verification complete for submitted resale/new property. 
+●​
+Digital Marketing review complete where required. 
+●​
+MD approval complete where required. 
+●​
+Property marked published for the relevant brand. 
+●​
+Property currently Available. 
+7. Seller / Resale Workflow Requirements 
+7.1 Website intake to CRM 
+Seller​
+  ↓​
+Website seller registration/intake​
+  ↓​
+Sell New Property or Resell Property​
+  ↓​
+Basic details​
+  ↓​
+CRM intake​
+  ↓​
+Project Manager assignment​
+ 
+The public seller form does not require images during initial submission. 
+7.2 CRM Project Manager stage 
+●​
+Receive assigned seller submission. 
+●​
+Visit the property. 
+●​
+Verify property and seller-provided information. 
+●​
+Update/correct property details where necessary. 
+●​
+Add or update amenities. 
+●​
+Capture property photographs. 
+●​
+Capture exact property location in CRM. 
+●​
+Check applicable RERA and other verification information. 
+●​
+Complete internal verification notes/checks. 
+7.3 Digital Marketing stage 
+●​
+Review property photographs. 
+●​
+Check public text/spelling. 
+●​
+Check presentation/marketing readiness. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+7.4 MD approval stage 
+●​
+Final management approval before publication. 
+●​
+Only approved/published inventory becomes visible on the relevant website. 
+7.5 Seller vs verified data 
+The workflow requires CRM to distinguish initial seller input from the final verified/current property information wherever 
+the existing CRM design permits. The PM may modify seller-provided values after verification. 
+8. CRM Location Capture Requirements 
+Location capture is an internal CRM operation during Project Manager site verification. It is not part of the public seller 
+intake workflow. 
+●​
+Provide a CRM 'Capture Current Location' action. 
+●​
+Show clear instructions to stand at the actual property location before capture. 
+●​
+Request device/browser location permission with an explanatory message. 
+●​
+Store latitude. 
+●​
+Store longitude. 
+●​
+Store location accuracy when available. 
+●​
+Store capture timestamp. 
+●​
+Store the employee identity responsible for capture. 
+●​
+Allow PM to manually verify/correct address/public location representation. 
+●​
+Keep exact coordinates internal; the public website receives only a safe approximate location. 
+9. Price Requirements 
+●​
+All listed real-estate prices are negotiable; customer-facing UI should not falsely imply fixed transaction rates. 
+●​
+Property/project price may be represented as a range such as ₹45L – ₹53L. 
+●​
+CRM should expose structured numeric price boundaries in INR to allow search and ranking. 
+●​
+Minimum/maximum search budget is a customer requirement, not a promise of final transaction price. 
+Examples:​
+  max budget ₹50L → max = 5,000,000​
+  ₹40L–₹60L → min = 4,000,000; max = 6,000,000​
+  above ₹1Cr → min = 10,000,000​
+ 
+10. Location & Geographic Search Data 
+●​
+Launch market is Telangana. 
+●​
+Schema must support future additional states. 
+●​
+CRM should expose structured state/city/locality/project/location identifiers where available. 
+●​
+Public search may use safe location data for map and proximity functions. 
+●​
+Exact property coordinates remain internal. 
+●​
+For future 'near metro/landmark' matching, the website/search layer needs a reliable relationship or coordinate 
+dataset. CRM should provide enough canonical property location data to support that when the geographic dataset 
+is available. 
+Visakhapatnam was used only as a sample location in the discussion; it is not current launch scope. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+11. Search Requirements from CRM 
+11.1 Normal Search 
+●​
+Location. 
+●​
+Property category/type. 
+●​
+New/Resale/Any. 
+●​
+Minimum budget. 
+●​
+Maximum budget. 
+●​
+Property-type-specific searchable attributes. 
+●​
+Amenities/features where supported. 
+●​
+Project/unit relationship. 
+●​
+Availability/publication. 
+●​
+Safe public location. 
+●​
+Approved media. 
+11.2 AI Search data contract 
+The AI does not need to understand the CRM schema directly. It converts natural-language input into structured 
+requirements. CRM must expose canonical values/relationships that the website matching engine can query. 
+AI requirement 
+CRM data needed 
+Budget 
+Structured price min/max in INR 
+Property type 
+Canonical type IDs/labels 
+BHK 
+BHK field for applicable residential properties 
+Location 
+Canonical state/city/locality/project identifiers 
+Near landmark 
+Coordinates/geo relationship or supported location index 
+Amenities 
+Canonical amenity IDs + property associations 
+Area/size 
+Numeric value + unit 
+New/Resale 
+Canonical classification 
+Availability 
+Current availability state 
+Project 
+Project ↔ inventory relationship 
+Other property-specific need 
+Canonical field when business supports it 
+ 
+11.3 Applicability 
+CRM/search data must distinguish Not Applicable from Missing. For example, agricultural land has no BHK; that should 
+not be represented as a failed/false BHK value. 
+12. Dynamic Match & Ranking Engine Data Requirements 
+The matching algorithm must be dynamic and requirement-aware. Fixed global percentages are not acceptable as the 
+universal model because different users express different requirements and different property types have different fields. 
+12.1 Requirement classes 
+State 
+Meaning 
+Hard 
+User explicitly requires the condition 
+Strong preference 
+Important but can be compromised 
+Soft preference 
+Useful but not essential 
+Flexible 
+User explicitly permits variation 
+Unknown 
+User did not specify 
+Not applicable 
+Field does not apply to property type 
+Excluded 
+User explicitly does not want it 
+ 
+12.2 Data quality required for matching 
+●​
+Missing must remain distinguishable from False. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+●​
+Not Applicable must remain distinguishable from Missing. 
+●​
+Verified/final values should be distinguishable from unverified seller-entered values where needed. 
+●​
+Availability must be current. 
+●​
+Price must be numeric and structured. 
+●​
+Location must be structured enough for geographic matching. 
+●​
+Applicable property-specific attributes must be queryable. 
+12.3 Example behavior 
+If a customer searches for a 2BHK, an agricultural plot should not receive a poor BHK score; BHK is not applicable and 
+the property is outside the intended property-type candidate set. If a residential apartment has BHK missing, that is 
+unknown and should be handled differently from a verified non-match. 
+If a customer sets a maximum budget of ₹50L, exact/below-budget properties rank first. Slightly-above-budget 
+properties may be shown as related alternatives, clearly labeled as above budget, but must not silently replace exact 
+matches. 
+13. Search Recommendation Requirements 
+13.1 Required V1 recommendation data 
+●​
+Stable property IDs. 
+●​
+Property type/category. 
+●​
+Location. 
+●​
+Price. 
+●​
+Applicable specifications. 
+●​
+Amenities/features. 
+●​
+Availability. 
+●​
+Publication state. 
+●​
+Project relationship. 
+●​
+Approved media. 
+13.2 Recommendation categories 
+●​
+Exact/strong match results. 
+●​
+Related properties. 
+●​
+Slightly above-budget alternatives. 
+●​
+Nearby-location alternatives. 
+●​
+Alternative property types where valid. 
+●​
+Recently viewed properties. 
+●​
+Popular/featured properties for first-time visitors. 
+●​
+No-result recovery suggestions. 
+13.3 Brand isolation 
+●​
+RRH recommendations use RRH-approved live inventory. 
+●​
+Sonthillu recommendations use Sonthillu-approved live inventory. 
+●​
+A shared property is returned to a website only if it is separately published/eligible for that website. 
+●​
+Reserved and Sold properties do not appear as live recommendations. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+14. Website → CRM Enquiry Requirements 
+14.1 Request a Call 
+User 
+Website submits 
+CRM outcome 
+Logged-in 
+Known customer context + preferred contact 
+time + property/project context 
+Create/update CRM enquiry/lead 
+Guest 
+Name/contact + preferred contact time + 
+required consent + property/project context 
+Create/update CRM enquiry/lead 
+ 
+14.2 Call Now 
+Both websites also provide a direct Call Now action. The exact phone/telephony configuration is a deployment/business 
+setting, not a CRM property requirement. 
+14.3 Multi-property enquiry 
+●​
+User may select multiple properties. 
+●​
+Website sends selected property IDs plus customer/contact context. 
+●​
+CRM should support a single enquiry/request referencing multiple selected properties if its existing model permits; 
+otherwise an integration mapping must be defined. 
+14.4 Lead source 
+CRM should record whether the enquiry originated from RRH or Sonthillu website so management can compare 
+website performance. 
+15. Separate Customer Accounts 
+●​
+RRH and Sonthillu have separate customer login systems/databases. 
+●​
+Website customer records are not silently merged across the two brands. 
+●​
+Shortlist, compare and saved activity are scoped to the relevant brand account. 
+●​
+Cross-brand navigation can send the user to the other website, where a separate account can be used/created. 
+The exact customer-to-CRM identity linking strategy must be verified against the existing CRM authentication/customer 
+architecture. 
+16. Verification & RERA 
+●​
+CRM stores detailed property verification and document information. 
+●​
+RERA checking is part of internal verification where applicable. 
+●​
+Website can show an approved public RERA Verified indicator/status. 
+●​
+Detailed RERA documents and internal checks remain private to CRM. 
+●​
+A missing document/field must not be interpreted as verified. 
+17. Data That Must Not Be Exposed Publicly 
+CRM internal data 
+Website response 
+Seller identity/contact 
+Exclude 
+Source type 
+Exclude 
+Project Manager identity 
+Exclude 
+Internal notes 
+Exclude 
+Detailed verification notes 
+Exclude 
+Legal/internal documents 
+Exclude 
+Exact GPS coordinates 
+Exclude 
+Internal approval comments 
+Exclude 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+Internal channel-partner information 
+Exclude unless future requirement explicitly allows 
+ 
+18. Required CRM API Capabilities 
+Capability-level API requirements are below. Exact endpoint names and HTTP contracts must be taken from the 
+existing CRM implementation. 
+Capability 
+Direction 
+Requirement 
+Live property search 
+CRM → website 
+Brand-scoped, published + Available 
+inventory only 
+Property detail 
+CRM → website 
+Safe public details by ID/slug 
+Project search 
+CRM → website 
+Published project records 
+Project detail 
+CRM → website 
+Public project data + current available 
+inventory 
+Taxonomy/locations 
+CRM → website 
+Canonical property types, locations and 
+filters 
+Amenities/attributes 
+CRM → website 
+Applicable public search fields 
+Enquiry 
+Website → CRM 
+Create/update enquiry 
+Request a Call 
+Website → CRM 
+Create/update callback request 
+Multi-property enquiry 
+Website → CRM 
+Reference selected property IDs 
+Seller submission 
+Website → CRM 
+Create initial seller/property request 
+Publication/state update 
+CRM → website 
+Propagate publication/availability changes 
+Search/recommendation events 
+Website → analytics/CRM if required 
+Measure business-relevant behavior 
+ 
+18.1 API quality requirements 
+●​
+Versioning. 
+●​
+Typed/schema-validated contracts. 
+●​
+Authentication/authorization. 
+●​
+Brand scope. 
+●​
+Rate limiting. 
+●​
+Safe retries for idempotent operations. 
+●​
+Consistent errors. 
+●​
+Correlation/request IDs. 
+●​
+No internal fields in public DTOs. 
+●​
+Monitoring and audit logging. 
+19. Publication & Availability Synchronization 
+CRM state​
+   ↓​
+Company-specific publication eligibility​
+   ↓​
+Website API / cache / event​
+   ↓​
+RRH or Sonthillu public inventory​
+​
+Important transitions:​
+  published + available  → public​
+  available → reserved   → remove from live​
+  available/reserved → sold → remove from live​
+  unpublished/rejected   → never expose​
+ 
+●​
+The website must not rely on long-lived stale cache for availability. 
+●​
+If a property changes to Reserved/Sold, public search must stop presenting it as available. 
+●​
+If V1 lacks webhooks, use safe short-cache/revalidation behavior. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+●​
+CRM remains authoritative when website/cache and CRM disagree. 
+20. CRM Fields Required by Major Website Feature 
+Website feature 
+CRM data required 
+Normal Search 
+Location, type, New/Resale, budget, applicable attributes, 
+amenities, availability, publication 
+AI Search 
+Same canonical data plus searchable relationships and values 
+Property card 
+Title, primary photo, type, price range, location, key specs, 
+availability, verification badge 
+Property detail 
+Full safe public details, media, amenities, RERA-safe data, 
+approximate map 
+Project page 
+Project data, media, status, amenities, available inventory, price 
+range 
+Shortlist 
+Stable property IDs + current availability check 
+Compare 
+Stable IDs + comparable public fields 
+Request a Call 
+Property/project context + customer reference + preferred time 
+Multi-property enquiry 
+Selected property IDs + customer context 
+Sell Property 
+Seller intake endpoint + submission reference 
+Recommendations 
+Stable IDs + structured searchable attributes + 
+availability/publication 
+Analytics 
+Stable IDs/type/location identifiers for aggregation 
+ 
+21. Edge Cases 
+Case 
+CRM requirement/behavior 
+BHK not applicable (e.g. land) 
+Expose property type/applicability; do not treat BHK as false 
+BHK missing on apartment 
+Return unknown/null; matching engine handles uncertainty 
+Seller value differs from PM value 
+Public API returns current verified/final CRM value 
+Seller claims amenity, PM not verified 
+Do not present as verified if verification is required 
+Published for RRH only 
+RRH can return; Sonthillu must not 
+Published for both 
+Each website receives only its own eligible public representation 
+Reserved/Sold 
+Not live 
+Exact GPS exists 
+Keep private; return public-safe approximate location 
+Price missing 
+Return an explicit approved public state if supported; never invent a 
+value 
+Property becomes unpublished after caching 
+Public detail/search should revalidate safely 
+CRM unavailable 
+Website fails safely and hides internal error details 
+Duplicate enquiry 
+Use idempotency/deduplication where practical 
+Cross-brand unauthorized record 
+Never leak via search/recommendation 
+ 
+22. Observability & Audit 
+●​
+Log website API health and failures in a privacy-safe manner. 
+●​
+Track failed enquiry creation. 
+●​
+Track failed seller submission intake. 
+●​
+Track publication/state synchronization issues. 
+●​
+Use correlation/request IDs across website → API → CRM. 
+●​
+Audit sensitive publication/approval actions. 
+●​
+Do not write seller PII or internal notes into general logs. 
+23. CRM Integration Security 
+●​
+Public websites never connect directly to MySQL. 
+●​
+Authenticated API boundary between websites and CRM. 
+●​
+Server-side brand authorization. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+●​
+Least-privilege service credentials. 
+●​
+IDOR protection. 
+●​
+Rate limits. 
+●​
+No CRM secrets in browser code. 
+●​
+Separate public-read inventory endpoints from privileged internal write APIs. 
+●​
+Sensitive seller/location data protected. 
+24. Must Verify in Existing RRH-CRMS Before Development 
+1. Actual property model/table and current lifecycle. 
+2. Project/tower/floor/unit/plot model. 
+3. Current availability and publication fields/enums. 
+4. Existing property APIs. 
+5. Existing project/inventory APIs. 
+6. Existing customer/lead APIs. 
+7. Existing site-visit workflow and APIs. 
+8. Project Manager assignment workflow. 
+9. Existing RERA/document fields. 
+10. Existing media storage and media APIs. 
+11. Existing GPS/location fields. 
+12. Existing authorization/service-account model. 
+13. Existing CRM host/API configuration. 
+14. Customer Portal integration boundary. 
+15. Whether independent RRH/Sonthillu publication already exists or must be added. 
+25. Explicit Non-Assumptions 
+●​
+No fixed universal match percentages. 
+●​
+No rentals. 
+●​
+No seller-direct communication. 
+●​
+No public exact GPS. 
+●​
+No public seller/source information. 
+●​
+No public internal legal documents. 
+●​
+No final AI model chosen yet. 
+●​
+No map provider chosen yet. 
+●​
+No endpoint names are final. 
+●​
+No exact CRM lifecycle enum names are final until inspected. 
+●​
+No additional launch states beyond Telangana. 
+●​
+Visakhapatnam is only an example, not current launch scope. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+26. CRM Integration Acceptance Checklist 
+1.​ RRH website can retrieve only RRH-approved, published and Available inventory. 
+2.​ Sonthillu website can retrieve only Sonthillu-approved, published and Available inventory. 
+3.​ CRM can independently publish a shared property to either or both brands. 
+4.​ Reserved and Sold inventory cannot be exposed as live purchasable listings. 
+5.​ Public payload excludes seller identity and internal source type. 
+6.​ Exact coordinates are protected. 
+7.​ RERA public indicator is controlled by approved CRM data. 
+8.​ Price ranges are available in structured form. 
+9.​ New/Resale classification is available. 
+10.​ Applicable property-specific attributes are available. 
+11.​ Project and inventory relationships are available. 
+12.​ Normal Search can be built entirely from canonical CRM data. 
+13.​ AI Search can map normalized requirements onto canonical CRM data. 
+14.​ Recommendations can use brand-scoped live inventory. 
+15.​ Enquiry and Request-a-Call can be created in CRM. 
+16.​ Multi-property enquiry can reference multiple selected property IDs. 
+17.​ Seller submissions reach CRM without direct publication. 
+18.​ Project Manager verification remains a CRM workflow. 
+19.​ Digital Marketing review remains a CRM workflow. 
+20.​ MD approval remains a CRM workflow. 
+21.​ Publication/availability changes propagate to websites. 
+22.​ RRH/Sonthillu customer accounts remain separate. 
+23.​ Cross-brand data leakage is prevented. 
+27. Final Principle 
+RRH-CRMS is the business and property authority. The websites should ask CRM for approved public information and 
+send customer actions back to CRM. They should not recreate the internal property lifecycle, seller verification, 
+project-manager work, Digital Marketing review or MD approval in the websites. 
+For the websites to deliver Normal Search, AI Search, dynamic matching, recommendations, property details, project 
+pages, shortlist/compare, enquiries and seller submission, CRM needs canonical, brand-scoped, structured and 
+sufficiently complete property/project data. 
+Where the discussion did not establish an exact field or implementation, this document deliberately marks it for 
+repository verification. The next technical step is to inspect the existing RRH-CRMS property schema, lifecycle and APIs 
+and reconcile them against this requirement set. 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+

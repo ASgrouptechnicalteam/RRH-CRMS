@@ -11,7 +11,7 @@ export const AnalyticsHub: React.FC = () => {
   const canManageTargets = user?.roles?.some(r => ['Managing director'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
     ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
-     'channel partner manager', 'Digital Marketing head(manager)', 'accountant'].includes(r)
+     'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
 
   const [activeTab, setActiveTab] = useState<'performance' | 'targets'>(

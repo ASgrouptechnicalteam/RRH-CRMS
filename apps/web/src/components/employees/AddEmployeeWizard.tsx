@@ -178,11 +178,9 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
                   <option value="telecallers">telecallers</option>
                   <option value="Agent">Agent</option>
-                  <option value="channel partners">channel partners</option>
                   <option value="digital marketing executive">digital marketing executive</option>
                   <option value="Digital lead operator">Digital lead operator</option>
                   <option value="Digital Marketing head(manager)">Digital Marketing head(manager)</option>
-                  <option value="channel partner manager">channel partner manager</option>
                   <option value="marketing director">marketing director</option>
                   <option value="project managers">project managers</option>
                   <option value="HR">HR</option>

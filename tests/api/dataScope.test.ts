@@ -15,8 +15,6 @@ describe('Phase 3 - Central Data Scope Engine (Security Matrix)', () => {
   const mockManager: TokenPayload = { employeeId: 102, employeeCode: 'MGR', companyId, branchId: null, roles: [Roles.TELECALLER] }; // Assuming manager just means having downstream
   const mockTelecallerA: TokenPayload = { employeeId: 103, employeeCode: 'TC-A', companyId, branchId: null, roles: [Roles.TELECALLER] };
   const mockTelecallerB: TokenPayload = { employeeId: 104, employeeCode: 'TC-B', companyId, branchId: null, roles: [Roles.TELECALLER] };
-  const mockCP: TokenPayload = { employeeId: 105, employeeCode: 'RRH-CP-1', companyId, branchId: null, roles: [Roles.CHANNEL_PARTNER] };
-  const mockOtherCP: TokenPayload = { employeeId: 205, employeeCode: 'RRH-CP-2', companyId: otherCompanyId, branchId: null, roles: [Roles.CHANNEL_PARTNER] };
   const mockPM: TokenPayload = { employeeId: 106, employeeCode: 'PM', companyId, branchId: null, roles: [Roles.PROJECT_MANAGER] };
 
   // Setup actual employees in DB for hierarchy tests
@@ -86,14 +84,7 @@ describe('Phase 3 - Central Data Scope Engine (Security Matrix)', () => {
       expect(assignedIn).not.toContain(99904);
     });
 
-    it('6. CP cannot see the global lead pool, only linked via lock', async () => {
-      const scope = await buildLeadScope(mockCP);
-      expect(scope.company_id).toBe(companyId);
-      expect(scope.OR).toBeDefined();
-      expect(scope.OR).toEqual([
-        { protection_lock: { cp: { cp_code: mockCP.employeeCode } } }
-      ]);
-    });
+
   });
 
   describe('Employee Scope Contract', () => {
@@ -119,10 +110,7 @@ describe('Phase 3 - Central Data Scope Engine (Security Matrix)', () => {
       expect(scope.id?.in).not.toContain(99904); // Cross company excluded
     });
 
-    it('10. CP receives ZERO employee records', async () => {
-      const scope = await buildEmployeeScope(mockCP);
-      expect(scope).toEqual({ id: { in: [] } }); // Hard stop
-    });
+
   });
 
   describe('Property Scope Contract', () => {
@@ -151,10 +139,6 @@ describe('Phase 3 - Central Data Scope Engine (Security Matrix)', () => {
       expect(scope.OR).toBeUndefined(); // Does not see assigned
     });
 
-    it('15. CP sees LIVE properties only', async () => {
-      const scope = await buildPropertyScope(mockCP);
-      expect(scope.company_id).toBe(companyId);
-      expect(scope.status).toBe('LIVE');
-    });
+
   });
 });

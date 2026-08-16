@@ -10,6 +10,7 @@ const router = Router();
 // Zod schemas for validation
 const RecordPaymentSchema = z.object({
   booking_id: z.number().int().positive(),
+  installment_id: z.number().int().positive().optional(),
   amount: z.number().positive(),
   payment_method: z.enum(['CASH', 'CHEQUE', 'BANK_TRANSFER', 'ONLINE']),
   reference_number: z.string().optional().nullable(),

@@ -30,15 +30,6 @@ describe('Layer 1: Authorization Engine Unit Tests', () => {
     permissions: [Permissions.PROPERTIES_UPDATE, Permissions.PROPERTIES_VERIFY] as any[],
   };
 
-  const cpmUser = {
-    ...baseUser,
-    roles: [Roles.CHANNEL_PARTNER_MANAGER],
-    permissions: [Permissions.CHANNEL_PARTNERS_READ, Permissions.LEADS_READ] as any[],
-  };
-
-  it('permits CPM to read channel partners', () => {
-    expect(can(cpmUser, Permissions.CHANNEL_PARTNERS_READ)).toBe(true);
-  });
 
   it('permits admin to complete unassigned site visit', () => {
     const visit = { assigned_agent_id: 99, lead: { company_id: 1 } };

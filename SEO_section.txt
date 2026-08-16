@@ -1,0 +1,230 @@
+cs 
+Yes 
+Yes 
+Must 
+Admin 
+Cross-branding 
+Yes 
+Yes 
+Must 
+Website/admin 
+SEO foundation 
+Yes 
+Yes 
+Must 
+Website 
+Advanced ML 
+personalization 
+Later 
+Later 
+Future 
+Recommendation layer 
+Rentals 
+No 
+No 
+Out 
+— 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+9. Page Requirements 
+9.1 Homepage 
+●​
+Distinct brand header/navigation. 
+●​
+Prominent Normal Search. 
+●​
+Prominent AI Search. 
+●​
+Brand-appropriate property categories. 
+●​
+Featured/curated properties where enabled. 
+●​
+Recently added properties. 
+●​
+Popular categories/locations when enough data exists. 
+●​
+Trust/verification messaging. 
+●​
+Subtle cross-brand reference. 
+●​
+Company/about section. 
+●​
+Contact CTA. 
+●​
+Footer with legal and cross-brand information. 
+●​
+Mobile responsive. 
+9.2 Category/property discovery pages 
+●​
+SEO-friendly category introduction. 
+●​
+Search/filter entry. 
+●​
+Results grid/list. 
+●​
+Sort controls. 
+●​
+Map option where implemented. 
+●​
+Recommendations. 
+●​
+No-result recovery. 
+●​
+Responsive behavior. 
+9.3 Search results 
+●​
+Query summary. 
+●​
+Active filter chips. 
+●​
+Result count. 
+●​
+Sort. 
+●​
+Property cards. 
+●​
+Shortlist. 
+●​
+Compare. 
+●​
+Approximate location. 
+●​
+Price range. 
+●​
+New/Resale. 
+●​
+Relevant verification badge. 
+●​
+Match percentage/explanation where meaningful. 
+●​
+Related/close matches. 
+●​
+Mobile list/grid. 
+9.4 Property details 
+●​
+Image gallery. 
+●​
+Title. 
+●​
+Type and New/Resale. 
+●​
+Price range. 
+●​
+Negotiability wording. 
+●​
+Public-safe location. 
+●​
+Applicable specifications. 
+●​
+Amenities. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+RERA verified badge where applicable. 
+●​
+Description. 
+●​
+Project relationship. 
+●​
+Approximate map. 
+●​
+Request a Call. 
+●​
+Call Now. 
+●​
+Shortlist. 
+●​
+Compare. 
+●​
+Related properties. 
+●​
+No seller identity/contact. 
+9.5 Project details 
+●​
+Project overview. 
+●​
+Location. 
+●​
+Project status. 
+●​
+Construction status. 
+●​
+RERA indicator. 
+●​
+Amenities. 
+●​
+Gallery. 
+●​
+Inventory summary. 
+●​
+Available types. 
+●​
+Price range. 
+●​
+Description. 
+●​
+SEO metadata. 
+●​
+Enquiry CTA. 
+9.6 Sell Property 
+●​
+Explain review/approval process. 
+●​
+Choose New/Resale where applicable. 
+●​
+Choose property category. 
+●​
+Basic details. 
+●​
+No photo requirement at initial submission. 
+●​
+Seller contact information for company follow-up. 
+●​
+Consent/privacy. 
+●​
+Submit to CRM. 
+●​
+Confirmation/reference. 
+●​
+Never publish directly from website. 
+9.7 Shortlist / Compare 
+●​
+Save/remove properties. 
+●​
+Open details. 
+●​
+Move to compare. 
+●​
+Enquire about selected properties. 
+●​
+Unavailable properties clearly labeled. 
+●​
+Compare only meaningful/applicable attributes. 
+●​
+N/A is distinct from missing. 
+9.8 Login/account 
+●​
+Separate RRH/Sonthillu authentication. 
+●​
+Secure sessions. 
+●​
+Brand-specific saved activity. 
+●​
+No silent account merge. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+9.9 About/Contact 
+●​
+Brand-specific story. 
+●​
+Company contact details. 
+●​
+Approved office/location details. 
+●​
+Subtle connected-company explanation. 
+●​
+No confusing blending of identit

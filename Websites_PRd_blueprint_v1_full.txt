@@ -1,0 +1,1845 @@
+RRH + SONTHILLU WEBSITES 
+PRODUCT REQUIREMENTS & V1 BLUEPRINT 
+Two distinct real-estate brands • One connected ecosystem • Shared CRM authority 
+Version 1.0 Draft Blueprint 
+14 August 2026 
+Scope: RRH (commercial, agriculture, open plots and related property) + Sonthillu (residential housing) 
+Purpose: establish a comprehensive product, UX, data, search, recommendation, integration, security, analytics, 
+hosting and implementation baseline before development. Confirmed decisions are recorded; proposed items are 
+explicitly identified; unresolved items are not guessed. 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+1. Document Control 
+Item 
+Value 
+Status 
+Draft for business + technical review 
+Websites 
+readhrealhomeproperties.com; sonthilluconstructions.com 
+Source of truth 
+RRH-CRMS for property/business lifecycle 
+Customer accounts 
+Separate RRH and Sonthillu accounts/databases 
+Website language 
+English 
+AI Search 
+Multilingual + mixed-language 
+Hosting 
+Existing Hostinger Business plan 
+Proposed public stack 
+Next.js + TypeScript + React 
+CRM context 
+Express + TypeScript + Prisma + MySQL + React/Vite 
+V1 principle 
+Industry-standard essentials first; extensible, not over-engineered 
+ 
+Status legend 
+●​
+CONFIRMED — explicitly decided. 
+●​
+PROPOSED — recommended approach. 
+●​
+TBD — must be confirmed before implementation. 
+●​
+FUTURE — intentionally deferred. 
+2. Executive Summary 
+RRH and Sonthillu are two distinct but connected real-estate companies. RRH handles commercial properties, 
+agricultural land, open plots and related real-estate opportunities. Sonthillu focuses on residential housing such as 
+apartments/flats, independent houses and villas. Both support resale. 
+The websites must not be clones. They will share product capabilities and backend integration patterns while 
+maintaining separate visual identity, content tone, UX personality and customer accounts. Cross-branding is approved 
+but should be subtle and contextual. 
+RRH-CRMS remains the authoritative source for property existence, verification, lifecycle and publication eligibility. A 
+property may be associated with one or both companies; publication is independently controlled per brand. 
+Both websites provide Normal Search and AI Search. AI interprets natural language and multilingual/mixed-language 
+input into a structured requirement model. A deterministic matching/ranking engine then retrieves and ranks actual 
+CRM-approved inventory. A recommendation layer provides exact, related, nearby, slightly-above-budget and no-result 
+recovery options. 
+V1 prioritizes practical production features. Advanced ML personalization, complex AI agents and large-scale search 
+infrastructure are deferred until actual usage justifies them. 
+3. Business & Brand Model 
+3.1 RRH 
+●​
+General real-estate company focused on commercial properties, agricultural lands and open plots. 
+●​
+Rentals are not handled. 
+●​
+Resale is supported; owners can submit property for RRH to market/sell. 
+●​
+Current market: Telangana; planned future expansion to other states. 
+●​
+Separate logo, branding, content and customer account system. 
+3.2 Sonthillu 
+●​
+Residential/housing-oriented company. 
+●​
+Handles own houses, villas, apartments/flats and related residential inventory. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+Resale is supported; owners can submit property for Sonthillu to market/sell. 
+●​
+Separate logo, branding, content and customer account system. 
+3.3 Connected ecosystem 
+●​
+Cross-branding is approved by the owner. 
+●​
+Cross-brand references should appear in footer, About and relevant contextual discovery moments, not dominate 
+the UI. 
+●​
+If a visitor is looking for a category primarily handled by the other company, the site may provide a contextual link to 
+that company. 
+●​
+A property can be associated with both companies and published independently per company. 
+4. Product Goals & Non-Goals 
+Goals 
+●​
+Launch two professional real-estate websites. 
+●​
+Make discovery the central experience. 
+●​
+Provide familiar industry-standard Normal Search. 
+●​
+Provide AI Search as a differentiator. 
+●​
+Provide property/project pages that convert browsing into enquiries. 
+●​
+Support seller/resale submission into CRM. 
+●​
+Provide shortlist, compare and multi-property enquiry. 
+●​
+Make search recommendations a production feature. 
+●​
+Provide separate website admin panels for analytics/configuration. 
+●​
+Keep CRM as business/property source of truth. 
+●​
+Build for future expansion without overbuilding V1. 
+Non-goals for V1 
+●​
+Rental marketplace. 
+●​
+Direct seller-to-customer contact. 
+●​
+Public seller identity. 
+●​
+Replicating CRM operational workflows in the website. 
+●​
+Full ML recommendation stack from day one. 
+●​
+Running large AI inference on Hostinger Business. 
+●​
+Duplicating authoritative property records in both website databases. 
+●​
+Overly complex personalization before enough behavioral data exists. 
+5. Personas & Actors 
+Actor 
+Goals 
+System 
+Anonymous visitor 
+Search, browse, compare, enquire 
+Public website 
+RRH customer 
+Save/search/enquire efficiently 
+RRH account 
+Sonthillu customer 
+Save/search/enquire efficiently 
+Sonthillu account 
+Seller/owner 
+Submit property for review 
+Website → CRM 
+Project Manager 
+Verify/enrich seller submission, site visit 
+CRM 
+Digital Marketing 
+Review photos/content/presentation 
+CRM 
+MD/approver 
+Final approval before publication 
+CRM 
+RRH website admin 
+Monitor search/AI/recommendations/content 
+RRH Admin 
+Sonthillu website admin 
+Monitor search/AI/recommendations/content 
+Sonthillu Admin 
+CRM/API 
+Authoritative business/property data 
+RRH-CRMS 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+6. Confirmed Business Rules 
+1. Rentals are not a website offering. 
+2. Sold and Reserved inventory cannot be live/public. 
+3. Inventory availability includes Available, Reserved and Sold. 
+4. Project lifecycle and inventory availability must be modeled separately. 
+5. New vs Resale is an explicit search dimension. 
+6. Source type is internal and never public by default. 
+7. The same physical property/project may be associated with RRH and Sonthillu. 
+8. Publication is independently controlled per company. 
+9. Exact property location is not public; approximate location is used. 
+10. CRM site verification can capture current latitude, longitude, accuracy, timestamp and employee identity. 
+11. Seller identity/contact details are never exposed to customers. 
+12. Prices are negotiable; do not present them as falsely fixed rates. 
+13. Price ranges may be displayed such as ₹45L – ₹53L. 
+14. RERA can be shown as a public verified indicator where applicable; detailed documents remain internal. 
+15. Logged-in customers can provide only preferred contact time when identity is already known. 
+16. Guests can login or use a guest enquiry form. 
+17. Both Request a Call and Call Now are available. 
+18. Users can enquire about multiple selected properties in one action. 
+19. Homepage primary discovery is Search + AI Search. 
+20. Sell Property is a main navbar action, not a dominant homepage hero action. 
+21. Website content/UI is English-only. 
+22. AI Search supports multilingual and mixed-language input. 
+23. RRH and Sonthillu have separate customer accounts/databases. 
+24. Core capabilities are shared, but UI/UX must be unique to each brand. 
+25. Stock imagery may be used during design where real assets are unavailable. 
+7. V1 Information Architecture 
+7.1 RRH 
+Home​
+├── Properties​
+│   ├── Commercial​
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+│   ├── Agricultural Land​
+│   ├── Open Plots​
+│   └── Resale​
+├── Projects​
+├── Normal Search​
+├── AI Search​
+├── Sell Property​
+├── Shortlist​
+├── Compare​
+├── About​
+├── Contact​
+└── Login / Account 
+7.2 Sonthillu 
+Home​
+├── Properties​
+│   ├── Apartments / Flats​
+│   ├── Independent Houses​
+│   ├── Villas​
+│   └── Resale​
+├── Projects​
+├── Normal Search​
+├── AI Search​
+├── Sell Property​
+├── Shortlist​
+├── Compare​
+├── About​
+├── Contact​
+└── Login / Account 
+Final category names must map to the actual CRM property taxonomy before implementation. 
+8. V1 Feature Matrix 
+Feature 
+RRH 
+Sonthillu 
+Priority 
+Authority/owner 
+Homepage 
+Yes 
+Yes 
+Must 
+Website 
+Normal Search 
+Yes 
+Yes 
+Must 
+Website + CRM data 
+AI Search 
+Yes 
+Yes 
+Must 
+AI + matching 
+Property results 
+Yes 
+Yes 
+Must 
+CRM/API 
+Property details 
+Yes 
+Yes 
+Must 
+CRM/API 
+Projects 
+Yes 
+Yes 
+Must/Recommended 
+CRM/API 
+Shortlist 
+Yes 
+Yes 
+Must 
+Website DB 
+Compare 
+Yes 
+Yes 
+Must 
+Website 
+Request a Call 
+Yes 
+Yes 
+Must 
+CRM 
+Call Now 
+Yes 
+Yes 
+Must 
+Website/telephony 
+Multi-property enquiry 
+Yes 
+Yes 
+Must 
+CRM 
+Sell Property 
+Yes 
+Yes 
+Must 
+Website → CRM 
+Login 
+Separate 
+Separate 
+Must 
+Website DB 
+Recommendations 
+Yes 
+Yes 
+Must 
+Recommendation layer 
+Search analytics 
+Yes 
+Yes 
+Must 
+Admin 
+AI analytics 
+Yes 
+Yes 
+Must 
+Admin 
+Cross-branding 
+Yes 
+Yes 
+Must 
+Website/admin 
+SEO foundation 
+Yes 
+Yes 
+Must 
+Website 
+Advanced ML 
+personalization 
+Later 
+Later 
+Future 
+Recommendation layer 
+Rentals 
+No 
+No 
+Out 
+— 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+9. Page Requirements 
+9.1 Homepage 
+●​
+Distinct brand header/navigation. 
+●​
+Prominent Normal Search. 
+●​
+Prominent AI Search. 
+●​
+Brand-appropriate property categories. 
+●​
+Featured/curated properties where enabled. 
+●​
+Recently added properties. 
+●​
+Popular categories/locations when enough data exists. 
+●​
+Trust/verification messaging. 
+●​
+Subtle cross-brand reference. 
+●​
+Company/about section. 
+●​
+Contact CTA. 
+●​
+Footer with legal and cross-brand information. 
+●​
+Mobile responsive. 
+9.2 Category/property discovery pages 
+●​
+SEO-friendly category introduction. 
+●​
+Search/filter entry. 
+●​
+Results grid/list. 
+●​
+Sort controls. 
+●​
+Map option where implemented. 
+●​
+Recommendations. 
+●​
+No-result recovery. 
+●​
+Responsive behavior. 
+9.3 Search results 
+●​
+Query summary. 
+●​
+Active filter chips. 
+●​
+Result count. 
+●​
+Sort. 
+●​
+Property cards. 
+●​
+Shortlist. 
+●​
+Compare. 
+●​
+Approximate location. 
+●​
+Price range. 
+●​
+New/Resale. 
+●​
+Relevant verification badge. 
+●​
+Match percentage/explanation where meaningful. 
+●​
+Related/close matches. 
+●​
+Mobile list/grid. 
+9.4 Property details 
+●​
+Image gallery. 
+●​
+Title. 
+●​
+Type and New/Resale. 
+●​
+Price range. 
+●​
+Negotiability wording. 
+●​
+Public-safe location. 
+●​
+Applicable specifications. 
+●​
+Amenities. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+RERA verified badge where applicable. 
+●​
+Description. 
+●​
+Project relationship. 
+●​
+Approximate map. 
+●​
+Request a Call. 
+●​
+Call Now. 
+●​
+Shortlist. 
+●​
+Compare. 
+●​
+Related properties. 
+●​
+No seller identity/contact. 
+9.5 Project details 
+●​
+Project overview. 
+●​
+Location. 
+●​
+Project status. 
+●​
+Construction status. 
+●​
+RERA indicator. 
+●​
+Amenities. 
+●​
+Gallery. 
+●​
+Inventory summary. 
+●​
+Available types. 
+●​
+Price range. 
+●​
+Description. 
+●​
+SEO metadata. 
+●​
+Enquiry CTA. 
+9.6 Sell Property 
+●​
+Explain review/approval process. 
+●​
+Choose New/Resale where applicable. 
+●​
+Choose property category. 
+●​
+Basic details. 
+●​
+No photo requirement at initial submission. 
+●​
+Seller contact information for company follow-up. 
+●​
+Consent/privacy. 
+●​
+Submit to CRM. 
+●​
+Confirmation/reference. 
+●​
+Never publish directly from website. 
+9.7 Shortlist / Compare 
+●​
+Save/remove properties. 
+●​
+Open details. 
+●​
+Move to compare. 
+●​
+Enquire about selected properties. 
+●​
+Unavailable properties clearly labeled. 
+●​
+Compare only meaningful/applicable attributes. 
+●​
+N/A is distinct from missing. 
+9.8 Login/account 
+●​
+Separate RRH/Sonthillu authentication. 
+●​
+Secure sessions. 
+●​
+Brand-specific saved activity. 
+●​
+No silent account merge. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+9.9 About/Contact 
+●​
+Brand-specific story. 
+●​
+Company contact details. 
+●​
+Approved office/location details. 
+●​
+Subtle connected-company explanation. 
+●​
+No confusing blending of identities. 
+10. Normal Search 
+10.1 Baseline filters 
+●​
+Location. 
+●​
+Property type/category. 
+●​
+Buy intent. 
+●​
+New/Resale/Any. 
+●​
+Minimum budget. 
+●​
+Maximum budget. 
+●​
+Property-type-specific attributes. 
+●​
+Size/area. 
+●​
+Amenities/features. 
+●​
+Project filters where applicable. 
+●​
+Optional radius/nearby location. 
+●​
+Sort by relevance, newest, price low-high, price high-low and other justified options. 
+10.2 Budget semantics 
+●​
+₹5L means ₹5 lakh purchase budget. 
+●​
+If max budget is ₹50L, genuine matches at/below ₹50L should rank ahead of above-budget alternatives. 
+●​
+Above-budget alternatives may appear only in a clearly labeled related section. 
+●​
+Never silently change the user's maximum budget. 
+●​
+Property ranges such as ₹45L–₹53L require overlap/fit rules. 
+●​
+Negotiability is expected. 
+10.3 Applicability 
+Property 
+Useful attributes 
+Not inherently applicable 
+Apartment/Flat 
+BHK, floor, built-up/carpet area, parking, 
+amenities 
+Agricultural acreage 
+Villa 
+BHK, built-up area, plot area, parking 
+Tower-specific fields 
+Independent House 
+BHK, built-up area, plot area, parking 
+Tower/unit fields 
+Open Plot 
+Plot area, dimensions, road width, facing, 
+approvals 
+BHK 
+Agricultural Land 
+Acreage, land/access/water/road details 
+BHK 
+Commercial 
+Use type, area, frontage, floor, parking, 
+approvals 
+BHK unless explicitly applicable 
+ 
+11. AI Search 
+11.1 Architecture principle 
+Natural-language query​
+      ↓​
+AI interpretation​
+      ↓​
+Validated requirement JSON​
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+      ↓​
+Clarification if necessary​
+      ↓​
+Candidate retrieval​
+      ↓​
+Deterministic match/ranking​
+      ↓​
+Recommendations​
+      ↓​
+Results + explanation 
+AI does not invent properties or make the final property truth decision. 
+11.2 Language 
+●​
+English. 
+●​
+Telugu. 
+●​
+Hindi. 
+●​
+Other supported languages where quality is acceptable. 
+●​
+Mixed language. 
+●​
+Telugu-English transliteration. 
+●​
+Hindi-English mixing. 
+●​
+Indian currency expressions: 5L, 50 lakhs, 0.5 crore, 1.2Cr, etc. 
+●​
+Location synonyms and common locality expressions. 
+11.3 Example 
+User: 'Hyderabad lo 50 lakhs budget lo 2bhk kavali'. The AI should identify Hyderabad, apartment/residential intent, 
+2BHK and ₹50L maximum, then pass normalized requirements to the matching engine. 
+11.4 Conceptual requirement model 
+{​
+  intent: BUY_PROPERTY,​
+  language: mixed,​
+  location: [...],​
+  propertyTypes: [...],​
+  listingType: ANY | NEW | RESALE,​
+  budget: { min, max, currency: INR },​
+  requirements: [...],​
+  preferences: [...],​
+  flexibleRequirements: [...],​
+  excludedRequirements: [...],​
+  unknownRequirements: [...],​
+  confidence: {...},​
+  clarificationNeeded: false​
+} 
+Final schema is a technical contract and must be versioned. 
+12. Dynamic Match & Ranking Engine 
+A fixed global weight table is rejected as the universal model. User requirements differ; property fields differ; some fields 
+are not applicable. 
+12.1 Requirement classes 
+Class 
+Meaning 
+Behavior 
+Hard 
+Explicit must-have 
+Exclude incompatible candidates where 
+verified 
+Strong preference 
+Important but flexible 
+High score contribution 
+Soft preference 
+Nice-to-have 
+Lower score contribution 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+Flexible 
+User allows variation 
+Alternative candidates permitted 
+Unknown 
+Not stated 
+No penalty solely due to absence 
+Not applicable 
+Does not apply 
+Ignore 
+Excluded 
+Explicitly unwanted 
+Exclude if reliably verifiable 
+ 
+12.2 Missing vs false vs N/A 
+Missing information is not automatically a negative. A plot has no BHK because BHK is not applicable. An apartment 
+missing BHK is unknown. This distinction must be explicit in the engine. 
+12.3 Ranking 
+1. Determine actual requirements.​
+2. Identify hard constraints.​
+3. Retrieve viable candidates.​
+4. Evaluate each applicable requirement.​
+5. Ignore N/A fields.​
+6. Treat unknown data separately.​
+7. Aggregate satisfaction using only the requirements present.​
+8. Apply hard-constraint gating.​
+9. Apply public/availability/verification rules.​
+10. Rank exact matches, then close matches, then alternatives. 
+12.4 Result bands 
+●​
+Exact/strong matches. 
+●​
+Good matches with one flexible difference. 
+●​
+Related matches. 
+●​
+Slightly above budget / nearby alternatives. 
+●​
+No-result recovery suggestions. 
+12.5 Tie-breakers 
+●​
+Requirement satisfaction. 
+●​
+Hard-constraint compliance. 
+●​
+Verified/public-data confidence. 
+●​
+User preferences. 
+●​
+Freshness. 
+●​
+Business-approved featured status only when it does not override user constraints. 
+13. Search & Property Recommendations 
+13.1 Types 
+Type 
+Example 
+Purpose 
+Search refinement 
+Try nearby locations 
+Recover weak/no-result searches 
+Related property 
+Similar unit at ₹52L 
+Continue discovery 
+Personalized 
+Based on recent activity 
+Return-visitor relevance 
+ 
+13.2 V1 
+●​
+Similar properties. 
+●​
+Close matches after search. 
+●​
+Slightly above-budget alternatives. 
+●​
+Nearby locations. 
+●​
+Alternative property types when logically valid. 
+●​
+Popular properties/categories for cold start. 
+●​
+Recently viewed. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+Search-history suggestions where appropriate. 
+●​
+No-result recovery. 
+●​
+Search refinement suggestions. 
+●​
+Recommendation impressions/clicks. 
+13.3 Behavioral signals 
+Signal 
+Indicative strength 
+Search 
+Low/medium 
+View 
+Medium 
+Shortlist 
+High 
+Compare 
+High 
+Enquiry 
+Very high 
+Site visit 
+Very high 
+ 
+These are signals, not absolute preferences. V1 may use explainable rules; ML is future. 
+13.4 Failed searches 
+Zero-result and low-result searches must be visible in admin analytics. They reveal unmet inventory demand and can 
+inform sourcing, marketing and channel-partner activity. 
+13.5 Company boundaries 
+Recommendations on RRH must use only RRH-approved inventory; Sonthillu recommendations must use only 
+Sonthillu-approved inventory. Cross-brand links are contextual, not silent inventory mixing. 
+14. Property & Project Data Requirements 
+14.1 Conceptual model 
+Property / Project​
+├── Identity​
+├── Company association/publication​
+├── Classification​
+├── Location​
+├── Pricing​
+├── Availability​
+├── Project/construction status​
+├── Specifications​
+├── Amenities/features​
+├── Media​
+├── Verification​
+├── Publication​
+└── Search/SEO attributes 
+Field group 
+Examples 
+Public 
+Authority 
+Identity 
+ID, title, slug 
+Safe fields 
+CRM 
+Classification 
+Type, New/Resale 
+Yes 
+CRM 
+Company 
+RRH/Sonthillu publication 
+Controlled 
+CRM 
+Price 
+Min, max, INR, negotiable 
+Yes 
+CRM 
+Public location 
+State/city/locality/approx point 
+Yes 
+CRM 
+Exact location 
+Exact coordinates/address 
+No 
+CRM 
+Size 
+Built-up, carpet, plot, acreage 
+Yes 
+CRM 
+Specs 
+BHK, floors, facing, road width 
+When applicable 
+CRM 
+Amenities 
+Parking, lift, power backup 
+Yes 
+CRM 
+RERA 
+Number/status/verified badge 
+Safe subset 
+CRM 
+Media 
+Photos/videos 
+Yes 
+CRM/media 
+Availability 
+Available/Reserved/Sold 
+Available only live 
+CRM 
+Verification 
+Internal checks 
+Badge subset 
+CRM 
+Source type 
+Owner/channel partner/etc. 
+No 
+CRM 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+Publication 
+Draft/review/approved/published 
+No 
+CRM 
+ 
+14.2 Status separation 
+Inventory: AVAILABLE | RESERVED | SOLD​
+Project: UPCOMING | ACTIVE | COMPLETED | CLOSED​
+Construction: UNDER_CONSTRUCTION | READY_TO_MOVE | N/A​
+Publication: DRAFT | IN_REVIEW | APPROVED | PUBLISHED | UNPUBLISHED | REJECTED​
+​
+Final enum names must match CRM rather than duplicate it. 
+Public live rule: Reserved and Sold inventory must not be exposed as live purchasable inventory. 
+15. Resale / Seller Workflow 
+Seller​
+ ↓​
+Website: Sell Property​
+ ↓​
+Register/login or guest seller intake​
+ ↓​
+New Property / Resale Property​
+ ↓​
+Basic details (no images required)​
+ ↓​
+CRM intake​
+ ↓​
+Project Manager assignment​
+ ↓​
+Site visit / verification​
+ ├─ amenities/details​
+ ├─ photos​
+ ├─ exact location​
+ ├─ current-location capture​
+ └─ RERA/checks​
+ ↓​
+Digital Marketing review​
+ ├─ photos​
+ └─ copy/spelling​
+ ↓​
+MD approval​
+ ↓​
+Company-specific publication​
+ ↓​
+Website live inventory 
+15.1 CRM location capture 
+●​
+Occurs in CRM, not public website. 
+●​
+'Capture Current Location' control. 
+●​
+Clear instruction to stand at property before capture. 
+●​
+Permission prompt explanation. 
+●​
+Store latitude, longitude, accuracy, timestamp, employee identity. 
+●​
+Allow manual address confirmation/correction. 
+●​
+Exact location remains internal. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+16. CRM ↔ Website Integration 
+16.1 Authority 
+RRH Website → RRH Website API/BFF → RRH-CRMS​
+Sonthillu Website → Sonthillu Website API/BFF → RRH-CRMS​
+​
+Customer accounts remain separate.​
+CRM remains authoritative for property/business lifecycle. 
+16.2 CRM → website 
+●​
+Published properties by company. 
+●​
+Projects. 
+●​
+Inventory. 
+●​
+Public attributes. 
+●​
+Price ranges. 
+●​
+Availability. 
+●​
+Public location. 
+●​
+RERA badge. 
+●​
+Amenities. 
+●​
+Media. 
+●​
+SEO-safe content. 
+●​
+Cross-brand configuration. 
+16.3 Website → CRM 
+●​
+Enquiries. 
+●​
+Request-a-call. 
+●​
+Multi-property enquiry. 
+●​
+Seller submission. 
+●​
+Relevant customer references. 
+●​
+Search/AI/recommendation analytics where approved. 
+16.4 Integration principles 
+●​
+Version APIs. 
+●​
+Typed contracts. 
+●​
+Validate all input. 
+●​
+Server-side company scoping. 
+●​
+Rate limiting. 
+●​
+Correlation IDs. 
+●​
+Timeouts/retries only when safe. 
+●​
+Caching for read-heavy data. 
+●​
+Event/webhook invalidation later if needed. 
+●​
+Never expose CRM internal fields. 
+17. Customer Database Architecture 
+RRH Web DB​
+├── customers​
+├── authentication/session​
+├── shortlist​
+├── compare​
+├── website preferences/activity​
+└── website-specific records​
+​
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+Sonthillu Web DB​
+├── customers​
+├── authentication/session​
+├── shortlist​
+├── compare​
+├── website preferences/activity​
+└── website-specific records 
+Do not duplicate authoritative property business records in these databases. A search index/cache is a derived read 
+model, not a second source of truth. 
+18. Separate Website Admin Panels 
+18.1 RRH and Sonthillu 
+●​
+Dashboard. 
+●​
+Search analytics. 
+●​
+AI Search analytics. 
+●​
+Popular searches. 
+●​
+Zero-result searches. 
+●​
+Low-result searches. 
+●​
+Popular locations. 
+●​
+Property-type demand. 
+●​
+Budget demand. 
+●​
+Property views. 
+●​
+Shortlists. 
+●​
+Compare events. 
+●​
+Enquiries. 
+●​
+Recommendation performance. 
+●​
+AI feature activation/configuration. 
+●​
+Featured property/content controls where approved. 
+●​
+Cross-brand links. 
+●​
+Basic SEO/content controls. 
+18.2 Boundary 
+Admin panels monitor and configure the website; CRM continues to own verification, assignment, approval and 
+operational property lifecycle. 
+19. Analytics & Event Tracking 
+Event 
+Minimum information 
+page_view 
+website, route, optional property/project ID 
+search_started 
+mode, session, time 
+normal_search 
+filters, result count 
+ai_search 
+query reference, language, normalized requirement version 
+property_view 
+property ID, source context 
+shortlist_add/remove 
+property ID 
+compare_add/remove 
+property ID 
+enquiry_start/submit 
+property IDs, contact preference 
+call_click 
+property/company context 
+sell_start/submit 
+category, submission reference 
+recommendation_impression 
+type, property ID 
+recommendation_click 
+type, property ID 
+refinement_click 
+suggestion type/value 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+Do not store passwords in analytics. 
+●​
+Do not expose seller PII. 
+●​
+Use pseudonymous identifiers where practical. 
+●​
+Define retention. 
+●​
+Provide required consent/privacy mechanisms. 
+20. Proposed Technical Stack 
+Layer 
+Recommendation 
+Rationale 
+Public web 
+Next.js + TypeScript 
+SEO + React + SSR/SSG 
+UI 
+React + custom design system 
+Unique RRH/Sonthillu experiences 
+CSS 
+Tailwind CSS 
+Consistent implementation 
+Validation 
+Zod 
+Runtime/API contracts 
+Website DB 
+MySQL 
+Fits ecosystem 
+ORM 
+Prisma 
+Fits existing stack 
+BFF/API 
+Next.js server/API initially 
+Avoid unnecessary extra backend 
+CRM 
+Existing Express/TypeScript/Prisma/MySQL 
+Preserve source of truth 
+Search V1 
+MySQL + application matching + caching 
+Avoid premature search cluster 
+Matching 
+Custom TypeScript module/service 
+Deterministic and testable 
+Recommendations 
+Custom V1 rules/service 
+Explainable and extensible 
+AI 
+Provider/model abstraction 
+Avoid lock-in 
+Maps 
+Provider abstraction 
+Future flexibility 
+Hosting 
+Hostinger Business 
+Existing environment 
+Deployment 
+GitHub → Hostinger 
+Supported deployment path 
+ 
+20.1 Why Next.js 
+The CRM is an application; the public sites are search/discovery products with indexable property/project pages. Next.js 
+is therefore proposed for SEO-friendly public pages while retaining React/TypeScript. 
+20.2 Why not WordPress 
+The product requires typed property APIs, dynamic search, AI interpretation, matching, recommendations, separate 
+customer accounts, CRM integration and analytics. A custom TypeScript application is a cleaner fit. 
+20.3 AI hosting 
+Do not run a large AI model on the Hostinger Business web server. The AI inference layer should be independently 
+deployable and accessed through a stable internal interface. 
+21. Hostinger Architecture 
+Hostinger's current documentation states that Business hosting supports Node.js web applications and lists Next.js, 
+React and Vite among supported technologies. Its current Business listing shows 5 web apps, 2 CPU cores, 3 GB RAM, 
+50 GB NVMe, unlimited bandwidth, managed MySQL, GitHub integration, SSL, CDN, WAF and backups. These values 
+must be rechecked in hPanel before deployment because plan entitlements can change. 
+citeturn0search0turn0search1 
+App 
+Role 
+Proposed 
+1 
+RRH website + admin 
+Hostinger Node.js app 
+2 
+Sonthillu website + admin 
+Hostinger Node.js app 
+3 
+Existing CRM 
+Existing deployment 
+4 
+Customer Portal 
+Existing deployment 
+5 
+Reserve/future 
+Avoid consuming without need 
+ 
+Hostinger documents GitHub deployment/automatic build flows for Node.js web apps and explicitly lists Next.js/Express 
+support. citeturn0search0 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+21.1 Scaling 
+●​
+V1 should target current plan. 
+●​
+Monitor resource usage. 
+●​
+Do not host AI inference on the shared web server. 
+●​
+If traffic/search/database load grows, move compute/search to stronger infrastructure without changing product 
+contracts. 
+22. Security & Privacy 
+●​
+HTTPS everywhere. 
+●​
+Secure HTTP-only sessions/cookies where used. 
+●​
+CSRF protection where required. 
+●​
+Strong password hashing if passwords are stored. 
+●​
+Rate limiting. 
+●​
+Runtime validation. 
+●​
+Secure headers. 
+●​
+Least-privilege API credentials. 
+●​
+No sensitive tokens in browser localStorage. 
+●​
+No seller details in public API. 
+●​
+No exact coordinates in public payloads. 
+●​
+Separate RRH/Sonthillu auth scopes. 
+●​
+Audit sensitive admin actions. 
+●​
+No internal source type/employee data publicly. 
+●​
+Server-side authorization against IDOR. 
+●​
+Secrets only in environment/secret management. 
+●​
+Dependency scanning. 
+●​
+Backups/recovery. 
+23. SEO 
+●​
+Unique title/meta per property/project/category. 
+●​
+Canonical URLs. 
+●​
+Clean slugs. 
+●​
+Open Graph metadata. 
+●​
+XML sitemap. 
+●​
+Robots.txt. 
+●​
+Accurate structured data where appropriate. 
+●​
+Index only publishable public pages. 
+●​
+Noindex admin/account/internal filter states. 
+●​
+Avoid filter-URL index explosion. 
+●​
+Useful location/category content. 
+●​
+Clear sold/unpublished redirect/404 policy. 
+●​
+Performance/Core Web Vitals monitoring. 
+24. UI/UX 
+24.1 Shared 
+●​
+Familiar real-estate patterns without copying competitor UI. 
+●​
+Original layouts and components. 
+●​
+Fast discovery. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+Mobile-first responsiveness. 
+●​
+Accessible controls. 
+●​
+Clear filters. 
+●​
+Transparent recommendation labels. 
+●​
+No silent modification of requirements. 
+24.2 RRH direction 
+●​
+Professional/investment/property-business personality. 
+●​
+Use logo-derived palette. 
+●​
+Strong commercial/land/plot imagery. 
+●​
+Modern, credible, business-oriented. 
+24.3 Sonthillu direction 
+●​
+Residential/home/lifestyle personality. 
+●​
+Use logo-derived palette. 
+●​
+Lifestyle, home, villa and apartment imagery. 
+●​
+Warm/premium/trust-oriented. 
+The final UI design must not be a color-swapped clone. Both sites should share quality and core capability, not visual 
+identity. 
+25. Accessibility 
+●​
+Semantic HTML. 
+●​
+Keyboard navigation. 
+●​
+Visible focus. 
+●​
+Accessible labels/errors. 
+●​
+Good contrast. 
+●​
+Meaningful alt text. 
+●​
+Decorative-image handling. 
+●​
+Touch-friendly targets. 
+●​
+Do not rely on color alone. 
+●​
+Accessible dialogs/drawers. 
+26. Performance 
+●​
+Optimize images and formats. 
+●​
+Responsive image delivery. 
+●​
+Lazy-load non-critical media. 
+●​
+Minimize client JS. 
+●​
+Cache public reads safely. 
+●​
+Avoid repeated CRM calls. 
+●​
+Pagination/incremental loading. 
+●​
+Monitor Core Web Vitals. 
+●​
+Separate AI latency from normal search UX. 
+●​
+Skeleton/loading states. 
+27. Edge Cases & Failure States 
+Scenario 
+Required behavior 
+No results 
+Explain no exact match; show alternatives/refinements 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+Only above-budget matches 
+Separate and label them 
+Property reserved 
+Remove from live search after state propagation 
+Property sold 
+Remove from live search; follow SEO policy 
+Unpublished 
+Never expose through public API 
+BHK missing on land 
+N/A, no penalty 
+BHK missing on apartment 
+Unknown; handle according to hard/soft requirement 
+Exact location unavailable 
+Use safe locality/approximate location 
+CRM location permission denied 
+Manual correction path in CRM 
+AI ambiguity 
+Ask clarification or offer Normal Search 
+AI invalid output 
+Schema validation + retry/fallback 
+CRM unavailable 
+Controlled error; no internal leakage 
+Duplicate enquiry 
+Idempotency/deduplication 
+Unavailable shortlisted property 
+Keep historical record but label unavailable; suggest alternatives 
+Compare N/A field 
+Show N/A, not false 
+Image failure 
+Fallback image 
+Cross-brand unpublished property 
+Never leak through recommendation 
+ 
+28. Content & Media 
+●​
+Brand-specific copy. 
+●​
+CRM-approved property/project descriptions. 
+●​
+Category content. 
+●​
+About/contact. 
+●​
+Privacy/terms/cookie notices as required. 
+●​
+Accurate RERA wording. 
+●​
+Real property photos in production preferred. 
+●​
+Stock images only where they do not misrepresent a specific property. 
+●​
+Responsive media variants. 
+●​
+Primary image ordering. 
+●​
+Safe alt text. 
+●​
+Internal documents never public. 
+29. AI Production Requirements 
+●​
+Normal Search always remains available. 
+●​
+AI is optional. 
+●​
+AI output must be schema validated. 
+●​
+AI never invents properties, prices, availability or amenities. 
+●​
+AI interprets requirements; deterministic engine decides property matching. 
+●​
+Clarify ambiguous inputs. 
+●​
+Provider/model abstraction. 
+●​
+Model version tracking where appropriate. 
+●​
+Design for model replacement. 
+●​
+Avoid dependence on a single paid API when effectively unlimited usage is a business requirement. 
+●​
+AI inference infrastructure is independent from Hostinger web hosting. 
+30. Candidate API Contract Inventory 
+Capability 
+Direction 
+Purpose 
+Published property search 
+CRM → website 
+Brand-scoped live inventory 
+Property detail 
+CRM → website 
+Public property data 
+Projects 
+CRM → website 
+Published projects 
+Project detail 
+CRM → website 
+Public project data 
+Property types 
+CRM → website 
+Canonical taxonomy 
+Amenities 
+CRM → website 
+Applicable filters 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+Locations 
+CRM → website 
+Search/location data 
+Enquiry 
+Website → CRM 
+Create lead/enquiry 
+Multi-property enquiry 
+Website → CRM 
+One enquiry for selections 
+Call request 
+Website → CRM 
+Follow-up 
+Seller submission 
+Website → CRM 
+Initial resale/new submission 
+Publication event 
+CRM → website 
+Cache invalidation/sync 
+Search event 
+Website → analytics 
+Demand tracking 
+AI event 
+Website → analytics 
+AI quality/adoption 
+Recommendation event 
+Website → analytics 
+Recommendation performance 
+ 
+These are requirement-level operations, not final endpoint names. Existing CRM APIs must be inspected before 
+implementation. 
+31. Testing Strategy 
+Functional 
+●​
+Normal Search. 
+●​
+AI Search. 
+●​
+Property results/details. 
+●​
+Projects. 
+●​
+Shortlist. 
+●​
+Compare. 
+●​
+Login. 
+●​
+Guest enquiry. 
+●​
+Logged-in enquiry. 
+●​
+Multi-property enquiry. 
+●​
+Sell Property. 
+●​
+Cross-brand links. 
+●​
+Admin analytics. 
+Search/matching 
+●​
+Budget boundaries. 
+●​
+Price-range overlap. 
+●​
+New/Resale. 
+●​
+Location synonyms. 
+●​
+Property-type applicability. 
+●​
+Missing vs N/A. 
+●​
+Hard/soft/flexible requirements. 
+●​
+No results. 
+●​
+Above-budget alternatives. 
+●​
+Ranking consistency. 
+●​
+Recommendations. 
+AI 
+●​
+English. 
+●​
+Telugu. 
+●​
+Hindi. 
+●​
+Mixed-language. 
+●​
+Transliteration. 
+●​
+Currency expressions. 
+●​
+Ambiguous location. 
+●​
+Ambiguous type. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+●​
+Missing requirements. 
+●​
+Contradictory requirements. 
+●​
+Invalid model output. 
+●​
+Prompt injection/adversarial inputs. 
+●​
+Hallucination prevention. 
+●​
+Fallback. 
+Integration 
+●​
+CRM timeout/unavailable. 
+●​
+Stale property state. 
+●​
+Reserved/Sold transition. 
+●​
+API authorization. 
+●​
+Duplicate submission. 
+●​
+Invalid payload. 
+●​
+Cross-brand isolation. 
+32. Development & Deployment 
+●​
+Separate applications/repos or clearly isolated projects for RRH and Sonthillu. 
+●​
+Development → staging/UAT → production where feasible. 
+●​
+Environment variables for secrets/config. 
+●​
+No secrets in source control. 
+●​
+GitHub-based deployment. 
+●​
+Intentional DB migrations. 
+●​
+Health checks. 
+●​
+Redacted logs. 
+●​
+Backups. 
+●​
+Rollback plan. 
+●​
+Production monitoring. 
+Development​
+   ↓​
+Staging / UAT​
+   ↓​
+Production​
+​
+RRH Web + Admin​
+Sonthillu Web + Admin​
+RRH-CRMS​
+Customer Portal 
+33. V1 Delivery Phases 
+Phase 
+Scope 
+Exit 
+P0 Discovery 
+Inspect CRM APIs, lifecycle, schema, 
+Hostinger, domains 
+Integration constraints confirmed 
+P1 Design 
+Two brand design systems + responsive 
+shell 
+Approved UI direction 
+P2 Foundation 
+Home, nav, footer, routing, SEO foundation 
+Public shell complete 
+P3 Discovery 
+Normal Search, filters, results, details, 
+projects 
+Normal search end-to-end 
+P4 Customer 
+Login, shortlist, compare, enquiry/call 
+Conversion flow complete 
+P5 Seller 
+Sell Property → CRM 
+Submission safe and traceable 
+P6 Recommendations 
+Similar/related/no-result + analytics 
+Measured recommendations 
+P7 AI 
+AI interpretation + multilingual + matching 
+Safe AI Search 
+P8 Admin 
+Analytics/configuration 
+Admin visibility 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+P9 Hardening 
+Security/performance/accessibility/SEO/edg
+e cases 
+Production-ready 
+P10 Launch 
+Deploy, monitor, backup, rollback 
+Live 
+ 
+34. Acceptance Criteria 
+1.​ RRH and Sonthillu are visually and experientially distinct. 
+2.​ Separate domains and customer databases work correctly. 
+3.​ CRM remains property/business source of truth. 
+4.​ Only brand-approved live inventory is public. 
+5.​ Reserved/Sold inventory is not live. 
+6.​ Normal Search works without AI. 
+7.​ AI Search supports multilingual/mixed input. 
+8.​ AI output is validated and cannot invent property data. 
+9.​ Ranking is requirement-aware, not a fixed global weight table. 
+10.​ N/A fields do not cause false mismatch penalties. 
+11.​ Price ranges and negotiability are represented correctly. 
+12.​ Exact location is protected. 
+13.​ RERA public badge is safe and accurate. 
+14.​ Seller details are private. 
+15.​ Shortlist and Compare work. 
+16.​ Multi-property enquiry works. 
+17.​ Guest and logged-in enquiry flows work. 
+18.​ Seller submissions reach CRM and do not publish automatically. 
+19.​ Recommendations cover exact/related/no-result scenarios. 
+20.​ Analytics capture search/recommendation outcomes. 
+21.​ Admin is separate by brand and does not duplicate CRM operations. 
+22.​ SEO basics are implemented. 
+23.​ Mobile UX is production quality. 
+24.​ Cross-brand data leakage is prevented. 
+25.​ Deployment fits the approved hosting architecture. 
+35. Open Questions / Pre-Implementation Decisions 
+1. Exact final property taxonomy in CRM for RRH and Sonthillu. 
+2. Existing CRM project/unit model and reusable APIs. 
+3. Existing CRM public property APIs. 
+4. Existing CRM lifecycle/publication enum names. 
+5. Whether a property can have different public titles/descriptions per brand. 
+6. Exact phone/WhatsApp Call Now policy. 
+7. Final guest enquiry required fields and consent wording. 
+8. Whether site-visit booking is V1. 
+9. Map provider. 
+10. WhatsApp contact/enquiry in V1 or later. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+11. Blog/content CMS requirement. 
+12. Final legal/privacy/cookie wording. 
+13. Analytics provider vs first-party-only. 
+14. AI model/infrastructure selection after evaluation. 
+15. Recommendation data retention. 
+16. Login method: OTP/password/etc. 
+17. Separate MySQL databases vs database servers for website accounts. 
+18. Current Hostinger web-app slot usage. 
+19. Staging hosting arrangement. 
+20. Final transparent/SVG logo assets. 
+36. Risks & Mitigations 
+Risk 
+Impact 
+Mitigation 
+CRM API mismatch 
+High 
+Inspect CRM before coding; version 
+contracts 
+Taxonomy mismatch 
+High 
+Canonical CRM-to-website mapping 
+AI hallucination 
+High 
+Structured AI output + deterministic matcher 
+AI cost/limits 
+High 
+Model abstraction + controlled/self-hosted 
+evaluation 
+Hostinger limits 
+Medium/High 
+Monitor; keep AI off web server; scale if 
+needed 
+Stale availability 
+High 
+Short cache + invalidation/events 
+Cross-brand leakage 
+Critical 
+Server-side brand authorization 
+Poor recommendations 
+Medium 
+Explainable V1 + measurement + iteration 
+SEO duplicates 
+Medium 
+Canonical/noindex/index strategy 
+Image bloat 
+Medium 
+Optimization/CDN 
+Scope creep 
+High 
+Strict V1/Future classification 
+ 
+37. Change Control 
+●​
+Every new feature is classified as V1 Must, V1 Recommended, V1.1 or Future. 
+●​
+Do not guess business rules affecting visibility, pricing, legal status or privacy. 
+●​
+CRM ownership/publication changes require API/data-contract review. 
+●​
+Customer identity changes require security review. 
+●​
+AI changes must preserve structured requirement boundary. 
+●​
+UI changes must preserve brand separation and accessibility. 
+38. Glossary 
+Term 
+Definition 
+CRM 
+RRH-CRMS, authoritative operational/business system 
+Normal Search 
+Structured real-estate filter search 
+AI Search 
+Natural-language interpretation layer 
+Match Engine 
+Deterministic property requirement scoring/ranking 
+Recommendation Engine 
+System for related properties/refinements/personalization 
+Publishable 
+Approved and authorized for a specific brand 
+Available 
+Inventory currently public as available 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+Resale 
+Third-party-owned property submitted for marketing/sale 
+Source type 
+Internal property origin 
+Approximate location 
+Public-safe location without exact property coordinates 
+Hard requirement 
+Must-have condition 
+Unknown 
+Data unavailable; not false 
+N/A 
+Field does not apply to this property type 
+ 
+39. External Hosting Reference 
+Hostinger documentation was consulted for the current hosting assumptions. Hostinger states that Business hosting 
+supports Node.js web applications and lists Next.js, React and Vite among supported technologies. The current 
+Business plan page lists 5 web apps, 2 CPU cores, 3 GB RAM, 50 GB NVMe, unlimited bandwidth, managed MySQL, 
+GitHub integration, SSL, CDN, WAF and backups. These values must be verified in the user's actual hPanel before 
+deployment because commercial plan details can change. citeturn0search0turn0search1 
+References: urlHostinger Node.js Web App documentationturn0search0 and urlHostinger Business Web 
+Apps Hostingturn0search1 
+40. Final Product Principle 
+The websites should be simple for customers and sophisticated behind the scenes. The user should experience familiar 
+real-estate discovery, clear property information, fast Normal Search, useful recommendations and an optional AI 
+Search. Complexity should live in the CRM integration, data contracts, matching engine, recommendation layer and 
+analytics rather than unnecessary UI. 
+RRH and Sonthillu are separate brands. They should look and feel different while providing the same level of product 
+quality. Their shared foundation is the connected CRM/API ecosystem, not a shared visual identity. 
+This blueprint is the product baseline. The next artifact after review should reconcile it against the actual RRH-CRMS 
+repository, database schema, lifecycle and existing API surface, then produce the final implementation-ready 
+requirements/data-contract document. 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+

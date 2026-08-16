@@ -2,12 +2,14 @@ import { WorkflowDomain, WorkflowTransitionRequest, WorkflowTransitionResult, Do
 import { LeadWorkflow } from './lead.workflow';
 import { PropertyWorkflow } from './property.workflow';
 import { SiteVisitWorkflow } from './siteVisit.workflow';
+import { OpportunityWorkflow } from './opportunity.workflow';
 
 export class WorkflowEngine {
   private static registry: Record<WorkflowDomain, DomainWorkflow> = {
     [WorkflowDomain.LEAD]: new LeadWorkflow(),
     [WorkflowDomain.PROPERTY]: new PropertyWorkflow(),
     [WorkflowDomain.SITE_VISIT]: new SiteVisitWorkflow(),
+    [WorkflowDomain.OPPORTUNITY]: new OpportunityWorkflow(),
   };
 
   /**

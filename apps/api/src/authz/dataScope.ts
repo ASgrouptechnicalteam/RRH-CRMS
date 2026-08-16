@@ -33,21 +33,6 @@ export async function buildLeadScope(user: TokenPayload): Promise<Prisma.LeadWhe
     return {}; // Global access
   }
 
-  // 2. CHANNEL PARTNER (Must be checked early to prevent global access fallback)
-  if (user.roles.includes(Roles.CHANNEL_PARTNER)) {
-    return {
-      ...baseScope,
-      OR: [
-        { protection_lock: { cp: { cp_code: user.employeeCode } } },
-        // If CP Payouts eventually link to Leads in a way that requires visibility, add it here.
-        // Currently, CP Payouts have a lead_id, so we can do:
-        // { activities: { some: { actor_id: user.employeeId } } } ? No, payouts are separate.
-        // Wait, CPPayout has lead_id. But Prisma doesn't easily do a reverse relation if not defined in Lead.
-        // Let's check if Lead has a relation to CPPayout. It doesn't in schema! 
-        // So we just use protection_lock.
-      ],
-    };
-  }
 
   // 3. MANAGEMENT
   const isManagement = user.roles.some((r) => MANAGEMENT_ROLES.includes(r as any));
@@ -77,11 +62,6 @@ export async function buildEmployeeScope(user: TokenPayload): Promise<Prisma.Emp
     return {}; // Global access
   }
 
-  // 2. CHANNEL PARTNER
-  if (user.roles.includes(Roles.CHANNEL_PARTNER)) {
-    // CPs get ZERO internal employee records.
-    return { id: { in: [] } };
-  }
 
   // Hide system/invisible roles for everyone except Admin
   const invisibleFilter = {
@@ -129,11 +109,53 @@ export async function buildPropertyScope(user: TokenPayload): Promise<Prisma.Pro
     };
   }
 
-  // 3. TELECALLER, AGENT, CHANNEL PARTNER
+  // 3. TELECALLER, AGENT
   // Default to LIVE properties only within their company.
   return {
     ...baseScope,
     status: 'LIVE',
+  };
+}
+
+/**
+ * Builds the read-visibility scope for Projects.
+ *
+ * Authorization per Phase 5 docs (03-project-level-authorization.md):
+ *   ADMIN / MANAGEMENT:  all projects in company_id
+ *   PROJECT_MANAGER:     ONLY explicitly assigned projects (assigned_pm_id = user.employeeId)
+ *   TELECALLER / AGENT:  non-PLANNING, non-CANCELLED projects (for pitching)
+ *   Others:              no access
+ */
+export async function buildProjectScope(user: TokenPayload): Promise<Prisma.ProjectWhereInput> {
+  const baseScope = getBaseScope(user);
+
+  // 1. ADMIN (global, no company restriction)
+  if (user.roles.includes(Roles.ADMIN)) {
+    return {};
+  }
+
+  // 2. MANAGEMENT (all company projects)
+  const isManagement = user.roles.some((r) => MANAGEMENT_ROLES.includes(r as any));
+  if (isManagement) {
+    return baseScope;
+  }
+
+  // 3. PROJECT MANAGER — STRICTLY ASSIGNED PROJECTS ONLY
+  // Per authoritative rule: PM CANNOT view Projects assigned to other PMs.
+  if (user.roles.includes(Roles.PROJECT_MANAGER)) {
+    return {
+      ...baseScope,
+      assigned_pm_id: user.employeeId,
+    };
+  }
+
+  // 4. TELECALLER / AGENT — read-only, launched projects (UNDER_CONSTRUCTION or COMPLETED)
+  // Note: Project has no 'LIVE' status. 'LIVE' in roadmap documentation maps to
+  // non-PLANNING, non-CANCELLED projects. This interpretation is confirmed by
+  // the Packet 3 telecaller scope business decision.
+  return {
+    ...baseScope,
+    status: { notIn: ['PLANNING', 'CANCELLED'] },
   };
 }
 

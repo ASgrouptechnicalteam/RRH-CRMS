@@ -68,7 +68,7 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
         .set('Authorization', `Bearer ${mdToken}`)
         .send({
           customer_name: 'Test Lead IDOR Target',
-          phone: '+919999999999',
+          phone: `+919999${Date.now().toString().slice(-6)}`,
           source: 'MANUAL_ENTRY',
           notes: 'This lead is meant to test IDOR protections.'
         });
@@ -191,7 +191,7 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
         .set('Authorization', `Bearer ${mdToken}`)
         .send({
           customer_name: 'Phase 2B Distribution Test',
-          phone: '+919999999888',
+          phone: `+918888${Date.now().toString().slice(-6)}`,
           source: 'MANUAL_ENTRY'
         });
         

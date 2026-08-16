@@ -2,6 +2,8 @@ import { PrismaClient, Payment } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { PaymentPolicy } from '../policies/payment.policy';
 import { BookingPolicy } from '../policies/booking.policy';
+import { NotificationService } from './notification.service';
+import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
 
 const prisma = new PrismaClient();
 const p = prisma as any;
@@ -61,6 +63,21 @@ export class PaymentService {
       throw new AppError(403, 'You do not have access to record a payment for this booking');
     }
 
+    if (dto.installment_id) {
+      const installment = await p.installment.findFirst({
+        where: { id: dto.installment_id, booking_id: booking.id }
+      });
+      if (!installment) {
+        throw new AppError(404, 'Installment not found or does not belong to this booking');
+      }
+      if (dto.amount > (installment.expected_amount - installment.received_amount)) {
+        throw new AppError(400, 'Collection amount exceeds remaining installment balance');
+      }
+      if (dto.amount <= 0) {
+        throw new AppError(400, 'Collection amount must be greater than zero');
+      }
+    }
+
     if (booking.status === 'CANCELLED') {
       throw new AppError(400, 'Cannot record payment for a cancelled booking');
     }
@@ -79,6 +96,7 @@ export class PaymentService {
           notes: dto.notes,
           status: 'PENDING', // All new payments require Finance verification
           recorded_by_id: user.employeeId,
+          installment_id: dto.installment_id || null,
         }
       });
 
@@ -104,6 +122,11 @@ export class PaymentService {
       throw new AppError(403, 'Permission denied');
     }
 
+    // Packet 4: Admin MUST NOT gain financial approval authority merely because PaymentPolicy currently considers ADMIN a management role.
+    if (user.roles.includes('Admin (Technical)') && !user.roles.some((r: string) => ['Managing director', 'FINANCE', 'accountant'].includes(r))) {
+      throw new AppError(403, 'Admin role does not have financial verification authority');
+    }
+
     if (payment.status === 'SUCCESS') {
       throw new AppError(400, 'Payment is already verified and successful');
     }
@@ -115,13 +138,142 @@ export class PaymentService {
       });
 
       if (status === 'SUCCESS') {
-        // Reduce the booking balance
-        const newBalance = Math.max(0, payment.booking.balance_amount - payment.amount);
-        
-        await tx.booking.update({
-          where: { id: payment.booking.id },
-          data: { balance_amount: newBalance }
+        if (payment.installment_id) {
+          // Packet 4 logic: Do NOT modify Booking.balance_amount. Update Installment atomically.
+          const installment = await tx.installment.findUniqueOrThrow({
+            where: { id: payment.installment_id }
+          });
+          
+          if (payment.amount > (installment.expected_amount - installment.received_amount)) {
+            throw new AppError(400, 'Verification failed: Payment amount exceeds remaining installment balance');
+          }
+          
+          const newReceivedAmount = installment.received_amount + payment.amount;
+          const newStatus = newReceivedAmount >= installment.expected_amount ? 'RECEIVED' : 'PARTIALLY_RECEIVED';
+
+          const updateResult = await tx.installment.updateMany({
+            where: { id: installment.id, received_amount: installment.received_amount },
+            data: { received_amount: newReceivedAmount, status: newStatus, received_date: newStatus === 'RECEIVED' ? new Date() : undefined }
+          });
+
+          if (updateResult.count === 0) {
+            throw new AppError(409, 'Concurrency conflict: Installment was modified by another request');
+          }
+
+          // Create audit event
+          await tx.auditEvent.create({
+            data: {
+              actor_id: user.employeeId,
+              action: 'INSTALLMENT_COLLECTED',
+              entity_type: 'Installment',
+              entity_id: installment.id,
+              old_value: JSON.stringify({ received_amount: installment.received_amount, status: installment.status }),
+              new_value: JSON.stringify({ received_amount: newReceivedAmount, status: newStatus }),
+            }
+          });
+
+          // Phase 11 Packet 3H — Installment / Financial Status Sync.
+          // Emit INSTALLMENT_STATUS_CHANGED only when the installment's persisted
+          // financial state genuinely changed (PENDING → PARTIALLY_RECEIVED /
+          // RECEIVED, PARTIALLY_RECEIVED → RECEIVED). OVERDUE is read-derived in
+          // the CRM and never persisted, so it is never emitted. OVERDUE is not
+          // persisted and a FAILED/REFUNDED verify never touches the installment,
+          // so the sole trigger here is a successful collection on an
+          // installment-linked payment. Atomic with the payment + installment
+          // update — one genuine state change yields exactly one event.
+          if (newStatus !== installment.status) {
+            await tx.integrationEvent.create({
+              data: {
+                event_type: INSTALLMENT_EVENT_TYPE,
+                payload: JSON.stringify({
+                  event_type: INSTALLMENT_EVENT_TYPE,
+                  company_id: user.companyId,
+                  crms_customer_id: payment.booking.customer_id,
+                  crms_booking_id: payment.booking.id,
+                  installment_id: installment.id,
+                  installment_number: installment.installment_number,
+                  status: newStatus,
+                  expected_amount: installment.expected_amount,
+                  received_amount: newReceivedAmount,
+                  remaining_amount: Math.max(0, installment.expected_amount - newReceivedAmount),
+                  changed_at: new Date().toISOString(),
+                }),
+                status: 'CREATED',
+                company_id: user.companyId,
+                crms_booking_id: payment.booking.id,
+                crms_customer_id: payment.booking.customer_id,
+              },
+            });
+          }
+        } else {
+          // Legacy logic: Reduce the booking balance
+          const newBalance = Math.max(0, payment.booking.balance_amount - payment.amount);
+          
+          await tx.booking.update({
+            where: { id: payment.booking.id },
+            data: { balance_amount: newBalance }
+          });
+        }
+      }
+
+      // Phase 11 Packet 3F — Payment Synchronization. Emit a PAYMENT_STATUS_CHANGED
+      // outbox event (delivered by PortalWorker to the Portal) whenever a payment
+      // reaches a Portal-relevant terminal state. Atomic with the payment/installment
+      // update above: a genuine transition yields exactly one event. A duplicate
+      // verifyPayment call is blocked earlier (already-SUCCESS guard) so no second
+      // event can be emitted for the same payment.
+      if (status === 'SUCCESS' || status === 'REFUNDED') {
+        await tx.payment.update({
+          where: { id },
+          data: { sync_status: 'PENDING_SYNC' },
         });
+
+        await tx.integrationEvent.create({
+          data: {
+            event_type: PAYMENT_EVENT_TYPE,
+            payload: JSON.stringify({
+              event_type: PAYMENT_EVENT_TYPE,
+              company_id: user.companyId,
+              crms_customer_id: payment.booking.customer_id,
+              crms_booking_id: payment.booking.id,
+              payment_id: payment.id,
+              payment_code: payment.payment_code,
+              installment_id: payment.installment_id ?? null,
+              amount: payment.amount,
+              status,
+              payment_date: payment.payment_date.toISOString(),
+              reference_number: payment.reference_number ?? null,
+            }),
+            status: 'CREATED',
+            company_id: user.companyId,
+            crms_booking_id: payment.booking.id,
+            crms_customer_id: payment.booking.customer_id,
+          },
+        });
+
+        await tx.auditEvent.create({
+          data: {
+            actor_id: user.employeeId,
+            action: 'PAYMENT_SYNC_INITIATED',
+            entity_type: 'Payment',
+            entity_id: payment.id,
+            old_value: 'LOCAL',
+            new_value: 'PENDING_SYNC',
+          },
+        });
+
+        // Packet 3E CustomerNotification for a genuine confirmed-payment transition.
+        // Same transaction; content is LOW sensitivity only.
+        if (status === 'SUCCESS') {
+          await NotificationService.createCustomerNotificationTx(tx, {
+            company_id: user.companyId,
+            customer_id: payment.booking.customer_id,
+            booking_id: payment.booking.id,
+            type: 'PAYMENT_STATUS_UPDATED',
+            title: 'Payment Confirmed',
+            message: `Your payment of ${payment.amount} for booking ${payment.booking.booking_code} is confirmed.`,
+          });
+        }
       }
 
       return updatedPayment;

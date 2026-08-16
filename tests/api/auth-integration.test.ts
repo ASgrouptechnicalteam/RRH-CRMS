@@ -20,12 +20,12 @@ const generateToken = (payload: any) => {
 // we will intercept the Prisma calls if necessary, or just verify the HTTP 403 Forbidden responses.
 describe('Layer 2 & 3: API Integration & Regression Tests', () => {
   
-  const cpmToken = generateToken({
+  const marketingDirToken = generateToken({
     employeeId: 10,
     employeeCode: 'EMP-002',
     companyId: 1,
     branchId: 1,
-    roles: [Roles.CHANNEL_PARTNER_MANAGER],
+    roles: [Roles.MARKETING_DIRECTOR],
     permissions: [Permissions.EMPLOYEES_READ]
   });
 
@@ -38,12 +38,12 @@ describe('Layer 2 & 3: API Integration & Regression Tests', () => {
     permissions: [] // Missing update permission
   });
 
-  it('Permits Channel Partner Manager to fetch employees list (if they have permission)', async () => {
+  it('Permits Marketing Director to fetch employees list (if they have permission)', async () => {
     // Assuming employees route requires EMPLOYEES_READ
     // For this test, it might fail if prisma is not mocked, but we expect at least it passes auth
     const res = await request(app)
       .get('/api/v1/employees')
-      .set('Authorization', `Bearer ${cpmToken}`);
+      .set('Authorization', `Bearer ${marketingDirToken}`);
     
     // We expect it NOT to be 403 (could be 200 or 500 depending on mock)
     expect(res.status).not.toBe(403);

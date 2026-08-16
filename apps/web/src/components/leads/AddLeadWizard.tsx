@@ -26,6 +26,12 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [source, setSource] = useState('ORGANIC_SEARCH');
+  
+  // Phase 4: Marketing Attribution
+  const [campaign, setCampaign] = useState('');
+  const [utmSource, setUtmSource] = useState('');
+  const [utmMedium, setUtmMedium] = useState('');
+  const [utmCampaign, setUtmCampaign] = useState('');
 
   // Step 2: Requirements (Quick Selects)
   const [propertyType, setPropertyType] = useState('RESIDENTIAL_APARTMENT');
@@ -74,6 +80,10 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
           property_type_preference: propertyType,
           preferred_location: preferredLocation,
           notes: structuredNotes,
+          campaign: campaign || null,
+          utm_source: utmSource || null,
+          utm_medium: utmMedium || null,
+          utm_campaign: utmCampaign || null,
           // budget_max could be parsed from budgetRange if needed, skipping for now as it's in notes
         }),
       });
@@ -83,7 +93,11 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
         showToast(`Lead Captured Successfully! ID: ${data.lead.lead_code}`, 'success');
         onSuccess();
       } else {
-        showToast(data.error || 'Failed to capture lead', 'error');
+        if (res.status === 409) {
+          showToast(`Duplicate Lead: ${data.error}`, 'error');
+        } else {
+          showToast(data.error || 'Failed to capture lead', 'error');
+        }
       }
     } catch (e) {
       showToast('Error connecting to server', 'error');
@@ -141,8 +155,26 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                     <option value="GOOGLE_AD">Google Ads</option>
                     <option value="WALK_IN">Direct Walk-in</option>
                     <option value="REFERRAL">Referral</option>
-                    <option value="CHANNEL_PARTNER">Channel Partner</option>
                   </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Campaign</label>
+                  <input type="text" value={campaign} onChange={e => setCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. Summer Sale" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">UTM Source</label>
+                  <input type="text" value={utmSource} onChange={e => setUtmSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. google" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">UTM Medium</label>
+                  <input type="text" value={utmMedium} onChange={e => setUtmMedium(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. cpc" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">UTM Campaign</label>
+                  <input type="text" value={utmCampaign} onChange={e => setUtmCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. summer_sale" />
                 </div>
               </div>
             </div>

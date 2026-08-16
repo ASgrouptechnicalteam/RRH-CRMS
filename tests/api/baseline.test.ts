@@ -13,14 +13,14 @@ describe('Phase 0: Baseline Verification', () => {
     await prisma.$disconnect();
   });
 
-  it('should have 13 deterministic test roles created', async () => {
+  it('should have 11 deterministic test roles created', async () => {
     const userCount = await prisma.employee.count({
       where: {
         employee_code: { in: deterministicUsers.map(u => u.employee_code) }
       }
     });
     
-    // We expect exactly 13 deterministic authoritative role users
-    expect(userCount).toBe(13);
+    // We expect exactly 11 deterministic authoritative role users
+    expect(userCount).toBe(11);
   });
 });

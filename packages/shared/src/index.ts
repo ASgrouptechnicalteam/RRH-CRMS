@@ -17,12 +17,10 @@ export const Roles = {
   PROJECT_MANAGER: 'project managers',
   DIGITAL_LEAD_OPERATOR: 'Digital lead operator',
   TELECALLER: 'telecallers',
-  CHANNEL_PARTNER_MANAGER: 'channel partner manager',
   DIGITAL_MARKETING_HEAD: 'Digital Marketing head(manager)',
   HR_MANAGER: 'HR',
   FINANCE: 'accountant',
   AGENT: 'Agent',
-  CHANNEL_PARTNER: 'channel partners',
   DIGITAL_MARKETING_EXECUTIVE: 'digital marketing executive'
 } as const;
 
@@ -35,9 +33,7 @@ export const DepartmentCodes: Record<string, string> = {
   [Roles.ADMIN]: 'EX',
   [Roles.HR_MANAGER]: 'HR',
   [Roles.TELECALLER]: 'SL',
-  [Roles.CHANNEL_PARTNER_MANAGER]: 'SL',
   [Roles.AGENT]: 'SL',
-  [Roles.CHANNEL_PARTNER]: 'CP',
   [Roles.PROJECT_MANAGER]: 'OP',
   [Roles.DIGITAL_MARKETING_EXECUTIVE]: 'MK',
   [Roles.DIGITAL_MARKETING_HEAD]: 'MK',
@@ -70,6 +66,7 @@ export const Permissions = {
   CUSTOMERS_UPDATE: 'customers.update',
   CUSTOMERS_DELETE: 'customers.delete',
   CUSTOMERS_CONVERT: 'customers.convert',
+  CUSTOMERS_KYC_WRITE: 'customers.kyc_write',
   
   PROPERTIES_CREATE: 'properties.create',
   PROPERTIES_READ: 'properties.read',
@@ -85,6 +82,11 @@ export const Permissions = {
   SITE_VISITS_ASSIGN_AGENT: 'site_visits.assign_agent',
   SITE_VISITS_COMPLETE: 'site_visits.complete',
   
+  PROJECTS_CREATE: 'projects.create',
+  PROJECTS_READ: 'projects.read',
+  PROJECTS_UPDATE: 'projects.update',
+  PROJECTS_DELETE: 'projects.delete',
+  
   BOOKINGS_CREATE: 'bookings.create',
   BOOKINGS_READ: 'bookings.read',
   BOOKINGS_UPDATE: 'bookings.update',
@@ -95,14 +97,6 @@ export const Permissions = {
   PAYMENTS_READ: 'payments.read',
   PAYMENTS_UPDATE: 'payments.update',
   PAYMENTS_CANCEL: 'payments.cancel',
-  
-  CHANNEL_PARTNERS_CREATE: 'channel_partners.create',
-  CHANNEL_PARTNERS_READ: 'channel_partners.read',
-  CHANNEL_PARTNERS_UPDATE: 'channel_partners.update',
-  CHANNEL_PARTNERS_CALCULATE_COMMISSION: 'channel_partners.calculate_commission',
-  CHANNEL_PARTNERS_PROTECT_LEAD: 'channel_partners.protect_lead',
-  CHANNEL_PARTNERS_PAYOUTS_READ: 'channel_partners.payouts.read',
-  CHANNEL_PARTNERS_PAYOUTS_APPROVE: 'channel_partners.payouts.approve',
   
   TASKS_CREATE: 'tasks.create',
   TASKS_READ: 'tasks.read',
@@ -138,6 +132,11 @@ export const Permissions = {
   
   PUBLIC_PROPERTIES_READ: 'public.properties.read',
   PUBLIC_LEADS_CREATE: 'public.leads.create',
+  
+  DOCUMENTS_CREATE: 'documents.create',
+  DOCUMENTS_READ: 'documents.read',
+  DOCUMENTS_VERIFY: 'documents.verify',
+  DOCUMENTS_DELETE: 'documents.delete',
 } as const;
 
 export type Permission = typeof Permissions[keyof typeof Permissions];
@@ -162,15 +161,22 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.CUSTOMERS_UPDATE,
     Permissions.CUSTOMERS_DELETE,
     Permissions.CUSTOMERS_CONVERT,
+    Permissions.CUSTOMERS_KYC_WRITE,
+    Permissions.PROJECTS_CREATE,
+    Permissions.PROJECTS_READ,
+    Permissions.PROJECTS_UPDATE,
+    Permissions.PROJECTS_DELETE,
     Permissions.BOOKINGS_CREATE,
     Permissions.BOOKINGS_READ,
     Permissions.BOOKINGS_UPDATE,
-    Permissions.BOOKINGS_CANCEL,
-    Permissions.BOOKINGS_CONFIRM,
     Permissions.PAYMENTS_CREATE,
     Permissions.PAYMENTS_READ,
     Permissions.PAYMENTS_UPDATE,
     Permissions.PAYMENTS_CANCEL,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
+    Permissions.DOCUMENTS_VERIFY,
+    Permissions.DOCUMENTS_DELETE,
     // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
   ],
   
@@ -188,21 +194,25 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.TASKS_ASSIGN,
     Permissions.REPORTS_READ_TEAM,
     Permissions.PERFORMANCE_READ_TEAM,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
+    Permissions.CUSTOMERS_KYC_WRITE,
   ],
   
   [Roles.FINANCE]: [
     Permissions.EXPENSES_REVIEW,
     Permissions.EXPENSES_MARK_REFUNDED,
-    Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
-    Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION,
     Permissions.EMPLOYEES_VIEW_SENSITIVE, // Finance receives authorized sensitive fields
     Permissions.BOOKINGS_READ,
-    Permissions.BOOKINGS_CONFIRM,
-    Permissions.BOOKINGS_CANCEL,
+    Permissions.BOOKINGS_UPDATE,
     Permissions.PAYMENTS_CREATE,
     Permissions.PAYMENTS_READ,
     Permissions.PAYMENTS_UPDATE,
     Permissions.PAYMENTS_CANCEL,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
+    Permissions.DOCUMENTS_VERIFY,
+    Permissions.CUSTOMERS_KYC_WRITE,
   ],
   
   [Roles.MARKETING_DIRECTOR]: [
@@ -223,15 +233,21 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_TARGETS_CONFIGURE,
     Permissions.REPORTS_READ_TEAM,
     Permissions.PERFORMANCE_READ_TEAM,
-    Permissions.CHANNEL_PARTNERS_READ,
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
   ],
   
   [Roles.PROJECT_MANAGER]: [
+    Permissions.PROJECTS_CREATE,
+    Permissions.PROJECTS_READ,
+    Permissions.PROJECTS_UPDATE,
+    Permissions.PROJECTS_DELETE,
     Permissions.PROPERTIES_CREATE,
     Permissions.PROPERTIES_VERIFY,
     Permissions.PROPERTIES_READ,
+    Permissions.PROPERTIES_UPDATE,
     Permissions.SITE_VISITS_READ,
     Permissions.SITE_VISITS_ASSIGN_AGENT,
     Permissions.TASKS_CREATE,
@@ -244,6 +260,8 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_READ_OWN,
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
   ],
   
   [Roles.DIGITAL_LEAD_OPERATOR]: [
@@ -260,16 +278,18 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.CUSTOMERS_CONVERT,
     Permissions.SITE_VISITS_CREATE,
     Permissions.SITE_VISITS_VERIFY,
-    Permissions.CHANNEL_PARTNERS_READ,
     Permissions.REPORTS_TARGETS_CONFIGURE,
     Permissions.BOOKINGS_CREATE,
     Permissions.BOOKINGS_READ,
     Permissions.BOOKINGS_UPDATE,
     Permissions.PAYMENTS_CREATE,
     Permissions.PAYMENTS_READ,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
   ],
   
   [Roles.TELECALLER]: [
+    Permissions.PROJECTS_READ,
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
     Permissions.LEADS_WHATSAPP_PROPOSAL,
@@ -289,16 +309,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.PERFORMANCE_READ_OWN,
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
-  ],
-  
-  [Roles.CHANNEL_PARTNER_MANAGER]: [
-    Permissions.CHANNEL_PARTNERS_CREATE,
-    Permissions.CHANNEL_PARTNERS_READ,
-    Permissions.CHANNEL_PARTNERS_UPDATE,
-    Permissions.CHANNEL_PARTNERS_CALCULATE_COMMISSION,
-    Permissions.CHANNEL_PARTNERS_PROTECT_LEAD,
-    Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
-    Permissions.PERFORMANCE_READ_TEAM,
+    Permissions.DOCUMENTS_READ,
   ],
   
   [Roles.DIGITAL_MARKETING_HEAD]: [
@@ -324,13 +335,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.PERFORMANCE_READ_OWN,
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
-  ],
-  
-  [Roles.CHANNEL_PARTNER]: [
-    Permissions.CHANNEL_PARTNERS_READ,
-    Permissions.CHANNEL_PARTNERS_PAYOUTS_READ,
-    Permissions.LEADS_READ,
-    Permissions.SITE_VISITS_READ,
+    Permissions.DOCUMENTS_READ,
   ],
   
   [Roles.DIGITAL_MARKETING_EXECUTIVE]: [
@@ -464,6 +469,9 @@ export const TaskCreateSchema = z.object({
   assignee_id: z.number().int().positive(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
   deadline: z.string().min(1, 'Deadline date/time is required'),
+  lead_id: z.number().int().positive().optional().nullable(),
+  opportunity_id: z.number().int().positive().optional().nullable(),
+  booking_id: z.number().int().positive().optional().nullable(),
 });
 
 export type TaskCreateInput = z.infer<typeof TaskCreateSchema>;
@@ -483,6 +491,7 @@ export const LeadStatus = {
   QUALIFIED: 'QUALIFIED',
   SITE_VISIT_SCHEDULED: 'SITE_VISIT_SCHEDULED',
   NEGOTIATION: 'NEGOTIATION',
+  OPPORTUNITY_OPEN: 'OPPORTUNITY_OPEN',
   WON: 'WON',
   LOST: 'LOST',
   RECOVERED_TO_POOL: 'RECOVERED_TO_POOL',
@@ -510,9 +519,32 @@ export const LeadCreateSchema = z.object({
   budget_max: z.number().optional().nullable(),
   preferred_location: z.string().optional(),
   notes: z.string().optional(),
+  campaign: z.string().optional().nullable(),
+  utm_source: z.string().optional().nullable(),
+  utm_medium: z.string().optional().nullable(),
+  utm_campaign: z.string().optional().nullable(),
 });
 
 export type LeadCreateInput = z.infer<typeof LeadCreateSchema>;
+
+// Website public lead intake — mirrors the fields the public API currently accepts.
+// Intentionally narrower than the internal LeadCreateSchema (no source/campaign/UTM:
+// source is forced to WEBSITE server-side).
+export const PublicLeadCreateSchema = z.object({
+  customer_name: z.string().min(2, 'Customer name is required'),
+  phone: z.string().min(10, 'Valid phone number is required'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  property_type_preference: z.string().optional(),
+  preferred_location: z.string().optional(),
+  enquiry_type: z.enum(['appraisal', 'call', 'project', 'property', 'consultation', 'other']).optional(),
+  preferred_contact_time: z.enum(['immediate', 'business_hours', 'after_hours', 'anytime']).optional(),
+  property_ids: z.array(z.number().int().positive()).max(10).optional(),
+  project_id: z.number().int().positive().optional().nullable(),
+  budget_max: z.number().positive('Budget must be a positive number').optional().nullable(),
+  notes: z.string().optional(),
+});
+
+export type PublicLeadCreateInput = z.infer<typeof PublicLeadCreateSchema>;
 
 export const LeadStatusUpdateSchema = z.object({
   status: z.enum([
@@ -522,6 +554,7 @@ export const LeadStatusUpdateSchema = z.object({
     'QUALIFIED',
     'SITE_VISIT_SCHEDULED',
     'NEGOTIATION',
+    'OPPORTUNITY_OPEN',
     'WON',
     'LOST',
     'RECOVERED_TO_POOL',
@@ -538,6 +571,31 @@ export const LeadReassignSchema = z.object({
 
 export type LeadReassignInput = z.infer<typeof LeadReassignSchema>;
 
+// Project Constants & Schemas
+export const ProjectCreateSchema = z.object({
+  name: z.string().min(3),
+  description: z.string().optional(),
+  location: z.string().min(3),
+  total_area: z.string().optional(),
+  launch_date: z.string().optional(),
+  amenities: z.any().optional(),
+  assigned_pm_id: z.number().int().positive().optional().nullable(),
+});
+
+export type ProjectCreateInput = z.infer<typeof ProjectCreateSchema>;
+
+export const ProjectUpdateSchema = z.object({
+  name: z.string().min(3).optional(),
+  description: z.string().optional(),
+  location: z.string().min(3).optional(),
+  total_area: z.string().optional(),
+  launch_date: z.string().optional(),
+  amenities: z.any().optional(),
+  assigned_pm_id: z.number().int().positive().optional().nullable(),
+  status: z.enum(['PLANNING', 'UNDER_CONSTRUCTION', 'COMPLETED', 'CANCELLED']).optional(),
+});
+
+export type ProjectUpdateInput = z.infer<typeof ProjectUpdateSchema>;
 export const AddPropertyInterestSchema = z.object({
   property_id: z.number().int().positive(),
 });
@@ -549,9 +607,21 @@ export const PropertyStatus = {
   PENDING_MD_APPROVAL: 'PENDING_MD_APPROVAL',
   LIVE: 'LIVE',
   REJECTED: 'REJECTED',
+  LOCKED: 'LOCKED',
+  BOOKED: 'BOOKED',
+  SOLD: 'SOLD',
 } as const;
 
 export type PropertyStatusType = typeof PropertyStatus[keyof typeof PropertyStatus];
+
+export const PropertyAvailability = {
+  AVAILABLE: 'AVAILABLE',
+  RESERVED: 'RESERVED',
+  SOLD: 'SOLD',
+  UNAVAILABLE: 'UNAVAILABLE',
+} as const;
+
+export type PropertyAvailabilityType = typeof PropertyAvailability[keyof typeof PropertyAvailability];
 
 export const PropertyBrand = {
   SONTHILLU: 'SONTHILLU', // Residential Villas & Apartments
@@ -576,7 +646,15 @@ export const PropertyCreateSchema = z.object({
   amenities: z.string().optional(),
   possession_status: z.enum(['READY_TO_MOVE', 'UNDER_CONSTRUCTION']).optional(),
   assigned_pm_id: z.number().int().optional().nullable(),
-  details: z.any().optional(), // Flexible JSON payload for specific property details
+  details: z.any().optional(),
+  // WR-2: Structured location fields
+  state: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  locality: z.string().optional().nullable(),
+  pincode: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  listing_type: z.enum(['NEW', 'RESALE']).optional(),
 });
 
 export type PropertyCreateInput = z.infer<typeof PropertyCreateSchema>;
@@ -604,6 +682,38 @@ export const PropertyMDApprovalSchema = z.object({
 });
 
 export type PropertyMDApprovalInput = z.infer<typeof PropertyMDApprovalSchema>;
+
+export const PropertyUpdateSchema = z.object({
+  title: z.string().min(3).optional(),
+  description: z.string().optional(),
+  type: z.enum(['APARTMENT', 'VILLA', 'PLOT', 'COMMERCIAL']).optional(),
+  price: z.number().positive().optional(),
+  size: z.string().optional(),
+  location: z.string().min(3).optional(),
+  bhk: z.number().int().positive().optional(),
+  facing: z.string().optional(),
+  amenities: z.any().optional(),
+  project_id: z.number().int().positive().nullable().optional(),
+  status: z.enum(['PENDING_VERIFICATION', 'PENDING_DM_POLISH', 'PENDING_MD_APPROVAL', 'LIVE', 'REJECTED', 'LOCKED', 'BOOKED', 'SOLD']).optional(),
+  // WR-2: Structured location fields
+  state: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  locality: z.string().optional().nullable(),
+  pincode: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  listing_type: z.enum(['NEW', 'RESALE']).optional(),
+});
+
+export type PropertyUpdateInput = z.infer<typeof PropertyUpdateSchema>;
+
+export const PropertyPublicationSchema = z.object({
+  property_id: z.number().int().positive(),
+  company_id: z.number().int().positive(),
+  is_published: z.boolean(),
+});
+
+export type PropertyPublicationInput = z.infer<typeof PropertyPublicationSchema>;
 
 // Expense Refund Constants & Schemas
 export const ExpenseRefundStatus = {
@@ -642,45 +752,7 @@ export const ExpenseRefundMarkRefundedSchema = z.object({});
 
 export type ExpenseRefundMarkRefundedInput = z.infer<typeof ExpenseRefundMarkRefundedSchema>;
 
-// Channel Partner & Incentive Constants
-export const CPTier = {
-  SILVER: 'SILVER', // 2.0% Base Rate
-  GOLD: 'GOLD', // 2.5% Rate
-  PLATINUM: 'PLATINUM', // 3.0% Top Rate
-} as const;
 
-export const CPTierRates: Record<string, number> = {
-  SILVER: 2.0,
-  GOLD: 2.5,
-  PLATINUM: 3.0,
-};
-
-export const CPOverrideRate = 0.5; // Level 2 Upline Override Rate %
-
-export const CPCreateSchema = z.object({
-  firm_name: z.string().min(2, 'Firm name is required'),
-  contact_name: z.string().min(2, 'Contact person name is required'),
-  phone: z.string().min(10, 'Valid phone number required'),
-  email: z.string().email().optional().or(z.literal('')),
-  tier: z.enum(['SILVER', 'GOLD', 'PLATINUM']).default('SILVER'),
-  upline_cp_id: z.number().int().optional().nullable(),
-  rera_number: z.string().optional(),
-  pan_number: z.string().optional(),
-  bank_name: z.string().optional(),
-  bank_account_number: z.string().optional(),
-  bank_ifsc: z.string().optional(),
-});
-
-export type CPCreateInput = z.infer<typeof CPCreateSchema>;
-
-export const CPCommissionCalculateSchema = z.object({
-  cp_id: z.number().int().positive('Channel Partner ID is required'),
-  deal_amount: z.number().positive('Deal amount must be greater than 0'),
-  property_id: z.number().int().optional(),
-  lead_id: z.number().int().optional(),
-});
-
-export type CPCommissionCalculateInput = z.infer<typeof CPCommissionCalculateSchema>;
 
 // ─────────────────────────────────────────────────────────────
 // CUSTOMER SCHEMAS
@@ -703,3 +775,365 @@ export const CustomerUpdateSchema = z.object({
   email: z.string().email().optional(),
   status: z.string().optional(),
 });
+
+// ─────────────────────────────────────────────────────────────
+// DOCUMENT MANAGEMENT — Phase 11
+// ─────────────────────────────────────────────────────────────
+
+export const DocumentType = {
+  KYC_PAN: 'KYC_PAN',
+  KYC_AADHAAR: 'KYC_AADHAAR',
+  BOOKING_AGREEMENT: 'BOOKING_AGREEMENT',
+  PAYMENT_RECEIPT: 'PAYMENT_RECEIPT',
+  BOOKING_RECEIPT: 'BOOKING_RECEIPT',
+  SALE_DEED: 'SALE_DEED',
+  PROPERTY_TITLE: 'PROPERTY_TITLE',
+  PROPERTY_PLAN: 'PROPERTY_PLAN',
+  PROPOSAL: 'PROPOSAL',
+  OTHER: 'OTHER',
+} as const;
+
+export type DocumentTypeValue = typeof DocumentType[keyof typeof DocumentType];
+
+export const DocumentStatus = {
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type DocumentStatusValue = typeof DocumentStatus[keyof typeof DocumentStatus];
+
+export const DocumentVerificationStatus = {
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type DocumentVerificationStatusValue = typeof DocumentVerificationStatus[keyof typeof DocumentVerificationStatus];
+
+// Document type -> required entity FK mapping
+export const DOCUMENT_TYPE_ENTITY_REQUIREMENTS: Record<string, { required: string[]; optional: string[] }> = {
+  [DocumentType.KYC_PAN]: { required: ['customer_id'], optional: [] },
+  [DocumentType.KYC_AADHAAR]: { required: ['customer_id'], optional: [] },
+  [DocumentType.BOOKING_AGREEMENT]: { required: ['booking_id'], optional: ['customer_id'] },
+  [DocumentType.BOOKING_RECEIPT]: { required: ['booking_id'], optional: ['payment_id'] },
+  [DocumentType.PAYMENT_RECEIPT]: { required: ['payment_id'], optional: ['booking_id'] },
+  [DocumentType.SALE_DEED]: { required: ['booking_id'], optional: ['property_id', 'customer_id'] },
+  [DocumentType.PROPERTY_TITLE]: { required: ['property_id'], optional: ['project_id'] },
+  [DocumentType.PROPERTY_PLAN]: { required: ['property_id'], optional: ['project_id'] },
+  [DocumentType.PROPOSAL]: { required: ['lead_id'], optional: ['opportunity_id'] },
+  [DocumentType.OTHER]: { required: [], optional: ['customer_id', 'lead_id', 'opportunity_id', 'booking_id', 'property_id', 'project_id', 'payment_id'] },
+};
+
+export const DocumentUploadSchema = z.object({
+  document_type: z.enum([
+    'KYC_PAN', 'KYC_AADHAAR', 'BOOKING_AGREEMENT', 'PAYMENT_RECEIPT',
+    'BOOKING_RECEIPT', 'SALE_DEED', 'PROPERTY_TITLE', 'PROPERTY_PLAN',
+    'PROPOSAL', 'OTHER',
+  ]),
+  title: z.string().min(1, 'Title is required').max(255),
+  customer_id: z.coerce.number().int().positive().optional().nullable(),
+  lead_id: z.coerce.number().int().positive().optional().nullable(),
+  opportunity_id: z.coerce.number().int().positive().optional().nullable(),
+  booking_id: z.coerce.number().int().positive().optional().nullable(),
+  property_id: z.coerce.number().int().positive().optional().nullable(),
+  project_id: z.coerce.number().int().positive().optional().nullable(),
+  payment_id: z.coerce.number().int().positive().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+export type DocumentUploadInput = z.infer<typeof DocumentUploadSchema>;
+
+export const DocumentVerifySchema = z.object({
+  status: z.enum(['VERIFIED', 'REJECTED']),
+  notes: z.string().optional().nullable(),
+});
+
+export type DocumentVerifyInput = z.infer<typeof DocumentVerifySchema>;
+
+export const DocumentArchiveSchema = z.object({
+  reason: z.string().optional().nullable(),
+});
+
+export type DocumentArchiveInput = z.infer<typeof DocumentArchiveSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// CUSTOMER PORTAL INTEGRATION — Phase 11 Packet 3B
+// ─────────────────────────────────────────────────────────────
+
+export const PortalCallbackStatus = {
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const;
+
+export type PortalCallbackStatusValue = typeof PortalCallbackStatus[keyof typeof PortalCallbackStatus];
+
+export const PortalCallbackSchema = z.object({
+  idempotency_key: z.string().min(1),
+  event_type: z.literal('BOOKING_PORTAL_HANDOFF'),
+  status: z.enum(['completed', 'failed']),
+  portal_customer_id: z.string().optional().nullable(),
+  portal_booking_id: z.string().optional().nullable(),
+  company_id: z.number().int().positive(),
+  crms_booking_id: z.number().int().positive(),
+  message: z.string().optional().nullable(),
+});
+
+export type PortalCallbackInput = z.infer<typeof PortalCallbackSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// CUSTOMER KYC — Phase 11 Packet 3C (KYC Data Bridge)
+// ─────────────────────────────────────────────────────────────
+
+export const KycStatus = {
+  PENDING: 'PENDING',
+  PARTIAL: 'PARTIAL',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type KycStatusValue = typeof KycStatus[keyof typeof KycStatus];
+
+export const KYC_STATUSES = Object.values(KycStatus) as string[];
+
+/**
+ * CRM-internal KYC write/update path. Encrypted at rest before persistence.
+ * Raw PAN/Aadhaar NEVER cross the CRM ↔ Portal boundary (Packet 3C §3.4).
+ */
+export const CustomerKycWriteSchema = z.object({
+  pan_number: z.string().regex(/^[A-Z0-9]{10}$/, 'PAN must be 10 alphanumeric characters').optional(),
+  aadhaar_number: z.string().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional(),
+});
+
+export type CustomerKycWriteInput = z.infer<typeof CustomerKycWriteSchema>;
+
+/**
+ * Outbound CRM → Portal KYC status push payload (Packet 3C §3).
+ * Contains ONLY status + masked PAN — never raw PAN/Aadhaar/bank data.
+ */
+export const KycStatusChangedSchema = z.object({
+  event_type: z.literal('CUSTOMER_KYC_STATUS_CHANGED'),
+  company_id: z.number().int().positive(),
+  crms_customer_id: z.number().int().positive(),
+  crms_booking_id: z.number().int().positive().nullable(),
+  kyc_status: z.enum(['PENDING', 'PARTIAL', 'VERIFIED', 'REJECTED']),
+  masked_pan: z.string().nullable(),
+  verified_at: z.string().datetime().nullable(),
+});
+
+export type KycStatusChangedInput = z.infer<typeof KycStatusChangedSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// PORTAL → CRM KYC SUBMISSION CALLBACK — Phase 11 Packet 3D
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Inbound Portal → CRM KYC submission callback (Packet 3D).
+ * The Portal may report ONLY "submitted" — verification authority stays
+ * exclusively in CRM. Raw PAN/Aadhaar/bank/document data is NEVER part of
+ * this contract (Packet 3C §3.4 / §4.2).
+ */
+export const KycCallbackSchema = z.object({
+  idempotency_key: z.string().min(1),
+  event_type: z.literal('CUSTOMER_KYC_STATUS_CHANGED'),
+  status: z.literal('submitted'),
+  portal_customer_id: z.string().optional().nullable(),
+  company_id: z.number().int().positive(),
+  crms_customer_id: z.number().int().positive(),
+  crms_booking_id: z.number().int().positive().optional().nullable(),
+}).strict();
+
+export type KycCallbackInput = z.infer<typeof KycCallbackSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// PAYMENT SYNCHRONIZATION — Phase 11 Packet 3F
+// ─────────────────────────────────────────────────────────────
+
+export const PAYMENT_EVENT_TYPE = 'PAYMENT_STATUS_CHANGED';
+
+/**
+ * Outbound CRM → Portal payment status push payload (Packet 3F §4).
+ * Contains ONLY amounts + identifiers — NEVER card/UPI/bank credentials,
+ * CVV, or any raw financial secret (3A–3E sensitive-data policy).
+ */
+export const PaymentStatusChangedSchema = z.object({
+  event_type: z.literal(PAYMENT_EVENT_TYPE),
+  company_id: z.number().int().positive(),
+  crms_customer_id: z.number().int().positive(),
+  crms_booking_id: z.number().int().positive(),
+  payment_id: z.number().int().positive(),
+  payment_code: z.string().min(1),
+  installment_id: z.number().int().positive().nullable(),
+  amount: z.number().positive(),
+  status: z.enum(['SUCCESS', 'REFUNDED']),
+  payment_date: z.string().datetime(),
+  reference_number: z.string().nullable().optional(),
+});
+
+export type PaymentStatusChangedInput = z.infer<typeof PaymentStatusChangedSchema>;
+
+/**
+ * Inbound Portal → CRM payment callback (Packet 3F §5).
+ * The Portal may report ONLY "completed" / "failed" — it may never claim
+ * SUCCESS/REFUNDED (CRM owns verification, enforced at the schema boundary).
+ * References the outbound PAYMENT_STATUS_CHANGED IntegrationEvent via its
+ * idempotency key; it NEVER creates a new IntegrationEvent.
+ */
+export const PaymentCallbackSchema = z.object({
+  idempotency_key: z.string().min(1),
+  event_type: z.literal(PAYMENT_EVENT_TYPE),
+  status: z.enum(['completed', 'failed']),
+  company_id: z.number().int().positive(),
+  crms_customer_id: z.number().int().positive(),
+  crms_booking_id: z.number().int().positive(),
+  payment_id: z.number().int().positive(),
+  portal_payment_id: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+}).strict();
+
+export type PaymentCallbackInput = z.infer<typeof PaymentCallbackSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// INSTALLMENT / FINANCIAL STATUS SYNC — Phase 11 Packet 3H
+// ─────────────────────────────────────────────────────────────
+
+export const INSTALLMENT_EVENT_TYPE = 'INSTALLMENT_STATUS_CHANGED';
+
+/**
+ * Outbound CRM → Portal installment financial status push (Packet 3H §5).
+ *
+ * Emitted atomically inside verifyPayment's transaction whenever an
+ * installment's PERSISTED status genuinely transitions (PENDING →
+ * PARTIALLY_RECEIVED / RECEIVED, PARTIALLY_RECEIVED → RECEIVED). OVERDUE is
+ * read-derived in the CRM (lazy, never persisted) and therefore is never
+ * emitted here.
+ *
+ * Contains ONLY identifiers + amounts + status — NEVER PAN/Aadhaar, bank
+ * data, salary, credentials, or secrets (3A–3G sensitive-data policy).
+ * remaining_amount = expected_amount - received_amount is the Portal's
+ * derived outstanding figure. CRM remains the financial source of truth.
+ */
+export const InstallmentStatusChangedSchema = z.object({
+  event_type: z.literal(INSTALLMENT_EVENT_TYPE),
+  company_id: z.number().int().positive(),
+  crms_customer_id: z.number().int().positive(),
+  crms_booking_id: z.number().int().positive(),
+  installment_id: z.number().int().positive(),
+  installment_number: z.number().int().positive(),
+  status: z.enum(['PENDING', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED']),
+  expected_amount: z.number().positive(),
+  received_amount: z.number().nonnegative(),
+  remaining_amount: z.number().nonnegative(),
+  changed_at: z.string().datetime(),
+});
+
+export type InstallmentStatusChangedInput = z.infer<typeof InstallmentStatusChangedSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// CUSTOMER NOTIFICATIONS — Phase 11 Packet 3E
+// ─────────────────────────────────────────────────────────────
+
+export const CustomerNotificationType = {
+  PORTAL_ACTIVATED: 'PORTAL_ACTIVATED',
+  KYC_STATUS_UPDATED: 'KYC_STATUS_UPDATED',
+  PAYMENT_STATUS_UPDATED: 'PAYMENT_STATUS_UPDATED', // Phase 11 Packet 3F
+} as const;
+
+export type CustomerNotificationTypeValue = typeof CustomerNotificationType[keyof typeof CustomerNotificationType];
+
+/**
+ * Read-only query for the Portal-facing customer-notifications API (Packet 3E).
+ * The Portal may only READ; it can never create/update/delete notifications.
+ * company_id + crms_customer_id are tenant/customer-scoped (both required).
+ */
+export const CustomerNotificationReadSchema = z.object({
+  company_id: z.number().int().positive(),
+  crms_customer_id: z.number().int().positive(),
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().positive().max(100).default(20),
+}).strict();
+
+export type CustomerNotificationReadInput = z.infer<typeof CustomerNotificationReadSchema>;
+
+/**
+ * Single customer-notification item returned by the read API (Packet 3E).
+ * Carries ONLY low-sensitivity fields — never raw PAN/Aadhaar/bank/salary.
+ */
+export const CustomerNotificationResponseSchema = z.object({
+  id: z.number().int().positive(),
+  type: z.string().min(1),
+  title: z.string().min(1),
+  message: z.string().min(1),
+  is_read: z.boolean(),
+  booking_id: z.number().int().positive().nullable(),
+  created_at: z.string().datetime(),
+}).strict();
+
+export type CustomerNotificationResponse = z.infer<typeof CustomerNotificationResponseSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// PORTAL / INTEGRATION METRICS — Phase 11 Packet 3G
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Read-only metrics query for GET /api/v1/integration/metrics (Packet 3G).
+ *
+ * - from/to are IST calendar dates (YYYY-MM-DD). Without them, the metrics
+ *   snapshot covers the full company history; with them, only rows created
+ *   inside the IST date range are counted.
+ * - includeTimeseries=true requires both from and to (time-series over an
+ *   unbounded window is not meaningful). It adds daily IST buckets.
+ * - Authenticated via a user JWT + ADMIN_SYSTEM_METRICS — NEVER the Portal
+ *   service token (the Portal must not read cross-tenant aggregate data).
+ */
+export const IntegrationMetricsQuerySchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'from must be YYYY-MM-DD (IST)').optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'to must be YYYY-MM-DD (IST)').optional(),
+  includeTimeseries: z.enum(['true', 'false']).optional(),
+}).strict();
+
+export type IntegrationMetricsQueryInput = z.infer<typeof IntegrationMetricsQuerySchema>;
+
+/**
+ * Response shape for the metrics endpoint. Aggregates ONLY — no raw
+ * IntegrationEvent payloads, PAN/Aadhaar, bank data, or other sensitive
+ * information ever crosses this contract (3A–3G sensitive-data policy).
+ */
+export const IntegrationMetricsResponseSchema = z.object({
+  generated_at: z.string().datetime(),
+  company_id: z.number().int().positive(),
+  range: z.object({
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  }),
+  handoffs: z.object({
+    total: z.number().int().nonnegative(),
+    byStatus: z.record(z.number().int().nonnegative()),
+    activationRate: z.number().min(0).max(100).nullable(),
+  }),
+  outbox: z.object({
+    total: z.number().int().nonnegative(),
+    byEventType: z.record(z.number().int().nonnegative()),
+    byStatus: z.record(z.number().int().nonnegative()),
+    retried: z.number().int().nonnegative(),
+    terminalFailures: z.number().int().nonnegative(),
+  }),
+  payments: z.object({
+    total: z.number().int().nonnegative(),
+    bySyncStatus: z.record(z.number().int().nonnegative()),
+    bySource: z.record(z.number().int().nonnegative()),
+  }),
+  kyc: z.object({
+    total: z.number().int().nonnegative(),
+    byStatus: z.record(z.number().int().nonnegative()),
+    submissions: z.number().int().nonnegative(),
+  }),
+  notifications: z.object({
+    total: z.number().int().nonnegative(),
+    byType: z.record(z.number().int().nonnegative()),
+  }),
+  timeseries: z.object({
+    days: z.array(z.record(z.any())),
+  }).optional(),
+}).strict();
+
+export type IntegrationMetricsResponse = z.infer<typeof IntegrationMetricsResponseSchema>;

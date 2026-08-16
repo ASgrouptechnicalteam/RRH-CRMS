@@ -107,7 +107,7 @@ router.get('/managers', authenticateToken, async (req: AuthenticatedRequest, res
         roles: {
           some: {
             role: {
-              name: { in: [Roles.MD, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.MARKETING_DIRECTOR, Roles.DIGITAL_MARKETING_HEAD, Roles.CHANNEL_PARTNER_MANAGER] },
+              name: { in: [Roles.MD, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.MARKETING_DIRECTOR, Roles.DIGITAL_MARKETING_HEAD] },
             },
           },
         },

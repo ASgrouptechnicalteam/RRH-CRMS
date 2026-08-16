@@ -209,25 +209,9 @@
     <div id="res_late" class="result">—</div>
   </div>
 
-  <!-- 12. CHANNEL PARTNER CREATE -->
-  <div class="section" id="sec_cp">
-    <h2>12. Create Channel Partner <span class="badge pending" id="badge_cp">PENDING</span></h2>
-    <textarea id="body_cp" aria-label="Create Channel Partner Payload" title="Create Channel Partner Payload">{
-  "firm_name": "Sai Properties Hyderabad",
-  "contact_name": "Suresh Babu",
-  "phone": "9876500001",
-  "email": "suresh@saiprops.com",
-  "tier": "SILVER",
-  "upline_cp_id": null,
-  "rera_number": "RERA-HYD-2026-001"
-}</textarea>
-    <button class="run" onclick="runTest('POST','/cp','body_cp','res_cp','badge_cp')">▶ POST /cp</button>
-    <div id="res_cp" class="result">—</div>
-  </div>
-
-  <!-- 13. GET CHECKS -->
+  <!-- 12. GET CHECKS -->
   <div class="section" id="sec_gets">
-    <h2>13. GET Endpoints (Read checks) <span class="badge pending" id="badge_gets">PENDING</span></h2>
+    <h2>12. GET Endpoints (Read checks) <span class="badge pending" id="badge_gets">PENDING</span></h2>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
       <button class="run" onclick="getCheck('/health','Health')">GET /health</button>
       <button class="run" onclick="getCheck('/leads','Leads')">GET /leads</button>
@@ -238,7 +222,6 @@
       <button class="run" onclick="getCheck('/targets/my-target','My Target')">GET /targets/my-target</button>
       <button class="run" onclick="getCheck('/reports/today-status','Report Status')">GET /reports/today-status</button>
       <button class="run" onclick="getCheck('/site-visits','Site Visits')">GET /site-visits</button>
-      <button class="run" onclick="getCheck('/cp','Channel Partners')">GET /cp</button>
       <button class="run" onclick="getCheck('/md/employees','MD Employees')">GET /md/employees</button>
       <button class="run" onclick="getCheck('/notifications','Notifications')">GET /notifications</button>
       <button class="run" onclick="getCheck('/performance/my-score','Performance Score')">GET /performance/my-score</button>

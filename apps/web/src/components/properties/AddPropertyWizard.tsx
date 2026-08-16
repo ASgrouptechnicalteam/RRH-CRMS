@@ -35,6 +35,17 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
   // Form State
   const [category, setCategory] = useState<string>('');
+  const [projects, setProjects] = useState<any[]>([]);
+  const [projectId, setProjectId] = useState<string>('');
+
+  React.useEffect(() => {
+    fetchWithAuth(`${API_BASE_URL}/projects`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.projects) setProjects(data.projects);
+      })
+      .catch(() => {});
+  }, [fetchWithAuth]);
   
   // Base fields
   const [title, setTitle] = useState('');
@@ -57,6 +68,18 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
   const toggleAmenity = (am: string) => {
     setAmenities(prev => prev.includes(am) ? prev.filter(a => a !== am) : [...prev, am]);
   };
+
+  // WR-2: Structured location fields
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [locality, setLocality] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [listingType, setListingType] = useState<'NEW' | 'RESALE'>('NEW');
+
+  // WR-3: Pending images (selected before property creation)
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
 
   const handleNext = () => setStep(s => Math.min(s + 1, 6));
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
@@ -83,10 +106,19 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
         location,
         address,
         facing,
-        bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
+        bedrooms: bedrooms ? parseInt(bathrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
+        project_id: projectId ? parseInt(projectId, 10) : null,
         amenities: amenities.join(', '),
-        details, // Push JSON details
+        details,
+        // WR-2: Structured location fields
+        state: state || null,
+        city: city || null,
+        locality: locality || null,
+        pincode: pincode || null,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        listing_type: listingType,
       };
 
       const res = await fetchWithAuth(`${API_BASE_URL}/properties`, {
@@ -97,6 +129,19 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
       const data = await res.json();
       if (res.ok) {
+        // Upload pending images if any
+        if (pendingImages.length > 0 && data.property?.id) {
+          for (let i = 0; i < pendingImages.length; i++) {
+            const formData = new FormData();
+            formData.append('image', pendingImages[i]);
+            formData.append('sort_order', String(i));
+            formData.append('alt_text', `${title} - Photo ${i + 1}`);
+            await fetchWithAuth(`${API_BASE_URL}/properties/${data.property.id}/images`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
+        }
         showToast(`Property Listing Created Successfully!`, 'success');
         onSuccess();
       } else {
@@ -188,6 +233,21 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Property Title *</label>
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Luxurious 3 BHK in Miyapur" />
               </div>
+
+              {projects.length > 0 && (
+                <div className="col-span-1 md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Associated Project / Site</label>
+                  <div className="relative">
+                    <Building2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                    <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white text-sm">
+                      <option value="">-- Standalone Property (No Project) --</option>
+                      {projects.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.location})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Expected Price (₹) *</label>
@@ -335,11 +395,41 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
           <div className="space-y-6 animate-fadeIn">
             <h2 className="text-2xl font-bold text-slate-800">Location & Address</h2>
             
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">City / Region Area *</label>
-              <div className="relative">
-                <MapPin className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Miyapur, Hyderabad" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Listing Type *</label>
+                <select value={listingType} onChange={e => setListingType(e.target.value as 'NEW' | 'RESALE')} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500">
+                  <option value="NEW">New</option>
+                  <option value="RESALE">Resale</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
+                <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Telangana" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
+                <div className="relative">
+                  <MapPin className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Hyderabad" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Locality / Area</label>
+                <input type="text" value={locality} onChange={e => setLocality(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Miyapur" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Pincode</label>
+                <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. 500049" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">City / Region Area *</label>
+                <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Miyapur, Hyderabad" />
               </div>
             </div>
 
@@ -348,17 +438,27 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
               <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Plot No. 45, Beside Main Road..."></textarea>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Property Facing</label>
-              <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500">
-                <option value="">Select Facing Direction</option>
-                <option value="EAST">East</option>
-                <option value="WEST">West</option>
-                <option value="NORTH">North</option>
-                <option value="SOUTH">South</option>
-                <option value="NORTH_EAST">North-East</option>
-                <option value="SOUTH_EAST">South-East</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Property Facing</label>
+                <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500">
+                  <option value="">Select Facing Direction</option>
+                  <option value="EAST">East</option>
+                  <option value="WEST">West</option>
+                  <option value="NORTH">North</option>
+                  <option value="SOUTH">South</option>
+                  <option value="NORTH_EAST">North-East</option>
+                  <option value="SOUTH_EAST">South-East</option>
+                </select>
+              </div>
+
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">GPS Coordinates (Internal Only — Not Public)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Latitude" />
+                  <input type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Longitude" />
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -394,10 +494,41 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             </div>
             <h2 className="text-2xl font-bold text-slate-800">Upload Photos</h2>
             <p className="text-slate-500 text-sm max-w-md mx-auto">
-              Photo uploading is currently handled by the media team post-creation. You can skip this step and proceed to submit your listing.
+              Select photos to upload. They will be reviewed by the DM team before going live.
             </p>
-            <div className="mt-8 p-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 max-w-lg mx-auto">
-              <span className="text-slate-400 font-semibold">Drop images here (Feature Coming Soon)</span>
+            
+            <div className="mt-8 max-w-lg mx-auto">
+              <label className="block p-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 cursor-pointer hover:border-teal-400 transition-colors">
+                <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <span className="text-slate-500 font-semibold text-sm">Click to select images (JPG, PNG, WebP)</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setPendingImages(prev => [...prev, ...files]);
+                  }}
+                />
+              </label>
+
+              {pendingImages.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {pendingImages.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg">
+                      <span className="text-xs text-slate-600 truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPendingImages(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-red-400 hover:text-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );

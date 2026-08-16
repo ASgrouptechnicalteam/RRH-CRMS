@@ -25,7 +25,6 @@ async function main() {
   });
   
   // Wipe everything else
-  await prisma.channelPartner.deleteMany({});
   await prisma.property.deleteMany({});
 
   

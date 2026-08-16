@@ -1,9 +1,130 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { PublicLeadCreateSchema } from '@rrh-ems/shared';
+import { validateRequestBody } from '../middleware/validate';
+import { publicReadLimiter, publicWriteLimiter } from '../middleware/rateLimiter';
+import { correlationId } from '../middleware/correlationId';
 
 const router = Router();
 const prisma = new PrismaClient();
 const p = prisma as any;
+
+// Public-safe property allowlist (WR-1/WR-2/WR-3/WR-6)
+const PUBLIC_PROPERTY_SELECT = {
+  id: true,
+  property_code: true,
+  title: true,
+  description: true,
+  category: true,
+  price: true,
+  area_sqft: true,
+  location: true,
+  address: true,
+  bedrooms: true,
+  bathrooms: true,
+  facing: true,
+  amenities: true,
+  possession_status: true,
+  details: true,
+  seo_title: true,
+  seo_keywords: true,
+  created_at: true,
+  state: true,
+  city: true,
+  locality: true,
+  pincode: true,
+  listing_type: true,
+  slug: true,
+  // GPS intentionally EXCLUDED — internal only
+  images: {
+    where: { status: 'APPROVED' },
+    select: {
+      id: true,
+      image_url: true,
+      is_primary: true,
+      alt_text: true,
+      sort_order: true,
+    },
+    orderBy: [{ sort_order: 'asc' as const }, { created_at: 'asc' as const }],
+  }
+} as const;
+
+// Public-safe property subset for project detail (less than full property detail)
+// Excludes: status (internal), GPS coordinates, seller info, internal workflow fields
+const PUBLIC_PROJECT_PROPERTY_SELECT = {
+  id: true,
+  property_code: true,
+  title: true,
+  description: true,
+  category: true,
+  price: true,
+  area_sqft: true,
+  location: true,
+  bedrooms: true,
+  bathrooms: true,
+  facing: true,
+  amenities: true,
+  possession_status: true,
+  created_at: true,
+  state: true,
+  city: true,
+  locality: true,
+  pincode: true,
+  listing_type: true,
+  slug: true,
+  images: {
+    where: { status: 'APPROVED' },
+    select: {
+      id: true,
+      image_url: true,
+      is_primary: true,
+      alt_text: true,
+      sort_order: true,
+    },
+    orderBy: [{ sort_order: 'asc' as const }, { created_at: 'asc' as const }],
+  }
+} as const;
+
+// WR-5/WR-6: Public-safe project allowlist
+const PUBLIC_PROJECT_SELECT = {
+  id: true,
+  project_code: true,
+  name: true,
+  description: true,
+  location: true,
+  total_area: true,
+  launch_date: true,
+  status: true,
+  amenities: true,
+  created_at: true,
+  slug: true,
+  // company_id EXCLUDED — internal
+  // assigned_pm_id EXCLUDED — internal
+  // branch_id EXCLUDED — internal
+} as const;
+
+// WR-5: Project detail extends list with properties
+const PUBLIC_PROJECT_DETAIL_SELECT = {
+  ...PUBLIC_PROJECT_SELECT,
+  properties: {
+    select: PUBLIC_PROJECT_PROPERTY_SELECT,
+    orderBy: { created_at: 'desc' as const },
+  },
+} as const;
+
+// Property detail adds a minimal project subset (WR-5 extends this pattern)
+const PUBLIC_PROPERTY_DETAIL_SELECT = {
+  ...PUBLIC_PROPERTY_SELECT,
+  project: {
+    select: {
+      id: true,
+      project_code: true,
+      name: true,
+      location: true,
+      status: true,
+    },
+  },
+} as const;
 
 // Public API Key Middleware
 const authenticatePublicKey = async (req: any, res: Response, next: any) => {
@@ -30,51 +151,434 @@ const authenticatePublicKey = async (req: any, res: Response, next: any) => {
   }
 };
 
+router.use(correlationId);
+router.use(publicReadLimiter);
 router.use(authenticatePublicKey);
 
 // GET /api/v1/public/:brand/properties
 router.get('/:brand/properties', async (req: any, res: Response) => {
   try {
     const { brand } = req.params;
-    let brand_type = '';
+    const { city, locality, listing_type, category, price_min, price_max, bedrooms, bathrooms, area_min, area_max, sort } = req.query;
+    let companyId: number | null = null;
 
     if (brand.toLowerCase() === 'rrh') {
-      brand_type = 'RADHA_REAL_HOMES';
+      companyId = req.apiKeyContext.company_id;
     } else if (brand.toLowerCase() === 'sonthillu') {
-      brand_type = 'SONTHILLU';
+      companyId = req.apiKeyContext.company_id;
     } else {
       return res.status(400).json({ error: 'Invalid brand specified in URL' });
     }
 
-    const properties = await p.property.findMany({
-      where: { 
-        brand_type,
-        status: 'LIVE' // Only show live properties to the public
+// Helper: safely convert query param to number, returns undefined for invalid
+    const toNum = (v: any) => {
+      if (v === null || v === undefined || v === '') return undefined;
+      const n = Number(v);
+      if (n !== n || !isFinite(n)) return undefined; // NaN or Infinity
+      return n;
+    };
+
+    const priceMin = toNum(price_min);
+    const priceMax = toNum(price_max);
+    const bedRooms = toNum(bedrooms);
+    const bathRooms = toNum(bathrooms);
+    const areaMin = toNum(area_min);
+    const areaMax = toNum(area_max);
+    const sortIn = sort as string;
+    const pageNum = toNum(req.query.page);
+    const limitNum = toNum(req.query.limit);
+
+    // WR-7: Validation — min <= max for price and area (only when both provided)
+    if (priceMin !== undefined && priceMax !== undefined && priceMin > priceMax) {
+      return res.status(400).json({ error: 'price_min must be <= price_max' });
+    }
+    if (areaMin !== undefined && areaMax !== undefined && areaMin > areaMax) {
+      return res.status(400).json({ error: 'area_min must be <= area_max' });
+    }
+
+    // WR-7: Validation — invalid numeric inputs → 400 (only when param provided in URL)
+    // toNum returns undefined for both "not provided" and "invalid value"
+    // Check raw query param to distinguish: if provided but invalid → 400
+    const hasPriceMin = price_min !== undefined;
+    const hasPriceMax = price_max !== undefined;
+    const hasAreaMin = area_min !== undefined;
+    const hasAreaMax = area_max !== undefined;
+    const hasPage = req.query.page !== undefined;
+    const hasLimit = req.query.limit !== undefined;
+
+    if (hasPriceMin && priceMin === undefined) {
+      return res.status(400).json({ error: 'Invalid price_min value' });
+    }
+    if (hasPriceMax && priceMax === undefined) {
+      return res.status(400).json({ error: 'Invalid price_max value' });
+    }
+    if (hasAreaMin && areaMin === undefined) {
+      return res.status(400).json({ error: 'Invalid area_min value' });
+    }
+    if (hasAreaMax && areaMax === undefined) {
+      return res.status(400).json({ error: 'Invalid area_max value' });
+    }
+    if (hasPage && pageNum === undefined) {
+      return res.status(400).json({ error: 'Invalid page value' });
+    }
+    if (hasLimit && limitNum === undefined) {
+      return res.status(400).json({ error: 'Invalid limit value' });
+    }
+
+    // WR-7: Validation — page >= 1, limit >= 1, max limit 50
+    const page = pageNum !== undefined && pageNum >= 1 ? pageNum : 1;
+    let limit = limitNum !== undefined && limitNum >= 1 ? limitNum : 20;
+    if (limit > 50) {
+      return res.status(400).json({ error: 'Limit must not exceed 50' });
+    }
+    limit = Math.min(limit, 50);
+
+    // Brand / publication / availability foundation (unchanged)
+    const publishedPropertyIds = await p.propertyPublication.findMany({
+      where: {
+        company_id: companyId,
+        is_published: true,
       },
-      include: {
-        images: true,
-        faqs: true,
-      },
-      orderBy: { created_at: 'desc' }
+      select: { property_id: true },
     });
 
-    res.status(200).json(properties);
+    const propertyIds = publishedPropertyIds.map((pp: any) => pp.property_id);
+
+    if (propertyIds.length === 0) {
+      return res.status(200).json({
+        properties: [],
+        page,
+        limit,
+        total: 0,
+        total_pages: 0,
+        has_more: false,
+      });
+    }
+
+    // Build where condition with mandatory public restrictions
+    const whereCondition: any = {
+      id: { in: propertyIds },
+      OR: [
+        { status: 'LIVE' },
+        {
+          status: 'LOCKED',
+          locked_until: { lt: new Date() },
+        },
+      ],
+    };
+
+    // WR-7: Price range filter (price >= priceMin AND price <= priceMax)
+    if (priceMin !== undefined && priceMax !== undefined) {
+      whereCondition.price = { gte: priceMin, lte: priceMax };
+    } else if (priceMin !== undefined) {
+      whereCondition.price = { gte: priceMin };
+    } else if (priceMax !== undefined) {
+      whereCondition.price = { lte: priceMax };
+    }
+
+    // WR-7: Bedrooms filter (bedrooms >= requested value)
+    if (bedRooms !== undefined && bedRooms >= 0) {
+      whereCondition.bedrooms = { gte: bedRooms };
+    }
+
+    // WR-7: Bathrooms filter (bathrooms >= requested value)
+    if (bathRooms !== undefined && bathRooms >= 0) {
+      whereCondition.bathrooms = { gte: bathRooms };
+    }
+
+    // WR-7: Area range filter using area_sqft
+    if (areaMin !== undefined && areaMax !== undefined) {
+      whereCondition.area_sqft = { gte: areaMin, lte: areaMax };
+    } else if (areaMin !== undefined) {
+      whereCondition.area_sqft = { gte: areaMin };
+    } else if (areaMax !== undefined) {
+      whereCondition.area_sqft = { lte: areaMax };
+    }
+
+    // WR-7: Sorting — only validated deterministic values
+    const sortValues = ['newest', 'price-asc', 'price-desc'];
+
+    // If sort is omitted (undefined), default to newest.
+    // If sort is provided but not in the validated list, return 400.
+    let sortBy: any;
+    if (sortIn === undefined) {
+      sortBy = 'newest';
+    } else if (sortValues.includes(sortIn)) {
+      sortBy = sortIn;
+    } else {
+      return res.status(400).json({ error: 'Invalid sort value' });
+    }
+
+    const orderBy: any = {};
+    if (sortBy === 'newest') {
+      orderBy.created_at = 'desc';
+    } else if (sortBy === 'price-asc') {
+      orderBy.price = 'asc';
+    } else if (sortBy === 'price-desc') {
+      orderBy.price = 'desc';
+    }
+
+    // WR-7: Pagination — page and limit with defaults and max
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    // Count total for pagination metadata (after all filters applied to published set)
+    const total = await p.property.count({
+      where: whereCondition,
+    });
+
+    const properties = await p.property.findMany({
+      where: whereCondition,
+      select: PUBLIC_PROPERTY_SELECT,
+      orderBy: orderBy,
+      skip: skip,
+      take: take,
+    });
+
+    const has_more = skip + take < total;
+
+    res.status(200).json({
+      properties,
+      page,
+      limit,
+      total,
+      total_pages: total > 0 ? Math.ceil(total / limit) : 0,
+      has_more,
+    });
   } catch (error) {
     console.error('Fetch public properties error:', error);
     res.status(500).json({ error: 'Failed to fetch properties' });
   }
 });
 
-// POST /api/v1/public/:brand/leads
-router.post('/:brand/leads', async (req: any, res: Response) => {
+// GET /api/v1/public/:brand/properties/:id — public property detail
+// Re-checks publication and availability on every request (never trusts list-state).
+router.get('/:brand/properties/:id', async (req: any, res: Response) => {
   try {
-    const { brand } = req.params;
-    const { customer_name, phone, email, notes, property_type_preference, preferred_location, budget_max } = req.body;
-    
+    const { brand, id } = req.params;
+
+    if (brand.toLowerCase() !== 'rrh' && brand.toLowerCase() !== 'sonthillu') {
+      return res.status(400).json({ error: 'Invalid brand specified in URL' });
+    }
+
+    const propertyId = Number(id);
+    if (!Number.isInteger(propertyId) || propertyId <= 0) {
+      return res.status(404).json({ error: 'Property not found or not available' });
+    }
+
     const companyId = req.apiKeyContext.company_id;
 
-    if (!customer_name || !phone) {
-      return res.status(400).json({ error: 'customer_name and phone are required' });
+    // Publication re-check: must be published to THIS company's brand feed.
+    const publication = await p.propertyPublication.findFirst({
+      where: {
+        property_id: propertyId,
+        company_id: companyId,
+        is_published: true,
+      },
+    });
+
+    if (!publication) {
+      return res.status(404).json({ error: 'Property not found or not available' });
+    }
+
+    // Availability re-check: only LIVE or expired-LOCKED records are publicly visible.
+    const property = await p.property.findFirst({
+      where: {
+        id: propertyId,
+        OR: [
+          { status: 'LIVE' },
+          {
+            status: 'LOCKED',
+            locked_until: { lt: new Date() },
+          },
+        ],
+      },
+      select: PUBLIC_PROPERTY_DETAIL_SELECT,
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found or not available' });
+    }
+
+    res.status(200).json(property);
+  } catch (error) {
+    console.error('Fetch public property detail error:', error);
+    res.status(500).json({ error: 'Failed to fetch property detail' });
+  }
+});
+
+// ─── WR-5: Public Project Endpoints ──────────────────────────────────────────
+
+// Brand → brand_type mapping (WR-1 established: RRH=Commercial/Plots, Sonthillu=Residential)
+const BRAND_TYPE_MAP: Record<string, string> = {
+  rrh: 'RADHA_REAL_HOMES',
+  sonthillu: 'SONTHILLU',
+};
+
+// Helper: derive inventory summary from properties in a project
+// Counts all properties in the project regardless of publication status,
+// but excludes CANCELLED properties from the total.
+function deriveInventorySummary(properties: any[]) {
+  let total = 0;
+  let available = 0;
+  let reserved = 0;
+  let sold = 0;
+  const now = new Date();
+
+  for (const prop of properties) {
+    // Skip cancelled properties entirely
+    if (prop.status === 'CANCELLED') continue;
+
+    total++;
+
+    if (prop.status === 'LIVE') {
+      available++;
+    } else if (prop.status === 'LOCKED') {
+      if (prop.locked_until && prop.locked_until < now) {
+        available++; // expired lock = available
+      } else {
+        reserved++; // active lock = reserved
+      }
+    } else if (prop.status === 'BOOKED' || prop.status === 'SOLD') {
+      sold++;
+    }
+    // PENDING_* / REJECTED: count in total but not in available/reserved/sold
+  }
+
+  return { total, available, reserved, sold };
+}
+
+// GET /api/v1/public/:brand/projects — list projects with published properties for this brand
+router.get('/:brand/projects', async (req: any, res: Response) => {
+  try {
+    const { brand } = req.params;
+    const brandLower = brand.toLowerCase();
+
+    if (brandLower !== 'rrh' && brandLower !== 'sonthillu') {
+      return res.status(400).json({ error: 'Invalid brand specified in URL' });
+    }
+
+    const companyId = req.apiKeyContext.company_id;
+    const brandType = BRAND_TYPE_MAP[brandLower];
+
+    // Find projects that have at least one property:
+    // 1. of the matching brand_type (RRH → RADHA_REAL_HOMES, Sonthillu → SONTHILLU)
+    // 2. published to this company via PropertyPublication
+    const projects = await p.project.findMany({
+      where: {
+        properties: {
+          some: {
+            brand_type: brandType,
+            publications: {
+              some: {
+                company_id: companyId,
+                is_published: true,
+              },
+            },
+          },
+        },
+        status: { not: 'CANCELLED' },
+      },
+      select: PUBLIC_PROJECT_SELECT,
+      orderBy: { created_at: 'desc' },
+    });
+
+    // Derive inventory summary for each project
+    const projectsWithInventory = await Promise.all(
+      projects.map(async (project: any) => {
+        const allProperties = await p.property.findMany({
+          where: { project_id: project.id },
+          select: {
+            status: true,
+            locked_until: true,
+          },
+        });
+
+        const inventory_summary = deriveInventorySummary(allProperties);
+        return { ...project, inventory_summary };
+      })
+    );
+
+    res.status(200).json(projectsWithInventory);
+  } catch (error) {
+    console.error('Fetch public projects error:', error);
+    res.status(500).json({ error: 'Failed to fetch projects' });
+  }
+});
+
+// GET /api/v1/public/:brand/projects/:id — public project detail
+// Returns 404 when project does not exist or has no published properties for this brand.
+router.get('/:brand/projects/:id', async (req: any, res: Response) => {
+  try {
+    const { brand, id } = req.params;
+    const brandLower = brand.toLowerCase();
+
+    if (brandLower !== 'rrh' && brandLower !== 'sonthillu') {
+      return res.status(400).json({ error: 'Invalid brand specified in URL' });
+    }
+
+    const projectId = Number(id);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      return res.status(404).json({ error: 'Project not found or not available' });
+    }
+
+    const companyId = req.apiKeyContext.company_id;
+    const brandType = BRAND_TYPE_MAP[brandLower];
+
+    // Verify project exists and has at least one published property of this brand for this company
+    const publicationCheck = await p.propertyPublication.findFirst({
+      where: {
+        company_id: companyId,
+        is_published: true,
+        property: {
+          project_id: projectId,
+          brand_type: brandType,
+        },
+      },
+    });
+
+    if (!publicationCheck) {
+      return res.status(404).json({ error: 'Project not found or not available' });
+    }
+
+    // Fetch project with properties and approved images
+    const project = await p.project.findFirst({
+      where: { id: projectId },
+      select: PUBLIC_PROJECT_DETAIL_SELECT,
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found or not available' });
+    }
+
+    // Derive inventory summary from all properties in the project
+    const allProperties = await p.property.findMany({
+      where: { project_id: projectId },
+      select: {
+        status: true,
+        locked_until: true,
+      },
+    });
+
+    const inventory_summary = deriveInventorySummary(allProperties);
+
+    res.status(200).json({ ...project, inventory_summary });
+  } catch (error) {
+    console.error('Fetch public project detail error:', error);
+    res.status(500).json({ error: 'Failed to fetch project detail' });
+  }
+});
+
+// POST /api/v1/public/:brand/leads
+router.post('/:brand/leads', publicWriteLimiter, validateRequestBody(PublicLeadCreateSchema), async (req: any, res: Response) => {
+  try {
+    const { brand } = req.params;
+    const { customer_name, phone, email, notes, property_type_preference, preferred_location, budget_max, enquiry_type, preferred_contact_time, property_ids, project_id } = req.body;
+
+    const companyId = req.apiKeyContext.company_id;
+
+    if (brand.toLowerCase() !== 'rrh' && brand.toLowerCase() !== 'sonthillu') {
+      return res.status(400).json({ error: 'Invalid brand specified in URL' });
     }
 
     // Auto-generate Lead Code
@@ -95,6 +599,10 @@ router.post('/:brand/leads', async (req: any, res: Response) => {
         property_type_preference: property_type_preference || 'APARTMENT',
         preferred_location,
         budget_max: budget_max ? Number(budget_max) : null,
+        enquiry_type,
+        preferred_contact_time,
+        property_ids,
+        project_id,
         notes,
       },
     });

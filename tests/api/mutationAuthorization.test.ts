@@ -115,21 +115,6 @@ describe('Phase 4 - Authorization Architecture Consolidation & Mutation Hardenin
     });
   });
 
-  describe('Channel Partner Mutation Protection', () => {
-    it('prevents unauthorized role from registering CP', async () => {
-      // Telecaller tries to register a CP
-      const res = await request(app)
-        .post('/api/v1/cp')
-        .set('Authorization', `Bearer ${tcOrg1Token}`)
-        .send({
-          firm_name: 'Hack Firm',
-          contact_name: 'Hacker',
-          phone: '9999999999'
-        });
-        
-      expect(res.status).toBe(403);
-    });
-  });
 
   describe('Phase 6 - Target & Admin Protections', () => {
     it('prevents MD from setting targets for an employee in another company', async () => {

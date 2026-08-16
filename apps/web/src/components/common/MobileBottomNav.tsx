@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   TrendingUp,
   Building,
-  Network,
   MapPin,
   CheckSquare,
   Award,
@@ -15,7 +14,8 @@ import {
   Clock,
   Users,
   Target,
-  IndianRupee
+  IndianRupee,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -31,7 +31,7 @@ export const MobileBottomNav: React.FC = () => {
   const canManageEmployees = user?.roles?.some((r) => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
     ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
-     'channel partner manager', 'Digital Marketing head(manager)', 'accountant'].includes(r)
+     'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
   const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
 
@@ -80,6 +80,18 @@ export const MobileBottomNav: React.FC = () => {
           <button onClick={() => handleNav('/site-visits')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'site-visits' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}>
             <MapPin className="w-4 h-4" /> Site Visits
           </button>
+
+          {user?.permissions?.includes('PROJECTS_READ') && (
+            <button onClick={() => handleNav('/projects')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'projects' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+              <MapPin className="w-4 h-4" /> Projects & Sites
+            </button>
+          )}
+
+          {user?.permissions?.includes('documents.read') && (
+            <button onClick={() => handleNav('/documents')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'documents' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+              <FileText className="w-4 h-4" /> Documents
+            </button>
+          )}
 
           <div className="my-2 border-t border-slate-100" />
 
@@ -154,17 +166,6 @@ export const MobileBottomNav: React.FC = () => {
           </button>
         )}
 
-        {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'channel partner manager', 'accountant'].includes(r)) && (
-          <button
-            onClick={() => handleNav('/cp')}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-              activeTab === 'cp' ? 'text-amber-400 font-extrabold bg-amber-950/60' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Network className="w-5 h-5" />
-            <span className="text-[9px]">Network</span>
-          </button>
-        )}
 
         <button
           onClick={() => setIsDrawerOpen(true)}

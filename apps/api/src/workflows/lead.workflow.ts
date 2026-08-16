@@ -12,12 +12,13 @@ export class LeadWorkflow implements DomainWorkflow {
    * Value: Array of allowed next statuses
    */
   private static transitionMatrix: Record<string, string[]> = {
-    [LeadStatus.NEW]: [LeadStatus.ASSIGNED],
-    [LeadStatus.ASSIGNED]: [LeadStatus.CONTACTED, LeadStatus.RECOVERED_TO_POOL],
-    [LeadStatus.CONTACTED]: [LeadStatus.QUALIFIED, LeadStatus.LOST],
-    [LeadStatus.QUALIFIED]: [LeadStatus.SITE_VISIT_SCHEDULED, LeadStatus.NEGOTIATION, LeadStatus.LOST],
-    [LeadStatus.SITE_VISIT_SCHEDULED]: [LeadStatus.NEGOTIATION, LeadStatus.LOST],
-    [LeadStatus.NEGOTIATION]: [LeadStatus.WON, LeadStatus.LOST],
+    [LeadStatus.NEW]: [LeadStatus.ASSIGNED, LeadStatus.OPPORTUNITY_OPEN],
+    [LeadStatus.ASSIGNED]: [LeadStatus.CONTACTED, LeadStatus.OPPORTUNITY_OPEN, LeadStatus.RECOVERED_TO_POOL],
+    [LeadStatus.CONTACTED]: [LeadStatus.QUALIFIED, LeadStatus.OPPORTUNITY_OPEN, LeadStatus.LOST],
+    [LeadStatus.QUALIFIED]: [LeadStatus.SITE_VISIT_SCHEDULED, LeadStatus.NEGOTIATION, LeadStatus.OPPORTUNITY_OPEN, LeadStatus.LOST],
+    [LeadStatus.SITE_VISIT_SCHEDULED]: [LeadStatus.NEGOTIATION, LeadStatus.OPPORTUNITY_OPEN, LeadStatus.LOST],
+    [LeadStatus.NEGOTIATION]: [LeadStatus.WON, LeadStatus.OPPORTUNITY_OPEN, LeadStatus.LOST],
+    [LeadStatus.OPPORTUNITY_OPEN]: [LeadStatus.WON, LeadStatus.LOST],
     [LeadStatus.LOST]: [LeadStatus.RECOVERED_TO_POOL],
     [LeadStatus.RECOVERED_TO_POOL]: [LeadStatus.ASSIGNED],
     [LeadStatus.WON]: [], // Terminal state

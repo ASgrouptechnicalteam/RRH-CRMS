@@ -82,27 +82,7 @@ describe('Phase 7 - Data Access & Tenant Isolation Hardening', () => {
       }
     });
 
-    // CP Payout for Company A
-    const cpA = await p.channelPartner.create({
-      data: {
-        cp_code: 'CP-A',
-        firm_name: 'CP A',
-        contact_name: 'Contact A',
-        phone: '1111111111',
-        company_id: coA.id
-      }
-    });
-    
-    await p.cPPayout.create({
-      data: {
-        cp_id: cpA.id,
-        commission_amount: 5000,
-        deal_amount: 100000,
-        tier_rate_percent: 5,
-        status: 'PENDING',
-        payout_code: 'PAYOUT-TEST-1'
-      }
-    });
+
 
     // Attendance Log for Company A
     await p.attendanceLog.create({
@@ -128,8 +108,7 @@ describe('Phase 7 - Data Access & Tenant Isolation Hardening', () => {
   afterAll(async () => {
     await p.auditEvent.deleteMany({});
     await p.attendanceLog.deleteMany({});
-    await p.cPPayout.deleteMany({});
-    await p.channelPartner.deleteMany({});
+
     await p.dailyTarget.deleteMany({});
     await p.task.deleteMany({});
     await p.employeeRole.deleteMany({ where: { employee: { employee_code: { in: ['RRH-COA-001', 'RRH-COB-001', 'COA-MD-1', 'COB-MD-1'] } } } });
@@ -183,22 +162,6 @@ describe('Phase 7 - Data Access & Tenant Isolation Hardening', () => {
       // Only sees MD B, not MD A
       expect(res.body.managers.some((m: any) => m.label && m.label.includes('RRH-COB-001'))).toBe(true);
       expect(res.body.managers.some((m: any) => m.label && m.label.includes('RRH-COA-001'))).toBe(false);
-    });
-  });
-
-  describe('D. CP Payouts Isolation', () => {
-    it('prevents Company B from retrieving Company A payouts', async () => {
-      const res = await request(app)
-        .get('/api/v1/cp/payouts')
-        .set('Authorization', `Bearer ${coBToken}`);
-      
-      expect(res.status).toBe(200);
-      expect(res.body.payouts).toHaveLength(0);
-      
-      const resA = await request(app)
-        .get('/api/v1/cp/payouts')
-        .set('Authorization', `Bearer ${coAToken}`);
-      expect(resA.body.payouts).toHaveLength(1);
     });
   });
 

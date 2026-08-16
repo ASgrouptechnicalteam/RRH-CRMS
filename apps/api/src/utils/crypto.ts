@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_32_byte_secret_key_change_me_now!'; // Must be 32 bytes
+// Production REQUIRES a real ENCRYPTION_KEY (>= 32 chars) — the dev fallback is
+// only for development/test and is never used in production (Phase 11 Packet 3C).
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || (process.env.NODE_ENV === 'production' ? '' : 'default_32_byte_secret_key_change_me_now!');
 const IV_LENGTH = 16; // For AES, this is always 16
 
 export function encryptData(text: string | null | undefined): string | null {

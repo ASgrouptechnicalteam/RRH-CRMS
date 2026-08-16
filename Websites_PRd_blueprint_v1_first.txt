@@ -1,0 +1,69 @@
+RRH + SONTHILLU WEBSITES 
+PRODUCT REQUIREMENTS & V1 BLUEPRINT 
+Two distinct real-estate brands • One connected ecosystem • Shared CRM authority 
+Version 1.0 Draft Blueprint 
+14 August 2026 
+Scope: RRH (commercial, agriculture, open plots and related property) + Sonthillu (residential housing) 
+Purpose: establish a comprehensive product, UX, data, search, recommendation, integration, security, analytics, 
+hosting and implementation baseline before development. Confirmed decisions are recorded; proposed items are 
+explicitly identified; unresolved items are not guessed. 
+ 
+RRH + Sonthillu Websites — V1 PRD Blueprint | Draft 1.0 
+
+
+1. Document Control 
+Item 
+Value 
+Status 
+Draft for business + technical review 
+Websites 
+readhrealhomeproperties.com; sonthilluconstructions.com 
+Source of truth 
+RRH-CRMS for property/business lifecycle 
+Customer accounts 
+Separate RRH and Sonthillu accounts/databases 
+Website language 
+English 
+AI Search 
+Multilingual + mixed-language 
+Hosting 
+Existing Hostinger Business plan 
+Proposed public stack 
+Next.js + TypeScript + React 
+CRM context 
+Express + TypeScript + Prisma + MySQL + React/Vite 
+V1 principle 
+Industry-standard essentials first; extensible, not over-engineered 
+ 
+Status legend 
+●​
+CONFIRMED — explicitly decided. 
+●​
+PROPOSED — recommended approach. 
+●​
+TBD — must be confirmed before implementation. 
+●​
+FUTURE — intentionally deferred. 
+2. Executive Summary 
+RRH and Sonthillu are two distinct but connected real-estate companies. RRH handles commercial properties, 
+agricultural land, open plots and related real-estate opportunities. Sonthillu focuses on residential housing such as 
+apartments/flats, independent houses and villas. Both support resale. 
+The websites must not be clones. They will share product capabilities and backend integration patterns while 
+maintaining separate visual identity, content tone, UX personality and customer accounts. Cross-branding is approved 
+but should be subtle and contextual. 
+RRH-CRMS remains the authoritative source for property existence, verification, lifecycle and publication eligibility. A 
+property may be associated with one or both companies; publication is independently controlled per brand. 
+Both websites provide Normal Search and AI Search. AI interprets natural language and multilingual/mixed-language 
+input into a structured requirement model. A deterministic matching/ranking engine then retrieves and ranks actual 
+CRM-approved inventory. A recommendation layer provides exact, related, nearby, slightly-above-budget and no-result 
+recovery options. 
+V1 prioritizes practical production features. Advanced ML personalization, complex AI agents and large-scale search 
+infrastructure are deferred until actual usage justifies them. 
+3. Business & Brand Model 
+3.1 RRH 
+●​
+General real-estate company focused on commercial properties, agricultural lands and open plots. 
+●​
+Rentals are not handled. 
+●​
+Resale is supported; owners can submit property for RRH to market/s

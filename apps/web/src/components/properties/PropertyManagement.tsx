@@ -26,6 +26,8 @@ import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
 import { AddPropertyWizard } from './AddPropertyWizard';
+import { EditPropertyModal } from './EditPropertyModal';
+import { Edit, Building2 } from 'lucide-react';
 
 interface Property {
   id: number;
@@ -46,6 +48,7 @@ interface Property {
   seo_title?: string;
   seo_keywords?: string;
   assigned_pm?: { id: number; employee_code: string; full_name: string; phone: string };
+  project?: { id: number; name: string };
   created_by?: { id: number; employee_code: string; full_name: string };
   created_at: string;
   verification_logs?: any[];
@@ -113,6 +116,7 @@ export const PropertyManagement: React.FC = () => {
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   // Create Form State
@@ -449,6 +453,12 @@ export const PropertyManagement: React.FC = () => {
                 <div>
                   <div className="font-mono font-bold text-teal-900 text-[11px] mb-0.5">{prop.property_code}</div>
                   <h3 className="font-extrabold text-slate-900 text-base leading-snug line-clamp-1">{prop.title}</h3>
+                  {prop.project && (
+                    <div className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full inline-block border border-teal-100 mb-1">
+                      <Building2 className="w-3 h-3 inline mr-1" />
+                      {prop.project.name}
+                    </div>
+                  )}
                   <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
                     {prop.location}
@@ -535,11 +545,30 @@ export const PropertyManagement: React.FC = () => {
             </div>
 
             <div>
-              <h3 className="font-extrabold text-slate-900 text-xl">{selectedProperty.title}</h3>
-              <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                {selectedProperty.location} • ₹{(selectedProperty.price / 100000).toFixed(1)} Lakhs
-              </p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-xl">{selectedProperty.title}</h3>
+                  {selectedProperty.project && (
+                    <div className="text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full inline-block border border-teal-100 mt-1 mb-2">
+                      <Building2 className="w-3.5 h-3.5 inline mr-1" />
+                      {selectedProperty.project.name}
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    {selectedProperty.location} • ₹{(selectedProperty.price / 100000).toFixed(1)} Lakhs
+                  </p>
+                </div>
+                {user?.permissions?.includes('PROPERTIES_UPDATE') && (
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="p-2 text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors"
+                    title="Edit Safe Details"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Pipeline Stage Progress Bar */}
@@ -681,6 +710,20 @@ export const PropertyManagement: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Safe Edit Modal */}
+      {showEditModal && selectedProperty && (
+        <EditPropertyModal 
+          property={selectedProperty}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => {
+            setShowEditModal(false);
+            fetchProperties();
+            // Optional: Re-fetch or close dossier. Let's just close dossier to refresh fresh.
+            setSelectedProperty(null);
+          }}
+        />
       )}
     </div>
   );

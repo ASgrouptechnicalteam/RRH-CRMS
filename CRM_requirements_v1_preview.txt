@@ -1,0 +1,101 @@
+RRH-CRMS REQUIREMENTS 
+FOR RRH + SONTHILLU WEBSITES 
+CRM → Website data, Website → CRM data, business rules and publication requirements 
+Version 1.0 • Discussion-derived working specification 
+14 August 2026 
+Purpose: define the CRM-side information and integration requirements for the two public websites. This document 
+records confirmed decisions from the planning discussion. Where an exact CRM field, API route or enum was not 
+discussed, it is marked as needing repository verification rather than guessed. 
+ 
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+1. Document Control 
+Item 
+Value 
+Purpose 
+Define what RRH-CRMS must provide to the RRH and Sonthillu 
+websites and what the websites must send back. 
+Consumers 
+RRH website and Sonthillu website 
+CRM 
+RRH-CRMS 
+Property source of truth 
+RRH-CRMS 
+Customer accounts 
+Separate RRH and Sonthillu customer databases/accounts 
+Website content language 
+English 
+AI Search language 
+Multilingual and mixed-language 
+Public availability rule 
+Reserved and Sold inventory are not live public listings 
+Document status 
+Working requirements; final field/API names must be reconciled with 
+actual CRM 
+ 
+1.1 Rules for interpreting this document 
+●​
+CONFIRMED = explicitly decided in the discussion. 
+●​
+PROPOSED/CONCEPTUAL = structure needed to implement confirmed behavior; exact implementation must 
+match CRM. 
+●​
+TBD = not specified yet; must be verified before development. 
+●​
+No technical assumption should override an existing CRM business rule. 
+2. Business Scope Relevant to CRM 
+2.1 RRH 
+●​
+Commercial properties, agricultural land, open plots and related real-estate categories. 
+●​
+Rentals are not handled. 
+●​
+Both company/own inventory and resale/owner-submitted properties are supported. 
+●​
+Current operating geography is Telangana; the model must support future state expansion. 
+2.2 Sonthillu 
+●​
+Residential/housing properties including apartments/flats, independent houses and villas. 
+●​
+Rentals are not handled. 
+●​
+Both company/own inventory and resale/owner-submitted properties are supported. 
+●​
+Current operating geography is Telangana; the model must support future state expansion. 
+2.3 Connected brands 
+●​
+RRH and Sonthillu are separate companies/brands with separate domains, branding and customer accounts. 
+●​
+They are connected through the same CRM ecosystem. 
+●​
+Cross-branding is approved by the owner. 
+●​
+A property can be associated with both companies, and publication can be independent per brand. 
+3. System Boundary 
+RRH Website​
+    │  Secure API​
+    ▼​
+RRH-CRMS​
+    ▲​
+    │  Secure API​
+    │​
+Sonthillu Website​
+​
+CRM owns:​
+RRH-CRMS Requirements for RRH + Sonthillu Websites | v1.0 
+
+
+- authoritative property/project data​
+- lifecycle and availability​
+- verification​
+- publication approval​
+- internal/source/seller information​
+- business workflows​
+​
+Websites own:​
+- public presentation​
+- public search experience​
+- customer account experience​
+- AI Search interface​
+- 

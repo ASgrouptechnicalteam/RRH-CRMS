@@ -17,16 +17,17 @@ import { StaffDashboard } from './components/dashboards/StaffDashboard';
 
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
-import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, TrendingUp, Building, Network, MapPin, ShieldCheck, IndianRupee, Bell } from 'lucide-react';
+import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, TrendingUp, Building, MapPin, ShieldCheck, IndianRupee, Bell, LineChart } from 'lucide-react';
 import { API_BASE_URL } from './config';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
+const SalesPipelineManagement = lazy(() => import('./components/sales/SalesPipelineManagement').then(m => ({ default: m.SalesPipelineManagement })));
 const CustomerManagement = lazy(() => import('./components/customers/CustomerManagement').then(m => ({ default: m.CustomerManagement })));
 const PropertyManagement = lazy(() => import('./components/properties/PropertyManagement').then(m => ({ default: m.PropertyManagement })));
-const ChannelPartnerManagement = lazy(() => import('./components/cp/ChannelPartnerManagement').then(m => ({ default: m.ChannelPartnerManagement })));
+const ProjectManagement = lazy(() => import('./components/projects/ProjectManagement').then(m => ({ default: m.ProjectManagement })));
 const SiteVisitManagement = lazy(() => import('./components/siteVisits/SiteVisitManagement').then(m => ({ default: m.SiteVisitManagement })));
 const TaskManager = lazy(() => import('./components/tasks/TaskManager').then(m => ({ default: m.TaskManager })));
 const BookingManagement = lazy(() => import('./components/commercial/BookingManagement').then(m => ({ default: m.BookingManagement })));
@@ -36,9 +37,10 @@ const BookingDossier = lazy(() => import('./components/commercial/BookingDossier
 export const prefetchMainModules = () => {
   setTimeout(() => {
     import('./components/leads/LeadManagement');
+    import('./components/sales/SalesPipelineManagement');
     import('./components/customers/CustomerManagement');
     import('./components/properties/PropertyManagement');
-    import('./components/cp/ChannelPartnerManagement');
+    import('./components/projects/ProjectManagement');
     import('./components/siteVisits/SiteVisitManagement');
     import('./components/tasks/TaskManager');
     import('./components/commercial/BookingManagement');
@@ -51,6 +53,7 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
+const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement })));
 // Legacy for standard users
 const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveProposals').then(m => ({ default: m.LateLeaveProposals })));
 
@@ -63,9 +66,8 @@ const DefaultRedirect: React.FC<{ user: import('./context/AuthContext').UserProf
   if (roles.includes('HR')) return <Navigate to="/hr-hub" replace />;
   if (roles.includes('accountant')) return <Navigate to="/finance" replace />;
   if (roles.some(r => ['telecallers', 'Digital lead operator', 'Digital Marketing head(manager)'].includes(r))) return <Navigate to="/leads" replace />;
-  if (roles.includes('channel partner manager')) return <Navigate to="/cp" replace />;
   if (roles.some(r => ['project managers'].includes(r))) return <Navigate to="/properties" replace />;
-  if (roles.some(r => ['Agent', 'channel partners'].includes(r))) return <Navigate to="/site-visits" replace />;
+  if (roles.some(r => ['Agent'].includes(r))) return <Navigate to="/site-visits" replace />;
   
   return <Navigate to="/tasks" replace />;
 };
@@ -160,7 +162,7 @@ const MainLayout: React.FC = () => {
   const canManageEmployees = user?.roles?.some(r => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
     ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
-     'channel partner manager', 'Digital Marketing head(manager)', 'accountant'].includes(r)
+     'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
 
   return (
@@ -254,6 +256,18 @@ const MainLayout: React.FC = () => {
             <span>Leads & Distribution</span>
           </button>
 
+          {user?.permissions?.includes('LEADS_READ') && (
+            <button
+              onClick={() => navigate('/sales-pipeline')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
+                activeTab === 'sales-pipeline' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-indigo-50'
+              }`}
+            >
+              <LineChart className="w-4 h-4 text-indigo-400 group-hover:text-indigo-500" />
+              <span>Sales Pipeline</span>
+            </button>
+          )}
+
           {user?.permissions?.includes('CUSTOMERS_READ') && (
             <button
               onClick={() => navigate('/customers')}
@@ -278,17 +292,18 @@ const MainLayout: React.FC = () => {
             </button>
           )}
 
-          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'channel partner manager', 'project managers'].includes(r)) && (
+          {user?.permissions?.includes('PROJECTS_READ') && (
             <button
-              onClick={() => navigate('/cp')}
+              onClick={() => navigate('/projects')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'cp' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                activeTab === 'projects' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <Network className="w-4 h-4 text-amber-400" />
-              <span>Channel Partners</span>
+              <MapPin className="w-4 h-4 text-emerald-500" />
+              <span>Projects & Sites</span>
             </button>
           )}
+
 
           {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'telecallers', 'Agent', 'digital marketing executive'].includes(r)) && (
             <button
@@ -373,6 +388,18 @@ const MainLayout: React.FC = () => {
             </button>
           )}
 
+          {user?.permissions?.includes('documents.read') && (
+            <button
+              onClick={() => navigate('/documents')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
+                activeTab === 'documents' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <FileText className="w-4 h-4 text-blue-500" />
+              <span>Documents</span>
+            </button>
+          )}
+
           {/* Finance — visible to all, Finance/MD get extra queue tab */}
           <button
             onClick={() => navigate('/finance')}
@@ -412,13 +439,15 @@ const MainLayout: React.FC = () => {
               } />
 
               <Route path="/leads" element={<LeadManagement />} />
+              <Route path="/sales-pipeline" element={user?.permissions?.includes('LEADS_READ') ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
               <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
+              <Route path="/projects" element={user?.permissions?.includes('PROJECTS_READ') ? <ProjectManagement /> : <Navigate to="/" replace />} />
               <Route path="/properties" element={<PropertyManagement />} />
-              <Route path="/cp" element={<ChannelPartnerManagement />} />
               <Route path="/site-visits" element={<SiteVisitManagement />} />
               <Route path="/tasks" element={<TaskManager />} />
               <Route path="/bookings" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingManagement /> : <Navigate to="/" replace />} />
               <Route path="/bookings/:id" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingDossier /> : <Navigate to="/" replace />} />
+              <Route path="/documents" element={user?.permissions?.includes('documents.read') ? <DocumentManagement /> : <Navigate to="/" replace />} />
               <Route path="/profile" element={<UserProfile />} />
               
               {/* Consolidated Hubs */}

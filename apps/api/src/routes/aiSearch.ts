@@ -1,12 +1,18 @@
 /**
- * Phase 17-B — AI Search API route.
+ * Phase 17-B/17-D — AI Search + AI Chat API routes.
  *
- * Flow: authenticateToken → aiSearchLimiter → requireAuthz(AI_SEARCH) → validateRequestBody
- *   → SearchIntentService.extract (server-derived req.user.companyId) → COMPLETE/INCOMPLETE.
+ * Search flow: authenticateToken → aiSearchLimiter → requireAuthz(AI_SEARCH) →
+ *   validateRequestBody(AISearchRequestSchema) → SearchIntentService.extract
+ *   (server-derived req.user.companyId) → COMPLETE/INCOMPLETE.
  *
- * The AI's responsibility ends at SearchIntent — CRM performs deterministic filtering,
- * matching, scoring and ranking (Phase 17-C). The client can never control tenant identity,
- * provider, model, credentials, permissions, or tools.
+ * Chat flow (Phase 17-D): authenticateToken → aiSearchLimiter →
+ *   requireAuthz(AI_SEARCH) → validateRequestBody(AIChatRequestSchema) →
+ *   SearchIntentService.chat → CLARIFICATION or COMPLETE SearchIntent.
+ *
+ * The AI's responsibility ends at SearchIntent — CRM performs deterministic
+ * filtering, matching, scoring and ranking (Phase 17-C). The client can never
+ * control tenant identity, provider, model, credentials, permissions, or tools.
+ * Chat history is ephemeral (client-managed); nothing is persisted server-side.
  */
 
 import { Router, Response } from 'express';
@@ -26,8 +32,10 @@ import {
   AITenantOverrideError,
   InvalidAIInputError,
   InvalidAIStructuredOutputError,
+  InvalidChatInputError,
   AuthenticatedAICaller,
 } from '../services/ai/application';
+import { AIChatRequestSchema, buildChatApiResponse } from '../services/ai/chatApi';
 
 function mapAIError(err: unknown, res: Response): void {
   if (err instanceof AIProviderError) {
@@ -52,7 +60,7 @@ function mapAIError(err: unknown, res: Response): void {
     return;
   }
 
-  if (err instanceof AITenantOverrideError || err instanceof InvalidAIInputError) {
+  if (err instanceof AITenantOverrideError || err instanceof InvalidAIInputError || err instanceof InvalidChatInputError) {
     res.status(400).json({ error: err.message, code: 'INVALID_REQUEST' });
     return;
   }
@@ -105,6 +113,45 @@ export function createAISearchRouter(service?: SearchIntentService): Router {
         if (extraction.status === 'COMPLETE' && extraction.searchIntent) {
           try {
             response.results = await searchCrmMatches(extraction.searchIntent, caller.companyId);
+          } catch (crmErr) {
+            mapAIError(new CRMSearchError('CRM property search failed'), res);
+            return;
+          }
+        }
+
+        res.status(200).json(response);
+      } catch (err) {
+        mapAIError(err, res);
+      }
+    }
+  );
+
+  // Phase 17-D — POST /api/v1/ai/chat
+  // Flow: authenticateToken → aiSearchLimiter → requireAuthz(AI_SEARCH) →
+  //   validateRequestBody(AIChatRequestSchema) → SearchIntentService.chat
+  //   (server-derived req.user.companyId) → CLARIFICATION or COMPLETE SearchIntent.
+  // On COMPLETE, the deterministic 17-C CRM bridge runs and returns results.
+  // The conversation is ephemeral (client-managed) — nothing is persisted here.
+  router.post(
+    '/chat',
+    authenticateToken,
+    aiSearchLimiter,
+    requireAuthz(Permissions.AI_SEARCH),
+    validateRequestBody(AIChatRequestSchema),
+    async (req: AuthenticatedRequest, res: Response) => {
+      try {
+        const caller: AuthenticatedAICaller = {
+          companyId: req.user!.companyId,
+          employeeId: req.user!.employeeId,
+        };
+        const chatResult = await svc.chat(req.body, caller);
+        const response = buildChatApiResponse(chatResult);
+
+        // Phase 17-C: when the chat resolves to COMPLETE, the deterministic CRM
+        // bridge decides matches (never the AI). companyId stays server-derived.
+        if (chatResult.status === 'COMPLETE' && chatResult.searchIntent) {
+          try {
+            response.results = await searchCrmMatches(chatResult.searchIntent, caller.companyId);
           } catch (crmErr) {
             mapAIError(new CRMSearchError('CRM property search failed'), res);
             return;

@@ -1,34 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Card, type CardHeaderProps, type CardTitleProps, type CardDescriptionProps, type CardContentProps, type CardFooterProps } from '../common/ui/Card';
 import { InputField } from '../common/ui/InputField';
 import { SelectField } from '../common/ui/SelectField';
 import { Button } from '../common/ui/Button';
 import { StatusChip } from '../common/ui/StatusChip';
 import { Skeleton } from '../common/ui/Skeleton';
+import { EmptyState } from '../common/ui/EmptyState';
 import { AppLayout } from '../common/AppLayout';
 
 /**
- * LeadsClientsPage — Primary Leads & Clients view.
- *
- * Layout:
-   - AppLayout shell (compact left sidebar, top utility bar, 12-col content grid)
-   - Page header with H1 typography and "+ New Lead" primary action button
-   - Filter row with InputField (search) and two SelectField components (status, budget)
-   - Data grid of lead cards with columns: Lead Info, Requirement, Status, Next Action, Actions
-   - Loading state with Skeleton primitives
-   - 3 dummy lead entries populated with realistic Sonthillu CRM data
- *
- * Visual design:
-   - App Background `--color-canvas: #f4fafc` applied via AppLayout
-   - 8px spacing rhythm: gap-4, p-6, etc.
-   - Navy text via `text-navy` / `text-neutral-900` CSS variables
-   - Action Blue interactive states via `var(--color-action-blue)`
-   - Status chips using StatusChip primitive with semantic colors
-   - Cards using Card primitive with 16px radius, subtle borders, soft shadows
+ * Lead status filter types matching the backend API.
  */
-
 type LeadStatus = 'NEW' | 'SITE_VISIT' | 'NEGOTIATION' | 'CLOSED';
 
+/** Budget filter options matching the backend API. */
+type BudgetFilter = 'Under 50L' | '50L-1Cr' | '1Cr+';
+
+/** Individual lead data shape from the backend. */
 interface Lead {
   id: number;
   name: string;
@@ -36,70 +25,201 @@ interface Lead {
   budget: string;
   locality: string;
   status: LeadStatus;
-  nextFollowUp: string; // e.g., "Tomorrow 2 PM"
+  nextFollowUp: string;
 }
 
-/** Dummy data for exactly 3 leads */
-const DUMMY_LEADS: Lead[] = [
-  {
-    id: 1,
-    name: 'Arjun Patel',
-    phone: '+91 98480 12345',
-    budget: '75L - 1Cr',
-    locality: 'Miyapur',
-    status: 'NEW',
-    nextFollowUp: 'Tomorrow 2 PM',
-  },
-  {
-    id: 2,
-    name: 'Priya Sharma',
-    phone: '+91 97001 67890',
-    budget: '1Cr - 2Cr',
-    locality: 'Banjara Hills',
-    status: 'SITE_VISIT',
-    nextFollowUp: 'In 2 days 10 AM',
-  },
-  {
-    id: 3,
-    name: 'Rahul Singh',
-    phone: '+91 96662 55555',
-    budget: 'Under 50L',
-    locality: 'Kukatpally',
-    status: 'NEGOTIATION',
-    nextFollowUp: 'Friday 4 PM',
-  },
-];
+/**
+ * LeadsClientsPage — Live backend-integrated Leads & Clients view.
+ *
+ * Data fetching strategy (discovered in codebase):
+ *   - Uses `useAuth()` → `fetchWithAuth()` from `context/AuthContext`
+ *   - `API_BASE_URL` from `config.ts`: `http://localhost:3000/api/v1`
+ *   - Pattern: `fetchWithAuth(\`${API_BASE_URL}/leads?search=X&status=Y&budget=Z\`)`
+ *   - No new libraries installed — strictly useEffect + fetch pattern
+ *
+ * Visual design:
+ *   - App Background `--color-canvas: #f4fafc` via AppLayout
+ *   - 8px spacing rhythm: gap-4, p-6, etc.
+ *   - Navy text via `text-neutral-900` CSS variables
+ *   - Action Blue interactive states via `var(--color-action-blue)`
+ *   - Status chips using StatusChip primitive with semantic colors
+ *   - Cards using Card primitive with 16px radius, subtle borders, soft shadows
+ */
 
-/** Format status chip variant from LeadStatus */
-const statusVariantMap: Record<LeadStatus, StatusChipVariant> = {
-  NEW: 'available',
-  SITE_VISIT: 'reserved',
-  NEGOTIATION: 'pending_approval',
-  CLOSED: 'sold',
-};
-
-/** LeadsClientsPage component */
 const LeadsClientsPage: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'NEW' | 'SITE_VISIT' | 'NEGOTIATION' | 'CLOSED'>('All');
-  const [budgetFilter, setBudgetFilter] = useState<'All' | 'Under 50L' | '50L-1Cr' | '1Cr+'>('All');
+  /** Auth context — provides fetchWithAuth and accessToken */
+  const { user, fetchWithAuth, accessToken } = useAuth();
 
-  // Filtered leads computation
-  const filteredLeads = DUMMY_LEADS.filter((lead) => {
-    const matchesSearch =
-      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.phone.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'All' || lead.status === statusFilter;
-    const matchesBudget =
-      budgetFilter === 'All' ||
-      (budgetFilter === 'Under 50L' && lead.budget === 'Under 50L') ||
-      (budgetFilter === '50L-1Cr' && lead.budget === '75L - 1Cr') ||
-      (budgetFilter === '1Cr+' && lead.budget === '1Cr - 2Cr');
+  /** Filter state */
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [budgetFilter, setBudgetFilter] = useState<string>('All');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
 
-    return matchesSearch && matchesStatus && matchesBudget;
-  });
+  /** Backend API endpoint */
+  const API_ENDPOINT = '/leads';
+
+  /** Build query parameters from filter state */
+  const buildQueryParams = (): string => {
+    const params: string[] = [];
+    if (searchQuery && searchQuery.trim()) {
+      params.push(`search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+    if (statusFilter && statusFilter !== 'All') {
+      params.push(`status=${encodeURIComponent(statusFilter)}`);
+    }
+    if (budgetFilter && budgetFilter !== 'All') {
+      params.push(`budget=${encodeURIComponent(budgetFilter)}`);
+    }
+    return params.join('&');
+  };
+
+  /** Fetch leads from the backend with current filter state */
+  const fetchLeads = async (): Promise<void> => {
+    if (!accessToken) {
+      setLeads([]);
+      return;
+    }
+    setIsLoading(true);
+    setApiError(null);
+    try {
+      const query = buildQueryParams();
+      const url = query ? `${API_ENDPOINT}?${query}` : API_ENDPOINT;
+      const res = await fetchWithAuth(url);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to fetch leads');
+      }
+      const data = (await res.json()) as Lead[];
+      setLeads(data);
+    } catch (err: any) {
+      console.error('[LeadsClientsPage] fetch error:', err);
+      setApiError(err.message || 'Unexpected error loading leads');
+      setLeads([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /** Fetch leads when component mounts or when filter state changes */
+  useEffect(() => {
+    fetchLeads();
+  }, [searchQuery, statusFilter, budgetFilter, accessToken]);
+
+  /** Render the data grid */
+  const renderGrid = (): JSX.Element => {
+    if (isLoading) {
+      /** Loading state: skeleton cards matching lead card dimensions */
+      return (
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {Array.from({ length: Math.max(leads.length, 3) }).map((_, i) => (
+            <Skeleton
+              key={i}
+              shape="card"
+              className="rounded-md border border-neutral-200 p-4"
+              style={{ height: 'auto' }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    if (apiError) {
+      /** Error state: empty state with error message */
+      return (
+        <EmptyState
+          title="Error Loading Leads"
+          description={apiError}
+          skeletonRows={1}
+        >
+          <Button variant="secondary" size="md" onClick={fetchLeads}>
+            Retry
+          </Button>
+        </EmptyState>
+      );
+    }
+
+    if (leads.length === 0) {
+      /** Empty state: no leads match the current criteria */
+      return (
+        <EmptyState
+          title="No leads match your criteria"
+          description="Try adjusting your search or filter options."
+          skeletonRows={1}
+        />
+      );
+    }
+
+    /** Render lead cards */
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {leads.map((lead) => (
+          <Card
+            key={lead.id}
+            className="rounded-md border border-neutral-200 overflow-hidden"
+            style={{
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-surface)',
+            }}
+          >
+            <div className="p-4">
+              {/* Lead Info: Name and Phone (stacked) */}
+              <div className="space-y-1 text-sm">
+                <div className="font-medium text-neutral-900">
+                  {lead.name}
+                </div>
+                <div className="text-neutral-500">
+                  {lead.phone}
+                </div>
+              </div>
+
+              {/* Requirement: Budget & Preferred Locality */}
+              <p className="text-xs text-neutral-500 mb-2">
+                {lead.budget} • {lead.locality}
+              </p>
+
+              {/* Status: StatusChip */}
+              <StatusChip
+                variant={{
+                  NEW: 'available',
+                  SITE_VISIT: 'reserved',
+                  NEGOTIATION: 'pending_approval',
+                  CLOSED: 'sold',
+                }[lead.status as keyof Record<LeadStatus, StatusChipVariant>]}
+              />
+
+              {/* Next Action: Next follow-up date and time */}
+              <p className="text-xs text-neutral-500 mt-2">
+                Next: {lead.nextFollowUp}
+              </p>
+
+              {/* Actions: Ghost Button for "Edit" or "View" */}
+              <div className="mt-3 flex justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                  onClick={() => alert(`View lead ${lead.id}`)}
+                >
+                  View
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                  onClick={() => alert(`Edit lead ${lead.id}`)}
+                >
+                  Edit
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <AppLayout title="Leads & Clients">
@@ -156,76 +276,7 @@ const LeadsClientsPage: React.FC = () => {
       </Card>
 
       {/* Data Grid */}
-      {isLoading ? (
-        /* Loading state: three skeleton rows matching lead card height */
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton
-              shape="card"
-              className="rounded-md border border-neutral-200 p-4"
-              style={{ height: 'auto' }}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {filteredLeads.map((lead) => (
-            <Card
-              key={lead.id}
-              className="rounded-md border border-neutral-200 overflow-hidden"
-              style={{
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-surface)',
-              }}
-            >
-              <div className="p-4">
-                {/* Lead Info: Name and Phone (stacked) */}
-                <div className="space-y-1 text-sm">
-                  <div className="font-medium text-neutral-900">
-                    {lead.name}
-                  </div>
-                  <div className="text-neutral-500">
-                    {lead.phone}
-                  </div>
-                </div>
-
-                {/* Requirement: Budget & Preferred Locality */}
-                <p className="text-xs text-neutral-500 mb-2">
-                  {lead.budget} • {lead.locality}
-                </p>
-
-                {/* Status: StatusChip */}
-                <StatusChip variant={statusVariantMap[lead.status as keyof typeof statusVariantMap]} />
-
-                {/* Next Action: Next follow-up date and time */}
-                <p className="text-xs text-neutral-500 mt-2">
-                  Next: {lead.nextFollowUp}
-                </p>
-
-                {/* Actions: Ghost Button for "Edit" or "View" */}
-                <div className="mt-3 flex justify-end gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                    onClick={() => alert(`View lead ${lead.id}`)}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                    onClick={() => alert(`Edit lead ${lead.id}`)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+      {renderGrid()}
     </AppLayout>
   );
 };

@@ -149,6 +149,14 @@ export class OpenRouterProvider implements AIProvider {
     const url = this.options.baseUrl ?? OPENROUTER_CHAT_URL;
     const body = buildOpenRouterBody(request, this.options.model);
 
+    // AbortController-based timeout — prevents dangling fetch promises if OpenRouter
+    // hangs indefinitely. Also enforced by AIGateway.withTimeout (30s default).
+    const abortController = new AbortController();
+    const timeoutMs = 30_000; // matches AIConfig.default timeoutMs
+    const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+
+    let fetchError: { category: string; message: string; retryable: boolean } | null = null;
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -158,15 +166,31 @@ export class OpenRouterProvider implements AIProvider {
         'X-Title': OPENROUTER_APP_TITLE,
       },
       body: JSON.stringify(body),
-    }).catch(() => {
-      // Network-level failure (DNS, ECONN, CORS, etc.) — never surfaces a raw provider error.
-      throw new AIProviderError({
-        category: 'PROVIDER_UNAVAILABLE',
-        message: 'OpenRouter request could not be completed (network error).',
-        retryable: true,
-        provider: OPENROUTER_PROVIDER,
-      });
+      signal: abortController.signal,
+    }).catch((err) => {
+      // Distinguish abort (timeout) from other network failures
+      if (err.name === 'AbortError') {
+        fetchError = {
+          category: 'TIMEOUT',
+          message: 'OpenRouter request timed out.',
+          retryable: true,
+        };
+      } else {
+        fetchError = {
+          category: 'PROVIDER_UNAVAILABLE',
+          message: 'OpenRouter request could not be completed (network error).',
+          retryable: true,
+        };
+      }
+      // Re-throw so the caller can still check response.ok below if needed
+      throw err;
     });
+
+    clearTimeout(timeoutId);
+
+    if (fetchError) {
+      throw new AIProviderError(fetchError);
+    }
 
     if (!response.ok) {
       let errBody: { error?: { message?: string } } = {};

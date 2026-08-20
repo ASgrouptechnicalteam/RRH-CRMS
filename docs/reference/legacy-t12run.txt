@@ -1,0 +1,410 @@
+﻿  console.log
+    Γùç injected env (3) from .env.test // tip: Γîÿ custom filepath { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    
+    ========================================
+
+      at Object.<anonymous> (tests/api/setup.ts:36:11)
+
+  console.log
+    ≡ƒ¢í∩╕Å  PHASE 0 TEST DATABASE SAFETY GUARD
+
+      at Object.<anonymous> (tests/api/setup.ts:37:11)
+
+  console.log
+    ========================================
+
+      at Object.<anonymous> (tests/api/setup.ts:38:11)
+
+  console.log
+    Γ£ô Environment: test
+
+      at Object.<anonymous> (tests/api/setup.ts:39:11)
+
+  console.log
+    Γ£ô Target Host: 127.0.0.1
+
+      at Object.<anonymous> (tests/api/setup.ts:40:11)
+
+  console.log
+    Γ£ô Target DB  : test_db
+
+      at Object.<anonymous> (tests/api/setup.ts:41:11)
+
+  console.log
+    ========================================
+
+      at Object.<anonymous> (tests/api/setup.ts:42:11)
+
+  console.log
+    [DIAGNOSTIC] Inserted 278 RolePermission records.
+
+      at setupDeterministicTestUsers (tests/fixtures/testUsers.ts:172:15)
+
+  console.log
+    [DIAGNOSTIC] Project Manager Role (ID: 4) has 28 permissions in DB after sync.
+
+      at setupDeterministicTestUsers (tests/fixtures/testUsers.ts:182:13)
+
+node.exe : FAIL tests/api/packet12-1-attribution.test.ts (9.036 s)
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL tests/api/...st.ts (9. 
+   036 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Phase 12 Packet 12-1 ΓÇö Attribution Propagation
+    Lead capture
+      ├ù stores all five attribution fields (70 ms)
+    Lead ΓåÆ Customer
+      ├ù source preserved
+      ├ù campaign preserved
+      ├ù utm_source preserved
+      ├ù utm_medium preserved (1 ms)
+      ├ù utm_campaign preserved (1 ms)
+    Lead ΓåÆ Opportunity
+      ├ù all five fields preserved (1 ms)
+    Opportunity ΓåÆ Booking
+      ├ù all five fields preserved
+    End-to-end attribution chain
+      ├ù full funnel: Lead ΓåÆ Customer ΓåÆ Opportunity ΓåÆ Booking
+      ├ù source matches through funnel (1 ms)
+      ├ù campaign matches through funnel
+      ├ù utm fields match through funnel
+    Null handling
+      ├ù null campaign remains null (34 ms)
+      ├ù null UTM fields remain null through conversion (33 ms)
+    Company isolation
+      ├ù attribution cannot cross companies (35 ms)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead capture 
+ΓÇ║ stores all five attribution fields
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 409
+
+    [0m [90m 62 |[39m         })[33m;[39m
+     [90m 63 |[39m
+    [31m[1m>[22m[39m[90m 64 |[39m       
+expect(res[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;[39m
+     [90m    |[39m                          [31m[1m^[22m[39m
+     [90m 65 |[39m       expect(res[33m.[39mbody[33m.[39mlead)[33m
+.[39mtoBeDefined()[33m;[39m
+     [90m 66 |[39m       
+     [90m 67 |[39m       [90m// Verify all five attribution fields 
+are stored[39m[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:64:26)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead ΓåÆ 
+Customer ΓÇ║ source preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 92 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 93 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 94 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m    |[39m                                      
+[31m[1m^[22m[39m
+     [90m 95 |[39m       
+     [90m 96 |[39m       [90m// Manually assign to telecaller A for 
+the conversion test[39m
+     [90m 97 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:94:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead ΓåÆ 
+Customer ΓÇ║ campaign preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 92 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 93 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 94 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m    |[39m                                      
+[31m[1m^[22m[39m
+     [90m 95 |[39m       
+     [90m 96 |[39m       [90m// Manually assign to telecaller A for 
+the conversion test[39m
+     [90m 97 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:94:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead ΓåÆ 
+Customer ΓÇ║ utm_source preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 92 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 93 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 94 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m    |[39m                                      
+[31m[1m^[22m[39m
+     [90m 95 |[39m       
+     [90m 96 |[39m       [90m// Manually assign to telecaller A for 
+the conversion test[39m
+     [90m 97 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:94:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead ΓåÆ 
+Customer ΓÇ║ utm_medium preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 92 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 93 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 94 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m    |[39m                                      
+[31m[1m^[22m[39m
+     [90m 95 |[39m       
+     [90m 96 |[39m       [90m// Manually assign to telecaller A for 
+the conversion test[39m
+     [90m 97 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:94:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead ΓåÆ 
+Customer ΓÇ║ utm_campaign preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 92 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 93 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 94 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m    |[39m                                      
+[31m[1m^[22m[39m
+     [90m 95 |[39m       
+     [90m 96 |[39m       [90m// Manually assign to telecaller A for 
+the conversion test[39m
+     [90m 97 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:94:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Lead ΓåÆ 
+Opportunity ΓÇ║ all five fields preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 170 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 171 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 172 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m     |[39m                                      
+[31m[1m^[22m[39m
+     [90m 173 |[39m       
+     [90m 174 |[39m       [90m// Manually assign and create 
+opportunity[39m
+     [90m 175 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:172:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Opportunity 
+ΓåÆ Booking ΓÇ║ all five fields preserved
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 217 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 test'[39m[33m,[39m
+     [90m 218 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 219 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m     |[39m                                      
+[31m[1m^[22m[39m
+     [90m 220 |[39m       
+     [90m 221 |[39m       [90m// Create opportunity from lead[39m
+     [90m 222 |[39m       [36mconst[39m oppRes [33m=[39m 
+[36mawait[39m request(app)[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:219:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ End-to-end 
+attribution chain ΓÇ║ full funnel: Lead ΓåÆ Customer ΓåÆ Opportunity ΓåÆ 
+Booking
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 276 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 end-to-end test'[39m[33m,[39m
+     [90m 277 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 278 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m     |[39m                                      
+[31m[1m^[22m[39m
+     [90m 279 |[39m       
+     [90m 280 |[39m       [90m// Assign to telecaller A[39m
+     [90m 281 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:278:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ End-to-end 
+attribution chain ΓÇ║ source matches through funnel
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 276 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 end-to-end test'[39m[33m,[39m
+     [90m 277 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 278 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m     |[39m                                      
+[31m[1m^[22m[39m
+     [90m 279 |[39m       
+     [90m 280 |[39m       [90m// Assign to telecaller A[39m
+     [90m 281 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:278:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ End-to-end 
+attribution chain ΓÇ║ campaign matches through funnel
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 276 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 end-to-end test'[39m[33m,[39m
+     [90m 277 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 278 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m     |[39m                                      
+[31m[1m^[22m[39m
+     [90m 279 |[39m       
+     [90m 280 |[39m       [90m// Assign to telecaller A[39m
+     [90m 281 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:278:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ End-to-end 
+attribution chain ΓÇ║ utm fields match through funnel
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 276 |[39m           notes[33m:[39m [32m'Phase 12 
+Packet 12-1 end-to-end test'[39m[33m,[39m
+     [90m 277 |[39m         })[33m;[39m
+    [31m[1m>[22m[39m[90m 278 |[39m       testLeadId [33m=[39m 
+leadRes[33m.[39mbody[33m.[39mlead[33m.[39mid[33m;[39m
+     [90m     |[39m                                      
+[31m[1m^[22m[39m
+     [90m 279 |[39m       
+     [90m 280 |[39m       [90m// Assign to telecaller A[39m
+     [90m 281 |[39m       [36mawait[39m 
+prisma[33m.[39mlead[33m.[39mupdate({[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:278:38)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Null handling 
+ΓÇ║ null campaign remains null
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 409
+
+    [0m [90m 352 |[39m         })[33m;[39m
+     [90m 353 |[39m       
+    [31m[1m>[22m[39m[90m 354 |[39m       
+expect(res[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 355 |[39m       expect(res[33m.[39mbody[33m.[39mlead[33m
+.[39mcampaign)[33m.[39mtoBeNull()[33m;[39m
+     [90m 356 |[39m       expect(res[33m.[39mbody[33m.[39mlead[33m
+.[39mutm_source)[33m.[39mtoBeNull()[33m;[39m
+     [90m 357 |[39m       expect(res[33m.[39mbody[33m.[39mlead[33m
+.[39mutm_medium)[33m.[39mtoBeNull()[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:354:26)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Null handling 
+ΓÇ║ null UTM fields remain null through conversion
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 375 |[39m         
+[33m.[39mpost([32m'/api/v1/leads/:id/convert-to-customer'[39m)
+     [90m 376 |[39m         
+[33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m 
+[32m`Bearer ${telecallerAToken}`[39m)
+    [31m[1m>[22m[39m[90m 377 |[39m         
+[33m.[39mparam([32m'id'[39m[33m,[39m leadRes[33m.[39mbody[33m.[
+39mlead[33m.[39mid[33m.[39mtoString())[33m;[39m
+     [90m     |[39m                                        
+[31m[1m^[22m[39m
+     [90m 378 |[39m       
+     [90m 379 |[39m       expect(convertRes[33m.[39mstatus)[33m.[39
+mtoBe([35m201[39m)[33m;[39m
+     [90m 380 |[39m       expect(convertRes[33m.[39mbody[33m.[39mcu
+stomer[33m.[39mutm_source)[33m.[39mtoBeNull()[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:377:40)
+
+  ΓùÅ Phase 12 Packet 12-1 ΓÇö Attribution Propagation ΓÇ║ Company 
+isolation ΓÇ║ attribution cannot cross companies
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+    [0m [90m 406 |[39m         
+[33m.[39mpost([32m'/api/v1/leads/:id/convert-to-customer'[39m)
+     [90m 407 |[39m         
+[33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m 
+[32m`Bearer ${adminToken}`[39m)
+    [31m[1m>[22m[39m[90m 408 |[39m         
+[33m.[39mparam([32m'id'[39m[33m,[39m leadRes[33m.[39mbody[33m.[
+39mlead[33m.[39mid[33m.[39mtoString())[33m;[39m
+     [90m     |[39m                                        
+[31m[1m^[22m[39m
+     [90m 409 |[39m       
+     [90m 410 |[39m       expect(convertRes[33m.[39mstatus)[33m.[39
+mtoBe([35m201[39m)[33m;[39m
+     [90m 411 |[39m       [90m// Attribution should be preserved but 
+scoped to the company[39m[0m
+
+      at Object.<anonymous> 
+(tests/api/packet12-1-attribution.test.ts:408:40)
+
+Test Suites: 1 failed, 1 total
+Tests:       15 failed, 15 total
+Snapshots:   0 total
+Time:        9.988 s, estimated 11 s
+Ran all test suites matching 
+/tests\\api\\packet12-1-attribution.test.ts/i.

@@ -132,6 +132,8 @@ export const Permissions = {
   
   PUBLIC_PROPERTIES_READ: 'public.properties.read',
   PUBLIC_LEADS_CREATE: 'public.leads.create',
+
+  AI_SEARCH: 'ai.search',
   
   DOCUMENTS_CREATE: 'documents.create',
   DOCUMENTS_READ: 'documents.read',
@@ -189,6 +191,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.COMPLAINTS_ASSIGN,
     Permissions.COMPLAINTS_RESOLVE,
     Permissions.COMPLAINTS_CLOSE,
+    Permissions.AI_SEARCH,
     // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
   ],
   

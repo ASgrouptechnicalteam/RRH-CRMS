@@ -30,6 +30,12 @@ export interface AISearchApiResponse {
   ambiguities?: unknown[];
   unsupportedCriteria?: string[];
   nextAction: 'CRM_SEARCH' | 'AI_CHAT';
+  /**
+   * Populated ONLY on a COMPLETE extraction after the deterministic CRM property search
+   * (Phase 17-C bridge) runs. This is the CRM's authority, not the AI's — the AI never
+   * decides matches. Absent when the CRM search is not invoked.
+   */
+  results?: unknown[];
 }
 
 /**

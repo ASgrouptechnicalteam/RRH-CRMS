@@ -20,6 +20,7 @@ import { AIConfig, AIConfigError } from '../services/ai/config';
 import { createAIProvider } from '../services/ai/providerFactory';
 import { AIProviderError } from '../services/ai/provider';
 import { InvalidSearchIntentError } from '../services/ai/searchIntent';
+import { searchCrmMatches, CRMSearchError } from '../services/ai/searchIntentBridge';
 import {
   SearchIntentService,
   AITenantOverrideError,
@@ -61,6 +62,11 @@ function mapAIError(err: unknown, res: Response): void {
     return;
   }
 
+  if (err instanceof CRMSearchError) {
+    res.status(502).json({ error: 'CRM property search failed', code: 'CRM_SEARCH_ERROR' });
+    return;
+  }
+
   if (err && (err as { statusCode?: number }).statusCode) {
     res.status((err as { statusCode: number }).statusCode).json({ error: (err as Error).message });
     return;
@@ -92,7 +98,20 @@ export function createAISearchRouter(service?: SearchIntentService): Router {
           employeeId: req.user!.employeeId,
         };
         const extraction = await svc.extract(req.body, caller);
-        res.status(200).json(buildSearchApiResponse(extraction));
+        const response = buildSearchApiResponse(extraction);
+
+        // Phase 17-C: the deterministic CRM bridge decides what matches (never the AI).
+        // companyId is the authenticated caller's — client can never control it.
+        if (extraction.status === 'COMPLETE' && extraction.searchIntent) {
+          try {
+            response.results = await searchCrmMatches(extraction.searchIntent, caller.companyId);
+          } catch (crmErr) {
+            mapAIError(new CRMSearchError('CRM property search failed'), res);
+            return;
+          }
+        }
+
+        res.status(200).json(response);
       } catch (err) {
         mapAIError(err, res);
       }

@@ -50,3 +50,15 @@ export const loginRateLimiter = rateLimit({
     res.status(options.statusCode).json(options.message);
   }
 });
+
+// AI Search endpoint — conservative because each call invokes a provider (costly + slow).
+// Follows the existing express-rate-limit conventions (IP-based window, test skip).
+export const aiSearchLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  max: 10, // 10 AI search requests per IP per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many AI search requests, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
+});
+

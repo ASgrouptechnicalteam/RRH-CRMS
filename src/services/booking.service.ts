@@ -17,6 +17,11 @@ interface CreateBookingInput {
   booking_amount: number;
   assigned_employee_id?: number;
   notes?: string;
+  source?: string;
+  campaign?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
 }
 
 export class BookingService {
@@ -138,6 +143,13 @@ export class BookingService {
         balance_amount: balance,
         status: 'PENDING',
         notes: dto.notes ?? null,
+        // Phase 12-1: carry attribution forward from the Opportunity/Lead so it
+        // survives the Opportunity -> Booking conversion.
+        source: dto.source ?? null,
+        campaign: dto.campaign ?? null,
+        utm_source: dto.utm_source ?? null,
+        utm_medium: dto.utm_medium ?? null,
+        utm_campaign: dto.utm_campaign ?? null,
       },
     });
 

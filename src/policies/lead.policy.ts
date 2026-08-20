@@ -1,6 +1,7 @@
 import { TokenPayload } from '../utils/jwt';
 import { Roles } from '@rrh-ems/shared';
 import { Lead } from '@prisma/client';
+import { AppError } from '../services/lead.service';
 
 /**
  * Phase 3 - Lead Resource Scope Policy
@@ -92,7 +93,6 @@ export class LeadPolicy {
       QUALIFIED: ['SITE_VISIT_SCHEDULED'],
       SITE_VISIT_SCHEDULED: ['WON'],
       WON: [], // WON is terminal
-      NEW: [], // Special case for initial creation
     };
     return map[status] || [];
   }

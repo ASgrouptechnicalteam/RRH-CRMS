@@ -1,7 +1,9 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { Roles } from '@rrh-ems/shared';
+import { requireAuthz } from '../middleware/authz';
+import { Roles, Permissions } from '@rrh-ems/shared';
+import { calculatePerformanceScore, calculateLeaderboardScore } from '../services/performance-metric';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -67,51 +69,39 @@ router.get('/my-score', authenticateToken, async (req: AuthenticatedRequest, res
       if (log.status === 'HALF_DAY') halfDayCount++;
     }
 
-    // Base score = 50.0 per business rule!
-    const baseScore = 50.0;
-    const taskBoost = taskEvents * 1.0;
-    const reportBoost = reportEvents * 0.5;
-    const presentBoost = presentCount * 0.5;
-    const latePenalty = lateCount * 1.0;
-    const halfDayPenalty = halfDayCount * 2.0;
-    const belowTargetPenalty = belowTargetEvents * 2.0;
-    const overduePenalty = overdueTasksCount * 2.0;
-    const uninformedAbsentPenalty = uninformedAbsentEvents * 5.0;
-
-    const rawScore =
-      baseScore +
-      taskBoost +
-      reportBoost +
-      presentBoost -
-      latePenalty -
-      halfDayPenalty -
-      belowTargetPenalty -
-      overduePenalty -
-      uninformedAbsentPenalty;
-
-    const totalScore = Math.max(0, Math.round(rawScore * 10) / 10);
+    // Base score = 50.0 per business rule — centralized in performance-metric.ts
+    const { score: totalScore, breakdown } = calculatePerformanceScore({
+      completedTasks: taskEvents,
+      overdueTasks: overdueTasksCount,
+      dailyReports: reportEvents,
+      belowTargetEvents,
+      uninformedAbsentEvents,
+      presentCount,
+      lateCount,
+      halfDayCount,
+    });
 
     return res.status(200).json({
       employeeId,
       score: totalScore,
       breakdown: {
-        baseScore,
-        taskEvents,
-        taskBoost,
-        reportEvents,
-        reportBoost,
-        presentCount,
-        presentBoost,
-        lateCount,
-        latePenalty,
-        halfDayCount,
-        halfDayPenalty,
-        belowTargetEvents,
-        belowTargetPenalty,
-        overdueTasksCount,
-        overduePenalty,
-        uninformedAbsentEvents,
-        uninformedAbsentPenalty,
+        baseScore: breakdown.baseScore,
+        taskEvents: breakdown.completedTasks,
+        taskBoost: breakdown.taskBoost,
+        reportEvents: breakdown.dailyReports,
+        reportBoost: breakdown.reportBoost,
+        presentCount: breakdown.presentCount,
+        presentBoost: breakdown.presentBoost,
+        lateCount: breakdown.lateCount,
+        latePenalty: breakdown.latePenalty,
+        halfDayCount: breakdown.halfDayCount,
+        halfDayPenalty: breakdown.halfDayPenalty,
+        belowTargetEvents: breakdown.belowTargetEvents,
+        belowTargetPenalty: breakdown.belowTargetPenalty,
+        overdueTasksCount: breakdown.overdueTasks,
+        overduePenalty: breakdown.overduePenalty,
+        uninformedAbsentEvents: breakdown.uninformedAbsentEvents,
+        uninformedAbsentPenalty: breakdown.uninformedAbsentPenalty,
       },
     });
   } catch (error) {
@@ -227,10 +217,14 @@ router.get('/history', authenticateToken, async (req: AuthenticatedRequest, res:
 });
 
 // GET /api/v1/performance/leaderboard - Leaderboard (Admin filtered out)
-router.get('/leaderboard', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+// Packet D (15-16): company-scoped to req.user.companyId + PERMISSION_READ_TEAM authorization.
+router.get('/leaderboard', authenticateToken, requireAuthz(Permissions.PERFORMANCE_READ_TEAM), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employees = await p.employee.findMany({
-      where: { roles: { none: { role: { is_invisible: true } } } },
+      where: {
+        company_id: req.user!.companyId,
+        roles: { none: { role: { is_invisible: true } } },
+      },
       include: { branch: true, roles: { include: { role: true } } },
     });
 
@@ -238,7 +232,8 @@ router.get('/leaderboard', authenticateToken, async (req: AuthenticatedRequest, 
     for (const emp of employees) {
       const taskCount = await p.task.count({ where: { assignee_id: emp.id, status: 'COMPLETED' } });
       const reportCount = await p.dailyReport.count({ where: { employee_id: emp.id } });
-      const score = Math.max(0, Math.round((50.0 + taskCount * 1.0 + reportCount * 0.5) * 10) / 10);
+      // Leaderboard uses the reduced (tasks + reports only) score variant, preserved as-is.
+      const score = calculateLeaderboardScore(taskCount, reportCount);
 
       leaderboard.push({
         id: emp.id,
@@ -259,23 +254,27 @@ router.get('/leaderboard', authenticateToken, async (req: AuthenticatedRequest, 
 });
 
 // GET /api/v1/performance/team - Full team performance view for managers
+// Packet D (15-16): company-scoped to req.user.companyId + PERMISSION_READ_TEAM authorization.
+// ADMIN is preserved as an authorized team-viewer (documented legacy workflow) because the
+// RolePermissionsMatrix does not currently grant ADMIN the PERFORMANCE_READ_TEAM permission.
 router.get('/team', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const roles = req.user!.roles;
 
     const isMD = roles.includes(Roles.MD);
     const isAdmin = roles.includes(Roles.ADMIN);
-    const isMarketingDir = roles.includes(Roles.MARKETING_DIRECTOR);
     const isHR = roles.includes(Roles.HR_MANAGER);
-    const isDMHead = roles.includes(Roles.DIGITAL_MARKETING_HEAD);
 
-    const canViewTeam = isMD || isAdmin || isMarketingDir || isHR || isDMHead;
+    // Authorization: PERFORMANCE_READ_TEAM permission governs, with ADMIN preserved.
+    const hasTeamPermission = (req.user!.permissions || []).includes(Permissions.PERFORMANCE_READ_TEAM);
+    const canViewTeam = hasTeamPermission || isAdmin;
 
     if (!canViewTeam) {
       return res.status(403).json({ error: 'Access denied: Manager or above permission required.' });
     }
 
     const whereClause: any = {
+      company_id: req.user!.companyId,
       deleted_at: null,
       roles: { none: { role: { is_invisible: true } } },
     };
@@ -315,21 +314,16 @@ router.get('/team', authenticateToken, async (req: AuthenticatedRequest, res: Re
           else if (log.status === 'HALF_DAY') halfDayCount++;
         }
 
-        const score = Math.max(
-          0,
-          Math.round(
-            (50.0 +
-              tasksDone * 1.0 +
-              reportsDone * 0.5 +
-              presentCount * 0.5 -
-              lateCount * 1.0 -
-              halfDayCount * 2.0 -
-              belowTargetCount * 2.0 -
-              tasksOverdue * 2.0 -
-              uninformedAbsent * 5.0) *
-              10
-          ) / 10
-        );
+        const score = calculatePerformanceScore({
+          completedTasks: tasksDone,
+          overdueTasks: tasksOverdue,
+          dailyReports: reportsDone,
+          belowTargetEvents: belowTargetCount,
+          uninformedAbsentEvents: uninformedAbsent,
+          presentCount,
+          lateCount,
+          halfDayCount,
+        }).score;
 
         return {
           id: emp.id,

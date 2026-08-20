@@ -200,6 +200,7 @@ const AppShell: React.FC = () => {
               } />
 
               <Route path="/leads" element={<LeadManagement />} />
+              <Route path="/leads-clients" element={<LeadsClientsPage />} />
               <Route path="/sales-pipeline" element={user?.permissions?.includes('LEADS_READ') ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
               <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
               <Route path="/projects" element={user?.permissions?.includes('PROJECTS_READ') ? <ProjectManagement /> : <Navigate to="/" replace />} />

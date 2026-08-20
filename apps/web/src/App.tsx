@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { AppLayout } from './components/common/AppLayout';
 import { LoginForm } from './components/auth/LoginForm';
 import { ChangePasswordModal } from './components/auth/ChangePasswordModal';
 import { QRScannerModal } from './components/attendance/QRScannerModal';
@@ -53,26 +54,19 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
-const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement })));
+const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement }));
 // Legacy for standard users
 const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveProposals').then(m => ({ default: m.LateLeaveProposals })));
 
-// Default Redirect based on role
-const DefaultRedirect: React.FC<{ user: import('./context/AuthContext').UserProfile | null }> = ({ user }) => {
-  const roles = user?.roles || [];
-  
-  if (roles.includes('Managing director')) return <Navigate to="/dashboard" replace />;
-  if (roles.includes('Admin (Technical)')) return <Navigate to="/system-control" replace />;
-  if (roles.includes('HR')) return <Navigate to="/hr-hub" replace />;
-  if (roles.includes('accountant')) return <Navigate to="/finance" replace />;
-  if (roles.some(r => ['telecallers', 'Digital lead operator', 'Digital Marketing head(manager)'].includes(r))) return <Navigate to="/leads" replace />;
-  if (roles.some(r => ['project managers'].includes(r))) return <Navigate to="/properties" replace />;
-  if (roles.some(r => ['Agent'].includes(r))) return <Navigate to="/site-visits" replace />;
-  
-  return <Navigate to="/tasks" replace />;
+// TopUtilityBar placeholder — title rendered in AppLayout header
+const TopUtilityBar: React.FC<{ title?: string }> = ({ title }) => {
+  return null;
 };
 
-const MainLayout: React.FC = () => {
+// AppShell provides the global layout shell: compact left sidebar, top utility bar,
+// responsive 12-column content grid, and optional right rail. The Routes and
+// internal modal logic are rendered as children inside the AppLayout content canvas.
+const AppShell: React.FC = () => {
   const { user, accessToken, firstLoginDone, attendanceStamped, login, logout, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -132,9 +126,6 @@ const MainLayout: React.FC = () => {
     onIdle: () => {
       if (accessToken) {
         console.log('User inactive for 30 minutes, logging out automatically');
-        // Handle auto-logout. To avoid annoying the user if they were just visiting,
-        // we can just directly logout. But if they haven't submitted a report,
-        // we might lose their report. However, standard timeout behavior is direct logout.
         logout();
       }
     }
@@ -165,52 +156,9 @@ const MainLayout: React.FC = () => {
      'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
 
+  // Top utility bar with title
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
-          <img src="/logo.svg" alt="RRH EMS Logo" className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md shrink-0 object-contain" />
-          <div>
-            <h1 className="font-bold text-xs sm:text-sm text-slate-800 leading-tight">Radha Real Homes & Sonthillu</h1>
-            <p className="text-[10px] sm:text-[11px] text-slate-500">Employee Management System & CRM</p>
-          </div>
-        </div>
-
-        {/* User Card, Notification Drawer & Logout */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ISTClock />
-          <NotificationDrawer />
-
-          <div 
-            onClick={() => navigate('/profile')}
-            className="text-right hidden sm:block border-l border-slate-200 pl-3 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-lg transition-colors"
-          >
-            <div className="font-mono font-bold text-xs text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 inline-block">
-              {user?.employeeCode}
-            </div>
-            <p className="text-[11px] text-slate-500">{user?.roles?.join(', ')}</p>
-          </div>
-
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="p-2 text-slate-600 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-colors text-xs font-medium flex items-center gap-1 border border-slate-200"
-            title="Daily Report"
-          >
-            <FileText className="w-4 h-4 text-teal-700" />
-            <span className="hidden sm:inline">Daily Log</span>
-          </button>
-
-          <button
-            onClick={handleLogoutClick}
-            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-            title="Sign Out"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
+    <AppLayout title="RRH-CRMS Dashboard">
       {/* Global Image Banner */}
       <GlobalAnnouncementBanner />
 
@@ -238,9 +186,7 @@ const MainLayout: React.FC = () => {
         <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-1">
           <button
             onClick={() => navigate('/dashboard')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-              activeTab === 'dashboard' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-            }`}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'dashboard' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>Dashboard</span>
@@ -248,9 +194,7 @@ const MainLayout: React.FC = () => {
 
           <button
             onClick={() => navigate('/leads')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-              activeTab === 'leads' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-            }`}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'leads' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
           >
             <TrendingUp className="w-4 h-4" />
             <span>Leads & Distribution</span>
@@ -259,9 +203,7 @@ const MainLayout: React.FC = () => {
           {user?.permissions?.includes('LEADS_READ') && (
             <button
               onClick={() => navigate('/sales-pipeline')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'sales-pipeline' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-indigo-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'sales-pipeline' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-indigo-50' }`}
             >
               <LineChart className="w-4 h-4 text-indigo-400 group-hover:text-indigo-500" />
               <span>Sales Pipeline</span>
@@ -271,9 +213,7 @@ const MainLayout: React.FC = () => {
           {user?.permissions?.includes('CUSTOMERS_READ') && (
             <button
               onClick={() => navigate('/customers')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'customers' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'customers' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <Building className="w-4 h-4 text-indigo-500" />
               <span>Customers</span>
@@ -283,9 +223,7 @@ const MainLayout: React.FC = () => {
           {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'project managers'].includes(r)) && (
             <button
               onClick={() => navigate('/properties')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'properties' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'properties' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <Building className="w-4 h-4" />
               <span>Properties & Inventory</span>
@@ -295,9 +233,7 @@ const MainLayout: React.FC = () => {
           {user?.permissions?.includes('PROJECTS_READ') && (
             <button
               onClick={() => navigate('/projects')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'projects' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'projects' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <MapPin className="w-4 h-4 text-emerald-500" />
               <span>Projects & Sites</span>
@@ -305,12 +241,10 @@ const MainLayout: React.FC = () => {
           )}
 
 
-          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'telecallers', 'Agent', 'digital marketing executive'].includes(r)) && (
+          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'telecallers', 'Agent', 'digital marketing executive'].includes(r)) && (
             <button
               onClick={() => navigate('/site-visits')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'site-visits' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'site-visits' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <MapPin className="w-4 h-4 text-sky-400" />
               <span>Site Visits & Field Dispatch</span>
@@ -319,9 +253,7 @@ const MainLayout: React.FC = () => {
 
           <button
             onClick={() => navigate('/tasks')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-              activeTab === 'tasks' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-            }`}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'tasks' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
           >
             <CheckSquare className="w-4 h-4" />
             <span>Task Manager</span>
@@ -330,22 +262,17 @@ const MainLayout: React.FC = () => {
           {canManageEmployees && (
             <button
               onClick={() => navigate('/hr-hub')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'hr-hub' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'hr-hub' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <Users className="w-4 h-4" />
               <span>HR & Team Hub</span>
             </button>
           )}
 
-          {/* Legacy Proposals for regular users */}
           {!canManageEmployees && (
             <button
               onClick={() => navigate('/proposals')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'proposals' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'proposals' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <Clock className="w-4 h-4" />
               <span>Proposals & Leaves</span>
@@ -355,9 +282,7 @@ const MainLayout: React.FC = () => {
           {(canManageTargets || canViewTeamPerformance) && (
             <button
               onClick={() => navigate('/analytics')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeTab === 'analytics' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${ activeTab === 'analytics' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <Target className="w-4 h-4" />
               <span>Analytics & Goals</span>
@@ -367,9 +292,7 @@ const MainLayout: React.FC = () => {
           {(isMD || isAdmin) && (
             <button
               onClick={() => navigate('/system-control')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeTab === 'system-control' ? 'bg-rose-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${ activeTab === 'system-control' ? 'bg-rose-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <ShieldCheck className="w-4 h-4 text-rose-500" />
               <span className={activeTab === 'system-control' ? 'text-white font-bold' : 'text-rose-900 font-bold'}>System Control</span>
@@ -379,9 +302,7 @@ const MainLayout: React.FC = () => {
           {user?.permissions?.includes('BOOKINGS_READ') && (
             <button
               onClick={() => navigate('/bookings')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'bookings' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'bookings' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <FileText className="w-4 h-4 text-purple-500" />
               <span>Bookings</span>
@@ -391,21 +312,16 @@ const MainLayout: React.FC = () => {
           {user?.permissions?.includes('documents.read') && (
             <button
               onClick={() => navigate('/documents')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-                activeTab === 'documents' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'documents' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
             >
               <FileText className="w-4 h-4 text-blue-500" />
               <span>Documents</span>
             </button>
           )}
 
-          {/* Finance — visible to all, Finance/MD get extra queue tab */}
           <button
             onClick={() => navigate('/finance')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${
-              activeTab === 'finance' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-            }`}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'finance' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
           >
             <IndianRupee className="w-4 h-4" />
             <span>Finance</span>
@@ -413,8 +329,8 @@ const MainLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Body */}
-      <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto pb-20 md:pb-6">
+      {/* Main Content Body — Routes rendered inside AppLayout content canvas */}
+      <div className="main-content p-4 sm:p-6 max-w-7xl w-full mx-auto pb-20 md:pb-6">
         <ErrorBoundary>
           <Suspense
             fallback={
@@ -463,11 +379,7 @@ const MainLayout: React.FC = () => {
                 (isMD || isAdmin) ? <SystemControlHub /> : <Navigate to="/" replace />
               } />
 
-              {/* Finance Hub — all employees can submit, Finance/MD manage */}
               <Route path="/finance" element={<FinanceHub />} />
-
-              {/* Legacy for regular staff */}
-              <Route path="/proposals" element={<LateLeaveProposals />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -482,13 +394,8 @@ const MainLayout: React.FC = () => {
       {/* Daily Report Modal (Logout Gate) */}
       <DailyReportModal
         isOpen={showReportModal}
-        onClose={() => {
-          setShowReportModal(false);
-          setPendingLogout(false);
-        }}
-        onSuccess={() => {
-          if (pendingLogout) logout();
-        }}
+        onClose={() => { setShowReportModal(false); setPendingLogout(false); }}
+        onSuccess={() => { if (pendingLogout) logout(); }}
       />
 
       {/* Logout Intent Modal */}
@@ -502,20 +409,13 @@ const MainLayout: React.FC = () => {
             
             <div className="space-y-3">
               <button
-                onClick={() => {
-                  setShowLogoutIntentModal(false);
-                  setPendingLogout(true);
-                  setShowReportModal(true);
-                }}
+                onClick={() => { setShowLogoutIntentModal(false); setPendingLogout(true); setShowReportModal(true); }}
                 className="w-full p-3 bg-teal-700 text-white font-bold rounded-xl hover:bg-teal-800 transition-colors shadow-md"
               >
                 Submit Daily Log & Logout
               </button>
               <button
-                onClick={() => {
-                  setShowLogoutIntentModal(false);
-                  logout();
-                }}
+                onClick={() => { setShowLogoutIntentModal(false); logout(); }}
                 className="w-full p-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
               >
                 Just Visiting / Updating (Log out immediately)
@@ -530,7 +430,7 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 };
 
@@ -538,11 +438,10 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <MainLayout />
+        <AppShell />
       </ToastProvider>
     </AuthProvider>
   );
 }
 
 export default App;
-

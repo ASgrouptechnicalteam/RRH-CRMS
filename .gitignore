@@ -20,3 +20,16 @@ apps/web/vite.config.d.ts
 # Private AI development / phase planning
 docs/roadmap/
 docs/transformation/
+
+# Test artifacts (logs, snapshots, cache)
+test-output.txt
+/coverage/
+/jest-cache/
+*.test-output
+
+# Documentation (authoritative docs — not tracked in source tree)
+# Uncomment the next line to ignore ALL docs content:
+# docs/
+# Or ignore only the investigative/reference docs, keeping canonical architecture docs:
+# docs/investigation/
+# docs/reference/

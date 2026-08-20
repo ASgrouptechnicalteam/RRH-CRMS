@@ -106,8 +106,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?price_min=750000`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const over500k = props.filter((p: any) => p.price >= 750000);
       expect(over500k.length).toBe(props.length);
@@ -118,8 +118,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?price_max=1250000`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const under1250k = props.filter((p: any) => p.price <= 1250000);
       expect(under1250k.length).toBe(props.length);
@@ -130,8 +130,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?price_min=750000&price_max=1500000`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const inRange = props.every((p: any) => p.price >= 750000 && p.price <= 1500000);
       expect(inRange).toBe(true);
@@ -155,8 +155,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?area_min=2000`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const over2000 = props.filter((p: any) => p.area_sqft && p.area_sqft >= 2000);
       expect(over2000.length).toBe(props.length);
@@ -167,8 +167,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?area_max=2500`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const under2500 = props.filter((p: any) => p.area_sqft && p.area_sqft <= 2500);
       expect(under2500.length).toBe(props.length);
@@ -179,11 +179,83 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?area_min=1000&area_max=2500`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const inRange = props.every((p: any) => p.area_sqft && p.area_sqft >= 1000 && p.area_sqft <= 2500);
       expect(inRange).toBe(true);
+    });
+  });
+
+  
+  // ---- New String Filters & Bedrooms Range ----
+
+  describe('New filters (city, locality, category, listing_type, bedrooms_min, bedrooms_max)', () => {
+    beforeAll(async () => {
+      const prop1 = await createSonthilluProperty({ city: 'Hyderabad', locality: 'Miyapur', category: 'VILLA', listing_type: 'NEW', bedrooms: 2 });
+      const prop2 = await createSonthilluProperty({ city: 'Bangalore', locality: 'Whitefield', category: 'APARTMENT', listing_type: 'RESALE', bedrooms: 4 });
+      await publishProperty(prop1.id, companyId);
+      await publishProperty(prop2.id, companyId);
+    });
+
+    it('filters by city', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?city=Hyderabad`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
+      expect(props.length).toBeGreaterThan(0);
+      expect(props.every((p: any) => p.city === 'Hyderabad')).toBe(true);
+    });
+
+    it('filters by locality', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?locality=Whitefield`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
+      expect(props.length).toBeGreaterThan(0);
+      expect(props.every((p: any) => p.locality === 'Whitefield')).toBe(true);
+    });
+
+    it('filters by category', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?category=APARTMENT`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
+      expect(props.length).toBeGreaterThan(0);
+      expect(props.every((p: any) => p.category === 'APARTMENT')).toBe(true);
+    });
+
+    it('filters by listing_type', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?listing_type=RESALE`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
+      expect(props.length).toBeGreaterThan(0);
+      expect(props.every((p: any) => p.listing_type === 'RESALE')).toBe(true);
+    });
+
+    it('filters by bedrooms_min and bedrooms_max', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?bedrooms_min=2&bedrooms_max=3`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
+      expect(props.length).toBeGreaterThan(0);
+      expect(props.every((p: any) => p.bedrooms >= 2 && p.bedrooms <= 3)).toBe(true);
+    });
+
+    it('combines multiple filters (city, bedrooms_min, price_max)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?city=Hyderabad&bedrooms_min=2&price_max=10000000`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
+      expect(props.length).toBeGreaterThan(0);
+      expect(props.every((p: any) => p.city === 'Hyderabad' && p.bedrooms >= 2 && p.price <= 10000000)).toBe(true);
     });
   });
 
@@ -204,8 +276,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?bedrooms=3`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const atLeast3 = props.filter((p: any) => p.bedrooms && p.bedrooms >= 3);
       expect(atLeast3.length).toBe(props.length);
@@ -216,8 +288,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?bathrooms=2`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       const atLeast2 = props.filter((p: any) => p.bathrooms && p.bathrooms >= 2);
       expect(atLeast2.length).toBe(props.length);
@@ -241,8 +313,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?sort=newest`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       // 'newest' sorts by created_at DESC - verify IDs are in descending order
       if (props.length >= 2) {
@@ -255,8 +327,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?sort=price-asc`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       if (props.length >= 2) {
         expect(props[0].price).toBeLessThanOrEqual(props[1].price);
@@ -268,8 +340,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?sort=price-desc`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       expect(props.length).toBeGreaterThan(0);
       if (props.length >= 2) {
         expect(props[0].price).toBeGreaterThanOrEqual(props[1].price);
@@ -300,13 +372,11 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      expect(res.body.properties.length).toBeLessThanOrEqual(20);
-      expect(res.body.page).toBe(1);
-      expect(res.body.limit).toBe(20);
-      expect(res.body).toHaveProperty('total');
-      expect(res.body).toHaveProperty('total_pages');
-      expect(res.body).toHaveProperty('has_more');
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      expect(res.body.length).toBeLessThanOrEqual(20);
+      
+      
+      
     });
 
     it('14. custom page/limit — returns specified page and limit', async () => {
@@ -314,10 +384,9 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?page=1&limit=2`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      expect(res.body.properties.length).toBe(2);
-      expect(res.body.page).toBe(1);
-      expect(res.body.limit).toBe(2);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      expect(res.body.length).toBe(2);
+      
     });
 
     it('15. max limit enforcement — caps limit at 50', async () => {
@@ -381,8 +450,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_RRH}/properties`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       // RRH should only see RRH properties, not Sonthillu-only
       const sonthilluProps = props.filter((p: any) => p.brand_type === 'SONTHILLU');
       expect(sonthilluProps.length).toBe(0);
@@ -393,8 +462,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       // Sonthillu should only see Sonthillu properties, not RRH-only
       const rrhProps = props.filter((p: any) => p.brand_type === 'RADHA_REAL_HOMES');
       expect(rrhProps.length).toBe(0);
@@ -409,8 +478,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       const found = props.find((p: any) => p.id === unpubProp.id);
       expect(found).toBeUndefined();
     });
@@ -420,8 +489,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      const props = res.body.properties;
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const props = res.body;
       const prop = props[0];
       expect(prop).not.toHaveProperty('company_id');
       expect(prop).not.toHaveProperty('assigned_pm_id');
@@ -443,8 +512,8 @@ const publishProperty = async (propertyId: number, companyId: number) => {
         .get(`/api/v1/public/${BRAND_SONTHILLU}/properties`)
         .set('x-api-key', apiKey);
 
-      expect(res.status).toBe(200);
-      expect(res.body.properties.length).toBeGreaterThan(0);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
 
       // Verify existing filters still work (city, locality, listing_type, category)
       const cityRes = await request(app)
@@ -454,4 +523,184 @@ const publishProperty = async (propertyId: number, companyId: number) => {
       expect(cityRes.status).toBe(200);
     });
   });
+
+  describe('Phase 3: Location Search Tokenization', () => {
+    let propLoc1, propLoc2, propLoc3;
+
+    beforeAll(async () => {
+      // Create properties with specific city and locality combinations
+      propLoc1 = await p.property.create({
+        data: {
+          property_code: 'LOC-TEST-1',
+          company_id: companyId,
+          created_by_id: employeeId,
+          title: 'Hyderabad City Property',
+          brand_type: BRAND_SONTHILLU,
+          category: 'VILLA',
+          price: 5000000,
+          area_sqft: 1500,
+          location: 'Hyderabad',
+          city: 'Hyderabad',
+          locality: 'Banjara Hills',
+          status: 'LIVE'
+        }
+      });
+      await p.propertyPublication.create({ data: { property_id: propLoc1.id, company_id: companyId, is_published: true } });
+
+      propLoc2 = await p.property.create({
+        data: {
+          property_code: 'LOC-TEST-2',
+          company_id: companyId,
+          created_by_id: employeeId,
+          title: 'Miyapur Locality Property',
+          brand_type: BRAND_SONTHILLU,
+          category: 'VILLA',
+          price: 6000000,
+          area_sqft: 1600,
+          location: 'Miyapur',
+          city: 'Secunderabad',
+          locality: 'Miyapur',
+          status: 'LIVE'
+        }
+      });
+      await p.propertyPublication.create({ data: { property_id: propLoc2.id, company_id: companyId, is_published: true } });
+
+      propLoc3 = await p.property.create({
+        data: {
+          property_code: 'LOC-TEST-3',
+          company_id: companyId,
+          created_by_id: employeeId,
+          title: 'Miyapur Hyderabad Property',
+          brand_type: BRAND_SONTHILLU,
+          category: 'VILLA',
+          price: 7000000,
+          area_sqft: 1700,
+          location: 'Miyapur, Hyderabad',
+          city: 'Hyderabad',
+          locality: 'Miyapur',
+          status: 'LIVE'
+        }
+      });
+      await p.propertyPublication.create({ data: { property_id: propLoc3.id, company_id: companyId, is_published: true } });
+    });
+
+    afterAll(async () => {
+      await p.propertyPublication.deleteMany({
+        where: { property_id: { in: [propLoc1.id, propLoc2.id, propLoc3.id] } }
+      });
+      await p.property.deleteMany({
+        where: { id: { in: [propLoc1.id, propLoc2.id, propLoc3.id] } }
+      });
+    });
+
+    it('should match city with 1 token (location=Hyderabad)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=Hyderabad`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc1.id);
+      expect(ids).toContain(propLoc3.id);
+      expect(ids).not.toContain(propLoc2.id); // City is Secunderabad, locality is Miyapur
+    });
+
+    it('should match locality with 1 token (location=Miyapur)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=Miyapur`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc2.id);
+      expect(ids).toContain(propLoc3.id);
+      expect(ids).not.toContain(propLoc1.id);
+    });
+
+    it('should match case-insensitively (location=miyapur)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=miyapur`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc2.id);
+      expect(ids).toContain(propLoc3.id);
+    });
+
+    it('should handle whitespace correctly (location=%20Miyapur%20)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=%20Miyapur%20`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc2.id);
+      expect(ids).toContain(propLoc3.id);
+    });
+
+    it('should combine tokens with AND semantics (location=Miyapur, Hyderabad)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=Miyapur,%20Hyderabad`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc3.id);
+      expect(ids).not.toContain(propLoc1.id); // Missing Miyapur
+      expect(ids).not.toContain(propLoc2.id); // Missing Hyderabad
+    });
+
+    it('should allow reversed field placement (location=Hyderabad, Miyapur)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=Hyderabad,Miyapur`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc3.id);
+      expect(ids).not.toContain(propLoc1.id);
+      expect(ids).not.toContain(propLoc2.id);
+    });
+
+    it('should handle duplicate tokens safely (location=Hyderabad, Hyderabad)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=Hyderabad,%20Hyderabad`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc1.id);
+      expect(ids).toContain(propLoc3.id);
+    });
+
+    it('should return 400 for more than 2 tokens (location=A,B,C)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=A,B,C`)
+        .set('x-api-key', apiKey);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/maximum of 2 tokens/i);
+    });
+
+    it('should return empty array for nonexistent location', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=DefinitelyNonexistent`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      expect(res.body.length).toBe(0);
+    });
+
+    it('should ignore empty location parameter', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids.length).toBeGreaterThanOrEqual(3);
+    });
+    
+    it('should compose with other filters (location=Miyapur&price_min=6500000)', async () => {
+      const res = await request(app)
+        .get(`/api/v1/public/${BRAND_SONTHILLU}/properties?location=Miyapur&price_min=6500000`)
+        .set('x-api-key', apiKey);
+      if (res.status !== 200) console.log(res.body); expect(res.status).toBe(200);
+      const ids = res.body.map((x: any) => x.id);
+      expect(ids).toContain(propLoc3.id);
+      expect(ids).not.toContain(propLoc2.id); // Price is 6,000,000
+    });
+  });
+
 });

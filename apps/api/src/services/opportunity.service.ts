@@ -595,6 +595,13 @@ export class OpportunityService {
         ...dto,
         customer_id: customer.id,
         property_id: opp.property_id,
+        // Phase 12-1: propagate the Opportunity's attribution onto the Booking
+        // (DTO overrides if explicitly provided, else inherit from the Opportunity).
+        source: dto.source ?? opp.source ?? null,
+        campaign: dto.campaign ?? opp.campaign ?? null,
+        utm_source: dto.utm_source ?? opp.utm_source ?? null,
+        utm_medium: dto.utm_medium ?? opp.utm_medium ?? null,
+        utm_campaign: dto.utm_campaign ?? opp.utm_campaign ?? null,
         // Override any provided amounts with the agreed opportunity value if needed, 
         // but typically DTO provides exact booking token/agreed price.
       };

@@ -320,7 +320,7 @@ model Notification {
 
 model DailyTarget {
   id                  Int      @id @default(autoincrement())
-  company_id          Int      @default(1)
+  company_id          Int
   role_name           String
   employee_id         Int?
   target_date         DateTime @default(now())

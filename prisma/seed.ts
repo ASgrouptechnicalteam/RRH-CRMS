@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { Roles, DepartmentCodes } from '@rrh-ems/shared';
 
-import './fixtures/sonthillu-e2e.fixtures';
+import './fixtures/sonthillu-e2e.fixtures.ts';
 
 // PrismaClient instance shared across seed fixtures
 const prisma = new PrismaClient();
@@ -164,24 +164,22 @@ async function main() {
     }
   }
 
-  console.log('🎉 Full Team Seed Completed Successfully!');
-}
-
-main();
+    console.log('dYZ% Full Team Seed Completed Successfully!');
 
   // Step 5: Conditionally run Sonthillu E2E local fixtures (development only).
-  // The fixture script has its own production guard and env‑var guard,
-  // so it will abort cleanly if run in production or without the key.
   if (process.env.NODE_ENV !== 'production') {
     try {
-      await import('./fixtures/sonthillu-e2e.fixtures').then((mod) => mod.main());
+      // @ts-expect-error
+      await import('./fixtures/sonthillu-e2e.fixtures.ts');
     } catch (fixtureErr) {
-      console.error('⚠️ Sonthillu E2E fixtures skipped:', fixtureErr);
+      console.error('Sonthillu E2E fixtures skipped:', fixtureErr);
     }
   }
+}
 
+main()
   .catch((e) => {
-    console.error('❌ Seed script error:', e);
+    console.error('Seed script error:', e);
     process.exit(1);
   })
   .finally(async () => {

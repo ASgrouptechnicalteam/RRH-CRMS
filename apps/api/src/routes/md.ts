@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { Roles, Permissions } from '@rrh-ems/shared';
+import AnalyticsService from '../services/analytics.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -17,6 +18,8 @@ router.get(
     try {
       const employees = await p.employee.findMany({
         where: {
+          // Packet D (15-16): company-scoped to req.user.companyId
+          company_id: req.user!.companyId,
           // Filter out Admin or invisible system roles per SDD Golden Rule #2
           roles: {
             none: {
@@ -117,69 +120,22 @@ router.patch(
 );
 
 // GET /api/v1/md/executive-metrics - Real DB Metrics Aggregator for MD Executive Dashboard
-router.get('/executive-metrics', authenticateToken, requireAuthz(Permissions.ADMIN_SYSTEM_METRICS), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const companyId = req.user?.companyId || (req.user as any)?.company_id || 1;
-
-    // 1. Total Leads Count
-    const totalLeadsCountResult: any = await p.$queryRaw`SELECT COUNT(*) as count FROM Lead WHERE company_id = ${companyId}`;
-    const totalLeadsCount = Number(totalLeadsCountResult[0]?.count || 0);
-
-    // 2. Won Leads (Closed Deals Count)
-    const wonLeadsResult: any = await p.$queryRaw`SELECT COUNT(*) as count FROM Lead WHERE company_id = ${companyId} AND status = 'WON'`;
-    const totalClosedDeals = Number(wonLeadsResult[0]?.count || 0);
-
-    const siteVisitsResult: any = await p.$queryRaw`SELECT COUNT(*) as count FROM Lead WHERE company_id = ${companyId} AND status = 'SITE_VISIT_SCHEDULED'`;
-    const siteVisitsScheduled = Number(siteVisitsResult[0]?.count || 0);
-
-    // 3. Properties Count
-    const propCountRes: any = await p.$queryRaw`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'LIVE' THEN 1 ELSE 0 END) as liveCount,
-        SUM(CASE WHEN status = 'PENDING_MD_APPROVAL' THEN 1 ELSE 0 END) as pendingMDCount,
-        SUM(CASE WHEN status = 'PENDING_VERIFICATION' THEN 1 ELSE 0 END) as pendingPMCount
-      FROM Property 
-      WHERE company_id = ${companyId}
-    `;
-    const totalPropertiesCount = Number(propCountRes[0]?.total || 0);
-    const livePropertiesCount = Number(propCountRes[0]?.liveCount || 0);
-    const pendingApprovalPropertiesCount = Number(propCountRes[0]?.pendingMDCount || 0);
-    const pendingVerificationPropertiesCount = Number(propCountRes[0]?.pendingPMCount || 0);
-
-    // 4. Team Count & Attendance Exceptions
-    const empCountRes: any = await p.$queryRaw`SELECT COUNT(*) as count FROM Employee WHERE company_id = ${companyId} AND status = 'ACTIVE'`;
-    const totalEmployeesCount = Number(empCountRes[0]?.count || 0);
-
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const stampedEmpsRes: any = await p.$queryRaw`
-      SELECT COUNT(DISTINCT e.id) as count
-      FROM Employee e
-      LEFT JOIN AttendanceLog a ON a.employee_id = e.id AND a.check_in_at >= ${startOfDay}
-      WHERE e.company_id = ${companyId} 
-        AND e.status = 'ACTIVE'
-        AND (e.attendance_required = false OR a.id IS NOT NULL)
-    `;
-    const totalExemptOrStamped = Number(stampedEmpsRes[0]?.count || 0);
-    const attendanceExceptionsCount = Math.max(0, totalEmployeesCount - totalExemptOrStamped);
-
-    return res.status(200).json({
-      totalLeadsCount,
-      totalClosedDeals,
-      siteVisitsScheduled,
-      totalPropertiesCount,
-      livePropertiesCount,
-      pendingApprovalPropertiesCount,
-      pendingVerificationPropertiesCount,
-      totalEmployeesCount,
-      attendanceExceptionsCount,
-    });
-  } catch (error: any) {
-    console.error('Fetch executive metrics error:', error);
-    return res.status(500).json({ error: 'Failed to fetch executive metrics' });
+// Delegates to the centralized AnalyticsService (Phase 16 Packet B extraction) so the
+// KPI calculations are shared with /api/v1/analytics/kpis. The flat response contract
+// below is preserved EXACTLY (same field names) - this is behavior-preserving.
+router.get(
+  '/executive-metrics',
+  authenticateToken,
+  requireAuthz(Permissions.ADMIN_SYSTEM_METRICS),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const companyId = req.user?.companyId || (req.user as any)?.company_id || 1;
+      const metrics = await AnalyticsService.getExecutiveMetrics(companyId);
+      return res.status(200).json(metrics);
+    } catch (error: any) {
+      console.error('Fetch executive metrics error:', error);
+      return res.status(500).json({ error: 'Failed to fetch executive metrics' });
+    }
   }
-});
-
+);
 export default router;

@@ -53,7 +53,7 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
-const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement }));
+const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement })));
 // Legacy for standard users
 const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveProposals').then(m => ({ default: m.LateLeaveProposals })));
 
@@ -61,6 +61,10 @@ const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveP
 const TopUtilityBar: React.FC<{ title?: string }> = ({ title }) => {
   return null;
 };
+
+const DefaultRedirect: React.FC<{ user: unknown }> = () => (
+  <Navigate to="/dashboard" replace />
+);
 
 // AppShell provides the global layout shell: compact left sidebar, top utility bar,
 // responsive 12-column content grid, and optional right rail. The Routes and
@@ -200,7 +204,7 @@ const AppShell: React.FC = () => {
               } />
 
               <Route path="/leads" element={<LeadManagement />} />
-              <Route path="/leads-clients" element={<LeadsClientsPage />} />
+              <Route path="/leads-clients" element={<LeadManagement />} />
               <Route path="/sales-pipeline" element={user?.permissions?.includes('LEADS_READ') ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
               <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
               <Route path="/projects" element={user?.permissions?.includes('PROJECTS_READ') ? <ProjectManagement /> : <Navigate to="/" replace />} />

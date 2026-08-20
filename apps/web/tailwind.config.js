@@ -7,23 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          DEFAULT: '#0f766e',
-          dark: '#0d5c56',
-        },
-        accent: '#0ea5e9',
-        success: '#059669',
-        warning: '#d97706',
-        danger: '#dc2626',
-        background: '#f0fdfa',
-        surface: '#ffffff',
-        muted: '#475569',
-        text: '#0f172a'
+        canvas: "var(--color-canvas, #F4FAFC)",
+        navy: { DEFAULT: "#203873", deep: "#172A52" },
+        gold: { DEFAULT: "#E0B040" },
+        action: "#4268E8",
+        primary: "#203873"
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-      },
-    },
+        sans: ["Plus Jakarta Sans", "Inter", "sans-serif"]
+      }
+    }
   },
-  plugins: [],
+  plugins: []
 }

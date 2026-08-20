@@ -159,7 +159,7 @@ router.use(authenticatePublicKey);
 router.get('/:brand/properties', async (req: any, res: Response) => {
   try {
     const { brand } = req.params;
-    const { city, locality, listing_type, category, price_min, price_max, bedrooms, bathrooms, area_min, area_max, sort } = req.query;
+    const { city, locality, location, listing_type, category, price_min, price_max, bedrooms, bedrooms_min, bedrooms_max, bathrooms, area_min, area_max, sort } = req.query;
     let companyId: number | null = null;
 
     if (brand.toLowerCase() === 'rrh') {
@@ -181,6 +181,8 @@ router.get('/:brand/properties', async (req: any, res: Response) => {
     const priceMin = toNum(price_min);
     const priceMax = toNum(price_max);
     const bedRooms = toNum(bedrooms);
+    const bedRoomsMin = toNum(bedrooms_min);
+    const bedRoomsMax = toNum(bedrooms_max);
     const bathRooms = toNum(bathrooms);
     const areaMin = toNum(area_min);
     const areaMax = toNum(area_max);
@@ -245,14 +247,7 @@ router.get('/:brand/properties', async (req: any, res: Response) => {
     const propertyIds = publishedPropertyIds.map((pp: any) => pp.property_id);
 
     if (propertyIds.length === 0) {
-      return res.status(200).json({
-        properties: [],
-        page,
-        limit,
-        total: 0,
-        total_pages: 0,
-        has_more: false,
-      });
+      return res.status(200).json([]);
     }
 
     // Build where condition with mandatory public restrictions
@@ -276,9 +271,73 @@ router.get('/:brand/properties', async (req: any, res: Response) => {
       whereCondition.price = { lte: priceMax };
     }
 
-    // WR-7: Bedrooms filter (bedrooms >= requested value)
+    // WR-7: Bedrooms filter
+    let finalBedroomsMin: number | undefined = undefined;
     if (bedRooms !== undefined && bedRooms >= 0) {
-      whereCondition.bedrooms = { gte: bedRooms };
+      finalBedroomsMin = bedRooms;
+    }
+    if (bedRoomsMin !== undefined && bedRoomsMin >= 0) {
+      if (finalBedroomsMin !== undefined) {
+        finalBedroomsMin = Math.max(finalBedroomsMin, bedRoomsMin);
+      } else {
+        finalBedroomsMin = bedRoomsMin;
+      }
+    }
+
+    if (finalBedroomsMin !== undefined && bedRoomsMax !== undefined && finalBedroomsMin > bedRoomsMax) {
+      return res.status(400).json({ error: 'effective bedrooms minimum must be <= bedrooms_max' });
+    }
+
+    if (finalBedroomsMin !== undefined || (bedRoomsMax !== undefined && bedRoomsMax >= 0)) {
+      whereCondition.bedrooms = {};
+      if (finalBedroomsMin !== undefined) {
+        whereCondition.bedrooms.gte = finalBedroomsMin;
+      }
+      if (bedRoomsMax !== undefined && bedRoomsMax >= 0) {
+        whereCondition.bedrooms.lte = bedRoomsMax;
+      }
+    }
+
+    // New string filters
+    if (city !== undefined && typeof city === 'string' && city.trim() !== '') {
+      whereCondition.city = city.trim();
+    }
+    if (locality !== undefined && typeof locality === 'string' && locality.trim() !== '') {
+      whereCondition.locality = locality.trim();
+    }
+
+    // Phase 3: Location search (tokenized OR search across city/locality)
+    if (location !== undefined && typeof location === 'string' && location.trim() !== '') {
+      const tokens = location.split(',').map((t: string) => t.trim()).filter(Boolean);
+      const uniqueTokens: string[] = [];
+      const seenLower = new Set<string>();
+      for (const t of tokens) {
+        const lower = t.toLowerCase();
+        if (!seenLower.has(lower)) {
+          seenLower.add(lower);
+          uniqueTokens.push(t);
+        }
+      }
+      if (uniqueTokens.length > 2) {
+        return res.status(400).json({ error: 'Location search supports a maximum of 2 tokens (e.g., Locality, City)' });
+      }
+      if (uniqueTokens.length > 0) {
+        whereCondition.AND = whereCondition.AND || [];
+        for (const token of uniqueTokens) {
+          whereCondition.AND.push({
+            OR: [
+              { city: { equals: token } },
+              { locality: { equals: token } }
+            ]
+          });
+        }
+      }
+    }
+    if (category !== undefined && typeof category === 'string' && category.trim() !== '') {
+      whereCondition.category = category.trim();
+    }
+    if (listing_type !== undefined && typeof listing_type === 'string' && listing_type.trim() !== '') {
+      whereCondition.listing_type = listing_type.trim();
     }
 
     // WR-7: Bathrooms filter (bathrooms >= requested value)
@@ -335,16 +394,7 @@ router.get('/:brand/properties', async (req: any, res: Response) => {
       take: take,
     });
 
-    const has_more = skip + take < total;
-
-    res.status(200).json({
-      properties,
-      page,
-      limit,
-      total,
-      total_pages: total > 0 ? Math.ceil(total / limit) : 0,
-      has_more,
-    });
+    res.status(200).json(properties);
   } catch (error) {
     console.error('Fetch public properties error:', error);
     res.status(500).json({ error: 'Failed to fetch properties' });

@@ -7,6 +7,7 @@ import { notifyEmployee } from '../utils/notifyEmployee';
 import { requireAuthz } from '../middleware/authz';
 import { can } from '../authz/authorization';
 import { getDownstreamEmployeeIds } from '../utils/hierarchy';
+import { deriveTaskSlaStatus } from '../services/task-sla.status';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -159,6 +160,46 @@ router.post('/', authenticateToken, validateRequestBody(TaskCreateSchema), async
     return res.status(500).json({ error: 'Failed to create task' });
   }
 });
+
+// GET /api/v1/tasks/:id/sla - Read SLA status for a Task (Phase 15 V1)
+router.get('/:id/sla', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const taskId = parseInt(req.params.id, 10);
+
+    // Locate the Task within the user's company scope
+    const task = await p.task.findUnique({
+      where: { id: taskId },
+      include: { assignee: { select: { company_id: true } } },
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // Enforce existing Task read authorization
+    if (task.assignee?.company_id !== req.user!.companyId) {
+      return res.status(403).json({ error: 'Forbidden: Task does not belong to your company' });
+    }
+
+    // Call deriveTaskSlaStatus using existing helper
+    const slaStatus = deriveTaskSlaStatus({
+      status: task.status,
+      target_date: task.target_date,
+      completed_at: task.completed_at,
+    }, new Date());
+
+    return res.status(200).json({
+      task_id: task.id,
+      target_date: task.target_date,
+      completed_at: task.completed_at,
+      status: task.status,
+      sla_status: slaStatus,
+    });
+  } catch (error) {
+    console.error('Read task SLA error:', error);
+    return res.status(500).json({ error: 'Failed to read task SLA status' });
+  }
+})
 
 // PATCH /api/v1/tasks/:id/status - Update Task Status & Cheer-up Event
 router.patch('/:id/status', authenticateToken, requireAuthz(Permissions.TASKS_UPDATE), validateRequestBody(TaskUpdateStatusSchema), async (req: AuthenticatedRequest, res: Response) => {

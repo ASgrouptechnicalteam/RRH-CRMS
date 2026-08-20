@@ -47,7 +47,7 @@ async function main() {
   const admin = await prisma.employee.findFirst({
     where: {
       company_id: company.id,
-      role: { hasSome: ['Admin (Technical)'] }, // prisma Role relation
+      roles: { some: { role: { is: { name: 'Admin (Technical)' } } } }, // prisma Role relation
       // fallback: just check role_name via raw if needed
     },
   });
@@ -131,10 +131,11 @@ async function main() {
 
   const createdProps: any[] = [];
   for (const pd of propertiesData) {
+    const { company_id, ...rest } = pd;
     const prop = await prisma.property.upsert({
       where: { property_code: pd.property_code },
-      update: pd,
-      create: pd,
+      update: { ...rest, company: { connect: { id: company_id } }, created_by: { connect: { id: admin.id } } },
+      create: { ...rest, company: { connect: { id: company_id } }, created_by: { connect: { id: admin.id } } },
     });
     createdProps.push(prop);
     console.log(`✅ Property upserted: ${prop.property_code}`);

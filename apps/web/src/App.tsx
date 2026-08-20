@@ -6,7 +6,6 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppLayout } from './components/common/AppLayout';
 import { LoginForm } from './components/auth/LoginForm';
 import { ChangePasswordModal } from './components/auth/ChangePasswordModal';
-import { QRScannerModal } from './components/attendance/QRScannerModal';
 import { DailyReportModal } from './components/reports/DailyReportModal';
 import { NotificationDrawer } from './components/notifications/NotificationDrawer';
 import { ISTClock } from './components/common/ISTClock';
@@ -95,10 +94,8 @@ const AppShell: React.FC = () => {
     }
   }, [accessToken, isSupported, permission, subscribe]);
 
-  // Attendance & Report Exemption Logic
-  const isExemptFromAttendance = user?.attendanceRequired === false || user?.roles?.some((r) => ['MD', 'Admin (Technical)', 'Marketing Director'].includes(r));
+  // Report Exemption Logic (for logout gate only — attendance gating removed)
   const isExemptFromReport = user?.roles?.some((r) => ['MD', 'HR Manager', 'Admin (Technical)', 'Marketing Director'].includes(r));
-  const needsAttendance = accessToken && !attendanceStamped && !isExemptFromAttendance;
 
   const [showLogoutIntentModal, setShowLogoutIntentModal] = useState(false);
 
@@ -143,10 +140,6 @@ const AppShell: React.FC = () => {
     return <FirstLoginSetup />;
   }
 
-  if (needsAttendance) {
-    return <QRScannerModal />;
-  }
-
   const isMD = user?.roles?.includes('Managing director');
   const isAdmin = user?.roles?.includes('Admin (Technical)');
   const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
@@ -156,7 +149,7 @@ const AppShell: React.FC = () => {
      'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
 
-  // Top utility bar with title
+  // Top utility bar with title — rendered inside AppLayout
   return (
     <AppLayout title="RRH-CRMS Dashboard">
       {/* Global Image Banner */}
@@ -180,154 +173,6 @@ const AppShell: React.FC = () => {
           </button>
         </div>
       )}
-
-      {/* Primary Navigation Bar (Hidden on Mobile, replaced by BottomNav & Drawer) */}
-      <div className="hidden md:block bg-white border-b border-slate-200 px-4 sm:px-6 py-2">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-1">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'dashboard' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/leads')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'leads' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>Leads & Distribution</span>
-          </button>
-
-          {user?.permissions?.includes('LEADS_READ') && (
-            <button
-              onClick={() => navigate('/sales-pipeline')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'sales-pipeline' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-indigo-50' }`}
-            >
-              <LineChart className="w-4 h-4 text-indigo-400 group-hover:text-indigo-500" />
-              <span>Sales Pipeline</span>
-            </button>
-          )}
-
-          {user?.permissions?.includes('CUSTOMERS_READ') && (
-            <button
-              onClick={() => navigate('/customers')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'customers' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <Building className="w-4 h-4 text-indigo-500" />
-              <span>Customers</span>
-            </button>
-          )}
-
-          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'marketing director', 'project managers'].includes(r)) && (
-            <button
-              onClick={() => navigate('/properties')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'properties' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <Building className="w-4 h-4" />
-              <span>Properties & Inventory</span>
-            </button>
-          )}
-
-          {user?.permissions?.includes('PROJECTS_READ') && (
-            <button
-              onClick={() => navigate('/projects')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'projects' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <MapPin className="w-4 h-4 text-emerald-500" />
-              <span>Projects & Sites</span>
-            </button>
-          )}
-
-
-          {user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'telecallers', 'Agent', 'digital marketing executive'].includes(r)) && (
-            <button
-              onClick={() => navigate('/site-visits')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'site-visits' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <MapPin className="w-4 h-4 text-sky-400" />
-              <span>Site Visits & Field Dispatch</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => navigate('/tasks')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'tasks' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-          >
-            <CheckSquare className="w-4 h-4" />
-            <span>Task Manager</span>
-          </button>
-
-          {canManageEmployees && (
-            <button
-              onClick={() => navigate('/hr-hub')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'hr-hub' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>HR & Team Hub</span>
-            </button>
-          )}
-
-          {!canManageEmployees && (
-            <button
-              onClick={() => navigate('/proposals')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'proposals' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <Clock className="w-4 h-4" />
-              <span>Proposals & Leaves</span>
-            </button>
-          )}
-
-          {(canManageTargets || canViewTeamPerformance) && (
-            <button
-              onClick={() => navigate('/analytics')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${ activeTab === 'analytics' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <Target className="w-4 h-4" />
-              <span>Analytics & Goals</span>
-            </button>
-          )}
-
-          {(isMD || isAdmin) && (
-            <button
-              onClick={() => navigate('/system-control')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${ activeTab === 'system-control' ? 'bg-rose-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-rose-500" />
-              <span className={activeTab === 'system-control' ? 'text-white font-bold' : 'text-rose-900 font-bold'}>System Control</span>
-            </button>
-          )}
-
-          {user?.permissions?.includes('BOOKINGS_READ') && (
-            <button
-              onClick={() => navigate('/bookings')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'bookings' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <FileText className="w-4 h-4 text-purple-500" />
-              <span>Bookings</span>
-            </button>
-          )}
-
-          {user?.permissions?.includes('documents.read') && (
-            <button
-              onClick={() => navigate('/documents')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'documents' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-            >
-              <FileText className="w-4 h-4 text-blue-500" />
-              <span>Documents</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => navigate('/finance')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all ${ activeTab === 'finance' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50' }`}
-          >
-            <IndianRupee className="w-4 h-4" />
-            <span>Finance</span>
-          </button>
-        </div>
-      </div>
 
       {/* Main Content Body — Routes rendered inside AppLayout content canvas */}
       <div className="main-content p-4 sm:p-6 max-w-7xl w-full mx-auto pb-20 md:pb-6">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { SidebarNav } from './SidebarNav';
-import { TopUtilityBar } from './TopUtilityBar';
 import { ContextualRail } from './ContextualRail';
+import { GlobalSearchInput } from './GlobalSearchInput';
 
 /**
  * AppLayout — Global layout shell for RRH-CRMS frontend.
@@ -21,8 +21,8 @@ import { ContextualRail } from './ContextualRail';
  *   - Mobile: 4 columns (sidebar collapses)
  *
  * Shell structure:
- *   - Compact left sidebar (240-260px)
- *   - Top utility bar with notifications/profile
+ *   - Compact left sidebar (240-260px) — 100% of primary navigation
+ *   - Top utility bar with ONLY global utilities (Search, Bell, Profile)
  *   - Main content canvas with responsive 12-col grid
  *   - Optional contextual right rail
  */
@@ -36,7 +36,7 @@ export const AppLayout: React.FC<{
 }> = ({ children, showRightRail = false, title }) => {
   return (
     <div className="app-shell min-h-screen">
-      {/* Top Utility Bar */}
+      {/* Top Utility Bar — global utilities only (no routing links) */}
       <header className="utility-bar">
         <div className="flex items-center gap-4">
           {title && (
@@ -44,31 +44,28 @@ export const AppLayout: React.FC<{
               {title}
             </h1>
           )}
-          {/* Placeholder for notification/utility actions */}
-          <div className="hidden sm:flex items-center gap-2">
-            {/* Notifications icon placeholder */}
-            <button
-              aria-label="Notifications"
-              className="relative p-2"
-            >
-              {/* Notification dot indicator */}
-              <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2 h-2" />
-            </button>
-            {/* Profile placeholder */}
-            <button
-              aria-label="User profile"
-              className="relative p-2"
-            >
-              {/* Avatar placeholder */}
-              <span className="w-6 h-6 rounded-full bg-neutral-300" />
-            </button>
-          </div>
+          {/* Global Search Input — no routing, pure search */}
+          <GlobalSearchInput placeholder="Search properties, leads, clients..." />
+          {/* Notifications icon */}
+          <button
+            aria-label="Notifications"
+            className="relative p-2"
+          >
+            <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2 h-2" />
+          </button>
+          {/* User Profile */}
+          <button
+            aria-label="User profile"
+            className="relative p-2"
+          >
+            <span className="w-6 h-6 rounded-full bg-neutral-300" />
+          </button>
         </div>
       </header>
 
       {/* Main Layout: Sidebar | Content | (Optional) Right Rail */}
       <div className="flex min-h-screen">
-        {/* Left Sidebar (compact, 240-260px) */}
+        {/* Left Sidebar (compact, 240-260px) — 100% of primary navigation */}
         <aside
           className="sidebar-left"
           style={{
@@ -111,7 +108,7 @@ export const AppLayout: React.FC<{
 type SidebarNavItem = {
   /** Unique identifier for the nav link */
   id: string;
-  /** Display label */
+  /** Display label (real-estate terminology) */
   label: string;
   /** Icon component (lucide-react or similar) */
   icon: React.ComponentType;
@@ -125,16 +122,15 @@ type SidebarNavItem = {
   submenu?: SidebarNavItem[];
 };
 
-/** Default sidebar navigation items for the RRH-CRMS dashboard */
+/** Default sidebar navigation items for the RRH-CRMS dashboard — strictly real-estate terminology. */
 const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: React.ComponentType, path: '/dashboard' },
-  { id: 'leads', label: 'Leads & Distribution', icon: React.ComponentType, path: '/leads' },
-  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: React.ComponentType, path: '/sales-pipeline' },
-  { id: 'customers', label: 'Customers', icon: React.ComponentType, path: '/customers' },
-  { id: 'properties', label: 'Properties & Inventory', icon: React.ComponentType, path: '/properties' },
-  { id: 'projects', label: 'Projects & Sites', icon: React.ComponentType, path: '/projects' },
-  { id: 'tasks', label: 'Task Manager', icon: React.ComponentType, path: '/tasks' },
-  { id: 'analytics', label: 'Analytics & Goals', icon: React.ComponentType, path: '/analytics' },
+  { id: 'command-center', label: 'Command Center', icon: React.ComponentType, path: '/dashboard' },
+  { id: 'leads-clients', label: 'Leads & Clients', icon: React.ComponentType, path: '/leads' },
+  { id: 'transactions-closings', label: 'Transactions & Closings', icon: React.ComponentType, path: '/sales-pipeline' },
+  { id: 'property-inventory', label: 'Property Inventory', icon: React.ComponentType, path: '/properties' },
+  { id: 'projects-sites', label: 'Projects & Sites', icon: React.ComponentType, path: '/projects' },
+  { id: 'site-visits-follow-ups', label: 'Site Visits & Follow-ups', icon: React.ComponentType, path: '/tasks' },
+  { id: 'analytics-goals', label: 'Analytics & Goals', icon: React.ComponentType, path: '/analytics' },
   { id: 'finance', label: 'Finance', icon: React.ComponentType, path: '/finance' },
   { id: 'profile', label: 'Profile', icon: React.ComponentType, path: '/profile' },
 ];
@@ -175,15 +171,11 @@ const SidebarNav: React.FC = () => {
 };
 
 /* =============================================================================
-   TopUtilityBar — Top utility bar with actions and profile
+   TopUtilityBar — Top utility bar with ONLY global utilities (Search, Bell, Profile)
    ============================================================================= */
 
 const TopUtilityBar: React.FC = () => {
-  return (
-    <div>
-      {/* Title slot is rendered in AppLayout header */}
-    </div>
-  );
+  return null; /* Rendered inline in AppLayout; title only */
 };
 
 /* =============================================================================

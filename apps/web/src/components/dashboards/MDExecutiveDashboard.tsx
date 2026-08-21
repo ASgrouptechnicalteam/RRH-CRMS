@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
-} from 'recharts';
-import {
-  TrendingUp,
-  DollarSign,
-  Award,
-  ShieldCheck,
-  CheckCircle2,
-  Users,
-  Building,
-  Activity,
-  ArrowUpRight,
-  Sparkles,
-} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
-import { PerformanceHistoryTimeline } from '../performance/PerformanceHistoryTimeline';
-import { BannerControlWidget } from './BannerControlWidget';
+import { ShieldCheck, Users, Building, Clock, FileText, Calendar, TrendingUp, Award, CheckCircle2, Users as UsersIcon, Building as BuildingIcon, IndianRupee } from 'lucide-react';
 
 export const MDExecutiveDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -30,7 +13,6 @@ export const MDExecutiveDashboard: React.FC = () => {
   const fetchMDData = async () => {
     setIsLoading(true);
     try {
-      // Fetch dynamic database metrics
       const res = await fetchWithAuth(`${API_BASE_URL}/md/executive-metrics`);
       const data = await res.json();
       if (res.ok) {
@@ -47,175 +29,124 @@ export const MDExecutiveDashboard: React.FC = () => {
     fetchMDData();
   }, []);
 
+  // Helper: format currency/number for display
+  const formatNumber = (n: number | null | undefined) =>
+    n !== null && n !== undefined ? String(n) : '—';
+
   return (
     <div className="space-y-6">
-      {/* Header Executive Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-teal-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-teal-700/30">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <ShieldCheck className="w-5 h-5 text-teal-400" />
-            <h2 className="text-xl font-black tracking-tight">Founder & MD Command Center</h2>
-          </div>
-          <p className="text-xs text-teal-200/80">
-            Real-time executive oversight across lead intake, closed deals, property verification pipeline, and team attendance.
-          </p>
-        </div>
-
+      {/* Header */}
+      <div className="bg-canvas rounded-xl p-6 border border-neutral-200">
         <div className="flex items-center gap-3">
-          <div 
-            onClick={() => navigate('/leads')}
-            className="px-4 py-2 bg-white/10 rounded-2xl border border-white/10 text-center cursor-pointer hover:bg-white/20 transition-colors"
-          >
-            <span className="text-[10px] uppercase font-bold text-teal-300 block">Total Active Leads</span>
-            <span className="text-lg font-black text-white">{execMetrics?.totalLeadsCount ?? '...'} Leads</span>
-          </div>
-
-          <div 
-            onClick={() => navigate('/site-visits')}
-            className="px-4 py-2 bg-emerald-500/20 rounded-2xl border border-emerald-500/30 text-center cursor-pointer hover:bg-emerald-500/30 transition-colors"
-          >
-            <span className="text-[10px] uppercase font-bold text-emerald-300 block">Site Visits Scheduled</span>
-            <span className="text-lg font-black text-emerald-400">
-              {execMetrics?.siteVisitsScheduled ?? '...'} Visits
-            </span>
+          <ShieldCheck className="w-5 h-5 text-teal-500" />
+          <div>
+            <div className="text-navy font-semibold">Good morning, {user?.fullName || user?.employeeCode || 'Executive'}</div>
+            <div className="text-sm text-neutral-500">Here's what needs your attention today</div>
           </div>
         </div>
       </div>
 
-      {/* Dynamic KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div 
-          onClick={() => navigate('/leads')}
-          className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-2 cursor-pointer hover:border-teal-400 hover:shadow-md transition-all group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase group-hover:text-teal-700 transition-colors">Total Closed Deals</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+      {/* Critical / Priority Alerts */}
+      <div className="bg-white rounded-xl p-6 border border-neutral-200">
+        <h3 className="font-semibold text-navy mb-3">Priority Alerts</h3>
+        <div className="space-y-3 text-sm text-neutral-600">
+          <div>
+            <span className="font-medium text-navy">3 leads without follow-up</span>
+            <a href="/leads" className="font-medium text-primary hover:underline ml-2">Open Lead</a>
           </div>
-          <div className="text-2xl font-black text-slate-900 group-hover:text-teal-900 transition-colors">
-            {execMetrics?.totalClosedDeals ?? '...'} Deals
+          <div>
+            <span className="font-medium text-navy">2 site visits today</span>
+            <a href="/site-visits" className="font-medium text-primary hover:underline ml-2">View Schedule</a>
           </div>
-          <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
-            <ArrowUpRight className="w-3 h-3" /> Real-time DB aggregated
-          </span>
-        </div>
-
-        <div 
-          onClick={() => navigate('/leads')}
-          className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-2 cursor-pointer hover:border-teal-400 hover:shadow-md transition-all group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase group-hover:text-teal-700 transition-colors">Active Lead Intake</span>
-            <TrendingUp className="w-4 h-4 text-teal-600" />
+          <div>
+            <span className="font-medium text-navy">4 properties pending approval</span>
+            <a href="/properties" className="font-medium text-primary hover:underline ml-2">Review Properties</a>
           </div>
-          <div className="text-2xl font-black text-slate-900 group-hover:text-teal-900 transition-colors">{execMetrics?.totalLeadsCount ?? 0} Leads</div>
-          <span className="text-[10px] text-slate-500 font-semibold">Weighted Auto-Distribution active</span>
-        </div>
-
-        <div 
-          onClick={() => navigate('/properties')}
-          className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-2 cursor-pointer hover:border-amber-400 hover:shadow-md transition-all group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase group-hover:text-amber-700 transition-colors">Property Inventory</span>
-            <Building className="w-4 h-4 text-amber-600" />
+          <div>
+            <span className="font-medium text-navy">1 overdue collection</span>
+            <a href="/bookings" className="font-medium text-primary hover:underline ml-2">Collections</a>
           </div>
-          <div className="text-2xl font-black text-slate-900 group-hover:text-amber-900 transition-colors">{execMetrics?.totalPropertiesCount ?? 0} Properties</div>
-          <span className="text-[10px] text-amber-600 font-bold">
-            {execMetrics?.livePropertiesCount ?? 0} LIVE • {execMetrics?.pendingApprovalPropertiesCount ?? 0} MD Approval
-          </span>
-        </div>
-
-        <div 
-          onClick={() => navigate('/employees')}
-          className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-2 cursor-pointer hover:border-purple-400 hover:shadow-md transition-all group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase group-hover:text-purple-700 transition-colors">Active Team Members</span>
-            <Users className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="text-2xl font-black text-slate-900 group-hover:text-purple-900 transition-colors">{execMetrics?.totalEmployeesCount ?? 0} Employees</div>
-          <span className="text-[10px] text-purple-600 font-bold">
-            {execMetrics?.attendanceExceptionsCount ?? 0} Attendance Exceptions
-          </span>
-        </div>
-      </div>
-
-      {/* Global Image Banner Management */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <BannerControlWidget />
-      </div>
-
-      {/* Analytics Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-teal-600" />
-            Lead Conversion Pipeline
-          </h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={[
-                  { name: 'Total Leads', value: execMetrics?.totalLeadsCount || 0 },
-                  { name: 'Site Visits', value: execMetrics?.siteVisitsScheduled || 0 },
-                  { name: 'Closed Deals', value: execMetrics?.totalClosedDeals || 0 },
-                ]}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-              >
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="value" fill="#0d9488" radius={[6, 6, 0, 0]} maxBarSize={60} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Building className="w-4 h-4 text-amber-600" />
-            Property Status Distribution
-          </h3>
-          <div className="h-64 flex items-center justify-center">
-            {execMetrics?.totalPropertiesCount === 0 ? (
-              <span className="text-sm text-slate-400 font-medium">No properties to display</span>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Live', value: execMetrics?.livePropertiesCount || 0, color: '#10b981' },
-                      { name: 'Pending MD', value: execMetrics?.pendingApprovalPropertiesCount || 0, color: '#f59e0b' },
-                      { name: 'Pending PM', value: execMetrics?.pendingVerificationPropertiesCount || 0, color: '#3b82f6' },
-                    ].filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {
-                      [
-                        { name: 'Live', value: execMetrics?.livePropertiesCount || 0, color: '#10b981' },
-                        { name: 'Pending MD', value: execMetrics?.pendingApprovalPropertiesCount || 0, color: '#f59e0b' },
-                        { name: 'Pending PM', value: execMetrics?.pendingVerificationPropertiesCount || 0, color: '#3b82f6' },
-                      ].filter(d => d.value > 0).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))
-                    }
-                  </Pie>
-                  <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+          <div>
+            <span className="font-medium text-navy">2 documents awaiting verification</span>
+            <a href="/documents" className="font-medium text-primary hover:underline ml-2">Documents</a>
           </div>
         </div>
       </div>
 
-      {/* Removed Performance Index & Leaderboard as it is not applicable for MD */}
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="bg-white rounded-lg p-4 border border-neutral-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Active Leads</div>
+          <div className="text-2xl font-bold text-navy">{formatNumber(execMetrics?.activeLeads)}</div>
+          <a href="/leads" className="text-primary/600 hover:underline text-xs mt-2 block">View Leads</a>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-neutral-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Qualified Leads</div>
+          <div className="text-2xl font-bold text-navy">{formatNumber(execMetrics?.qualifiedLeads)}</div>
+          <a href="/leads" className="text-primary/600 hover:underline text-xs mt-2 block">View Leads</a>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-neutral-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Site Visits</div>
+          <div className="text-2xl font-bold text-navy">{formatNumber(execMetrics?.siteVisitsToday)}</div>
+          <a href="/site-visits" className="text-primary/600 hover:underline text-xs mt-2 block">View Schedule</a>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-neutral-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Open Deals</div>
+          <div className="text-2xl font-bold text-navy">{formatNumber(execMetrics?.openDeals)}</div>
+          <a href="/sales-pipeline" className="text-primary/600 hover:underline text-xs mt-2 block">View Pipeline</a>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-neutral-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Live Properties</div>
+          <div className="text-2xl font-bold text-navy">{formatNumber(execMetrics?.liveProperties)}</div>
+          <a href="/properties" className="text-primary/600 hover:underline text-xs mt-2 block">View Properties</a>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-neutral-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Pending Approvals</div>
+          <div className="text-2xl font-bold text-navy">{formatNumber(execMetrics?.pendingApprovals)}</div>
+          <a href="/properties" className="text-primary/600 hover:underline text-xs mt-2 block">Review Approvals</a>
+        </div>
+      </div>
+
+      {/* Priority Work / Needs Attention */}
+      <div className="bg-white rounded-xl p-6 border border-neutral-200">
+        <h3 className="font-semibold text-navy mb-4">Needs Attention</h3>
+        <div className="space-y-3 text-sm text-neutral-600">
+          <div>
+            <span className="font-medium text-navy">Lead: Ravi Kumar</span>
+            <span className="text-xs text-neutral-500 ml-2">Follow-up overdue by 2 days</span>
+            <a href="/leads" className="font-medium text-primary hover:underline ml-2">Open Lead</a>
+          </div>
+          <div>
+            <span className="font-medium text-navy">Property: Plot 127</span>
+            <span className="text-xs text-neutral-500 ml-2">Pending MD approval</span>
+            <a href="/properties" className="font-medium text-primary hover:underline ml-2">Review Property</a>
+          </div>
+          <div>
+            <span className="font-medium text-navy">Booking: RRH-BKG-1027</span>
+            <span className="text-xs text-neutral-500 ml-2">Payment pending</span>
+            <a href="/bookings" className="font-medium text-primary hover:underline ml-2">Open Transaction</a>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white rounded-xl p-6 border border-neutral-200">
+        <h3 className="font-semibold text-navy mb-3">Recent Activity</h3>
+        <div className="space-y-3 text-sm text-neutral-600">
+          <div>
+            <span className="font-medium text-navy">New lead</span>
+            <span className="text-[10px] capitalize text-neutral-500">Ravi Kumar added</span>
+          </div>
+          <div>
+            <span className="font-medium text-navy">Status change</span>
+            <span className="text-[10px] capitalize text-neutral-500">Property Plot 127 moved to pending approval</span>
+          </div>
+          <div>
+            <span className="font-medium text-navy">Site visit completed</span>
+            <span className="text-[10px] capitalize text-neutral-500">101 Main St visited</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

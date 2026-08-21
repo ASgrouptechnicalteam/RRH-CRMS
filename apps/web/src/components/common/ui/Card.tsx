@@ -7,93 +7,108 @@ export interface CardHeaderProps {
 
 export interface CardTitleProps {
   className?: string;
+  children?: React.ReactNode;
 }
 
 export interface CardDescriptionProps {
   className?: string;
+  children?: React.ReactNode;
 }
 
 export interface CardContentProps {
   className?: string;
+  children?: React.ReactNode;
 }
 
 export interface CardFooterProps {
   className?: string;
+  children?: React.ReactNode;
 }
 
 export type CardVariant = 'default' | 'elevated' | 'outlined';
 
-/**
- * Card — Card component primitive with sub-components.
- *
- * Geometry per CRM-DESIGN-SYSTEM-RULES.md:
- *   - 16px border-radius (--radius-md)
- *   - Background: --color-surface-raised (#EAF3FB) or --color-card-surface
- *   - Subtle border: #D7E3EA
- *   - Very soft shadow: var(--shadow-card)
- *   - No heavy gradients, no neon
- *
- * Sub-components provide consistent vertical rhythm using the 4px/8px spacing scale.
- */
-
-const Card: React.FC<{
-  variant?: CardVariant;
-  className?: string;
-  children: React.ReactNode;
-}> = ({ variant = 'default', className, children }) => {
-  const cardClasses = `
-    card
-    rounded-md
-    border
-    border-transparent
-    shadow-sm
-    transition-all
-    data-[variant=default]:bg-surface-soft
-    data-[variant=elevated]:bg-white shadow-lg
-    data-[variant=outlined]:bg-white border border-border
-  `.trim();
-
-  return (
-    <div
-      className`
-        ${cardClasses}
-        ${className}
-      `
-    >
-      {children}
-    </div>
-  );
-};
-
-Card.Header: React.FC<CardHeaderProps> = ({ title, subtitle }) => (
-  <div className="flex flex-col space-y-1.5">
+// Sub-component implementations
+const CardHeader: React.ComponentType<CardHeaderProps> = ({
+  title,
+  subtitle
+}) => (
+  <div className="p-4 border-b">
     <h3 className="text-sm font-medium text-neutral-900">{title}</h3>
     {subtitle && <p className="text-xs text-neutral-500">{subtitle}</p>}
   </div>
 );
 
-Card.Title: React.FC<CardTitleProps> = ({ className, children }) => (
-  <h4 className={`text-xs font-semibold text-neutral-900 ${className}`}>
-    {children}
-  </h4>
-);
+CardHeader.displayName = 'Card.Header';
 
-Card.Description: React.FC<CardDescriptionProps> = ({ className, children }) => (
-  <p className={`text-xs text-neutral-500 ${className}`}>
-    {children}
-  </p>
-);
+const CardTitle: React.ComponentType<CardTitleProps> = ({
+  className,
+  children
+}) => <h3 className={className}>{children}</h3>;
 
-Card.Content: React.FC<CardContentProps> = ({ className, children }) => (
-  <div className={`p-6 ${className}`}>
+CardTitle.displayName = 'Card.Title';
+
+const CardDescription: React.ComponentType<CardDescriptionProps> = ({
+  className,
+  children
+}) => <p className={className}>{children}</p>;
+
+CardDescription.displayName = 'Card.Description';
+
+const CardContent: React.ComponentType<CardContentProps> = ({
+  className,
+  children
+}) => <div className="p-4">{children}</div>;
+
+CardContent.displayName = 'Card.Content';
+
+const CardFooter: React.ComponentType<CardFooterProps> = ({
+  className,
+  children
+}) => (
+  <div className="p-4 border-t">
     {children}
   </div>
 );
 
-Card.Footer: React.FC<CardFooterProps> = ({ className, children }) => (
-  <div className={`p-6 pt-0 border-t border-border ${className}`}>
-    {children}
-  </div>
-);
+CardFooter.displayName = 'Card.Footer';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardVariant, CardHeaderProps, CardTitleProps, CardDescriptionProps, CardContentProps, CardFooterProps };
+// The Card compound component - typed with both props AND static sub-component properties
+type CardComponentType = React.ComponentType<{
+  variant?: CardVariant;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+  Header?: React.ReactNode;
+  Title?: React.ReactNode;
+  Content?: React.ReactNode;
+  Footer?: React.ReactNode;
+}> & {
+  Header: React.ComponentType<CardHeaderProps>;
+  Title: React.ComponentType<CardTitleProps>;
+  Description: React.ComponentType<CardDescriptionProps>;
+  Content: React.ComponentType<CardContentProps>;
+  Footer: React.ComponentType<CardFooterProps>;
+};
+
+const Card: CardComponentType = ({ variant = 'default', className, style, children, Header, Title, Content, Footer }) => {
+  const cardClasses = `card rounded-md border border-transparent shadow-sm transition-all`;
+
+  return (
+    <div className={cardClasses + ' ' + className} style={style}>
+      {Header && <CardHeader title={Header as React.ReactNode} subtitle="Subtitle" />}
+      {Title && <CardTitle className={className}>{Title}</CardTitle>}
+      {Content && <CardContent>{Content}</CardContent>}
+      {Footer && <CardFooter>{Footer}</CardFooter>}
+      {children}
+    </div>
+  );
+};
+
+// Attach sub-components for TypeScript recognition
+Card.Header = CardHeader;
+Card.Title = CardTitle;
+Card.Description = CardDescription;
+Card.Content = CardContent;
+Card.Footer = CardFooter;
+
+export { Card };

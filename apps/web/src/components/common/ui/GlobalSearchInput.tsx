@@ -25,17 +25,7 @@ const GlobalSearchInput: React.FC<{
       <input
         type="text"
         placeholder={placeholder}
-        className`
-          bg-transparent
-          outline-none
-          ring-0
-          text-sm
-          text-neutral-700
-          w-full
-          pl-7
-          pr-2
-          placeholder-shown:pl-8
-        `
+        className="bg-transparent outline-none ring-0 text-sm text-neutral-700 w-full pl-7 pr-2 placeholder-shown:pl-8"
       />
     </div>
   );

@@ -11,6 +11,7 @@ import { NotificationDrawer } from './components/notifications/NotificationDrawe
 import { ISTClock } from './components/common/ISTClock';
 import { FirstLoginSetup } from './components/auth/FirstLoginSetup';
 import { MDExecutiveDashboard } from './components/dashboards/MDExecutiveDashboard';
+import { AdminCommandCenter } from './components/dashboards/AdminCommandCenter';
 import { TelecallerDashboard } from './components/dashboards/TelecallerDashboard';
 import { PMDashboard } from './components/dashboards/PMDashboard';
 import { StaffDashboard } from './components/dashboards/StaffDashboard';
@@ -49,7 +50,9 @@ export const prefetchMainModules = () => {
 
 // New Consolidated Hubs
 const UserProfile = lazy(() => import('./components/profile/UserProfile').then(m => ({ default: m.UserProfile })));
-const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => ({ default: m.HRDashboard })));
+const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => ({
+  default: m.HRDashboard
+})));
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
@@ -70,7 +73,7 @@ const DefaultRedirect: React.FC<{ user: unknown }> = () => (
 // responsive 12-column content grid, and optional right rail. The Routes and
 // internal modal logic are rendered as children inside the AppLayout content canvas.
 const AppShell: React.FC = () => {
-  const { user, accessToken, firstLoginDone, attendanceStamped, login, logout, fetchWithAuth } = useAuth();
+  const { user, accessToken, authStatus, firstLoginDone, attendanceStamped, login, logout, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = location.pathname.replace('/', '') || 'dashboard';
@@ -132,10 +135,20 @@ const AppShell: React.FC = () => {
     }
   });
 
-  if (!accessToken) {
+  if (authStatus === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950">
         <LoginForm />
+      </div>
+    );
+  }
+
+  if (authStatus === 'bootstrapping') {
+    return (
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-8">
+        <div className="text-navy text-xl font-semibold mb-4">RRH-CRMS</div>
+        <div className="w-12 h-12 border-4 border-navy border-t-transparent rounded-full animate-spin mb-4"></div>
+        <span className="text-neutral-600">Loading application...</span>
       </div>
     );
   }
@@ -145,7 +158,13 @@ const AppShell: React.FC = () => {
   }
 
   const isMD = user?.roles?.includes('Managing director');
-  const isAdmin = user?.roles?.includes('Admin (Technical)');
+  const isTechAdmin = user?.roles?.includes('Admin (Technical)');
+  const isHRManager = user?.roles?.includes('HR Manager');
+  const isProjectManager = user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager'].includes(r));
+  const isTelecaller = user?.roles?.some((r) => ['Telecaller'].includes(r));
+  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller;
+
+  // Role-based access for hubs
   const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
   const canManageEmployees = user?.roles?.some(r => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
@@ -153,134 +172,52 @@ const AppShell: React.FC = () => {
      'Digital Marketing head(manager)', 'accountant'].includes(r)
   );
 
-  // Top utility bar with title — rendered inside AppLayout
-  return (
-    <AppLayout title="RRH-CRMS Dashboard">
-      {/* Global Image Banner */}
-      <GlobalAnnouncementBanner />
+  // Role-to-dashboard resolver — each role gets its own dedicated dashboard
+  const dashboardElement = (
+    <Routes>
+      <Route path="/" element={<DefaultRedirect user={user} />} />
+      <Route path="/dashboard" element={
+        isMD ? (
+          <MDExecutiveDashboard />
+        ) : isTechAdmin ? (
+          <AdminCommandCenter />
+        ) : isHRManager ? (
+          <HRDashboard />
+        ) : isProjectManager ? (
+          <PMDashboard />
+        ) : isTelecaller ? (
+          <TelecallerDashboard />
+        ) : (
+          <StaffDashboard />
+        )
+      } />
 
-      {/* Push Notification Banner */}
-      {isSupported && permission === 'default' && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm z-30 relative">
-          <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-amber-600 animate-bounce" />
-            <span className="text-sm font-semibold text-amber-900">
-              Enable push notifications to receive real-time updates and leads.
-            </span>
-          </div>
-          <button 
-            onClick={subscribe}
-            disabled={isSubscribing}
-            className="w-full sm:w-auto bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-700 transition-colors disabled:opacity-70 whitespace-nowrap"
-          >
-            {isSubscribing ? 'Enabling...' : 'Enable Notifications'}
-          </button>
-        </div>
-      )}
+      <Route path="/leads" element={<LeadManagement />} />
+      <Route path="/leads-clients" element={<LeadManagement />} />
+      <Route path="/sales-pipeline" element={user?.permissions?.includes('LEADS_READ') ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
+      <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
+      <Route path="/projects" element={user?.permissions?.includes('PROJECTS_READ') ? <ProjectManagement /> : <Navigate to="/" replace />} />
+      <Route path="/properties" element={<PropertyManagement />} />
+      <Route path="/site-visits" element={<SiteVisitManagement />} />
+      <Route path="/tasks" element={<TaskManager />} />
+      <Route path="/bookings" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingManagement /> : <Navigate to="/" replace />} />
+      <Route path="/bookings/:id" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingDossier /> : <Navigate to="/" replace />} />
+      <Route path="/documents" element={user?.permissions?.includes('documents.read') ? <DocumentManagement /> : <Navigate to="/" replace />} />
+      <Route path="/profile" element={<UserProfile />} />
+      
+      {/* Consolidated Hubs */}
+      <Route path="/hr-hub" element={canManageEmployees ? <HRDashboard /> : <Navigate to="/" replace />} />
+      
+      <Route path="/analytics" element={
+        (canManageTargets || canViewTeamPerformance) ? <AnalyticsHub /> : <Navigate to="/" replace />
+      } />
 
-      {/* Main Content Body — Routes rendered inside AppLayout content canvas */}
-      <div className="main-content p-4 sm:p-6 max-w-7xl w-full mx-auto pb-20 md:pb-6">
-        <ErrorBoundary>
-          <Suspense
-            fallback={
-              <div className="py-20 text-center text-xs text-slate-400 font-semibold flex flex-col items-center justify-center gap-3">
-                <div className="w-7 h-7 border-3 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-                <span>Loading workstation module...</span>
-              </div>
-            }
-          >
-            <Routes>
-              <Route path="/" element={<DefaultRedirect user={user} />} />
-              <Route path="/dashboard" element={
-                (isMD || isAdmin) ? (
-                  <MDExecutiveDashboard />
-                ) : user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager'].includes(r)) ? (
-                  <PMDashboard />
-                ) : user?.roles?.some((r) => ['Telecaller'].includes(r)) ? (
-                  <TelecallerDashboard />
-                ) : (
-                  <StaffDashboard />
-                )
-              } />
+      <Route path="/system-control" element={isMD ? <SystemControlHub /> : <Navigate to="/" replace />} />
 
-              <Route path="/leads" element={<LeadManagement />} />
-              <Route path="/leads-clients" element={<LeadManagement />} />
-              <Route path="/sales-pipeline" element={user?.permissions?.includes('LEADS_READ') ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
-              <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
-              <Route path="/projects" element={user?.permissions?.includes('PROJECTS_READ') ? <ProjectManagement /> : <Navigate to="/" replace />} />
-              <Route path="/properties" element={<PropertyManagement />} />
-              <Route path="/site-visits" element={<SiteVisitManagement />} />
-              <Route path="/tasks" element={<TaskManager />} />
-              <Route path="/bookings" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingManagement /> : <Navigate to="/" replace />} />
-              <Route path="/bookings/:id" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingDossier /> : <Navigate to="/" replace />} />
-              <Route path="/documents" element={user?.permissions?.includes('documents.read') ? <DocumentManagement /> : <Navigate to="/" replace />} />
-              <Route path="/profile" element={<UserProfile />} />
-              
-              {/* Consolidated Hubs */}
-              <Route path="/hr-hub" element={
-                canManageEmployees ? <HRDashboard /> : <Navigate to="/" replace />
-              } />
-              
-              <Route path="/analytics" element={
-                (canManageTargets || canViewTeamPerformance) ? <AnalyticsHub /> : <Navigate to="/" replace />
-              } />
+      <Route path="/finance" element={<FinanceHub />} />
 
-              <Route path="/system-control" element={
-                (isMD || isAdmin) ? <SystemControlHub /> : <Navigate to="/" replace />
-              } />
-
-              <Route path="/finance" element={<FinanceHub />} />
-
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </ErrorBoundary>
-      </div>
-
-      {/* Mobile Bottom Navigation Bar & PWA Prompt */}
-      <MobileBottomNav />
-      <PWAInstallPrompt />
-
-      {/* Daily Report Modal (Logout Gate) */}
-      <DailyReportModal
-        isOpen={showReportModal}
-        onClose={() => { setShowReportModal(false); setPendingLogout(false); }}
-        onSuccess={() => { if (pendingLogout) logout(); }}
-      />
-
-      {/* Logout Intent Modal */}
-      {showLogoutIntentModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl relative animate-scaleUp">
-            <h3 className="font-bold text-slate-800 text-lg mb-2">Logout Action</h3>
-            <p className="text-sm text-slate-600 mb-6">
-              You haven't submitted your Daily Log. Were you working a full shift, or just visiting/updating?
-            </p>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => { setShowLogoutIntentModal(false); setPendingLogout(true); setShowReportModal(true); }}
-                className="w-full p-3 bg-teal-700 text-white font-bold rounded-xl hover:bg-teal-800 transition-colors shadow-md"
-              >
-                Submit Daily Log & Logout
-              </button>
-              <button
-                onClick={() => { setShowLogoutIntentModal(false); logout(); }}
-                className="w-full p-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
-              >
-                Just Visiting / Updating (Log out immediately)
-              </button>
-              <button
-                onClick={() => setShowLogoutIntentModal(false)}
-                className="w-full p-2 text-slate-500 font-bold hover:text-slate-700 text-xs"
-              >
-                Cancel Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </AppLayout>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 

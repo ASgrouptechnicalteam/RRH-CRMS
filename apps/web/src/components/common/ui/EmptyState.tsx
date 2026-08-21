@@ -5,25 +5,10 @@ export interface EmptyStateProps {
   description?: string;
   actionLabel?: string;
   actionOnClick?: () => void;
-  icon?: React.ComponentType;
+  icon?: React.ElementType;
   skeletonRows?: number;
+  children?: React.ReactNode;
 }
-
-/**
- * EmptyState — Empty state placeholder with action CTA.
- *
- * Visual system:
- *   - Centered layout with generous spacing (var(--space-8) vertical rhythm)
- *   - Icon slot (or placeholder circle)
- *   - Title in deep navy hierarchy
- *   - Description in muted slate
- *   - Primary CTA button slot
- *   - No horizontal scrolling, fully responsive
- *
- * Accessibility:
- *   - aria-label required or derived from title + description
- *   - Action button has clear accessible name
- */
 
 const EmptyState: React.FC<EmptyStateProps> = ({
   title,
@@ -32,12 +17,22 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   actionOnClick,
   icon: IconComponent,
   skeletonRows = 2,
+  children,
 }) => {
-  const Icon = IconComponent || ((<div className="w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center animate-pulse" />));
+  let Icon: React.ReactElement | null = null;
+
+  if (IconComponent) {
+    Icon = <IconComponent className="mx-auto mb-4" aria-hidden="true" />;
+  } else {
+    Icon = (
+      <div className="w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center animate-pulse" />
+    );
+  }
 
   return (
     <div className="text-center p-8">
-      <Icon className="mx-auto mb-4" aria-hidden="true" />
+      {children}
+      {Icon}
       <h3 className="text-xl font-semibold text-neutral-900 mb-1">
         {title}
       </h3>
@@ -49,12 +44,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       {actionLabel && actionOnClick && (
         <button
           onClick={actionOnClick}
-          className`
-            btn-primary
-            w-full
-            py-2
-            mt-4
-          `
+          className="btn-primary w-full py-2 mt-4"
         >
           {actionLabel}
         </button>
@@ -63,4 +53,4 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   );
 };
 
-export { EmptyState, EmptyStateProps };
+export { EmptyState };

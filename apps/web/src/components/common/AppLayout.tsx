@@ -1,4 +1,6 @@
 import React, { type ComponentType } from 'react';
+import { NavLink } from 'react-router-dom';
+import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle } from 'lucide-react';
 
 const GlobalSearchInput: React.FC<{ placeholder?: string }> = ({ placeholder }) => (
   <input
@@ -54,7 +56,7 @@ export const AppLayout: React.FC<{
         >
           <div className="mb-6 px-3">
             <span className="text-xs font-bold uppercase tracking-wider text-gold">
-              Sonthillu CRM
+              Radha Real Homes CRM
             </span>
           </div>
           <SidebarNav />
@@ -82,25 +84,40 @@ export const AppLayout: React.FC<{
 type SidebarNavItem = {
   id: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
-  path: string;
+  icon?: ComponentType<{ className?: string }>;
+  path?: string;
   active?: boolean;
+  group?: boolean;
 };
 
-const PlaceholderIcon: ComponentType<{ className?: string }> = () => (
-  <span className="w-2 h-2 rounded-full bg-gold inline-block" />
-);
-
 const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
-  { id: 'command-center', label: 'Command Center', icon: PlaceholderIcon, path: '/dashboard' },
-  { id: 'leads-clients', label: 'Leads & Clients', icon: PlaceholderIcon, path: '/leads-clients' },
-  { id: 'transactions-closings', label: 'Transactions & Closings', icon: PlaceholderIcon, path: '/sales-pipeline' },
-  { id: 'property-inventory', label: 'Property Inventory', icon: PlaceholderIcon, path: '/properties' },
-  { id: 'projects-sites', label: 'Projects & Sites', icon: PlaceholderIcon, path: '/projects' },
-  { id: 'site-visits-follow-ups', label: 'Site Visits & Follow-ups', icon: PlaceholderIcon, path: '/tasks' },
-  { id: 'analytics-goals', label: 'Analytics & Goals', icon: PlaceholderIcon, path: '/analytics' },
-  { id: 'finance', label: 'Finance', icon: PlaceholderIcon, path: '/finance' },
-  { id: 'profile', label: 'Profile', icon: PlaceholderIcon, path: '/profile' },
+  // WORKSPACE
+  { id: 'group-workspace', label: 'WORKSPACE', group: true, icon: undefined },
+  { id: 'command-center', label: 'Command Center', icon: Settings2, path: '/dashboard' },
+
+  // CUSTOMER & SALES
+  { id: 'group-customer-sales', label: 'CUSTOMER & SALES', group: true, icon: undefined },
+  { id: 'leads-clients', label: 'Leads & Clients', icon: Users, path: '/leads-clients' },
+  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
+
+  // PROPERTY
+  { id: 'group-property', label: 'PROPERTY', group: true, icon: undefined },
+  { id: 'property-inventory', label: 'Property Inventory', icon: Building2, path: '/properties' },
+  { id: 'projects-sites', label: 'Projects & Sites', icon: MapPinned, path: '/projects' },
+
+  // TRANSACTIONS
+  { id: 'group-transactions', label: 'TRANSACTIONS', group: true, icon: FileCheck },
+  { id: 'bookings', label: 'Bookings / Transactions', icon: undefined, path: '/bookings' },
+  { id: 'documents', label: 'Documents', icon: undefined, path: '/documents' },
+
+  // INTELLIGENCE
+  { id: 'group-intelligence', label: 'INTELLIGENCE', group: true, icon: undefined },
+  { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics' },
+
+  // ADMINISTRATION
+  { id: 'group-administration', label: 'ADMINISTRATION', group: true, icon: undefined },
+  { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control' },
+  { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
 ];
 
 export { SIDEBAR_NAV_ITEMS };
@@ -110,24 +127,27 @@ const SidebarNav: React.FC = () => {
   return (
     <nav className="space-y-1">
       {SIDEBAR_NAV_ITEMS.map((item) => {
-        const isActive = window.location.pathname === item.path;
+        if (item.group) {
+          return (
+            <div
+              key={item.id}
+              className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-neutral-200"
+            >
+              {item.label}
+            </div>
+          );
+        }
         return (
-          <a
+<NavLink
             key={item.id}
-            href={item.path}
-            className={`
-              w-full
-              flex items-center gap-3
-              rounded-md
-              py-2.5 px-3
-              text-sm font-medium
-              transition-colors
-              ${isActive ? 'bg-primary/10 text-navy font-semibold' : 'text-neutral-600 hover:bg-neutral-50 hover:text-navy'}
-            `}
+            to={item.path || '/'}
+            className="w-full flex items-center gap-3 rounded-md py-2.5 px-3 text-sm font-medium transition-colors"
           >
-            <item.icon className="w-4 h-4 shrink-0 text-gold" />
+            {item.icon ? (
+              <item.icon className="w-4 h-4 shrink-0 text-gold" />
+            ) : null}
             <span className="truncate">{item.label}</span>
-          </a>
+          </NavLink>
         );
       })}
     </nav>

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Card, type CardHeaderProps, type CardTitleProps, type CardDescriptionProps, type CardContentProps, type CardFooterProps } from '../common/ui/Card';
-import { InputField } from '../common/ui/InputField';
-import { SelectField } from '../common/ui/SelectField';
-import { Button } from '../common/ui/Button';
-import { StatusChip } from '../common/ui/StatusChip';
-import { Skeleton } from '../common/ui/Skeleton';
-import { EmptyState } from '../common/ui/EmptyState';
-import { AppLayout } from '../common/AppLayout';
+import { useAuth } from '../context/AuthContext';
+import { Card, type CardHeaderProps, type CardTitleProps, type CardDescriptionProps, type CardContentProps, type CardFooterProps } from '../components/common/ui/Card';
+import { InputField } from '../components/common/ui/InputField';
+import { SelectField } from '../components/common/ui/SelectField';
+import { Button } from '../components/common/ui/Button';
+import { StatusChip, type StatusChipVariant } from '../components/common/ui/StatusChip';
+import { Skeleton } from '../components/common/ui/Skeleton';
+import { EmptyState } from '../components/common/ui/EmptyState';
+import { AppLayout } from '../components/common/AppLayout';
 
 /**
  * Lead status filter types matching the backend API.
@@ -187,7 +187,7 @@ const LeadsClientsPage: React.FC = () => {
                   SITE_VISIT: 'reserved',
                   NEGOTIATION: 'pending_approval',
                   CLOSED: 'sold',
-                }[lead.status as keyof Record<LeadStatus, StatusChipVariant>]}
+                }[lead.status as keyof Record<LeadStatus, StatusChipVariant>] as StatusChipVariant}
               />
 
               {/* Next Action: Next follow-up date and time */}

@@ -19,69 +19,69 @@ const variantStyles: Record<StatusChipVariant, {
   bg: string;
   fg: string;
   border: string;
-  icon: React.ComponentType;
+  icon: React.ReactNode;
 }> = {
   live: {
     bg: 'var(--color-success)',
     fg: 'white',
     border: 'var(--color-success)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
   available: {
     bg: 'var(--color-action-blue)',
     fg: 'white',
     border: 'var(--color-action-blue)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
   reserved: {
     bg: 'var(--color-warning)',
     fg: 'var(--color-neutral-900)',
     border: 'var(--color-warning)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
   booked: {
     bg: 'var(--color-navy)',
     fg: 'white',
     border: 'var(--color-navy)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
   sold: {
     bg: 'var(--color-destructive)',
     fg: 'white',
     border: 'var(--color-destructive)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
   pending_approval: {
     bg: 'var(--color-gold)',
     fg: 'var(--color-navy)',
     border: 'var(--color-gold)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
   in_progress: {
     bg: 'var(--color-info)',
     fg: 'var(--color-neutral-900)',
     border: 'var(--color-info)',
-    icon: React.forwardRef<HTMLSpanElement>((_, ref) => (
-      <span className="w-3 h-3 rounded-full" ref={ref} aria-hidden="true" />
-    )),
+    icon: (
+      <span className="w-3 h-3 rounded-full" aria-hidden="true" />
+    ),
   },
 };
 
 const sizeStyles = {
-  sm: { padding: 'var(--space-1) var(--space-2)', fontSize: 'var(--text-xs)' },  /* 4px/8px */
-  md: { padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--text-sm)' },  /* 8px/12px */
+  sm: { padding: 'var(--space-1) var(--space-2)', fontSize: 'var(--text-xs)' },
+  md: { padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--text-sm)' },
 };
 
 const StatusChip: React.FC<StatusChipProps> = ({
@@ -94,27 +94,15 @@ const StatusChip: React.FC<StatusChipProps> = ({
 
   return (
     <span
-      className`
-        inline-flex
-        items-center
-        rounded-full
-        ${bg}
-        ${fg}
-        ${border}
-        ${pkgSize}
-        transition-colors
-        data-[state=focus]:outline-none
-        data-[state=focus]:ring-2
-        data-[state=focus]:ring-${bg}
-      `
+      className="inline-flex items-center rounded-full"
       role="status"
       aria-live="polite"
       aria-label={`Status: ${variant.replace(/_/g, ' ')}`}
     >
-      {icon()}
+      {icon}
       <span className="ml-1 align-middle">{variant.replace(/_/g, ' ')}</span>
     </span>
   );
 };
 
-export { StatusChip, StatusChipVariant, StatusChipProps };
+export { StatusChip };

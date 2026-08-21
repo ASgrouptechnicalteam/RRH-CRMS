@@ -14,9 +14,12 @@ export interface UserProfile {
   firstLoginDone: boolean;
 }
 
+type AuthStatus = 'bootstrapping' | 'authenticated' | 'unauthenticated';
+
 interface AuthContextType {
   user: UserProfile | null;
   accessToken: string | null;
+  authStatus: AuthStatus;
   firstLoginDone: boolean;
   attendanceStamped: boolean;
   login: (userData: UserProfile, token: string) => void;
@@ -35,10 +38,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('bootstrapping');
 
-  // Silent refresh on mount
+  // Silent refresh on mount — explicit bootstrapping state
   useEffect(() => {
     const initAuth = async () => {
+      setAuthStatus('bootstrapping');
       // If we have a user stored but no access token in memory, try to refresh
       const savedUser = localStorage.getItem('rrh_user');
       if (savedUser && !accessToken) {
@@ -53,18 +58,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (res.ok) {
             const data = await res.json();
             setAccessToken(data.accessToken);
+            setAuthStatus('authenticated');
           } else {
             // Refresh failed, meaning session is dead
             logout();
+            setAuthStatus('unauthenticated');
           }
         } catch (err) {
           console.error('Silent refresh failed', err);
           logout();
+          setAuthStatus('unauthenticated');
         }
+      } else if (savedUser && accessToken) {
+        // We already have both user and token from a previous session
+        setAuthStatus('authenticated');
+      } else {
+        // No saved user — treat as unauthenticated
+        logout();
+        setAuthStatus('unauthenticated');
       }
     };
     initAuth();
-  }, []);
+  }, [accessToken]);
 
   const [firstLoginDone, setFirstLoginDoneState] = useState<boolean>(() => {
     if (!user) return true;
@@ -79,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isDone = Boolean(userData.firstLoginDone);
     setFirstLoginDoneState(isDone);
     localStorage.setItem('rrh_user', JSON.stringify({ ...userData, firstLoginDone: isDone }));
+    setAuthStatus('authenticated');
   };
 
   const logout = () => {
@@ -86,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAccessToken(null);
     setAttendanceStamped(false);
     localStorage.removeItem('rrh_user');
+    setAuthStatus('unauthenticated');
   };
 
   const setFirstLoginDone = (done: boolean) => {
@@ -106,28 +123,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const res = await fetch(url, { ...options, headers });
 
-    // Handle Expired Token -> Redirect/Throw user to Login page
+    // Handle Expired Token -> attempt single refresh, then retry
     if (res.status === 401) {
-      const clone = res.clone();
-      try {
-        const body = await clone.json();
-        if (body.code === 'TOKEN_EXPIRED' || body.code === 'UNAUTHORIZED') {
-          console.warn('⚠️ Token expired or invalid. Redirecting to login page...');
-          logout();
-        }
-      } catch (e) {
+      // Single-flight guard: prevent multiple simultaneous refresh calls
+      if (fetchWithAuth.refreshInProgress) {
+        // Already refreshing; just logout after retry fails
         logout();
+        return res;
+      }
+      fetchWithAuth.refreshInProgress = true;
+
+      try {
+        const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          setAccessToken(data.accessToken);
+          // Retry the original request with new token
+          const retryHeaders = new Headers(options.headers || {});
+          if (data.accessToken) {
+            retryHeaders.set('Authorization', `Bearer ${data.accessToken}`);
+          }
+          return fetch(url, { ...options, headers: retryHeaders });
+        } else {
+          // Refresh failed
+          logout();
+          setAuthStatus('unauthenticated');
+        }
+      } catch (err) {
+        console.error('Silent refresh retry failed', err);
+        logout();
+        setAuthStatus('unauthenticated');
+      } finally {
+        fetchWithAuth.refreshInProgress = false;
       }
     }
 
     return res;
   };
 
+  // Single-flight refresh guard
+  fetchWithAuth.refreshInProgress = false;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         accessToken,
+        authStatus,
         firstLoginDone,
         attendanceStamped,
         login,

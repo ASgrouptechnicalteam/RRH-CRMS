@@ -16,17 +16,6 @@ export interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectE
   searchable?: boolean;
 }
 
-/**
- * SelectField — Select primitive.
- *
- * Height: 44px touch target (var(--space-5) = 20px padding top/bottom + content)
- * Label: strictly above the select
- * Keyboard accessible with focus-visible ring
- * Lazy-loaded options support; searchable prop placeholder for future enhanced select
- *
- * States: default, focus (2px Action Blue ring + 2px offset), error (destructive border)
- */
-
 const SelectField: React.FC<SelectFieldProps> = ({
   id,
   label,
@@ -48,13 +37,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       {hasLabel && (
         <label
           htmlFor={id}
-          className`
-            block
-            text-xs font-medium
-            text-neutral-700
-            mb-1
-            transition-colors
-          `
+          className="block text-xs font-medium text-neutral-700 mb-1 transition-colors"
         >
           {label}
         </label>
@@ -63,15 +46,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       <select
         id={id}
         disabled={disabled}
-        className`
-          w-full
-          rounded-md
-          input-field
-          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-          ${hasError ? 'border-red-500' : ''}
-          ${hasSuccess ? 'border-green-500' : ''}
-          ${!disabled && !hasError && !hasSuccess ? 'border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0' : ''}
-        `
+        className="w-full rounded-md input-field"
         style={{
           transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
           ...(hasError && {
@@ -106,4 +81,4 @@ const SelectField: React.FC<SelectFieldProps> = ({
   );
 };
 
-export { SelectField, SelectFieldProps, OptionItem };
+export { SelectField };

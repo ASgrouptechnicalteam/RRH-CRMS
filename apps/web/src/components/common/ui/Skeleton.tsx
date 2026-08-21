@@ -24,39 +24,20 @@ const getSizeStyle = (shape: SkeletonShape) => {
   return styles[shape];
 };
 
-const SkeletonLoader: React.FC<{ shape: SkeletonShape; className?: string; rows?: number }> = ({
+const SkeletonLoader: React.FC<{ shape: SkeletonShape; className?: string; rows?: number; style?: React.CSSProperties }> = ({
   shape,
   className,
   rows = 1,
+  style,
 }) => {
   const size = getSizeStyle(shape as SkeletonShape);
 
   return (
     <div
-      className`
-        inline-block
-        rounded-md
-        animate-pulse
-        bg-neutral-200
-        ${JSON.stringify(size)}
-        ${className}
-      `
-      style={{
-        // Ensure the animation respects prefers-reduced-motion
-        animationDuration: '0.6s',
-        animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-      }}
-    >
-      {/* Rows of skeletons for multi-line content */}
-      {rows > 1 && (
-        <div className="space-y-1.5">
-          {Array.from({ length: rows }).map((_, i) => (
-            <div key={i} className={size ? `h-${size.height || '16px'}` : ''} />
-          ))}
-        </div>
-      )}
-    </div>
+      className={`inline-block rounded-md animate-pulse bg-neutral-200 ${JSON.stringify(size)} ${className}`}
+      style={style}
+    />
   );
 };
 
-export { SkeletonLoader, SkeletonShape };
+export { SkeletonLoader, SkeletonLoader as Skeleton };

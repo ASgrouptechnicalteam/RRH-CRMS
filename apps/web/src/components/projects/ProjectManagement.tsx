@@ -3,6 +3,7 @@ import { Building2, Plus, Search, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { Roles, Permissions } from '@rrh-ems/shared';
 import { ProjectFormWizard } from './ProjectFormWizard';
 import { ProjectDossier } from './ProjectDossier';
 
@@ -19,7 +20,7 @@ export const ProjectManagement: React.FC = () => {
   const [editingProject, setEditingProject] = useState<any>(null);
   const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
 
-  const canCreate = user?.permissions?.includes('PROJECTS_CREATE') || user?.roles?.includes('Managing director') || user?.roles?.includes('Admin (Technical)');
+  const canCreate = user?.permissions?.includes(Permissions.PROJECTS_CREATE) || user?.roles?.includes(Roles.MD) || user?.roles?.includes(Roles.ADMIN);
 
   const fetchProjects = async () => {
     setIsLoading(true);
@@ -161,7 +162,7 @@ export const ProjectManagement: React.FC = () => {
                      onClick={() => setViewingProjectId(proj.id)}
                      className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
                    >
-                     <Eye className="w-3.5 h-3.5" /> Dossier
+                     <Eye className="w-3.5 h-3.5" /> Details
                    </button>
                 </div>
              </div>

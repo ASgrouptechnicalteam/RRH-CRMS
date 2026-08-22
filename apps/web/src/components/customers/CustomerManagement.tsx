@@ -31,6 +31,7 @@ interface Customer {
   origin_lead?: {
     id: number;
     lead_code: string;
+    status?: string;
   };
   created_at: string;
 }
@@ -44,7 +45,25 @@ export const CustomerManagement: React.FC = () => {
 
   // Dossier state
   const [dossierCustomer, setDossierCustomer] = useState<Customer | null>(null);
+  const [isDossierLoading, setIsDossierLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+
+  const openDossier = async (cust: Customer) => {
+    setDossierCustomer(cust);
+    setIsDossierLoading(true);
+    try {
+      // List endpoint omits origin_lead; fetch full detail for the dossier
+      const res = await fetchWithAuth(`${API_BASE_URL}/customers/${cust.id}`);
+      const data = await res.json();
+      if (res.ok && data.customer) {
+        setDossierCustomer(data.customer);
+      }
+    } catch (e) {
+      console.error('Fetch customer detail error:', e);
+    } finally {
+      setIsDossierLoading(false);
+    }
+  };
 
   const fetchCustomers = async () => {
     setIsLoading(true);
@@ -60,6 +79,36 @@ export const CustomerManagement: React.FC = () => {
       showToast('Network error fetching customers', 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (customerId: number, newStatus: string, currentStatus: string) => {
+    if (newStatus === currentStatus) return;
+    
+    if (newStatus === 'BLACKLISTED') {
+      const confirmed = window.confirm('Are you sure you want to BLACKLIST this customer? This is a severe action.');
+      if (!confirmed) return;
+    }
+
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/customers/${customerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        showToast('Customer status updated', 'success');
+        setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, status: newStatus } : c));
+        if (dossierCustomer?.id === customerId) {
+          setDossierCustomer({ ...dossierCustomer, status: newStatus });
+        }
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to update status', 'error');
+      }
+    } catch (e) {
+      showToast('Network error updating status', 'error');
     }
   };
 
@@ -94,7 +143,7 @@ export const CustomerManagement: React.FC = () => {
           <div>
             <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
               <Building2 className="w-8 h-8 text-indigo-600" />
-              Customer 360 Foundation
+              Customer Details
             </h1>
             <p className="text-sm text-slate-500 font-medium mt-1">
               Unified customer records & identity resolution
@@ -104,6 +153,7 @@ export const CustomerManagement: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
+              aria-label="Search customers"
               placeholder="Search by code, name, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -119,11 +169,11 @@ export const CustomerManagement: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-wider">
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Customer ID</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Identity</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Contact</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Status</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Assigned To</th>
+                <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4">Customer ID</th>
+                <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4">Identity</th>
+                <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4">Contact</th>
+                <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4">Status</th>
+                <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4">Assigned To</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
@@ -147,7 +197,7 @@ export const CustomerManagement: React.FC = () => {
                 filteredCustomers.map((cust) => (
                   <tr
                     key={cust.id}
-                    onClick={() => setDossierCustomer(cust)}
+                    onClick={() => openDossier(cust)}
                     className="hover:bg-indigo-50/50 cursor-pointer transition-colors group"
                   >
                     <td className="px-4 py-3 sm:px-6 sm:py-4">
@@ -165,10 +215,22 @@ export const CustomerManagement: React.FC = () => {
                       </div>
                       {cust.email && <div className="text-[10px] text-slate-400 mt-0.5">{cust.email}</div>}
                     </td>
-                    <td className="px-4 py-3 sm:px-6 sm:py-4">
-                      <span className="inline-flex px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-[10px] font-extrabold uppercase tracking-wider">
-                        {cust.status}
-                      </span>
+                    <td className="px-4 py-3 sm:px-6 sm:py-4" onClick={(e) => e.stopPropagation()}>
+                      {user?.permissions?.includes(Permissions.CUSTOMERS_UPDATE) ? (
+                        <select
+                          value={cust.status}
+                          onChange={(e) => handleStatusChange(cust.id, e.target.value, cust.status)}
+                          className="p-1.5 text-[10px] uppercase font-extrabold tracking-wider bg-indigo-50 border border-indigo-200 rounded text-indigo-800 focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="ACTIVE">ACTIVE</option>
+                          <option value="INACTIVE">INACTIVE</option>
+                          <option value="BLACKLISTED">BLACKLISTED</option>
+                        </select>
+                      ) : (
+                        <span className="inline-flex px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-[10px] font-extrabold uppercase tracking-wider">
+                          {cust.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 sm:px-6 sm:py-4">
                       {cust.assigned_to ? (
@@ -214,12 +276,12 @@ export const CustomerManagement: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-2 items-center">
-                {user?.permissions?.includes('BOOKINGS_CREATE') && (
+                {user?.permissions?.includes(Permissions.BOOKINGS_CREATE) && (
                   <button onClick={() => setShowBookingModal(true)} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-teal-700">
                     Create Booking
                   </button>
                 )}
-                <button onClick={() => setDossierCustomer(null)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                <button onClick={() => setDossierCustomer(null)} aria-label="Close customer details" className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -290,6 +352,8 @@ export const CustomerManagement: React.FC = () => {
                         {dossierCustomer.origin_lead.lead_code}
                       </span>
                     </div>
+                  ) : isDossierLoading ? (
+                    <span className="text-slate-400 italic">Loading origin details…</span>
                   ) : (
                     <span className="text-slate-500 italic">Created directly as Customer (No origin lead).</span>
                   )}

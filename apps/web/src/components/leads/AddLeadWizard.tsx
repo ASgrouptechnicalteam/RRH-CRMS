@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   User, Phone, Mail, Building, MapPin, 
   CheckCircle2, IndianRupee, Clock, ArrowRight, ArrowLeft, 
-  X, MessageSquare, AlertCircle, FileText
+  X, MessageSquare, AlertCircle, FileText, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
@@ -44,9 +44,10 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
   const [purpose, setPurpose] = useState('');
   const [requiresLoan, setRequiresLoan] = useState<boolean | null>(null);
 
-  // Step 4: Final Notes & Assignment
+  // Step 4: Final Notes
   const [notes, setNotes] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
+  // NOTE: assigneeId was removed — assignment is handled automatically
+  // by the performance-weighted distribution engine on the backend.
 
   const handleNext = () => setStep(s => Math.min(s + 1, 4));
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
@@ -111,9 +112,21 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
       case 1:
         return (
           <div className="space-y-6 animate-fadeIn">
+            {/* Lead Attribution Badge */}
+            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3">
+              <div className="p-1.5 bg-indigo-100 rounded-lg flex-shrink-0">
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div>
+                <span className="text-indigo-500 text-[9px] uppercase font-black tracking-widest block">Introduced By</span>
+                <span className="text-indigo-900 text-xs font-bold">You — automatically recorded</span>
+                <span className="text-indigo-400 text-[9px] block">Attribution credit is assigned to you and cannot be changed</span>
+              </div>
+            </div>
+
             <div className="bg-sky-50 border-l-4 border-sky-500 p-4 rounded-r-xl mb-6">
               <h3 className="font-bold text-sky-900 text-sm flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" /> Telecaller Script Prompt:
+                <MessageSquare className="w-4 h-4" /> Lead Capture Prompt:
               </h3>
               <p className="text-sky-800 text-xs mt-1 italic">
                 "Hello, am I speaking with [Name]? I'm calling from Radha Real Homes regarding your recent inquiry..."
@@ -186,7 +199,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
           <div className="space-y-6 animate-fadeIn">
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl mb-6">
               <h3 className="font-bold text-amber-900 text-sm flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" /> Telecaller Script Prompt:
+                <MessageSquare className="w-4 h-4" /> Lead Capture Prompt:
               </h3>
               <p className="text-amber-800 text-xs mt-1 italic">
                 "Are you looking for an Apartment, Villa, or a Plot? And which areas are you primarily focusing on?"
@@ -250,7 +263,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
           <div className="space-y-6 animate-fadeIn">
             <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl mb-6">
               <h3 className="font-bold text-emerald-900 text-sm flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" /> Telecaller Script Prompt:
+                <MessageSquare className="w-4 h-4" /> Lead Capture Prompt:
               </h3>
               <p className="text-emerald-800 text-xs mt-1 italic">
                 "What is your comfortable budget range? Are you planning to buy immediately or within a few months? Do you need assistance with bank loans?"
@@ -351,7 +364,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
         <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white sticky top-0 z-10">
           <div className="flex items-center gap-2 text-sky-700 font-bold">
             <Phone className="w-5 h-5" />
-            <span>Telecaller Rapid Lead Entry</span>
+            <span>Lead Capture</span>
           </div>
           <button onClick={onClose} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
             <X className="w-5 h-5" />

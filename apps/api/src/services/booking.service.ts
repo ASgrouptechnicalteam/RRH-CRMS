@@ -2,6 +2,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { AppError } from './lead.service';
 import { BookingPolicy } from '../policies/booking.policy';
+import { Roles } from '@rrh-ems/shared';
 import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
@@ -167,14 +168,30 @@ export class BookingService {
   }
 
   static async updateBookingStatus(user: TokenPayload, id: number, status: string) {
+    // Route CONFIRMED transitions through the MD-authority/KYC/opportunity path.
+    if (status === 'CONFIRMED') {
+      return BookingService.confirmBooking(user, id);
+    }
+
     await BookingService.getBookingById(user, id);
     return prisma.booking.update({ where: { id }, data: { status } });
   }
 
   static async confirmBooking(user: TokenPayload, id: number) {
+    // Phase 9 Packet 5 — Transaction authority: only the MD may confirm a booking.
+    if (!user.roles.includes(Roles.MD)) {
+      throw new AppError(403, 'Forbidden: Only the Managing Director can confirm a booking');
+    }
+
     const booking = await BookingService.getBookingById(user, id);
 
     const customer = await p.customer.findUnique({ where: { id: booking.customer_id } });
+
+    // KYC gate: confirmation requires the customer to have both PAN and Aadhaar.
+    if (!customer?.pan_number || !customer?.aadhaar_number) {
+      throw new AppError(400, 'KYC (PAN and Aadhaar) is required before booking confirmation');
+    }
+
     const property = await p.property.findUnique({ where: { id: booking.property_id } });
 
     // Build a strict, approved-field-only outbound payload (no KYC/bank/password data).
@@ -235,6 +252,28 @@ export class BookingService {
         });
       }
 
+      // Transition the associated Opportunity to BOOKED (transactionally atomic with confirmation).
+      const opp = await (tx as any).opportunity.findFirst({ where: { booking_id: id } });
+      if (opp) {
+        await (tx as any).opportunity.update({
+          where: { id: opp.id },
+          data: { stage: 'BOOKED' },
+        });
+      }
+
+      // Phase 9 Packet 5 — golden rule audit trail for the confirmation decision.
+      await (tx as any).auditEvent.create({
+        data: {
+          actor_id: user.employeeId,
+          action: 'BOOKING_CONFIRMED',
+          entity_type: 'Booking',
+          entity_id: id,
+          old_value: booking.status,
+          new_value: 'CONFIRMED',
+          created_at: new Date(),
+        },
+      });
+
       return updated;
     });
 
@@ -250,6 +289,11 @@ export class BookingService {
         where: { id: booking.property_id },
         data: { status: 'LIVE', locked_until: null, locked_by_booking_id: null },
       });
+    }
+    // Drop the associated Opportunity when the booking is cancelled.
+    const opp = await p.opportunity.findFirst({ where: { booking_id: id } });
+    if (opp) {
+      await p.opportunity.update({ where: { id: opp.id }, data: { stage: 'DROPPED' } });
     }
     return updated;
   }

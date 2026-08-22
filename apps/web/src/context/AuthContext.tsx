@@ -31,55 +31,56 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+type RefreshResult = 
+  | { success: true; token: string }
+  | { success: false; reason: 'unauthorized' | 'network_error' | 'server_error' };
+
+// Shared single-flight refresh state
+let refreshPromise: Promise<RefreshResult> | null = null;
+
+const performRefresh = async (): Promise<RefreshResult> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, token: data.accessToken };
+    } else if (res.status === 401 || res.status === 403) {
+      return { success: false, reason: 'unauthorized' };
+    } else {
+      return { success: false, reason: 'server_error' };
+    }
+  } catch (err) {
+    console.error('Refresh network failed', err);
+    return { success: false, reason: 'network_error' };
+  }
+};
+
+const refreshAccessToken = async (): Promise<RefreshResult> => {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = performRefresh().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('rrh_user');
     return saved ? JSON.parse(saved) : null;
   });
 
+  // Access token strictly in memory
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('bootstrapping');
-
-  // Silent refresh on mount — explicit bootstrapping state
-  useEffect(() => {
-    const initAuth = async () => {
-      setAuthStatus('bootstrapping');
-      // If we have a user stored but no access token in memory, try to refresh
-      const savedUser = localStorage.getItem('rrh_user');
-      if (savedUser && !accessToken) {
-        try {
-          const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            // Credentials 'include' ensures the httpOnly refresh cookie is sent
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            setAccessToken(data.accessToken);
-            setAuthStatus('authenticated');
-          } else {
-            // Refresh failed, meaning session is dead
-            logout();
-            setAuthStatus('unauthenticated');
-          }
-        } catch (err) {
-          console.error('Silent refresh failed', err);
-          logout();
-          setAuthStatus('unauthenticated');
-        }
-      } else if (savedUser && accessToken) {
-        // We already have both user and token from a previous session
-        setAuthStatus('authenticated');
-      } else {
-        // No saved user — treat as unauthenticated
-        logout();
-        setAuthStatus('unauthenticated');
-      }
-    };
-    initAuth();
-  }, [accessToken]);
 
   const [firstLoginDone, setFirstLoginDoneState] = useState<boolean>(() => {
     if (!user) return true;
@@ -88,21 +89,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [attendanceStamped, setAttendanceStamped] = useState<boolean>(false);
 
+  const logout = () => {
+    setUser(null);
+    setAccessToken(null);
+    setAttendanceStamped(false);
+    localStorage.removeItem('rrh_user');
+    // Ensure no token persistence remains
+    localStorage.removeItem('rrh_token');
+    setAuthStatus('unauthenticated');
+    // Best effort background request to destroy backend session explicitly
+    fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+  
+    const initAuth = async () => {
+      setAuthStatus('bootstrapping');
+      const savedUser = localStorage.getItem('rrh_user');
+      
+      if (savedUser && !accessToken) {
+        const result = await refreshAccessToken();
+        
+        if (!isMounted) return;
+  
+        if (result.success) {
+          setAccessToken(result.token);
+          setAuthStatus('authenticated');
+        } else if (result.reason === 'unauthorized') {
+          logout();
+        } else {
+          // Network or server error - don't destroy local auth state so we can retry
+          setAccessToken(null);
+          setAuthStatus('unauthenticated');
+        }
+      } else if (savedUser && accessToken) {
+        setAuthStatus('authenticated');
+      } else {
+        logout();
+      }
+    };
+    
+    initAuth();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken]);
+
   const login = (userData: UserProfile, token: string) => {
     setUser(userData);
     setAccessToken(token);
     const isDone = Boolean(userData.firstLoginDone);
     setFirstLoginDoneState(isDone);
     localStorage.setItem('rrh_user', JSON.stringify({ ...userData, firstLoginDone: isDone }));
+    localStorage.removeItem('rrh_token'); // Make sure it's strictly removed
     setAuthStatus('authenticated');
-  };
-
-  const logout = () => {
-    setUser(null);
-    setAccessToken(null);
-    setAttendanceStamped(false);
-    localStorage.removeItem('rrh_user');
-    setAuthStatus('unauthenticated');
   };
 
   const setFirstLoginDone = (done: boolean) => {
@@ -114,7 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Helper fetch function that automatically includes Bearer token & intercepts expired 401s
   const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers || {});
     if (accessToken) {
@@ -123,51 +164,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const res = await fetch(url, { ...options, headers });
 
-    // Handle Expired Token -> attempt single refresh, then retry
     if (res.status === 401) {
-      // Single-flight guard: prevent multiple simultaneous refresh calls
-      if (fetchWithAuth.refreshInProgress) {
-        // Already refreshing; just logout after retry fails
+      const result = await refreshAccessToken();
+      
+      if (result.success) {
+        setAccessToken(result.token);
+        
+        const retryHeaders = new Headers(options.headers || {});
+        retryHeaders.set('Authorization', `Bearer ${result.token}`);
+        return fetch(url, { ...options, headers: retryHeaders });
+      } else if (result.reason === 'unauthorized') {
         logout();
-        return res;
-      }
-      fetchWithAuth.refreshInProgress = true;
-
-      try {
-        const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (refreshRes.ok) {
-          const data = await refreshRes.json();
-          setAccessToken(data.accessToken);
-          // Retry the original request with new token
-          const retryHeaders = new Headers(options.headers || {});
-          if (data.accessToken) {
-            retryHeaders.set('Authorization', `Bearer ${data.accessToken}`);
-          }
-          return fetch(url, { ...options, headers: retryHeaders });
-        } else {
-          // Refresh failed
-          logout();
-          setAuthStatus('unauthenticated');
-        }
-      } catch (err) {
-        console.error('Silent refresh retry failed', err);
-        logout();
-        setAuthStatus('unauthenticated');
-      } finally {
-        fetchWithAuth.refreshInProgress = false;
       }
     }
 
     return res;
   };
-
-  // Single-flight refresh guard
-  fetchWithAuth.refreshInProgress = false;
 
   return (
     <AuthContext.Provider

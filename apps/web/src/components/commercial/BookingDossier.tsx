@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { Permissions } from '@rrh-ems/shared';
 import { ArrowLeft, CheckCircle, XCircle, IndianRupee, FileText, User, MapPin, Clock } from 'lucide-react';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { useToast } from '../../context/ToastContext';
@@ -70,7 +71,7 @@ export const BookingDossier: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-sm">Loading dossier...</div>;
+  if (loading) return <div className="p-8 text-center text-sm">Loading booking details...</div>;
   if (!booking) return null;
 
   return (
@@ -98,12 +99,12 @@ export const BookingDossier: React.FC = () => {
             )}
           </div>
           <div className="flex gap-2">
-            {booking.status === 'PENDING' && user?.permissions?.includes('BOOKINGS_CONFIRM') && (
+            {booking.status === 'PENDING' && user?.permissions?.includes(Permissions.BOOKINGS_CONFIRM) && (
               <>
                 <button onClick={() => handleUpdateStatus('CONFIRMED')} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-teal-700">Confirm Booking</button>
               </>
             )}
-            {booking.status !== 'CANCELLED' && user?.permissions?.includes('BOOKINGS_CANCEL') && (
+            {booking.status !== 'CANCELLED' && user?.permissions?.includes(Permissions.BOOKINGS_CANCEL) && (
               <button onClick={() => handleUpdateStatus('CANCELLED')} className="bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-rose-50">Cancel</button>
             )}
           </div>
@@ -155,7 +156,7 @@ export const BookingDossier: React.FC = () => {
           <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
             Payment History
           </h3>
-          {user?.permissions?.includes('PAYMENTS_CREATE') && booking.status !== 'CANCELLED' && (
+          {user?.permissions?.includes(Permissions.PAYMENTS_CREATE) && booking.status !== 'CANCELLED' && (
             <button onClick={() => setShowPaymentModal(true)} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-teal-700 flex items-center gap-1">
               <IndianRupee className="w-3 h-3" /> Record Payment
             </button>

@@ -1,0 +1,25 @@
+apps/web/src/components/common/ui/Button.tsx(127,9): error TS1003: Identifier expected.
+apps/web/src/components/common/ui/Button.tsx(128,7): error TS1003: Identifier expected.
+apps/web/src/components/common/ui/Button.tsx(130,18): error TS1005: ',' expected.
+apps/web/src/components/common/ui/Button.tsx(130,75): error TS1128: Declaration or statement expected.
+apps/web/src/components/common/ui/Button.tsx(136,5): error TS1128: Declaration or statement expected.
+apps/web/src/components/common/ui/Button.tsx(137,3): error TS1109: Expression expected.
+apps/web/src/components/common/ui/Button.tsx(138,1): error TS1128: Declaration or statement expected.
+apps/web/src/components/common/ui/Card.tsx(55,12): error TS1005: ';' expected.
+apps/web/src/components/common/ui/Card.tsx(62,11): error TS1005: ';' expected.
+apps/web/src/components/common/ui/Card.tsx(63,4): error TS17008: JSX element 'h4' has no corresponding closing tag.
+apps/web/src/components/common/ui/Card.tsx(64,6): error TS1005: '...' expected.
+apps/web/src/components/common/ui/Card.tsx(65,3): error TS1003: Identifier expected.
+apps/web/src/components/common/ui/Card.tsx(68,79): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+apps/web/src/components/common/ui/Card.tsx(70,6): error TS1005: '...' expected.
+apps/web/src/components/common/ui/Card.tsx(71,3): error TS1003: Identifier expected.
+apps/web/src/components/common/ui/Card.tsx(71,5): error TS17002: Expected corresponding JSX closing tag for 'CardDescriptionProps'.
+apps/web/src/components/common/ui/Card.tsx(74,71): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+apps/web/src/components/common/ui/Card.tsx(76,6): error TS1005: '...' expected.
+apps/web/src/components/common/ui/Card.tsx(77,3): error TS1003: Identifier expected.
+apps/web/src/components/common/ui/Card.tsx(77,5): error TS17002: Expected corresponding JSX closing tag for 'CardContentProps'.
+apps/web/src/components/common/ui/Card.tsx(80,69): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+apps/web/src/components/common/ui/Card.tsx(82,6): error TS1005: '...' expected.
+apps/web/src/components/common/ui/Card.tsx(83,3): error TS1003: Identifier expected.
+apps/web/src/components/common/ui/Card.tsx(83,5): error TS17002: Expected corresponding JSX closing tag for 'CardFooterProps'.
+apps/web/src/components/common/ui/Card.tsx(86,185): error TS1005: '</' expected.

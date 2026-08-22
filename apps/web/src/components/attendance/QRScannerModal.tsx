@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { QrCode, CheckCircle2, Clock, ShieldCheck, AlertCircle, ArrowRight, Sun, Coffee, Camera } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { Roles } from '@rrh-ems/shared';
 import { QRCodeVisual } from '../common/QRCodeVisual';
 import { CameraQRScanner } from '../common/CameraQRScanner';
 
@@ -21,7 +22,7 @@ export const QRScannerModal: React.FC = () => {
 
   useEffect(() => {
     // Attendance Exemption Guard (MD, HR Manager, Admin, Marketing Director or attendanceRequired = false)
-    const isManagementRole = user?.roles?.some((r) => ['MD', 'HR Manager', 'Admin (Technical)', 'Marketing Director'].includes(r));
+    const isManagementRole = user?.roles?.some((r) => ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR] as readonly string[]).includes(r));
     if (user?.attendanceRequired === false || isManagementRole) {
       setAttendanceStamped(true);
       return;

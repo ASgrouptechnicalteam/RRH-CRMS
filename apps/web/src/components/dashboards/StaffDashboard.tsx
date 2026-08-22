@@ -14,7 +14,7 @@ export const StaffDashboard: React.FC = () => {
           <Activity className="w-8 h-8 text-teal-400" />
         </div>
         <div>
-          <h2 className="text-xl font-extrabold tracking-tight">Staff Workspace</h2>
+          <h2 className="text-xl font-extrabold tracking-tight">My Work</h2>
           <p className="text-xs text-slate-300">
             Welcome back, <strong className="text-white">{user?.employeeCode}</strong>. Manage your tasks and view your performance metrics.
           </p>

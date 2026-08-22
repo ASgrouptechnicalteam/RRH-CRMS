@@ -90,6 +90,7 @@ const Button: React.FC<ButtonProps> = ({
       type="button"
       disabled={isLoading || disabled}
       className={`w-full inline-flex items-center justify-center rounded-md font-medium transition-property:background-color border-color color transform box-shadow transition-timing-function:cubic-bezier(0.4,0,0.2,1) transition-duration:150ms ${isLoading?'opacity-70 pointer-events-none':''} {!isLoading&&disabled?'opacity-50 pointer-events-none':''} ${className}`}
+      {...rest}
     >
       {startIcon && <span className="mr-2 align-middle">{startIcon}</span>}
       {isLoading && spinner}

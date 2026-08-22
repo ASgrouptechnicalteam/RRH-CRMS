@@ -62,7 +62,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
               {SALES_STAGE_LABELS[opportunity.stage] || opportunity.stage}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} aria-label="Close sales details" className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

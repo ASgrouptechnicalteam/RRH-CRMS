@@ -26,6 +26,91 @@ const PROPERTY_CATEGORIES = [
   { id: 'AGRICULTURAL_LAND', label: 'Agricultural Land', icon: Tractor, group: 'LAND' },
 ];
 
+const AREA_UNITS = [
+  { value: 'SQFT', label: 'Sq.Ft', factor: 1 },
+  { value: 'SQMT', label: 'Sq.m', factor: 10.7639 },
+  { value: 'ACRES', label: 'Acres', factor: 43560 },
+  { value: 'GUNTHA', label: 'Guntha', factor: 1089 },
+  { value: 'CENTS', label: 'Cents', factor: 435.6 },
+  { value: 'PERCH', label: 'Perch', factor: 272.25 },
+];
+
+// WR-2+ : Free no-key pincode API (https://api.postalpincode.in). Returns State + District.
+// To swap in a keyed provider (e.g. Google Geocoding / PostcodeAnywhere) replace the
+// body of `lookupPincode` below and set your key via env var. See the task report for guidance.
+const PINCODE_API_BASE = 'https://api.postalpincode.in/pincode';
+const PINCODE_API_KEY: string | undefined = undefined; // set to switch to a keyed provider
+
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh', 'Chhattisgarh',
+  'Dadra and Nagar Haryana', 'Daman and Diu', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh',
+  'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh',
+  'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Rajasthan',
+  'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+];
+
+const MAJOR_CITIES: Record<string, string[]> = {
+  'Telangana': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar'],
+  'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Dharwad'],
+  'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
+  'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli'],
+  'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Agra', 'Varanasi'],
+  'West Bengal': ['Kolkata', 'Siliguri', 'Durgapur'],
+  'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot'],
+  'Delhi': ['Delhi'],
+};
+
+const numberToIndianWords = (n: number): string => {
+  if (!Number.isFinite(n) || n < 0) return '';
+  if (n === 0) return 'Zero';
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const renderGroup = (x: number): string => {
+    let s = '';
+    if (x >= 100) { s += ones[Math.floor(x / 100)] + ' Hundred'; x %= 100; }
+    if (x >= 20) { s += (s ? ' ' : '') + tens[Math.floor(x / 10)]; x %= 10; }
+    if (x >= 10) return s + (s ? ' ' : '') + teens[x - 10];
+    if (x > 0) return s + (s ? ' ' : '') + ones[x];
+    return s;
+  };
+  const parts: string[] = [];
+  const crore = Math.floor(n / 10000000) % 100;
+  const lakh = Math.floor(n / 100000) % 100;
+  const thousand = Math.floor(n / 1000) % 100;
+  const rest = n % 1000;
+  if (crore) parts.push(renderGroup(crore) + ' Crore' + (crore > 1 ? 's' : ''));
+  if (lakh) parts.push(renderGroup(lakh) + ' Lakh' + (lakh > 1 ? 's' : ''));
+  if (thousand) parts.push(renderGroup(thousand) + ' Thousand' + (thousand > 1 ? 's' : ''));
+  if (rest) parts.push(renderGroup(rest));
+  return parts.join(' ') || 'Zero';
+};
+
+const formatPriceWords = (raw: string): string => {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  return numberToIndianWords(Math.round(n));
+};
+
+const convertToSqft = (value: string, unit: string): number => {
+  const num = parseFloat(value);
+  if (!Number.isFinite(num)) return NaN;
+  const f = AREA_UNITS.find((u) => u.value === unit)?.factor ?? 1;
+  return num * f;
+};
+
+const groupForCategory = (category: string): 'RESIDENTIAL' | 'LAND' => {
+  return PROPERTY_CATEGORIES.find((c) => c.id === category)?.group === 'LAND' ? 'LAND' : 'RESIDENTIAL';
+};
+
+const AMENITIES_BY_TYPE: Record<string, string[]> = {
+  RESIDENTIAL: ['Gymnasium', 'Swimming Pool', '24/7 Security', 'Clubhouse', 'Power Backup', 'Lift / Elevator',
+    'Park', 'Water Supply', 'Vastu Compliant', 'Visitor Parking', "Children's Play Area", 'Jogging Track',
+    'Indoor Games', 'Multipurpose Hall', 'Rainwater Harvesting', 'Solar Power', 'Covered Parking', 'Broadband Ready'],
+  LAND: ['Fencing', 'Boundary Wall', 'Borewell', 'Electricity Connection', 'Water Connection', 'Road Access',
+    'Ready Soil', 'Irrigation Facility', 'Tree Cover', 'Agricultural Use Permitted', 'Open Sided', 'Clear Title'],
+};
+
 export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, onSuccess }) => {
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
@@ -76,17 +161,76 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
   const [pincode, setPincode] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
-  const [listingType, setListingType] = useState<'NEW' | 'RESALE'>('NEW');
+    const [listingType, setListingType] = useState<'NEW' | 'RESALE'>('NEW');
+
+  // WR-4/WR-3 enhancements: price range, area unit, location "Other" overrides, pincode lookup
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [areaUnit, setAreaUnit] = useState('SQFT');
+  const [stateOther, setStateOther] = useState('');
+  const [cityOther, setCityOther] = useState('');
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   // WR-3: Pending images (selected before property creation)
   const [pendingImages, setPendingImages] = useState<File[]>([]);
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 6));
+    const handleNext = () => {
+    if (!validateStep(step)) return;
+    setStep(s => Math.min(s + 1, 6));
+  };
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
 
   const updateDetail = (key: string, value: any) => {
     setDetails(prev => ({ ...prev, [key]: value }));
   };
+
+  // WR-4: Free no-key pincode lookup. Fills state/city/locality and the display `location`
+  // when empty. Uses https://api.postalpincode.in — no API key required.
+  const lookupPincode = async () => {
+    const pin = (pincode || '').trim();
+    if (!/^\d{6}$/.test(pin)) {
+      showToast('Please enter a valid 6-digit Indian pincode', 'error');
+      return;
+    }
+    setIsLookingUp(true);
+    try {
+      const res = await fetch(`${PINCODE_API_BASE}/${pin}${PINCODE_API_KEY ? `?key=${PINCODE_API_KEY}` : ''}`);
+      const data = await res.json();
+      const office = data?.[0]?.PostOffice?.[0];
+      if (!office || data?.[0]?.Status === 'Error') {
+        showToast('Pincode not found. Please enter the location details manually.', 'error');
+        return;
+      }
+      const stateName = office.State || '';
+      setState(stateName);
+      setStateOther('');
+      const knownCities = MAJOR_CITIES[stateName] || [];
+      const district = office.District || '';
+      if (knownCities.includes(district)) { setCity(district); setCityOther(''); }
+      else { setCity(''); setCityOther(district); }
+      if (!locality) setLocality(office.Name || '');
+      if (!location) setLocation([office.Name, district].filter(Boolean).join(', '));
+      showToast(`Location auto-filled: ${stateName}${district ? `, ${district}` : ''}`, 'success');
+    } catch {
+      showToast('Pincode lookup failed (offline?). Proceed manually.', 'error');
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  // Step-level required-field validation. Step 1 is validated by the category button itself.
+  const validateStep = (current: number): boolean => {
+    if (current === 2 && (!title || !price || !areaSqft)) {
+      showToast('Please fill in all required fields (marked *)', 'error');
+      return false;
+    }
+    if (current === 3 && !location) {
+      showToast('Please enter the City / Region Area (required)', 'error');
+      return false;
+    }
+    return true;
+  };
+
 
   const handleSubmit = async () => {
     if (!title || !price || !areaSqft || !location) {
@@ -96,24 +240,39 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
     setIsLoading(true);
     try {
+            const areaSqftResolved = convertToSqft(areaSqft, areaUnit);
+      if (!Number.isFinite(areaSqftResolved)) {
+        showToast('Please enter a valid area', 'error');
+        setIsLoading(false);
+        return;
+      }
+
+      const detailsPayload = {
+        ...details,
+        area_unit: areaUnit,
+        area_original_value: areaSqft ? parseFloat(areaSqft) : undefined,
+        expected_price_min: priceMin ? parseFloat(priceMin) : undefined,
+        expected_price_max: priceMax ? parseFloat(priceMax) : undefined,
+      };
+
       const payload = {
         title,
         description,
         brand_type: PROPERTY_CATEGORIES.find(c => c.id === category)?.group === 'LAND' ? 'RADHA_REAL_HOMES' : 'SONTHILLU',
         category,
         price: parseFloat(price),
-        area_sqft: parseFloat(areaSqft),
+        area_sqft: areaSqftResolved,
         location,
         address,
         facing,
-        bedrooms: bedrooms ? parseInt(bathrooms, 10) : null,
+        bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
         bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
         project_id: projectId ? parseInt(projectId, 10) : null,
         amenities: amenities.join(', '),
-        details,
+        details: detailsPayload,
         // WR-2: Structured location fields
-        state: state || null,
-        city: city || null,
+        state: state || stateOther || null,
+        city: city || cityOther || null,
         locality: locality || null,
         pincode: pincode || null,
         latitude: latitude ? parseFloat(latitude) : null,
@@ -251,18 +410,46 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Expected Price (₹) *</label>
-                <div className="relative">
+                                <div className="relative">
                   <Coins className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
                   <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="0.00" />
+                </div>
+                {price && (
+                  <p className="mt-1.5 text-xs text-slate-600">
+                    = <span className="font-semibold text-slate-800">₹ {Number(price).toLocaleString('en-IN')}</span>{' '}
+                    <span className="text-slate-500">≈ {formatPriceWords(price) || '—'}</span>
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Min Price (₹)<span className="text-slate-400 font-normal"> optional range</span></label>
+                    <input type="number" value={priceMin} onChange={e => setPriceMin(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Max Price (₹)<span className="text-slate-400 font-normal"> optional range</span></label>
+                    <input type="number" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg text-sm" placeholder="0.00" />
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Total Area / Size *</label>
-                <div className="relative">
-                  <Maximize className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="number" value={areaSqft} onChange={e => setAreaSqft(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Area in Sq.Ft / Acres" />
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Total Area / Size *</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Maximize className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                    <input type="number" value={areaSqft} onChange={e => setAreaSqft(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. 1500" />
+                  </div>
+                  <select value={areaUnit} onChange={e => setAreaUnit(e.target.value)} className="w-36 p-2.5 border border-slate-300 rounded-xl bg-white text-sm focus:ring-2 focus:ring-teal-500">
+                    {AREA_UNITS.map(u => (
+                      <option key={u.value} value={u.value}>{u.label}</option>
+                    ))}
+                  </select>
                 </div>
+                {areaSqft && areaUnit !== 'SQFT' && (
+                  <p className="mt-1.5 text-[10px] text-slate-500">
+                    ≈ {Math.round(convertToSqft(areaSqft, areaUnit)).toLocaleString('en-IN')} Sq.Ft (stored)
+                  </p>
+                )}
               </div>
             </div>
 
@@ -405,16 +592,29 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
-                <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Telangana" />
+                                <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
+                {state !== '__OTHER__' ? (
+                  <select value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white text-sm">
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    <option value="__OTHER__">Other (specify)</option>
+                  </select>
+                ) : (
+                  <input type="text" value={stateOther} onChange={e => setStateOther(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Enter state" />
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
-                <div className="relative">
-                  <MapPin className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Hyderabad" />
-                </div>
+                {city !== '__OTHER__' ? (
+                  <select value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white text-sm" disabled={!state || state === '__OTHER__'}>
+                    <option value="">Select City</option>
+                    {(state && state !== '__OTHER__' ? (MAJOR_CITIES[state] || []) : []).map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="__OTHER__">Other (specify)</option>
+                  </select>
+                ) : (
+                  <input type="text" value={cityOther} onChange={e => setCityOther(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Enter city" />
+                )}
               </div>
 
               <div>
@@ -422,9 +622,15 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                 <input type="text" value={locality} onChange={e => setLocality(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Miyapur" />
               </div>
 
-              <div>
+              <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Pincode</label>
-                <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. 500049" />
+                <div className="flex gap-2">
+                  <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. 500049" />
+                  <button type="button" onClick={lookupPincode} disabled={isLookingUp} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors shrink-0">
+                    {isLookingUp ? '…' : 'Auto-fill'}
+                  </button>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-500">Auto-fills State/City/Locality via the free India PIN code API (api.postalpincode.in). No key required.</p>
               </div>
 
               <div>
@@ -470,7 +676,13 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             <p className="text-slate-500 text-sm">Select all the amenities available for this property.</p>
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {['Gymnasium', 'Swimming Pool', '24/7 Security', 'Clubhouse', 'Power Backup', 'Lift / Elevator', 'Park', 'Water Supply', 'Vastu Compliant', 'Visitor Parking'].map(am => (
+                            {category && (
+                <p className="text-[10px] text-slate-500 mb-2">
+                  Showing amenities for: <span className="font-semibold text-teal-700">{category.replace('_', ' ')}</span>
+                  {groupForCategory(category) === 'LAND' && ' (Land)'}
+                </p>
+              )}
+              {(AMENITIES_BY_TYPE[groupForCategory(category)] || AMENITIES_BY_TYPE.RESIDENTIAL).map(am => (
                 <div 
                   key={am} 
                   onClick={() => toggleAmenity(am)}
@@ -513,20 +725,28 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                 />
               </label>
 
-              {pendingImages.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {pendingImages.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg">
-                      <span className="text-xs text-slate-600 truncate">{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => setPendingImages(prev => prev.filter((_, i) => i !== idx))}
-                        className="text-red-400 hover:text-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                            {pendingImages.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-xs text-slate-500">{pendingImages.length} photo(s) pending · the first photo will become the cover</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {pendingImages.map((file, idx) => (
+                      <div key={idx} className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`pending-${idx}`}
+                          className="w-full h-20 object-cover"
+                          onLoad={(e) => { try { URL.revokeObjectURL(e.currentTarget.src); } catch {} }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPendingImages(prev => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-1 right-1 p-0.5 bg-white rounded-full text-red-500 hover:bg-red-50 shadow"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -555,14 +775,73 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 text-sm gap-4">
-                <div><span className="text-slate-400 block text-xs">Facing</span><span className="font-semibold">{facing || 'N/A'}</span></div>
-                <div><span className="text-slate-400 block text-xs">Bed/Bath</span><span className="font-semibold">{bedrooms || 0} Beds / {bathrooms || 0} Baths</span></div>
+                            <div className="grid grid-cols-2 text-sm gap-4">
+                <div className="col-span-2">
+                  <span className="text-slate-400 block text-xs">Expected Price</span>
+                  <span className="font-semibold text-teal-800">₹ {Number(price).toLocaleString('en-IN')}</span>
+                  <span className="text-slate-500"> ≈ {formatPriceWords(price) || '—'}</span>
+                  {(priceMin || priceMax) && (
+                    <span className="text-xs text-slate-500 block mt-0.5">
+                      Range: ₹ {(priceMin ? Number(priceMin).toLocaleString('en-IN') : '—')} – ₹ {(priceMax ? Number(priceMax).toLocaleString('en-IN') : '—')}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Total Area</span>
+                  <span className="font-semibold">{Math.round(convertToSqft(areaSqft || '0', areaUnit)).toLocaleString('en-IN')} Sq.Ft</span>
+                  {areaSqft && areaUnit !== 'SQFT' && (
+                    <span className="text-xs text-slate-500 block">({areaSqft} {AREA_UNITS.find(u => u.value === areaUnit)?.label})</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Facing</span><span className="font-semibold">{facing || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Bed/Bath</span><span className="font-semibold">{bedrooms || 0} Beds / {bathrooms || 0} Baths</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-slate-400 block text-xs">Location</span>
+                  <span className="font-semibold">{location}</span>
+                  {(state || stateOther || city || cityOther || locality || pincode) && (
+                    <span className="text-xs text-slate-500 block">
+                      {[state === '__OTHER__' ? stateOther : state, city === '__OTHER__' ? cityOther : city, locality, pincode].filter(Boolean).join(', ')}
+                    </span>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <span className="text-slate-400 block text-xs">Amenities</span>
+                  <span className="font-semibold">{amenities.length ? amenities.join(', ') : 'None selected'}</span>
+                </div>
+                {pendingImages.length > 0 && (
+                  <div className="col-span-2">
+                    <span className="text-slate-400 block text-xs mb-1">Photos ({pendingImages.length} pending)</span>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                      {pendingImages.map((file, idx) => (
+                        <img
+                          key={idx}
+                          src={URL.createObjectURL(file)}
+                          alt={`preview-${idx}`}
+                          className="w-16 h-16 object-cover rounded-lg border border-slate-200"
+                          onLoad={(e) => { try { URL.revokeObjectURL(e.currentTarget.src); } catch {} }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="col-span-2">
                   <span className="text-slate-400 block text-xs">Specific Details</span>
-                  <div className="font-mono text-xs text-slate-700 bg-white p-2 rounded border border-slate-200 mt-1">
-                    {Object.keys(details).length > 0 ? JSON.stringify(details, null, 2) : 'None provided'}
-                  </div>
+                  {Object.keys(details).length > 0 ? (
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+                      {Object.entries(details).map(([k, v]) => (
+                        <div key={k} className="flex justify-between">
+                          <span className="text-slate-500">{k.replace(/_/g, ' ')}</span>
+                          <span className="font-semibold text-slate-800">{typeof v === 'object' ? JSON.stringify(v) : String(v ?? '—')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-slate-400">None provided</span>
+                  )}
                 </div>
               </div>
             </div>

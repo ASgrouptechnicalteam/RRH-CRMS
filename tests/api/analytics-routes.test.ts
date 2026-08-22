@@ -93,6 +93,13 @@ async function createEmployee(
 
 // Scoped cleanup — deletes ONLY rows for the given company + employee ids.
 async function wipeCompany(companyId: number, employeeIds: number[]) {
+  // Delete FK-dependent domain rows BEFORE employees, because Property/Lead reference
+  // employees via created_by_id and would otherwise block employee.deleteMany.
+  await prisma.lead.deleteMany({ where: { company_id: companyId } });
+  await prisma.booking.deleteMany({ where: { company_id: companyId } });
+  await prisma.customer.deleteMany({ where: { company_id: companyId } });
+  await prisma.property.deleteMany({ where: { company_id: companyId } });
+
   if (employeeIds.length) {
     await prisma.dailyReport.deleteMany({ where: { employee_id: { in: employeeIds } } });
     await prisma.attendanceLog.deleteMany({ where: { employee_id: { in: employeeIds } } });
@@ -101,10 +108,6 @@ async function wipeCompany(companyId: number, employeeIds: number[]) {
     await prisma.employeeRole.deleteMany({ where: { employee_id: { in: employeeIds } } });
     await prisma.employee.deleteMany({ where: { id: { in: employeeIds } } });
   }
-  await prisma.lead.deleteMany({ where: { company_id: companyId } });
-  await prisma.booking.deleteMany({ where: { company_id: companyId } });
-  await prisma.customer.deleteMany({ where: { company_id: companyId } });
-  await prisma.property.deleteMany({ where: { company_id: companyId } });
   await prisma.company.delete({ where: { id: companyId } });
 }
 
@@ -217,7 +220,7 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       await prisma.property.deleteMany({ where: { company_id: companyId } });
       await prisma.customer.deleteMany({ where: { company_id: companyId } });
       await prisma.booking.deleteMany({ where: { company_id: companyId } });
-      await prisma.company.delete({ where: { id: companyId } });
+      await prisma.company.deleteMany({ where: { id: companyId } });
       expect(await prisma.lead.count({ where: { company_id: companyId } })).toBe(0);
       expect(await prisma.property.count({ where: { company_id: companyId } })).toBe(0);
       expect(await prisma.customer.count({ where: { company_id: companyId } })).toBe(0);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Clock, AlertTriangle, Plus, Sparkles, Filter, ShieldAlert, X, Send, Users, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Roles } from '@rrh-ems/shared';
 import { API_BASE_URL } from '../../config';
 
 export const TaskManager: React.FC = () => {
@@ -22,8 +23,8 @@ export const TaskManager: React.FC = () => {
   const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canViewTeam = user?.roles.includes('Managing director') || user?.roles.includes('marketing director') || user?.roles.includes('Admin (Technical)') || user?.roles.includes('HR');
-  const canCreateTask = user?.roles.some((r: string) => ['Managing director', 'HR', 'Admin (Technical)', 'marketing director'].includes(r));
+  const canViewTeam = user?.roles.includes(Roles.MD) || user?.roles.includes(Roles.MARKETING_DIRECTOR) || user?.roles.includes(Roles.ADMIN) || user?.roles.includes(Roles.HR_MANAGER);
+  const canCreateTask = user?.roles.some((r: string) => r === Roles.MD || r === Roles.HR_MANAGER || r === Roles.ADMIN || r === Roles.MARKETING_DIRECTOR);
 
   const fetchTasks = async () => {
     setIsLoading(true);

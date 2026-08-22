@@ -17,7 +17,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
   let pmBToken: string;
   let pmOrgBToken: string; // cross-company PM
   let dmToken: string;
-  let telecallerToken: string;
+     let telecallerToken: string;
+   let adminToken: string;
 
   let pmAId: number;
   let pmBId: number;
@@ -51,7 +52,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
     const pmACode = getCode(Roles.PROJECT_MANAGER);
     const mdCode = getCode(Roles.MD);
     const dmCode = getCode(Roles.DIGITAL_MARKETING_HEAD);
-    const tcCode = getCode(Roles.TELECALLER);
+        const tcCode = getCode(Roles.TELECALLER);
+    const adminCode = getCode(Roles.ADMIN);
     
     companyId = (await prisma.employee.findFirst({where:{employee_code: pmACode}}))!.company_id;
 
@@ -91,7 +93,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       }
     });
 
-    [mdToken, pmAToken, dmToken, telecallerToken, pmBToken, pmOrgBToken] = await Promise.all([
+        [adminToken, mdToken, pmAToken, dmToken, telecallerToken, pmBToken, pmOrgBToken] = await Promise.all([
+      getAuth(adminCode, 7),
       getAuth(mdCode, 1),
       getAuth(pmACode, 2),
       getAuth(dmCode, 3),
@@ -261,7 +264,49 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         .send({ approved: true, comments: 'Looks good' });
       
       expect(mdRes.status).toBe(200);
-      expect(mdRes.body.property.status).toBe('LIVE');
+          expect(mdRes.body.property.status).toBe('LIVE');
+    });
+  });
+
+  describe('ADMIN property access regression (was: forbidden: insufficient access)', () => {
+    const createdIds: number[] = [];
+
+    afterAll(async () => {
+      if (createdIds.length) {
+        await p.propertyImage.deleteMany({ where: { property_id: { in: createdIds } } });
+        await p.property.deleteMany({ where: { id: { in: createdIds } } });
+      }
+    });
+
+    it('ADMIN can CREATE a property listing (previously 403 forbidden)', async () => {
+      const res = await request(app)
+        .post('/api/v1/properties')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          title: 'ADMIN Regression Villa',
+          brand_type: 'SONTHILLU',
+          category: 'VILLA',
+          price: 2000000,
+          area_sqft: 1200,
+          location: 'Hyderabad, Telangana',
+          assigned_pm_id: pmAId,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.property).toBeDefined();
+      expect(res.body.property.status).toBe('PENDING_VERIFICATION');
+      createdIds.push(res.body.property.id);
+    });
+
+    it('ADMIN can LIST properties (previously 403 -> empty list)', async () => {
+      const res = await request(app)
+        .get('/api/v1/properties')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.properties)).toBe(true);
+      // ADMIN bypasses company scope -> must see the property created earlier by PM A
+      expect(res.body.properties.some((p: any) => p.id === propertyAId)).toBe(true);
     });
   });
 });

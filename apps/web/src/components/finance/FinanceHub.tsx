@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, IndianRupee, Clock, CheckCircle2, XCircle, RefreshCw, Bell, BellOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { Permissions } from '@rrh-ems/shared';
 import { ExpenseRefundForm } from './ExpenseRefundForm';
 import { AccountantRefundQueue } from './AccountantRefundQueue';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
@@ -40,22 +41,30 @@ export const FinanceHub: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const [myRefunds, setMyRefunds] = useState<RefundItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchFailed, setFetchFailed] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<'my' | 'queue'>('my');
   const { isSupported, permission, isSubscribing, subscribe } = usePushNotifications();
 
-  const isFinance = user?.roles?.some(r => ['accountant', 'Admin (Technical)'].includes(r));
-  const isMD = user?.roles?.includes('Managing director');
-  const hasQueueAccess = isFinance || isMD;
+  // Permission-based queue access (canonical values; backend enforces EXPENSES_*)
+  const canReviewQueue = user?.permissions?.includes(Permissions.EXPENSES_REVIEW) ?? false;
+  const canMdApprove = user?.permissions?.includes(Permissions.EXPENSES_MD_APPROVE) ?? false;
+  const canCreateRequest = user?.permissions?.includes(Permissions.EXPENSES_CREATE) ?? false;
+  const hasQueueAccess = canReviewQueue || canMdApprove;
 
   const fetchMyRefunds = useCallback(async () => {
     try {
       setLoading(true);
+      setFetchFailed(false);
       const res = await fetchWithAuth(`${API_BASE_URL}/expense-refunds/my`);
       const data = await res.json();
-      setMyRefunds(data.refunds || []);
+      if (res.ok) {
+        setMyRefunds(data.refunds || []);
+      } else {
+        setFetchFailed(true);
+      }
     } catch {
-      // noop
+      setFetchFailed(true);
     } finally {
       setLoading(false);
     }
@@ -77,13 +86,15 @@ export const FinanceHub: React.FC = () => {
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Submit and track your petty cash reimbursements</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 transition-colors shadow-md"
-        >
+        {canCreateRequest && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 transition-colors shadow-md"
+          >
           <Plus className="w-4 h-4" />
           New Request
         </button>
+        )}
       </div>
 
       {/* Push Notification Banner */}
@@ -139,7 +150,7 @@ export const FinanceHub: React.FC = () => {
               activeTab === 'queue' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {isMD ? 'Approval Queue' : 'Review Queue'}
+            {canMdApprove ? 'Approval Queue' : 'Review Queue'}
           </button>
         </div>
       )}
@@ -156,6 +167,12 @@ export const FinanceHub: React.FC = () => {
 
           {loading ? (
             <div className="text-center py-12 text-slate-400 text-sm">Loading your requests...</div>
+          ) : fetchFailed ? (
+            <div className="text-center py-12 bg-white rounded-2xl border border-amber-200">
+              <XCircle className="w-10 h-10 mx-auto mb-3 text-amber-400" />
+              <p className="font-semibold text-slate-600">Unable to load your refund requests</p>
+              <p className="text-xs text-slate-400 mt-1">You may not have access to expense submissions yet. Contact your administrator if this seems wrong.</p>
+            </div>
           ) : myRefunds.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
               <IndianRupee className="w-10 h-10 mx-auto mb-3 text-slate-300" />
@@ -199,7 +216,7 @@ export const FinanceHub: React.FC = () => {
 
       {/* Queue Tab */}
       {activeTab === 'queue' && hasQueueAccess && (
-        <AccountantRefundQueue isMD={!!isMD} />
+        <AccountantRefundQueue isMD={canMdApprove} />
       )}
 
       {/* Submit Form Modal */}

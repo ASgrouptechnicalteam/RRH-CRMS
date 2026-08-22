@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Kanban, List, Filter, LayoutGrid } from 'lucide-react';
+import { Kanban, List, LayoutGrid } from 'lucide-react';
 import { useSalesPipeline } from '../../hooks/useSalesPipeline';
 import { useToast } from '../../context/ToastContext';
+import { SALES_STAGE_LABELS, SALES_STAGE_COLORS } from './SalesConstants';
 import { SalesPipelineMetrics } from './SalesPipelineMetrics';
 import { SalesKanbanBoard } from './SalesKanbanBoard';
 import { SalesStageTransitionModal } from './SalesStageTransitionModal';
@@ -85,6 +86,8 @@ export const SalesPipelineManagement: React.FC = () => {
           <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
             <button
               onClick={() => setViewMode('kanban')}
+              aria-label="Kanban view"
+              aria-pressed={viewMode === 'kanban'}
               className={`p-1.5 rounded-md flex items-center transition-all ${
                 viewMode === 'kanban' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'
               }`}
@@ -94,6 +97,8 @@ export const SalesPipelineManagement: React.FC = () => {
             </button>
             <button
               onClick={() => setViewMode('list')}
+              aria-label="List view"
+              aria-pressed={viewMode === 'list'}
               className={`p-1.5 rounded-md flex items-center transition-all ${
                 viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'
               }`}
@@ -102,11 +107,6 @@ export const SalesPipelineManagement: React.FC = () => {
               <List className="w-4 h-4" />
             </button>
           </div>
-          
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition-colors">
-            <Filter className="w-3.5 h-3.5" />
-            Filter
-          </button>
         </div>
       </div>
 
@@ -123,14 +123,55 @@ export const SalesPipelineManagement: React.FC = () => {
             </div>
           </div>
         ) : viewMode === 'kanban' ? (
-          <SalesKanbanBoard 
-            opportunities={opportunities} 
-            onOpportunityClick={handleOpportunityClick} 
-            onStageChange={handleStageChange} 
+          <SalesKanbanBoard
+            opportunities={opportunities}
+            onOpportunityClick={handleOpportunityClick}
+            onStageChange={handleStageChange}
           />
+        ) : opportunities.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+            No sales opportunities found.
+          </div>
         ) : (
-          <div className="p-4 flex items-center justify-center h-full text-slate-400 italic text-sm">
-            [Sales Pipeline List will go here]
+          <div className="p-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                  <th scope="col" className="py-2 px-3">Prospect</th>
+                  <th scope="col" className="py-2 px-3">Stage</th>
+                  <th scope="col" className="py-2 px-3">Project</th>
+                  <th scope="col" className="py-2 px-3">Property</th>
+                  <th scope="col" className="py-2 px-3 text-right">Expected Value</th>
+                  <th scope="col" className="py-2 px-3 text-right">Probability</th>
+                </tr>
+              </thead>
+              <tbody>
+                {opportunities.map((opp) => (
+                  <tr
+                    key={opp.id}
+                    onClick={() => handleOpportunityClick(opp)}
+                    className="border-b border-slate-100 hover:bg-indigo-50/40 cursor-pointer transition-colors"
+                  >
+                    <td className="py-2.5 px-3 font-semibold text-slate-800">
+                      {opp.lead?.customer_name || 'Unknown Prospect'}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${SALES_STAGE_COLORS[opp.stage] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                        {SALES_STAGE_LABELS[opp.stage] || opp.stage}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-600">{opp.project?.name || '—'}</td>
+                    <td className="py-2.5 px-3 text-slate-600">{opp.property?.title || '—'}</td>
+                    <td className="py-2.5 px-3 text-right font-bold text-slate-700">
+                      ₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-slate-600">
+                      {Number(opp.probability || 0) > 0 ? `${opp.probability}%` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

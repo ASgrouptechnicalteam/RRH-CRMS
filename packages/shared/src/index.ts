@@ -21,7 +21,8 @@ export const Roles = {
   HR_MANAGER: 'HR',
   FINANCE: 'accountant',
   AGENT: 'Agent',
-  DIGITAL_MARKETING_EXECUTIVE: 'digital marketing executive'
+  DIGITAL_MARKETING_EXECUTIVE: 'digital marketing executive',
+  SALES_MANAGER: 'Sales manager'
 } as const;
 
 export type RoleName = typeof Roles[keyof typeof Roles];
@@ -40,6 +41,7 @@ export const DepartmentCodes: Record<string, string> = {
   [Roles.DIGITAL_LEAD_OPERATOR]: 'MK',
   [Roles.FINANCE]: 'FN',
   [Roles.MARKETING_DIRECTOR]: 'MK',
+  [Roles.SALES_MANAGER]: 'SL',
 };
 
 // Canonical Permissions Model (Phase 1 - Stage 2 Blueprint Section 7)
@@ -191,6 +193,13 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.COMPLAINTS_ASSIGN,
     Permissions.COMPLAINTS_RESOLVE,
     Permissions.COMPLAINTS_CLOSE,
+    Permissions.PROPERTIES_CREATE,
+    Permissions.PROPERTIES_READ,
+    Permissions.PROPERTIES_UPDATE,
+    Permissions.PROPERTIES_DELETE,
+    Permissions.PROPERTIES_VERIFY,
+    Permissions.PROPERTIES_DM_POLISH,
+    Permissions.PROPERTIES_MD_APPROVE,
     Permissions.AI_SEARCH,
     // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
   ],
@@ -232,6 +241,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
   ],
   
 [Roles.MARKETING_DIRECTOR]: [
+    Permissions.TASKS_CREATE,
     Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
@@ -314,6 +324,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
   
   [Roles.TELECALLER]: [
     Permissions.PROJECTS_READ,
+    Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
     Permissions.LEADS_WHATSAPP_PROPOSAL,
@@ -379,6 +390,26 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.ATTENDANCE_READ_OWN,
     Permissions.ATTENDANCE_SCAN,
     Permissions.PERFORMANCE_READ_OWN,
+  ],
+  
+  [Roles.SALES_MANAGER]: [
+    Permissions.TASKS_CREATE,
+    Permissions.LEADS_READ,
+    Permissions.LEADS_UPDATE,
+    Permissions.LEADS_ASSIGN,
+    Permissions.LEADS_DISTRIBUTION_MONITOR,
+    Permissions.LEADS_WHATSAPP_PROPOSAL,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.SITE_VISITS_READ,
+    Permissions.SITE_VISITS_ASSIGN_AGENT,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
+    Permissions.TASKS_ASSIGN,
+    Permissions.REPORTS_READ_TEAM,
+    Permissions.REPORTS_TARGETS_CONFIGURE,
+    Permissions.PERFORMANCE_READ_TEAM,
+    Permissions.BOOKINGS_READ,
   ]
 };
 
@@ -1167,3 +1198,4 @@ export const IntegrationMetricsResponseSchema = z.object({
 }).strict();
 
 export type IntegrationMetricsResponse = z.infer<typeof IntegrationMetricsResponseSchema>;
+

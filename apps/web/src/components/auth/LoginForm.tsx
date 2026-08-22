@@ -58,6 +58,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
       const res = await fetch(loginUrl, {
         method: 'POST',
+        // 'include' so the httpOnly refreshToken cookie set by the server is stored
+        // cross-origin (frontend dev server on :5173, API on :3000). Without this the
+        // cookie is dropped and the token refresh on page reload fails (session lost).
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employee_code: employeeCode,

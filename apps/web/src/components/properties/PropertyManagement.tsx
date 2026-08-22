@@ -11,6 +11,8 @@ import {
   Search,
   Filter,
   Eye,
+   ImageIcon,
+
   ShieldCheck,
   Sparkles,
   FileCheck,
@@ -24,6 +26,17 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { Permissions } from '@rrh-ems/shared';
+
+// Static assets (property images) are served from the API origin at `/uploads`,
+// not under `/api/v1`. image_url from the API is a public-safe relative path
+// like `/uploads/property-images/prop-....jpg`.
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+const resolveImageUrl = (url?: string): string | undefined => {
+  if (!url) return undefined;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 import { Roles } from '@rrh-ems/shared';
 import { AddPropertyWizard } from './AddPropertyWizard';
 import { EditPropertyModal } from './EditPropertyModal';
@@ -50,8 +63,9 @@ interface Property {
   assigned_pm?: { id: number; employee_code: string; full_name: string; phone: string };
   project?: { id: number; name: string };
   created_by?: { id: number; employee_code: string; full_name: string };
-  created_at: string;
+    created_at: string;
   verification_logs?: any[];
+  images?: { id: number; image_url: string; is_primary: boolean; caption?: string }[];
 }
 
 const APPROVAL_STAGES = [
@@ -143,9 +157,9 @@ export const PropertyManagement: React.FC = () => {
   const [seoTitle, setSeoTitle] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
 
-  const isPM = user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager', 'MD', 'Admin (Technical)'].includes(r));
-  const isDM = user?.roles?.some((r) => ['Digital Lead Operator', 'Digital Marketing Head', 'Marketing Director', 'MD', 'Admin (Technical)'].includes(r));
-  const isMD = user?.roles?.some((r) => ['MD', 'Admin (Technical)'].includes(r));
+  const isPM = user?.roles?.some((r) => ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
+  const isDM = user?.roles?.some((r) => ([Roles.DIGITAL_LEAD_OPERATOR, Roles.DIGITAL_MARKETING_HEAD, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
+  const isMD = user?.roles?.some((r) => ([Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
 
   const fetchProperties = async () => {
     setIsLoading(true);
@@ -168,7 +182,7 @@ export const PropertyManagement: React.FC = () => {
       const res = await fetchWithAuth(`${API_BASE_URL}/employees`);
       const data = await res.json();
       if (res.ok && data.employees) {
-        setPms(data.employees.filter((e: any) => e.roles?.some((r: any) => r.includes('Project Manager'))));
+        setPms(data.employees.filter((e: any) => e.roles?.some((r: any) => r.includes(Roles.PROJECT_MANAGER))));
       }
     } catch (e) {}
   };
@@ -332,7 +346,7 @@ export const PropertyManagement: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Building className="w-5 h-5 text-teal-400" />
-            <h2 className="text-xl font-extrabold tracking-tight">Property Inventory & Verification Pipeline</h2>
+            <h2 className="text-xl font-extrabold tracking-tight">Property Inventory & Verification</h2>
           </div>
           <p className="text-xs text-teal-200/80">
             Manage your properties, inventory and approval pipelines.
@@ -431,7 +445,25 @@ export const PropertyManagement: React.FC = () => {
             <div
               key={prop.id}
               className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
-            >
+                        >
+              {/* Cover image (prefer primary) */}
+              <div className="relative">
+                {prop.images && prop.images.length > 0 ? (
+                  <img
+                    src={resolveImageUrl(
+                      prop.images.find((i) => i.is_primary)?.image_url || prop.images[0].image_url,
+                    )}
+                    alt={prop.title}
+                    className="w-full h-44 object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-44 flex items-center justify-center bg-slate-100">
+                    <ImageIcon className="w-10 h-10 text-slate-400" />
+                  </div>
+                )}
+              </div>
+
               <div className="p-5 space-y-3">
                 {/* Header Tag */}
                 <div className="flex items-center justify-between">
@@ -507,7 +539,7 @@ export const PropertyManagement: React.FC = () => {
                   className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  <span>Dossier & Verify</span>
+                  <span>Details & Verify</span>
                 </button>
               </div>
             </div>
@@ -559,7 +591,7 @@ export const PropertyManagement: React.FC = () => {
                     {selectedProperty.location} • ₹{(selectedProperty.price / 100000).toFixed(1)} Lakhs
                   </p>
                 </div>
-                {user?.permissions?.includes('PROPERTIES_UPDATE') && (
+                {user?.permissions?.includes(Permissions.PROPERTIES_UPDATE) && (
                   <button
                     onClick={() => setShowEditModal(true)}
                     className="p-2 text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors"
@@ -598,7 +630,7 @@ export const PropertyManagement: React.FC = () => {
               </h4>
 
               {/* Stage 1 Action for PM */}
-              {selectedProperty.status === 'PENDING_VERIFICATION' && (
+              {selectedProperty.status === 'PENDING_VERIFICATION' && user?.permissions?.includes(Permissions.PROPERTIES_VERIFY) && (
                 <div className="space-y-2">
                   <p className="text-xs text-slate-600">
                     Project Manager (<strong className="text-slate-800">{selectedProperty.assigned_pm?.full_name || 'PM'}</strong>) must verify site boundaries, location, and photos.
@@ -645,18 +677,20 @@ export const PropertyManagement: React.FC = () => {
                     onChange={(e) => setSeoKeywords(e.target.value)}
                     className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl"
                   />
-                  <button
-                    onClick={() => handleDMPolish(selectedProperty.id)}
-                    className="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Complete DM Polish $\rightarrow$ Submit to MD</span>
-                  </button>
+                  {user?.permissions?.includes(Permissions.PROPERTIES_DM_POLISH) && (
+                    <button
+                      onClick={() => handleDMPolish(selectedProperty.id)}
+                      className="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Complete DM Polish $\rightarrow$ Submit to MD</span>
+                    </button>
+                  )}
                 </div>
               )}
 
               {/* Stage 3 Action for MD */}
-              {selectedProperty.status === 'PENDING_MD_APPROVAL' && (
+              {selectedProperty.status === 'PENDING_MD_APPROVAL' && user?.permissions?.includes(Permissions.PROPERTIES_MD_APPROVE) && (
                 <div className="space-y-2">
                   <p className="text-xs text-slate-600">Managing Director Final Review & Go-Live Decision.</p>
                   <textarea

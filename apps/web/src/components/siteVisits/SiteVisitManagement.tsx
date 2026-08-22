@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { Roles } from '@rrh-ems/shared';
 
 interface SiteVisit {
   id: number;
@@ -118,7 +119,7 @@ export const SiteVisitManagement: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isPMOrMD = user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager', 'MD', 'Admin (Technical)'].includes(r));
+  const isPMOrMD = user?.roles?.some((r) => ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
 
   const fetchVisitsData = async () => {
     setIsLoading(true);

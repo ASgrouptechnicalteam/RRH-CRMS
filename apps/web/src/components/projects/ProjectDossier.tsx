@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, X, MapPin, Calendar, Layout, Edit, CheckCircle2, ShieldCheck, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { Permissions } from '@rrh-ems/shared';
 import { useToast } from '../../context/ToastContext';
 import { PropertyManagement } from '../properties/PropertyManagement';
 
@@ -18,7 +19,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
   const [isLoading, setIsLoading] = useState(true);
   const [properties, setProperties] = useState<any[]>([]);
 
-  const canEdit = user?.permissions?.includes('PROJECTS_UPDATE');
+  const canEdit = user?.permissions?.includes(Permissions.PROJECTS_UPDATE);
 
   useEffect(() => {
     const fetchProjectDetails = async () => {
@@ -39,7 +40,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
           setProperties(prData.properties || []);
         }
       } catch (e) {
-        showToast('Error loading project dossier', 'error');
+        showToast('Error loading project details', 'error');
       } finally {
         setIsLoading(false);
       }
@@ -53,7 +54,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
       <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-center justify-center">
            <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-slate-500 font-bold mt-4">Loading Project Dossier...</p>
+            <p className="text-slate-500 font-bold mt-4">Loading Project Details...</p>
         </div>
       </div>
     );

@@ -5,12 +5,13 @@ import { AdminAnalyticsPortal } from '../admin/AdminAnalyticsPortal';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { BannerControlWidget } from '../dashboards/BannerControlWidget';
+import { Roles } from '@rrh-ems/shared';
 
 export const SystemControlHub: React.FC = () => {
   const { user } = useAuth();
   
-  const isMD = user?.roles?.includes('MD');
-  const isAdmin = user?.roles?.includes('Admin (Technical)');
+  const isMD = user?.roles?.includes(Roles.MD);
+  const isAdmin = user?.roles?.includes(Roles.ADMIN);
 
   const [activeTab, setActiveTab] = useState<'md' | 'admin'>(
     isAdmin && !isMD ? 'admin' : 'md'

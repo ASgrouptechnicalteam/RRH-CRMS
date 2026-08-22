@@ -338,6 +338,144 @@ export class AnalyticsService {
       marketing,
     };
   }
+
+  static async getSalesManagerDashboard(companyId: number, user: TokenPayload) {
+    const today = new Date();
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const allLeads = await p.lead.findMany({
+      where: { company_id: companyId },
+      select: {
+        id: true,
+        status: true,
+        assigned_to_id: true,
+        created_by_id: true,
+        last_contacted_at: true,
+        created_at: true,
+      }
+    });
+
+    const kpis = {
+      totalLeads: allLeads.length,
+      newLeads: allLeads.filter((l: any) => l.status === 'NEW').length,
+      unassignedLeads: allLeads.filter((l: any) => !l.assigned_to_id).length,
+      contacted: allLeads.filter((l: any) => l.status === 'CONTACTED').length,
+      qualified: allLeads.filter((l: any) => l.status === 'QUALIFIED').length,
+      siteVisits: allLeads.filter((l: any) => l.status === 'SITE_VISIT_SCHEDULED').length,
+      won: allLeads.filter((l: any) => l.status === 'WON').length,
+      conversionRate: allLeads.length > 0 ? (allLeads.filter((l: any) => l.status === 'WON').length / allLeads.length) * 100 : 0
+    };
+
+    const pipelineCounts = allLeads.reduce((acc: any, lead: any) => {
+      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const statuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED', 'NEGOTIATION', 'WON', 'LOST'];
+    const pipeline = statuses.map(status => ({
+      status,
+      count: pipelineCounts[status] || 0
+    }));
+
+    const stalledLeadsQuery = await p.lead.findMany({
+      where: {
+        company_id: companyId,
+        status: { notIn: ['WON', 'LOST'] },
+        OR: [
+          { last_contacted_at: { lt: sevenDaysAgo } },
+          { last_contacted_at: null, created_at: { lt: sevenDaysAgo } }
+        ]
+      },
+      include: {
+        assigned_to: { select: { id: true, full_name: true, employee_code: true } }
+      },
+      orderBy: { last_contacted_at: 'asc' },
+      take: 20
+    });
+
+    const overdueTasksQuery = await p.task.findMany({
+      where: {
+        status: 'PENDING',
+        target_date: { lt: today },
+        assignee: { company_id: companyId }
+      },
+      include: {
+        assignee: { select: { id: true, full_name: true, employee_code: true } },
+        lead: { select: { id: true, customer_name: true } },
+        opportunity: { select: { id: true, opportunity_code: true } }
+      },
+      orderBy: { target_date: 'asc' },
+      take: 20
+    });
+
+    const siteVisitsQuery = await p.siteVisitBooking.groupBy({
+      by: ['status'],
+      where: { lead: { company_id: companyId } },
+      _count: { id: true }
+    });
+    
+    const siteVisits = siteVisitsQuery.reduce((acc: any, item: any) => {
+      acc[item.status] = item._count.id;
+      return acc;
+    }, {});
+
+    const targets = await this.targetAttainment(companyId);
+
+    const employeeIds = new Set<number>();
+    allLeads.forEach((l: any) => {
+      if (l.assigned_to_id) employeeIds.add(l.assigned_to_id);
+      if (l.created_by_id) employeeIds.add(l.created_by_id);
+    });
+
+    const employees = await p.employee.findMany({
+      where: { id: { in: Array.from(employeeIds) } },
+      select: { id: true, full_name: true, employee_code: true }
+    });
+
+    const teamPerformance: any[] = [];
+    const leadAttribution: any[] = [];
+
+    employees.forEach((emp: any) => {
+      const assigned = allLeads.filter((l: any) => l.assigned_to_id === emp.id);
+      if (assigned.length > 0) {
+        teamPerformance.push({
+          employee: emp,
+          assignedLeads: assigned.length,
+          contacted: assigned.filter((l: any) => l.status === 'CONTACTED').length,
+          qualified: assigned.filter((l: any) => l.status === 'QUALIFIED').length,
+          siteVisits: assigned.filter((l: any) => l.status === 'SITE_VISIT_SCHEDULED').length,
+          won: assigned.filter((l: any) => l.status === 'WON').length,
+          conversionRate: (assigned.filter((l: any) => l.status === 'WON').length / assigned.length) * 100
+        });
+      }
+
+      const introduced = allLeads.filter((l: any) => l.created_by_id === emp.id);
+      if (introduced.length > 0) {
+        leadAttribution.push({
+          employee: emp,
+          leadsIntroduced: introduced.length,
+          qualified: introduced.filter((l: any) => l.status === 'QUALIFIED').length,
+          siteVisits: introduced.filter((l: any) => l.status === 'SITE_VISIT_SCHEDULED').length,
+          won: introduced.filter((l: any) => l.status === 'WON').length,
+          conversionRate: (introduced.filter((l: any) => l.status === 'WON').length / introduced.length) * 100
+        });
+      }
+    });
+
+    leadAttribution.sort((a, b) => b.leadsIntroduced - a.leadsIntroduced);
+    teamPerformance.sort((a, b) => b.assignedLeads - a.assignedLeads);
+
+    return {
+      kpis,
+      pipeline,
+      teamPerformance,
+      leadAttribution,
+      stalledLeads: stalledLeadsQuery,
+      overdueTasks: overdueTasksQuery,
+      siteVisits,
+      targets
+    };
+  }
 }
 
 export default AnalyticsService;

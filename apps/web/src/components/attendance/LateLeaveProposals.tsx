@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, Send, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { Roles } from '@rrh-ems/shared';
 
 
 export const LateLeaveProposals: React.FC = () => {
@@ -20,7 +21,7 @@ export const LateLeaveProposals: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [queue, setQueue] = useState<any[]>([]);
 
-  const isHrOrMd = user?.roles.some((r) => r === 'HR Manager' || r === 'MD');
+  const isHrOrMd = user?.roles.some((r) => r === Roles.HR_MANAGER || r === Roles.MD);
 
   useEffect(() => {
     if (isHrOrMd && activeTab === 'queue') {

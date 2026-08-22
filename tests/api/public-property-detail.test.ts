@@ -188,6 +188,7 @@ describe('Public Property Detail API', () => {
       // Create a project
       const project = await p.project.create({
         data: {
+          project_code: `PUB-PRJ-${Date.now()}`,
           name: 'Test Project',
           company_id: companyId,
           location: 'Miyapur',

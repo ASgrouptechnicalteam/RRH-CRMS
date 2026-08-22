@@ -137,6 +137,24 @@ export class LeadService {
   }
 
   static async createLead(user: TokenPayload, dto: any) {
+    // ─────────────────────────────────────────────────────────────────────────
+    // LEAD ATTRIBUTION IMMUTABILITY CONTRACT
+    //
+    // created_by_id  = IMMUTABLE — set once from the authenticated server-side
+    //                  user identity. Represents permanent attribution credit.
+    //                  The original introducer retains credit regardless of any
+    //                  subsequent reassignment, qualification, site visit,
+    //                  opportunity creation, conversion, or closure.
+    //
+    // assigned_to_id = MUTABLE — operational assignment, may change freely via
+    //                  reassignLead(). Represents who is currently working the lead.
+    //
+    // DEFENSIVE STRIP: Although LeadCreateSchema (Zod) already excludes
+    // created_by_id, we explicitly delete it here so that even if the schema
+    // definition ever changes, no client-supplied value can override attribution.
+    // ─────────────────────────────────────────────────────────────────────────
+    delete dto.created_by_id;
+
     // 1. DUPLICATE DETECTION (Same Company Only)
     if (!dto.phone) {
       throw new AppError(400, 'Phone number is required for lead creation.');
@@ -299,7 +317,7 @@ export class LeadService {
       throw new AppError(403, 'Forbidden: Insufficient privileges or cross-company reassignment');
     }
 
-    const assignee = await p.employee.findUnique({ where: { id: assigneeId } });
+    const assignee = await p.employee.findFirst({ where: { id: assigneeId, company_id: user.companyId } });
     if (!assignee) throw new AppError(404, 'Assignee employee not found');
 
     return await p.$transaction(async (tx: any) => {

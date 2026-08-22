@@ -16,13 +16,18 @@ import { TelecallerDashboard } from './components/dashboards/TelecallerDashboard
 import { PMDashboard } from './components/dashboards/PMDashboard';
 import { StaffDashboard } from './components/dashboards/StaffDashboard';
 
+// Lazy load Sales Manager Dashboard
+const SalesManagerDashboard = lazy(() => import('./components/dashboards/SalesManagerDashboard').then(m => ({ default: m.SalesManagerDashboard })));
+
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
-import { LogOut, CheckCircle2, Clock, FileText, CheckSquare, Target, Users, TrendingUp, Building, MapPin, ShieldCheck, IndianRupee, Bell, LineChart } from 'lucide-react';
+import { Bell } from 'lucide-react';
+
 import { API_BASE_URL } from './config';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
+import { Roles, Permissions } from '@rrh-ems/shared';
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
 const SalesPipelineManagement = lazy(() => import('./components/sales/SalesPipelineManagement').then(m => ({ default: m.SalesPipelineManagement })));
@@ -57,6 +62,7 @@ const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').th
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
 const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement })));
+const UserSettings = lazy(() => import('./components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
 // Legacy for standard users
 const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveProposals').then(m => ({ default: m.LateLeaveProposals })));
 
@@ -102,7 +108,10 @@ const AppShell: React.FC = () => {
   }, [accessToken, isSupported, permission, subscribe]);
 
   // Report Exemption Logic (for logout gate only — attendance gating removed)
-  const isExemptFromReport = user?.roles?.some((r) => ['MD', 'HR Manager', 'Admin (Technical)', 'Marketing Director'].includes(r));
+  const isExemptFromReport = user?.roles?.some(
+    (r) => r === Roles.MD || r === Roles.HR_MANAGER || r === Roles.ADMIN || r === Roles.MARKETING_DIRECTOR
+  );
+
 
   const [showLogoutIntentModal, setShowLogoutIntentModal] = useState(false);
 
@@ -157,19 +166,20 @@ const AppShell: React.FC = () => {
     return <FirstLoginSetup />;
   }
 
-  const isMD = user?.roles?.includes('Managing director');
-  const isTechAdmin = user?.roles?.includes('Admin (Technical)');
-  const isHRManager = user?.roles?.includes('HR Manager');
-  const isProjectManager = user?.roles?.some((r) => ['Project Manager (Site)', 'Project Manager'].includes(r));
-  const isTelecaller = user?.roles?.some((r) => ['Telecaller'].includes(r));
-  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller;
+  const isMD = user?.roles?.includes(Roles.MD);
+  const isTechAdmin = user?.roles?.includes(Roles.ADMIN);
+  const isHRManager = user?.roles?.includes(Roles.HR_MANAGER);
+  const isProjectManager = user?.roles?.includes(Roles.PROJECT_MANAGER);
+  const isTelecaller = user?.roles?.includes(Roles.TELECALLER);
+  const isSalesManager = user?.roles?.includes(Roles.SALES_MANAGER);
+  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager;
 
   // Role-based access for hubs
   const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
   const canManageEmployees = user?.roles?.some(r => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
     ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
-     'Digital Marketing head(manager)', 'accountant'].includes(r)
+     'Digital Marketing head(manager)', 'accountant', 'Sales manager'].includes(r)
   );
 
   // Role-to-dashboard resolver — each role gets its own dedicated dashboard
@@ -185,6 +195,8 @@ const AppShell: React.FC = () => {
           <HRDashboard />
         ) : isProjectManager ? (
           <PMDashboard />
+        ) : isSalesManager ? (
+          <SalesManagerDashboard />
         ) : isTelecaller ? (
           <TelecallerDashboard />
         ) : (
@@ -194,16 +206,17 @@ const AppShell: React.FC = () => {
 
       <Route path="/leads" element={<LeadManagement />} />
       <Route path="/leads-clients" element={<LeadManagement />} />
-      <Route path="/sales-pipeline" element={user?.permissions?.includes('LEADS_READ') ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
-      <Route path="/customers" element={user?.permissions?.includes('CUSTOMERS_READ') ? <CustomerManagement /> : <Navigate to="/" replace />} />
-      <Route path="/projects" element={user?.permissions?.includes('PROJECTS_READ') ? <ProjectManagement /> : <Navigate to="/" replace />} />
+      <Route path="/sales-pipeline" element={user?.permissions?.includes(Permissions.LEADS_READ) ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
+      <Route path="/customers" element={user?.permissions?.includes(Permissions.CUSTOMERS_READ) ? <CustomerManagement /> : <Navigate to="/" replace />} />
+      <Route path="/projects" element={user?.permissions?.includes(Permissions.PROJECTS_READ) ? <ProjectManagement /> : <Navigate to="/" replace />} />
       <Route path="/properties" element={<PropertyManagement />} />
       <Route path="/site-visits" element={<SiteVisitManagement />} />
       <Route path="/tasks" element={<TaskManager />} />
-      <Route path="/bookings" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingManagement /> : <Navigate to="/" replace />} />
-      <Route path="/bookings/:id" element={user?.permissions?.includes('BOOKINGS_READ') ? <BookingDossier /> : <Navigate to="/" replace />} />
-      <Route path="/documents" element={user?.permissions?.includes('documents.read') ? <DocumentManagement /> : <Navigate to="/" replace />} />
+      <Route path="/bookings" element={user?.permissions?.includes(Permissions.BOOKINGS_READ) ? <BookingManagement /> : <Navigate to="/" replace />} />
+      <Route path="/bookings/:id" element={user?.permissions?.includes(Permissions.BOOKINGS_READ) ? <BookingDossier /> : <Navigate to="/" replace />} />
+      <Route path="/documents" element={user?.permissions?.includes(Permissions.DOCUMENTS_READ) ? <DocumentManagement /> : <Navigate to="/" replace />} />
       <Route path="/profile" element={<UserProfile />} />
+      <Route path="/settings" element={<UserSettings />} />
       
       {/* Consolidated Hubs */}
       <Route path="/hr-hub" element={canManageEmployees ? <HRDashboard /> : <Navigate to="/" replace />} />
@@ -212,12 +225,124 @@ const AppShell: React.FC = () => {
         (canManageTargets || canViewTeamPerformance) ? <AnalyticsHub /> : <Navigate to="/" replace />
       } />
 
-      <Route path="/system-control" element={isMD ? <SystemControlHub /> : <Navigate to="/" replace />} />
+      <Route path="/system-control" element={(isMD || isTechAdmin) ? <SystemControlHub /> : <Navigate to="/" replace />} />
 
-      <Route path="/finance" element={<FinanceHub />} />
+      <Route path="/finance" element={
+        (isMD || isTechAdmin || user?.roles?.includes(Roles.FINANCE))
+          ? <FinanceHub />
+          : <Navigate to="/" replace />
+      } />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  );
+
+  // Page context for the header — one clear business title per route.
+  const PAGE_TITLES: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/leads': 'Leads',
+    '/leads-clients': 'Leads',
+    '/sales-pipeline': 'Sales Pipeline',
+    '/customers': 'Customers',
+    '/properties': 'Properties',
+    '/projects': 'Projects',
+    '/site-visits': 'Site Visits',
+    '/tasks': 'Tasks',
+    '/bookings': 'Bookings',
+    '/documents': 'Documents',
+    '/profile': 'Profile',
+    '/settings': 'Personal Settings',
+    '/hr-hub': 'Employees & Attendance',
+    '/analytics': 'Analytics & Goals',
+    '/system-control': 'System Control',
+    '/finance': 'Payments & Refunds',
+  };
+  const pageTitle = PAGE_TITLES[location.pathname] || 'RRH-CRMS';
+
+  return (
+    <AppLayout title={pageTitle}>
+      {/* Global Image Banner */}
+      <GlobalAnnouncementBanner />
+
+      {/* Push Notification Banner */}
+      {isSupported && permission === 'default' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm z-30 relative">
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-amber-600 animate-bounce" />
+            <span className="text-sm font-semibold text-amber-900">
+              Enable push notifications to receive real-time updates and leads.
+            </span>
+          </div>
+          <button
+            onClick={subscribe}
+            disabled={isSubscribing}
+            className="w-full sm:w-auto bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-700 transition-colors disabled:opacity-70 whitespace-nowrap"
+          >
+            {isSubscribing ? 'Enabling...' : 'Enable Notifications'}
+          </button>
+        </div>
+      )}
+
+      {/* Main Content Body — Routes rendered inside AppLayout content canvas */}
+      <div className="main-content p-4 sm:p-6 max-w-7xl w-full mx-auto pb-20 md:pb-6">
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="py-20 text-center text-xs text-slate-400 font-semibold flex flex-col items-center justify-center gap-3">
+                <div className="w-7 h-7 border-3 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>Loading workstation module...</span>
+              </div>
+            }
+          >
+            {dashboardElement}
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+
+      {/* Mobile Bottom Navigation Bar & PWA Prompt */}
+      <MobileBottomNav />
+      <PWAInstallPrompt />
+
+      {/* Daily Report Modal (Logout Gate) */}
+      <DailyReportModal
+        isOpen={showReportModal}
+        onClose={() => { setShowReportModal(false); setPendingLogout(false); }}
+        onSuccess={() => { if (pendingLogout) logout(); }}
+      />
+
+      {/* Logout Intent Modal */}
+      {showLogoutIntentModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl relative animate-scaleUp">
+            <h3 className="font-bold text-slate-800 text-lg mb-2">Logout Action</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              You haven't submitted your Daily Log. Were you working a full shift, or just visiting/updating?
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => { setShowLogoutIntentModal(false); setPendingLogout(true); setShowReportModal(true); }}
+                className="w-full p-3 bg-teal-700 text-white font-bold rounded-xl hover:bg-teal-800 transition-colors shadow-md"
+              >
+                Submit Daily Log & Logout
+              </button>
+              <button
+                onClick={() => { setShowLogoutIntentModal(false); logout(); }}
+                className="w-full p-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Just Visiting / Updating (Log out immediately)
+              </button>
+              <button
+                onClick={() => setShowLogoutIntentModal(false)}
+                className="w-full p-2 text-slate-500 font-bold hover:text-slate-700 text-xs"
+              >
+                Cancel Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AppLayout>
   );
 };
 

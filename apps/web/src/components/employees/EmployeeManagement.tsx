@@ -103,7 +103,8 @@ export const EmployeeManagement: React.FC = () => {
   const [qrBadgeEmp, setQrBadgeEmp] = useState<Employee | null>(null);
   const [resetPwdEmp, setResetPwdEmp] = useState<Employee | null>(null);
 
-  // 20 Industrial Form Fields State
+  // Employment Details
+  // 20 Employment Form Fields State
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [secondaryPhone, setSecondaryPhone] = useState('');
@@ -316,9 +317,9 @@ export const EmployeeManagement: React.FC = () => {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Industrial Employee Directory & Details</h2>
+              <h2 className="text-xl font-bold text-slate-800">Employee Directory & Details</h2>
               <p className="text-xs text-slate-500">
-                Radha Real Homes & Sonthillu Enterprise HRMS & Payroll Registration System
+                Employee & HR Management
               </p>
             </div>
           </div>
@@ -490,7 +491,7 @@ export const EmployeeManagement: React.FC = () => {
                         <button
                           onClick={() => setDossierEmp(emp)}
                           className="p-1.5 text-slate-600 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-colors border border-slate-200"
-                          title="View Complete Industrial Dossier"
+                          title="View Employee Details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -705,7 +706,7 @@ export const EmployeeManagement: React.FC = () => {
                 onClick={() => setDossierEmp(null)}
                 className="py-2.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl"
               >
-                Close Dossier
+                Close Details
               </button>
             </div>
           </div>

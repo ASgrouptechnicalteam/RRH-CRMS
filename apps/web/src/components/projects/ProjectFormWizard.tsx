@@ -3,6 +3,7 @@ import { Building2, X, MapPin, Calendar, Layout, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { Roles } from '@rrh-ems/shared';
 
 interface ProjectFormWizardProps {
   onClose: () => void;
@@ -34,12 +35,12 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
   useEffect(() => {
     // Fetch PMs if the user has appropriate roles or permissions
     // The backend /employees endpoint might require specific permissions, but we can try.
-    if (user?.roles?.some(r => ['Managing director', 'Admin (Technical)', 'HR'].includes(r))) {
+    if (user?.roles?.some(r => r === Roles.MD || r === Roles.ADMIN || r === Roles.HR_MANAGER)) {
       fetchWithAuth(`${API_BASE_URL}/employees`)
         .then(res => res.json())
         .then(data => {
           if (data.employees) {
-            setPms(data.employees.filter((e: any) => e.roles?.some((r: any) => r.includes('Project Manager'))));
+            setPms(data.employees.filter((e: any) => e.roles?.some((r: any) => r.includes(Roles.PROJECT_MANAGER))));
           }
         })
         .catch(() => {});

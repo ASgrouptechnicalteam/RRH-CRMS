@@ -29,7 +29,7 @@ export const SalesStageTransitionModal: React.FC<SalesStageTransitionModalProps>
             <AlertCircle className="w-5 h-5" />
             <h3 className="font-bold text-slate-800">Drop Sales Opportunity</h3>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+          <button onClick={onClose} aria-label="Close drop dialog" className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

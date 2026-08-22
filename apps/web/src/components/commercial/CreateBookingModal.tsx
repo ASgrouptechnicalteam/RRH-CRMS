@@ -79,7 +79,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
             <Building className="w-4 h-4 text-teal-600" />
             Create Booking
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+          <button onClick={onClose} aria-label="Close create booking dialog" className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
             <X className="w-5 h-5" />
           </button>
         </div>

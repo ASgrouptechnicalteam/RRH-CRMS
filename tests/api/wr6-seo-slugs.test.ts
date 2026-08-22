@@ -180,11 +180,10 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
 
       expect(prop1.slug).toBeDefined();
       expect(prop2.slug).toBeDefined();
-      // Verify collision handling generates unique slugs (different suffixes)
-      const prop1Suffix = prop1.slug.match(/-(\d+)$/);
-      const prop2Suffix = prop2.slug.match(/-(\d+)$/);
-      expect(prop1Suffix).toBeTruthy();
-      expect(prop2Suffix).toBeTruthy();
+      // prop1 is the FIRST property in its company -> no collision -> no suffix.
+      expect(prop1.slug.match(/-(\d+)$/)).toBeNull();
+      // prop2 collides with prop1's slug -> unique suffix generated.
+      expect(prop2.slug.match(/-(\d+)$/)).toBeTruthy();
       // Slugs should be different (collision handling worked)
       expect(prop1.slug).not.toEqual(prop2.slug);
     });

@@ -2,6 +2,7 @@ import React from 'react';
 import { SALES_STAGES_ORDER, SALES_STAGE_LABELS, SALES_STAGE_COLORS } from './SalesConstants';
 import { SalesOpportunityCard } from './SalesOpportunityCard';
 import { useAuth } from '../../context/AuthContext';
+import { Permissions } from '@rrh-ems/shared';
 
 interface SalesKanbanBoardProps {
   opportunities: any[];
@@ -11,7 +12,7 @@ interface SalesKanbanBoardProps {
 
 export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({ opportunities, onOpportunityClick, onStageChange }) => {
   const { user } = useAuth();
-  const canUpdate = user?.permissions?.includes('LEADS_UPDATE');
+  const canUpdate = user?.permissions?.includes(Permissions.LEADS_UPDATE);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

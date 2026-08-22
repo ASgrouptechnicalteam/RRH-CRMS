@@ -1,6 +1,10 @@
-import React, { type ComponentType } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle } from 'lucide-react';
+import React, { type ComponentType, useState, useRef, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight } from 'lucide-react';
+import { Roles, Permissions } from '@rrh-ems/shared';
+import { useAuth } from '../../context/AuthContext';
+import { NotificationDrawer } from '../notifications/NotificationDrawer';
+import { ProductTour } from '../onboarding/ProductTour';
 
 const GlobalSearchInput: React.FC<{ placeholder?: string }> = ({ placeholder }) => (
   <input
@@ -16,67 +20,118 @@ export const AppLayout: React.FC<{
   showRightRail?: boolean;
   title?: string;
 }> = ({ children, showRightRail = false, title }) => {
+  const { user, logout } = useAuth();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getInitials = (name?: string, empCode?: string) => {
+    if (name) {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      return name.slice(0, 2).toUpperCase();
+    }
+    if (empCode) return empCode.slice(0, 2).toUpperCase();
+    return 'U';
+  };
+
+  const initials = getInitials(user?.fullName, user?.employeeCode);
+  const roleLabel = user?.roles?.[0] || 'Employee';
+
   return (
-    <div className="app-shell min-h-screen bg-canvas">
+    <div className="app-shell h-[100dvh] w-full flex flex-col overflow-hidden bg-canvas">
       {/* Top Utility Bar */}
-      <header className="utility-bar bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+      <header className="utility-bar shrink-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
+          <img src="/logo.svg" alt="RRH-CRMS Logo" className="h-8 w-auto hidden sm:block" />
+          <span className="text-sm font-black tracking-tight text-gold whitespace-nowrap sm:hidden md:inline-block">RRH-CRMS</span>
           {title && (
-            <h1 className="text-xl font-semibold text-navy">
-              {title}
-            </h1>
+            <>
+              <span className="text-neutral-300 hidden sm:inline-block" aria-hidden="true">/</span>
+              <h1 className="text-lg font-semibold text-navy truncate max-w-[150px] sm:max-w-xs">
+                {title}
+              </h1>
+            </>
           )}
-          <GlobalSearchInput placeholder="Search properties, leads, clients..." />
+          <div className="hidden lg:block ml-4">
+            <GlobalSearchInput placeholder="Search properties, leads, clients..." />
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            aria-label="Notifications"
-            className="relative p-2 rounded-full hover:bg-neutral-100 transition-colors"
-          >
-            <span className="absolute top-1 right-1 bg-destructive rounded-full w-2 h-2" />
-            🔔
-          </button>
-          <button
-            aria-label="User profile"
-            className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 transition-colors"
-          >
-            <span className="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center font-medium text-sm">
-              SK
-            </span>
-          </button>
+          <NotificationDrawer />
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              aria-label="Open user menu"
+              aria-expanded={isProfileMenuOpen}
+              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2 focus:ring-navy"
+            >
+              <span className="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center font-medium text-sm shadow-sm">
+                {initials}
+              </span>
+            </button>
+            {isProfileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-neutral-100 py-2 z-50">
+                <div className="px-4 py-3 border-b border-neutral-100">
+                  <p className="text-sm font-semibold text-navy truncate">{user?.fullName || 'Unknown User'}</p>
+                  <p className="text-xs text-neutral-500 capitalize truncate">{roleLabel}</p>
+                  <p className="text-[10px] text-neutral-400 mt-1 uppercase tracking-wider">{user?.employeeCode}</p>
+                </div>
+                <div className="py-1">
+                  <NavLink to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
+                    Profile
+                  </NavLink>
+                  <NavLink to="/settings" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
+                    Settings
+                  </NavLink>
+                  <button onClick={() => { setIsProfileMenuOpen(false); window.dispatchEvent(new Event('restart-product-tour')); }} className="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50">
+                    Take Product Tour
+                  </button>
+                  <button onClick={() => { setIsProfileMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-red-50">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Main Layout */}
-      <div className="flex min-h-[calc(100vh-73px)]">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Sidebar */}
         <aside
-          className="sidebar-left bg-white border-r border-neutral-200 p-4 shrink-0"
+          className="sidebar-left bg-white border-r border-neutral-200 p-4 shrink-0 h-full overflow-y-auto"
           style={{ width: '260px' }}
         >
-          <div className="mb-6 px-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-gold">
-              Radha Real Homes CRM
-            </span>
-          </div>
           <SidebarNav />
         </aside>
 
         {/* Main Content Canvas */}
-        <main className="main-content flex-1 p-8 overflow-y-auto">
+        <main className="main-content flex-1 min-w-0 h-full overflow-y-auto p-8 relative">
           {children}
         </main>
 
         {/* Optional Right Rail */}
         {showRightRail && (
           <div
-            className="rail-right bg-white border-l border-neutral-200 p-6 shrink-0"
+            className="rail-right bg-white border-l border-neutral-200 p-6 shrink-0 h-full overflow-y-auto"
             style={{ width: '320px' }}
           >
             <ContextualRail />
           </div>
         )}
       </div>
+      <ProductTour />
     </div>
   );
 };
@@ -88,35 +143,54 @@ type SidebarNavItem = {
   path?: string;
   active?: boolean;
   group?: boolean;
+  /** Canonical permission value required to see this item (e.g. Permissions.LEADS_READ). Omit = always visible. */
+  requiredPermission?: string;
+  /** Canonical Roles.* values; item visible if the user holds ANY of them. Omit = no role restriction. */
+  requiredAnyRole?: string[];
 };
 
 const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
-  // WORKSPACE
-  { id: 'group-workspace', label: 'WORKSPACE', group: true, icon: undefined },
-  { id: 'command-center', label: 'Command Center', icon: Settings2, path: '/dashboard' },
+  // HOME
+  { id: 'group-workspace', label: 'HOME', group: true, icon: undefined },
+  { id: 'command-center', label: 'Dashboard', icon: Settings2, path: '/dashboard' },
 
-  // CUSTOMER & SALES
-  { id: 'group-customer-sales', label: 'CUSTOMER & SALES', group: true, icon: undefined },
-  { id: 'leads-clients', label: 'Leads & Clients', icon: Users, path: '/leads-clients' },
-  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
+  // SALES
+  { id: 'group-customer-sales', label: 'SALES', group: true, icon: undefined },
+  { id: 'leads-clients', label: 'Leads', icon: Users, path: '/leads-clients', requiredPermission: Permissions.LEADS_READ },
+  { id: 'customers', label: 'Customers', path: '/customers', requiredPermission: Permissions.CUSTOMERS_READ },
+  { id: 'site-visits', label: 'Site Visits', icon: CalendarCheck, path: '/site-visits', requiredPermission: Permissions.SITE_VISITS_READ },
+  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline', requiredPermission: Permissions.LEADS_READ },
 
   // PROPERTY
   { id: 'group-property', label: 'PROPERTY', group: true, icon: undefined },
-  { id: 'property-inventory', label: 'Property Inventory', icon: Building2, path: '/properties' },
-  { id: 'projects-sites', label: 'Projects & Sites', icon: MapPinned, path: '/projects' },
+  { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties', requiredPermission: Permissions.PROPERTIES_READ },
+  { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects', requiredPermission: Permissions.PROJECTS_READ },
 
-  // TRANSACTIONS
-  { id: 'group-transactions', label: 'TRANSACTIONS', group: true, icon: FileCheck },
-  { id: 'bookings', label: 'Bookings / Transactions', icon: undefined, path: '/bookings' },
-  { id: 'documents', label: 'Documents', icon: undefined, path: '/documents' },
+  // BOOKINGS
+  { id: 'group-transactions', label: 'BOOKINGS', group: true, icon: FileCheck },
+  { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings', requiredPermission: Permissions.BOOKINGS_READ },
+  { id: 'documents', label: 'Documents', icon: undefined, path: '/documents', requiredPermission: Permissions.DOCUMENTS_READ },
 
-  // INTELLIGENCE
-  { id: 'group-intelligence', label: 'INTELLIGENCE', group: true, icon: undefined },
-  { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics' },
+  // WORK
+  { id: 'group-work', label: 'WORK', group: true, icon: undefined },
+  { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks', requiredPermission: Permissions.TASKS_READ },
+
+  // FINANCE
+  { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },
+  { id: 'finance', label: 'Payments & Refunds', icon: IndianRupee, path: '/finance', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.FINANCE] },
+
+  // HR
+  { id: 'group-hr', label: 'HR', group: true, icon: undefined },
+  { id: 'hr-hub', label: 'Employees & Attendance', icon: Briefcase, path: '/hr-hub', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+
+  // INSIGHTS
+  { id: 'group-intelligence', label: 'INSIGHTS', group: true, icon: undefined },
+  { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
 
   // ADMINISTRATION
   { id: 'group-administration', label: 'ADMINISTRATION', group: true, icon: undefined },
-  { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control' },
+  { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
+  { id: 'settings', label: 'Settings', icon: Settings2, path: '/settings' },
   { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
 ];
 
@@ -124,30 +198,112 @@ export { SIDEBAR_NAV_ITEMS };
 export type { SidebarNavItem };
 
 const SidebarNav: React.FC = () => {
-  return (
-    <nav className="space-y-1">
-      {SIDEBAR_NAV_ITEMS.map((item) => {
-        if (item.group) {
-          return (
-            <div
-              key={item.id}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-neutral-200"
-            >
-              {item.label}
-            </div>
-          );
+  const { user } = useAuth();
+  const location = useLocation();
+  const userPermissions = user?.permissions ?? [];
+  const isVisible = (item: SidebarNavItem): boolean =>
+    (!item.requiredPermission || userPermissions.includes(item.requiredPermission)) &&
+    (!item.requiredAnyRole || item.requiredAnyRole.some((r) => user?.roles?.includes(r)));
+
+  type NavGroup = { groupItem: SidebarNavItem; children: SidebarNavItem[] };
+  const groups: NavGroup[] = [];
+  let currentGroup: NavGroup | null = null;
+  
+  for (const entry of SIDEBAR_NAV_ITEMS) {
+    if (entry.group) {
+      if (currentGroup && currentGroup.children.length > 0) {
+        groups.push(currentGroup);
+      }
+      currentGroup = { groupItem: entry, children: [] };
+    } else if (isVisible(entry)) {
+      if (currentGroup) {
+        currentGroup.children.push(entry);
+      }
+    }
+  }
+  if (currentGroup && currentGroup.children.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  const storageKey = `rrh_sidebar_state_${user?.id || 'default'}`;
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  useEffect(() => {
+    let shouldUpdate = false;
+    const newExpanded = { ...expandedGroups };
+    for (const g of groups) {
+      if (g.children.some(child => child.path && location.pathname.startsWith(child.path))) {
+        if (!newExpanded[g.groupItem.id]) {
+          newExpanded[g.groupItem.id] = true;
+          shouldUpdate = true;
         }
+      }
+    }
+    if (shouldUpdate) {
+      setExpandedGroups(newExpanded);
+      const persistenceOff = localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
+      if (!persistenceOff) {
+        localStorage.setItem(storageKey, JSON.stringify(newExpanded));
+      }
+    }
+  }, [location.pathname, groups, storageKey, user?.id]);
+
+  const toggleGroup = (groupId: string) => {
+    const newExpanded = { ...expandedGroups, [groupId]: !expandedGroups[groupId] };
+    setExpandedGroups(newExpanded);
+    const persistenceOff = localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
+    if (!persistenceOff) {
+      localStorage.setItem(storageKey, JSON.stringify(newExpanded));
+    }
+  };
+
+  return (
+    <nav className="space-y-4 pb-12" aria-label="Main navigation">
+      {groups.map((group) => {
+        const isExpanded = expandedGroups[group.groupItem.id];
         return (
-<NavLink
-            key={item.id}
-            to={item.path || '/'}
-            className="w-full flex items-center gap-3 rounded-md py-2.5 px-3 text-sm font-medium transition-colors"
-          >
-            {item.icon ? (
-              <item.icon className="w-4 h-4 shrink-0 text-gold" />
-            ) : null}
-            <span className="truncate">{item.label}</span>
-          </NavLink>
+          <div key={group.groupItem.id} className="space-y-1">
+            <button
+              onClick={() => toggleGroup(group.groupItem.id)}
+              aria-expanded={isExpanded}
+              aria-controls={`group-${group.groupItem.id}`}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700 transition-colors rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-navy focus:bg-slate-50"
+            >
+              <span>{group.groupItem.label}</span>
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4 shrink-0" aria-label="Collapse group" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0" aria-label="Expand group" />
+              )}
+            </button>
+            {isExpanded && (
+              <div id={`group-${group.groupItem.id}`} className="space-y-1 mt-1">
+                {group.children.map((item) => (
+                  <NavLink
+                    key={item.id}
+                    to={item.path || '/'}
+                    data-tour={`sidebar-${item.id}`}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
+                        isActive ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                      }`
+                    }
+                  >
+                    {item.icon ? (
+                      <item.icon className="w-4 h-4 shrink-0 text-gold" />
+                    ) : null}
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         );
       })}
     </nav>

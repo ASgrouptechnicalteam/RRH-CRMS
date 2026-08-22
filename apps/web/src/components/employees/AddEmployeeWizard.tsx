@@ -153,7 +153,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name *</label>
                 <div className="relative">
                   <User className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="John Doe" />
+                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="Enter full legal name" />
                 </div>
               </div>
 

@@ -62,6 +62,19 @@ export const LeadManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [employees, setEmployees] = useState<any[]>([]);
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/md/employees`);
+      const data = await res.json();
+      if (res.ok) {
+        setEmployees(data.employees || []);
+      }
+    } catch (e) {
+      console.error('Failed to load employees for lead assignment');
+    }
+  };
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -142,6 +155,64 @@ export const LeadManagement: React.FC = () => {
       }
     } catch (e) {
       console.error('Fetch lead visits error:', e);
+    }
+  };
+
+  const handleUpdateLeadStatus = async (leadId: number, newStatus: string, currentStatus: string) => {
+    if (newStatus === currentStatus) return;
+    
+    let notes = '';
+    if (newStatus === 'LOST') {
+      const reason = window.prompt('Please provide a reason for dropping this lead (LOST):');
+      if (!reason) return; // Cancelled or empty
+      notes = reason;
+    }
+
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, notes }),
+      });
+
+      if (res.ok) {
+        showToast('Lead status updated', 'success');
+        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+        if (selectedLead?.id === leadId) {
+          setSelectedLead({ ...selectedLead, status: newStatus });
+        }
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to update status', 'error');
+      }
+    } catch (e) {
+      showToast('Network error updating status', 'error');
+    }
+  };
+
+  const handleUpdateLeadAssignment = async (leadId: number, assigneeIdStr: string) => {
+    const assigneeId = parseInt(assigneeIdStr, 10);
+    if (!assigneeId) return;
+
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_to_id: assigneeId, reason: 'Inline reassignment' }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Lead assigned successfully', 'success');
+        setLeads(prev => prev.map(l => l.id === leadId ? data.lead : l));
+        if (selectedLead?.id === leadId) {
+          setSelectedLead(data.lead);
+        }
+      } else {
+        showToast(data.error || 'Failed to assign lead', 'error');
+      }
+    } catch (e) {
+      showToast('Network error assigning lead', 'error');
     }
   };
 
@@ -400,7 +471,10 @@ export const LeadManagement: React.FC = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+    if (user?.permissions?.includes(Permissions.LEADS_ASSIGN)) {
+      fetchEmployees();
+    }
+  }, [user]);
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -540,6 +614,7 @@ export const LeadManagement: React.FC = () => {
 
           <button
             onClick={() => setShowAddModal(true)}
+            data-tour="lead-create"
             className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-teal-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -653,25 +728,59 @@ export const LeadManagement: React.FC = () => {
                         {lead.source}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4">
-                      {lead.assigned_to ? (
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-[10px]">
-                            {lead.assigned_to.employee_code.slice(-3)}
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-800 text-[11px]">{lead.assigned_to.full_name || lead.assigned_to.employee_code}</div>
-                            <div className="text-[9px] text-slate-400 font-mono">{lead.assignment_type || 'AUTO'}</div>
-                          </div>
-                        </div>
+                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                      {user?.permissions?.includes(Permissions.LEADS_ASSIGN) ? (
+                        <select
+                          value={lead.assigned_to?.id || ''}
+                          onChange={(e) => handleUpdateLeadAssignment(lead.id, e.target.value)}
+                          className="w-full max-w-[120px] p-1.5 text-[10px] uppercase font-extrabold tracking-wider bg-teal-50 border border-teal-200 rounded text-teal-800 focus:ring-2 focus:ring-teal-500"
+                        >
+                          <option value="">Unassigned Pool</option>
+                          {employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.full_name || emp.employee_code}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        <span className="text-slate-400 italic text-[11px]">Unassigned Pool</span>
+                        lead.assigned_to ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-[10px]">
+                              {lead.assigned_to.employee_code.slice(-3)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-800 text-[11px]">{lead.assigned_to.full_name || lead.assigned_to.employee_code}</div>
+                              <div className="text-[9px] text-slate-400 font-mono">{lead.assignment_type || 'AUTO'}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Unassigned Pool</span>
+                        )
                       )}
                     </td>
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getStatusBadge(lead.status)}`}>
-                        {lead.status}
-                      </span>
+                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                      {user?.permissions?.includes(Permissions.LEADS_UPDATE) ? (
+                        <select
+                          value={lead.status}
+                          onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value, lead.status)}
+                          className={`p-1.5 text-[10px] uppercase font-extrabold tracking-wider border rounded focus:ring-2 focus:ring-teal-500 ${getStatusBadge(lead.status)}`}
+                        >
+                          <option value="NEW">NEW</option>
+                          <option value="ASSIGNED">ASSIGNED</option>
+                          <option value="CONTACTED">CONTACTED</option>
+                          <option value="QUALIFIED">QUALIFIED</option>
+                          <option value="SITE_VISIT_SCHEDULED">SITE VISIT SCHEDULED</option>
+                          <option value="NEGOTIATION">NEGOTIATION</option>
+                          <option value="OPPORTUNITY_OPEN">OPPORTUNITY OPEN</option>
+                          <option value="WON">WON</option>
+                          <option value="LOST">LOST</option>
+                          <option value="RECOVERED_TO_POOL">RECOVERED TO POOL</option>
+                        </select>
+                      ) : (
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getStatusBadge(lead.status)}`}>
+                          {lead.status}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button
@@ -684,7 +793,7 @@ export const LeadManagement: React.FC = () => {
                         }}
                         className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-900 transition-all inline-flex items-center gap-1 font-bold text-xs"
                       >
-                        <span>View Dossier</span>
+                        <span>View Details</span>
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     </td>
@@ -744,10 +853,35 @@ export const LeadManagement: React.FC = () => {
               </div>
   
               <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-5 text-xs">
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Assigned Telecaller</span>
-                  <div className="font-bold text-slate-800 mt-0.5">{selectedLead.assigned_to?.full_name || 'Unassigned'}</div>
+                {/* ── Attribution block ─────────────────────────────────── */}
+                <div
+                  data-tour="lead-attribution-block"
+                  className="col-span-2 grid grid-cols-2 gap-3 bg-white rounded-xl p-3 border border-slate-200 shadow-sm"
+                >
+                  {/* Introduced By — permanent attribution */}
+                  <div className="flex items-start gap-2.5 p-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <div className="mt-0.5 p-1.5 bg-indigo-100 rounded-lg flex-shrink-0">
+                      <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-indigo-500 text-[9px] uppercase font-black tracking-widest block">Introduced By</span>
+                      <div className="font-bold text-indigo-900 mt-0.5 truncate">{selectedLead.created_by?.full_name || selectedLead.created_by?.employee_code || 'System'}</div>
+                      <span className="text-[9px] text-indigo-400 font-semibold">Permanent Attribution</span>
+                    </div>
+                  </div>
+                  {/* Assigned To — operational / mutable */}
+                  <div className="flex items-start gap-2.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="mt-0.5 p-1.5 bg-slate-200 rounded-lg flex-shrink-0">
+                      <UserCheck className="w-3.5 h-3.5 text-slate-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-slate-400 text-[9px] uppercase font-black tracking-widest block">Assigned To</span>
+                      <div className="font-bold text-slate-800 mt-0.5 truncate">{selectedLead.assigned_to?.full_name || 'Unassigned'}</div>
+                      <span className="text-[9px] text-slate-400 font-semibold">Current Owner</span>
+                    </div>
+                  </div>
                 </div>
+                {/* ── Rest of metadata ──────────────────────────────────── */}
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold">Created</span>
                   <div className="font-bold text-slate-800 mt-0.5">{new Date(selectedLead.created_at).toLocaleDateString()}</div>
@@ -1014,7 +1148,7 @@ export const LeadManagement: React.FC = () => {
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-mono font-bold text-amber-900 text-xs">{visit.booking_code}</span>
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-white border-amber-200 text-amber-800">
-                            {visit.status}
+                            {visit.status.replace(/_/g, ' ')}
                           </span>
                         </div>
                         {visit.property && (

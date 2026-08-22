@@ -34,12 +34,29 @@ router.get(
   requireAuthz(Permissions.ADMIN_SYSTEM_METRICS),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const companyId = req.user!.companyId ?? (req.user as any)?.company_id ?? 1;
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: 'Company context required' });
       const kpis = await AnalyticsService.getKpis(companyId, req.user!);
       return res.status(200).json(kpis);
     } catch (error: any) {
       console.error('Fetch analytics KPIs error:', error);
       return res.status(500).json({ error: 'Failed to fetch analytics KPIs' });
+    }
+  }
+);
+router.get(
+  '/sales-manager',
+  authenticateToken,
+  requireAuthz(Permissions.REPORTS_READ_TEAM),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: 'Company context required' });
+      const dashboardData = await AnalyticsService.getSalesManagerDashboard(companyId, req.user!);
+      return res.status(200).json(dashboardData);
+    } catch (error: any) {
+      console.error('Fetch sales manager dashboard error:', error);
+      return res.status(500).json({ error: 'Failed to fetch sales manager dashboard' });
     }
   }
 );

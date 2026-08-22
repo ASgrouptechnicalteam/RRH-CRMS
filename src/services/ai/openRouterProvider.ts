@@ -155,59 +155,57 @@ export class OpenRouterProvider implements AIProvider {
     const timeoutMs = 30_000; // matches AIConfig.default timeoutMs
     const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
 
-    let fetchError: { category: string; message: string; retryable: boolean } | null = null;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.options.apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': OPENROUTER_DEFAULT_REFERER,
+          'X-Title': OPENROUTER_APP_TITLE,
+        },
+        body: JSON.stringify(body),
+        signal: abortController.signal,
+      }).catch((err) => {
+        // Normalize immediately — the raw network error must never escape the provider
+        // boundary. Distinguish abort (timeout) from other network failures.
+        const info: AIProviderErrorInfo =
+          err.name === 'AbortError'
+            ? {
+                category: 'TIMEOUT',
+                message: 'OpenRouter request timed out.',
+                retryable: true,
+                provider: OPENROUTER_PROVIDER,
+              }
+            : {
+                category: 'PROVIDER_UNAVAILABLE',
+                message: 'OpenRouter request could not be completed (network error).',
+                retryable: true,
+                provider: OPENROUTER_PROVIDER,
+              };
+        throw new AIProviderError(info);
+      });
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.options.apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': OPENROUTER_DEFAULT_REFERER,
-        'X-Title': OPENROUTER_APP_TITLE,
-      },
-      body: JSON.stringify(body),
-      signal: abortController.signal,
-    }).catch((err) => {
-      // Distinguish abort (timeout) from other network failures
-      if (err.name === 'AbortError') {
-        fetchError = {
-          category: 'TIMEOUT',
-          message: 'OpenRouter request timed out.',
-          retryable: true,
-        };
-      } else {
-        fetchError = {
-          category: 'PROVIDER_UNAVAILABLE',
-          message: 'OpenRouter request could not be completed (network error).',
-          retryable: true,
-        };
+      if (!response.ok) {
+        let errBody: { error?: { message?: string } } = {};
+        try {
+          errBody = (await response.json()) as typeof errBody;
+        } catch {
+          /* non-JSON error body — fall back to status text */
+        }
+        throw new AIProviderError(
+          classifyOpenRouterError(
+            { status: response.status, message: errBody?.error?.message ?? response.statusText },
+            OPENROUTER_PROVIDER
+          )
+        );
       }
-      // Re-throw so the caller can still check response.ok below if needed
-      throw err;
-    });
 
-    clearTimeout(timeoutId);
-
-    if (fetchError) {
-      throw new AIProviderError(fetchError);
+      const data = await response.json();
+      return parseOpenRouterResponse(data, request, OPENROUTER_PROVIDER);
+    } finally {
+      // Always clear the timeout so the abort timer never leaks as an open handle.
+      clearTimeout(timeoutId);
     }
-
-    if (!response.ok) {
-      let errBody: { error?: { message?: string } } = {};
-      try {
-        errBody = (await response.json()) as typeof errBody;
-      } catch {
-        /* non-JSON error body — fall back to status text */
-      }
-      throw new AIProviderError(
-        classifyOpenRouterError(
-          { status: response.status, message: errBody?.error?.message ?? response.statusText },
-          OPENROUTER_PROVIDER
-        )
-      );
-    }
-
-    const data = await response.json();
-    return parseOpenRouterResponse(data, request, OPENROUTER_PROVIDER);
   }
 }

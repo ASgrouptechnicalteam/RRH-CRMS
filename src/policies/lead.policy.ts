@@ -19,6 +19,7 @@ export class LeadPolicy {
         Roles.HR_MANAGER,
         Roles.MARKETING_DIRECTOR,
         Roles.DIGITAL_LEAD_OPERATOR,
+        Roles.SALES_MANAGER,
       ].includes(r as any)
     );
   }

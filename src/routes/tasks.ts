@@ -97,7 +97,7 @@ router.get('/my-tasks', authenticateToken, async (req: AuthenticatedRequest, res
 });
 
 // POST /api/v1/tasks - Create new task
-router.post('/', authenticateToken, validateRequestBody(TaskCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, requireAuthz(Permissions.TASKS_CREATE), validateRequestBody(TaskCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { title, description, assignee_id, priority, deadline, lead_id, opportunity_id } = req.body;
     const creatorId = req.user!.employeeId;

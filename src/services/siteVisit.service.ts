@@ -14,9 +14,20 @@ const p = prisma as any;
 export class SiteVisitService {
   private static async generateNextBookingCode(): Promise<string> {
     const currentYear = new Date().getFullYear();
+    const prefix = `RRH-SV-${currentYear}-`;
     const count = await p.siteVisitBooking.count();
-    const seq = (count + 1).toString().padStart(4, '0');
-    return `RRH-SV-${currentYear}-${seq}`;
+    // Walk forward from the row count until we find a code that doesn't collide with an
+    // existing booking_code (the count can exceed the number of distinct codes after
+    // deletions/residue in a reused database, which would otherwise raise P2002).
+    let seq = count + 1;
+    for (;;) {
+      const candidate = `${prefix}${String(seq).padStart(4, '0')}`;
+      const existing = await p.siteVisitBooking.findUnique({ where: { booking_code: candidate } });
+      if (!existing) {
+        return candidate;
+      }
+      seq++;
+    }
   }
 
   static async listVisits(user: TokenPayload, filters: { status?: string; leadId?: string }) {

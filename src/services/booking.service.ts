@@ -37,9 +37,9 @@ export class BookingService {
 
   /** Fetch a single booking with company + policy scoping. */
   static async getBookingById(user: TokenPayload, id: number) {
-    const booking = await prisma.booking.findUnique({ where: { id } });
-    if (!booking || booking.company_id !== user.companyId) {
-      throw new AppError(404, 'Booking not found or access denied');
+    const booking = await prisma.booking.findFirst({ where: { id, company_id: user.companyId } });
+    if (!booking) {
+      throw new AppError(404, 'Booking not found');
     }
     if (!BookingPolicy.canView(user, booking)) {
       throw new AppError(403, 'Unauthorized to view this booking');
@@ -135,10 +135,10 @@ export class BookingService {
     const booking = await (client as any).booking.create({
       data: {
         booking_code,
-        company_id: user.companyId,
-        customer_id: dto.customer_id,
-        property_id: dto.property_id,
-        assigned_employee_id: assignedEmployeeId,
+        company:   { connect: { id: user.companyId } },
+        customer:  { connect: { id: dto.customer_id } },
+        property:  { connect: { id: dto.property_id } },
+        ...(assignedEmployeeId ? { assigned_employee: { connect: { id: assignedEmployeeId } } } : {}),
         agreed_price: Number(dto.agreed_price),
         booking_amount: Number(dto.booking_amount),
         balance_amount: balance,

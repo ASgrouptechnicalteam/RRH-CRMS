@@ -3,10 +3,29 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const p = prisma as any;
+const skipRateLimitInTests = (req: any) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true';
+
+export const apiRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  skip: skipRateLimitInTests,
+  message: { error: 'Too many API requests, please try again later', code: 'RATE_LIMIT_EXCEEDED' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const refreshRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  skip: skipRateLimitInTests,
+  message: { error: 'Too many refresh attempts, please try again later', code: 'RATE_LIMIT_EXCEEDED' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 export const publicReadLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  skip: skipRateLimitInTests,
   max: 120, // 120 public read requests per IP per minute
   message: { error: 'Too many requests from this IP, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
   standardHeaders: true,
@@ -15,7 +34,7 @@ export const publicReadLimiter = rateLimit({
 
 export const publicWriteLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  skip: skipRateLimitInTests,
   max: 10, // 10 public lead submissions per IP per minute
   message: { error: 'Too many submissions from this IP, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
   standardHeaders: true,
@@ -24,7 +43,7 @@ export const publicWriteLimiter = rateLimit({
 
 export const loginRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  skip: skipRateLimitInTests,
   max: 5, // Limit each IP to 5 login requests per window
   message: { error: 'Too many login attempts from this IP, please try again after a minute', code: 'RATE_LIMIT_EXCEEDED' },
   standardHeaders: true, 
@@ -55,7 +74,7 @@ export const loginRateLimiter = rateLimit({
 // Follows the existing express-rate-limit conventions (IP-based window, test skip).
 export const aiSearchLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true',
+  skip: skipRateLimitInTests,
   max: 10, // 10 AI search requests per IP per minute
   standardHeaders: true,
   legacyHeaders: false,

@@ -51,7 +51,10 @@ function mapAIError(err: unknown, res: Response): void {
       UNKNOWN_PROVIDER_ERROR: { status: 502, code: 'UPSTREAM_ERROR' },
     };
     const mapped = table[err.info.category] ?? { status: 502, code: 'UPSTREAM_ERROR' };
-    res.status(mapped.status).json({ error: err.info.message, code: mapped.code });
+    res.status(mapped.status).json({
+      error: mapped.status >= 500 ? 'AI service temporarily unavailable' : 'AI request could not be completed',
+      code: mapped.code,
+    });
     return;
   }
 
@@ -61,7 +64,7 @@ function mapAIError(err: unknown, res: Response): void {
   }
 
   if (err instanceof AITenantOverrideError || err instanceof InvalidAIInputError || err instanceof InvalidChatInputError) {
-    res.status(400).json({ error: err.message, code: 'INVALID_REQUEST' });
+    res.status(400).json({ error: 'Invalid AI request', code: 'INVALID_REQUEST' });
     return;
   }
 
@@ -76,7 +79,13 @@ function mapAIError(err: unknown, res: Response): void {
   }
 
   if (err && (err as { statusCode?: number }).statusCode) {
-    res.status((err as { statusCode: number }).statusCode).json({ error: (err as Error).message });
+    const status = (err as { statusCode: number }).statusCode;
+    if (status >= 500) {
+      console.error('[ai-search]', err);
+      res.status(status).json({ error: 'Internal Server Error', code: 'INTERNAL_ERROR' });
+      return;
+    }
+    res.status(status).json({ error: 'Invalid request', code: 'INVALID_REQUEST' });
     return;
   }
 

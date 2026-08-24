@@ -7,7 +7,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { LoginSchema, ChangePasswordSchema, Roles } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
-import { loginRateLimiter } from '../middleware/rateLimiter';
+import { loginRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -85,6 +85,7 @@ router.post('/login', loginRateLimiter, validateRequestBody(LoginSchema), async 
       branchId: employee.branch_id,
       roles: roleNames,
       permissions,
+      tokenVersion: employee.token_version,
     };
 
     const accessToken = generateAccessToken(tokenPayload);
@@ -163,12 +164,20 @@ router.post(
 
       const newHash = await bcrypt.hash(new_password, 12);
 
-      await p.employee.update({
-        where: { id: employeeId },
-        data: {
-          password_hash: newHash,
-          first_login_done: true,
-        },
+      await p.$transaction(async (tx: any) => {
+        await tx.employee.update({
+          where: { id: employeeId },
+          data: {
+            password_hash: newHash,
+            first_login_done: true,
+            token_version: { increment: 1 }
+          },
+        });
+
+        await tx.authSession.updateMany({
+          where: { employee_id: employeeId, revoked: false },
+          data: { revoked: true, revocation_reason: 'PASSWORD_CHANGED' }
+        });
       });
 
       return res.status(200).json({
@@ -234,7 +243,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
 });
 
 // POST /api/v1/auth/refresh
-router.post('/refresh', async (req, res: Response) => {
+router.post('/refresh', refreshRateLimiter, async (req, res: Response) => {
   try {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
@@ -349,6 +358,7 @@ router.post('/refresh', async (req, res: Response) => {
       branchId: employee.branch_id,
       roles: roleNames,
       permissions: Array.from(permissionsSet),
+      tokenVersion: employee.token_version,
     };
 
     const newAccessToken = generateAccessToken(tokenPayload);

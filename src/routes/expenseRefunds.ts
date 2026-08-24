@@ -44,13 +44,12 @@ router.get(
   '/my',
   authenticateToken,
   requirePermission([Permissions.EXPENSES_READ_OWN]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const refunds = await ExpenseRefundService.listMyRefunds(req.user!);
       return res.status(200).json({ refunds });
     } catch (error: any) {
-      console.error('[ExpenseRefunds] GET /my error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to fetch your refund requests.' });
+      next(error);
     }
   }
 );
@@ -59,13 +58,12 @@ router.get(
   '/queue',
   authenticateToken,
   requirePermission([Permissions.EXPENSES_REVIEW, Permissions.EXPENSES_MD_APPROVE]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const refunds = await ExpenseRefundService.listQueue(req.user!);
       return res.status(200).json({ refunds });
     } catch (error: any) {
-      console.error('[ExpenseRefunds] GET /queue error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to fetch refund queue.' });
+      next(error);
     }
   }
 );
@@ -76,14 +74,13 @@ router.post(
   requirePermission([Permissions.EXPENSES_CREATE]),
   upload.single('proof_image'),
   validateRequestBody(ExpenseRefundCreateSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const { purpose, amount } = req.body;
       const refund = await ExpenseRefundService.createRefund(req.user!, { purpose, amount }, req.file);
       return res.status(201).json({ message: 'Refund request submitted.', refund });
     } catch (error: any) {
-      console.error('[ExpenseRefunds] POST / error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to submit refund request.' });
+      next(error);
     }
   }
 );
@@ -93,15 +90,14 @@ router.patch(
   authenticateToken,
   requireAuthz(Permissions.EXPENSES_REVIEW),
   validateRequestBody(ExpenseRefundAccountantReviewSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const { decision, note } = req.body;
       const updated = await ExpenseRefundService.accountantReview(req.user!, id, decision, note);
       return res.status(200).json({ message: 'Review recorded.', refund: updated });
     } catch (error: any) {
-      console.error('[ExpenseRefunds] PATCH accountant-review error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to process accountant review.' });
+      next(error);
     }
   }
 );
@@ -111,15 +107,14 @@ router.patch(
   authenticateToken,
   requireAuthz(Permissions.EXPENSES_MD_APPROVE),
   validateRequestBody(ExpenseRefundMDReviewSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const { decision, note } = req.body;
       const updated = await ExpenseRefundService.mdReview(req.user!, id, decision, note);
       return res.status(200).json({ message: 'MD review recorded.', refund: updated });
     } catch (error: any) {
-      console.error('[ExpenseRefunds] PATCH md-review error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to process MD review.' });
+      next(error);
     }
   }
 );
@@ -129,14 +124,13 @@ router.patch(
   authenticateToken,
   requireAuthz(Permissions.EXPENSES_MARK_REFUNDED),
   validateRequestBody(ExpenseRefundMarkRefundedSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const updated = await ExpenseRefundService.markRefunded(req.user!, id);
       return res.status(200).json({ message: 'Marked as refunded.', refund: updated });
     } catch (error: any) {
-      console.error('[ExpenseRefunds] PATCH mark-refunded error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to mark refund as paid.' });
+      next(error);
     }
   }
 );
@@ -145,7 +139,7 @@ router.get(
   '/:id/proof',
   authenticateToken,
   requireAuthz(Permissions.EXPENSES_READ_OWN),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const proofUrl = await ExpenseRefundService.getProof(req.user!, id);
@@ -155,8 +149,7 @@ router.get(
       }
       return res.sendFile(filePath);
     } catch (error: any) {
-      console.error('[ExpenseRefunds] GET /proof error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to retrieve proof image.' });
+      next(error);
     }
   }
 );

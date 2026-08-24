@@ -49,8 +49,8 @@ export class LeadService {
   }
 
   static async getLeadById(user: TokenPayload, leadId: number) {
-    const lead = await p.lead.findUnique({
-      where: { id: leadId }
+    const lead = await p.lead.findFirst({
+      where: { id: leadId, company_id: user.companyId }
     });
     if (!lead || lead.company_id !== user.companyId) {
       return null;
@@ -182,6 +182,18 @@ export class LeadService {
     // 3. SLA BREACH CONFIGURATION (e.g. 2 hours from creation to first contact)
     const slaBreachAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
+    // 4. REFERRAL ATTRIBUTION
+    let validReferralEmployeeId = null;
+    if (dto.source === 'REFERRAL' && dto.referral_employee_id) {
+      const refEmp = await p.employee.findFirst({
+        where: { id: dto.referral_employee_id, company_id: user.companyId }
+      });
+      if (!refEmp) {
+        throw new AppError(400, 'Invalid or cross-company referral employee.');
+      }
+      validReferralEmployeeId = refEmp.id;
+    }
+
     return await p.$transaction(async (tx: any) => {
       const lead = await tx.lead.create({
         data: {
@@ -208,6 +220,8 @@ export class LeadService {
           utm_campaign: dto.utm_campaign || null,
           lead_score: leadScore,
           sla_breach_at: slaBreachAt,
+          referral_person_name: dto.source === 'REFERRAL' ? (dto.referral_person_name || null) : null,
+          referral_employee_id: validReferralEmployeeId,
         },
       });
 
@@ -245,72 +259,108 @@ export class LeadService {
   }
 
   static async bulkUploadLeads(user: TokenPayload, rawLeads: any[]) {
-    let insertedCount = 0;
-    const createdLeads = [];
+    const results = {
+      total_rows: rawLeads.length,
+      successful_imports: 0,
+      duplicates: 0,
+      failed_rows: 0,
+      errors: [] as any[],
+    };
+
+    // Pre-fetch existing phones to detect duplicates efficiently
+    const phones = rawLeads.map(l => l.phone).filter(Boolean);
+    const existingPhones = await p.lead.findMany({
+      where: { company_id: user.companyId, phone: { in: phones } },
+      select: { phone: true }
+    });
+    const phoneSet = new Set(existingPhones.map((e: { phone: string }) => e.phone));
 
     // Chunking to prevent holding transaction too long
     const CHUNK_SIZE = 50;
+    let currentRow = 0;
+
     for (let i = 0; i < rawLeads.length; i += CHUNK_SIZE) {
       const chunk = rawLeads.slice(i, i + CHUNK_SIZE);
 
-      await p.$transaction(async (tx: any) => {
-        for (const item of chunk) {
-          if (!item.customer_name || !item.phone) continue;
+      for (const item of chunk) {
+        currentRow++;
+        try {
+          if (!item.customer_name || !item.phone) {
+            results.failed_rows++;
+            results.errors.push({ row: currentRow, reason: 'Missing required fields: customer_name or phone' });
+            continue;
+          }
 
-          const leadCode = await this.generateNextLeadCode(); // Inside transaction to ensure unique code sequentially
-          const bestAssignee = await findBestAssigneeForLead(user.companyId);
+          if (phoneSet.has(item.phone)) {
+            results.duplicates++;
+            results.errors.push({ row: currentRow, reason: `Duplicate phone number: ${item.phone}` });
+            continue;
+          }
 
-          const newLead = await tx.lead.create({
-            data: {
-              lead_code: leadCode,
-              company_id: user.companyId,
-              branch_id: user.branchId || null,
-              customer_name: item.customer_name,
-              phone: item.phone,
-              email: item.email || null,
-              source: 'BULK_UPLOAD',
-              status: bestAssignee ? 'ASSIGNED' : 'NEW',
-              assigned_to_id: bestAssignee ? bestAssignee.employeeId : null,
-              assigned_at: bestAssignee ? new Date() : null,
-              assignment_type: bestAssignee ? 'PERFORMANCE_WEIGHTED' : null,
-              property_type_preference: item.property_type || null,
-              preferred_location: item.location || null,
-              notes: item.notes || 'Imported via Digital Lead Operator Bulk Upload',
-              created_by_id: user.employeeId,
-            },
-          });
+          await p.$transaction(async (tx: any) => {
+            const leadCode = await this.generateNextLeadCode(); // Inside transaction to ensure unique code sequentially
+            const bestAssignee = await findBestAssigneeForLead(user.companyId);
 
-          await tx.leadActivity.create({
-            data: {
-              lead_id: newLead.id,
-              actor_id: user.employeeId,
-              activity_type: 'LEAD_CREATED',
-              notes: `Bulk Upload Lead ${newLead.lead_code} created by Digital Lead Operator`,
-            },
-          });
+            const newLead = await tx.lead.create({
+              data: {
+                lead_code: leadCode,
+                company_id: user.companyId,
+                branch_id: user.branchId || null,
+                customer_name: item.customer_name,
+                phone: item.phone,
+                email: item.email || null,
+                source: item.source || 'BULK_UPLOAD',
+                status: bestAssignee ? 'ASSIGNED' : 'NEW',
+                assigned_to_id: bestAssignee ? bestAssignee.employeeId : null,
+                assigned_at: bestAssignee ? new Date() : null,
+                assignment_type: bestAssignee ? 'PERFORMANCE_WEIGHTED' : null,
+                property_type_preference: item.property_type || null,
+                preferred_location: item.location || null,
+                notes: item.notes || 'Imported via Bulk Upload',
+                created_by_id: user.employeeId,
+                utm_source: item.utm_source || null,
+                utm_medium: item.utm_medium || null,
+                utm_campaign: item.utm_campaign || null,
+              },
+            });
 
-          if (bestAssignee) {
             await tx.leadActivity.create({
               data: {
                 lead_id: newLead.id,
                 actor_id: user.employeeId,
-                activity_type: 'ASSIGNED_TO_AGENT',
-                notes: `Weighted Auto-Distribution to ${bestAssignee.name} (${bestAssignee.employeeCode})`,
+                activity_type: 'LEAD_CREATED',
+                notes: `Bulk Upload Lead ${newLead.lead_code} created by Digital Lead Operator`,
               },
             });
-          }
 
-          insertedCount++;
-          createdLeads.push(newLead);
+            if (bestAssignee) {
+              await tx.leadActivity.create({
+                data: {
+                  lead_id: newLead.id,
+                  actor_id: user.employeeId,
+                  activity_type: 'ASSIGNED_TO_AGENT',
+                  notes: `Weighted Auto-Distribution to ${bestAssignee.name} (${bestAssignee.employeeCode})`,
+                },
+              });
+            }
+          });
+
+          // Only add to Set if successfully inserted
+          phoneSet.add(item.phone);
+          results.successful_imports++;
+
+        } catch (error: any) {
+          results.failed_rows++;
+          results.errors.push({ row: currentRow, reason: error.message || 'Database error during insertion' });
         }
-      });
+      }
     }
 
-    return { count: insertedCount };
+    return results;
   }
 
   static async reassignLead(user: TokenPayload, leadId: number, assigneeId: number, reason: string) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_ASSIGN, lead)) {
@@ -356,7 +406,7 @@ export class LeadService {
   }
 
   static async updateLeadStatus(user: TokenPayload, leadId: number, newStatus: string, notes?: string) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_UPDATE, lead)) {
@@ -398,7 +448,7 @@ export class LeadService {
   }
 
   static async getMatches(user: TokenPayload, leadId: number) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_READ, lead)) {
@@ -414,8 +464,8 @@ export class LeadService {
   }
 
   static async sendWhatsAppProposal(user: TokenPayload, leadId: number, propertyId: number) {
-    const lead = await p.lead.findUnique({
-      where: { id: leadId },
+    const lead = await p.lead.findFirst({
+      where: { id: leadId, company_id: user.companyId },
       include: { assigned_to: true },
     });
     if (!lead) throw new AppError(404, 'Lead not found');
@@ -424,7 +474,7 @@ export class LeadService {
       throw new AppError(403, 'Forbidden: You do not have permission to propose properties to this lead');
     }
 
-    const property = await p.property.findUnique({ where: { id: propertyId } });
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw new AppError(404, 'Property not found');
 
     const text = generateWhatsAppText(lead, property, lead.assigned_to);
@@ -444,14 +494,14 @@ export class LeadService {
   }
 
   static async addPropertyInterest(user: TokenPayload, leadId: number, propertyId: number) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_UPDATE, lead)) {
       throw new AppError(403, 'Forbidden: You do not have permission to modify this lead');
     }
 
-    const property = await p.property.findUnique({ where: { id: propertyId } });
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw new AppError(404, 'Property not found');
 
     if (lead.company_id !== property.company_id) {
@@ -488,7 +538,7 @@ export class LeadService {
   }
 
   static async removePropertyInterest(user: TokenPayload, leadId: number, propertyId: number) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_UPDATE, lead)) {
@@ -524,7 +574,7 @@ export class LeadService {
   }
 
   static async getPropertyInterests(user: TokenPayload, leadId: number) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_READ, lead)) {
@@ -554,7 +604,7 @@ export class LeadService {
   }
 
   static async getLeadTasks(user: TokenPayload, leadId: number) {
-    const lead = await p.lead.findUnique({ where: { id: leadId } });
+    const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
     if (!can(user, Permissions.LEADS_READ, lead)) {

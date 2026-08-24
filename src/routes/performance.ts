@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { calculatePerformanceScore, calculateLeaderboardScore } from '../services/performance-metric';
@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 const p = prisma as any;
 
 // POST /api/v1/performance/reset-score-history - Resets test events across ALL employees back to clean 50.0
-router.post('/reset-score-history', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/reset-score-history', authenticateToken, requireRole([Roles.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {
   try {
     await p.auditEvent.deleteMany({});
     await p.dailyReport.deleteMany({});

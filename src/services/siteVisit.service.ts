@@ -66,7 +66,7 @@ export class SiteVisitService {
   }
 
   static async bookVisit(user: TokenPayload, data: any) {
-    const lead = await p.lead.findUnique({ where: { id: data.lead_id } });
+    const lead = await p.lead.findFirst({ where: { id: data.lead_id, company_id: user.companyId } });
     if (!lead) {
       throw { status: 404, message: 'Lead not found' };
     }
@@ -76,7 +76,7 @@ export class SiteVisitService {
     }
 
     if (data.opportunity_id) {
-      const opportunity = await p.opportunity.findUnique({ where: { id: data.opportunity_id } });
+      const opportunity = await p.opportunity.findFirst({ where: { id: data.opportunity_id, company_id: user.companyId } });
       if (!opportunity) {
         throw { status: 404, message: 'Opportunity not found' };
       }
@@ -97,8 +97,8 @@ export class SiteVisitService {
     let pm = null;
 
     if (data.property_id) {
-      const property = await p.property.findUnique({
-        where: { id: data.property_id },
+      const property = await p.property.findFirst({
+        where: { id: data.property_id, company_id: user.companyId },
         include: { assigned_pm: true }
       });
       
@@ -174,8 +174,8 @@ export class SiteVisitService {
   }
 
   static async verifyVisit(user: TokenPayload, visitId: number, confirmed: boolean, verification_notes?: string) {
-    const visit = await p.siteVisitBooking.findUnique({
-      where: { id: visitId },
+    const visit = await p.siteVisitBooking.findFirst({
+      where: { id: visitId, lead: { company_id: user.companyId } },
       include: { lead: true }
     });
 
@@ -231,8 +231,8 @@ export class SiteVisitService {
   }
 
   static async assignAgent(user: TokenPayload, visitId: number, agentId: number, notes?: string) {
-    const visit = await p.siteVisitBooking.findUnique({
-      where: { id: visitId },
+    const visit = await p.siteVisitBooking.findFirst({
+      where: { id: visitId, lead: { company_id: user.companyId } },
       include: { lead: true }
     });
 
@@ -240,7 +240,7 @@ export class SiteVisitService {
       throw { status: 404, message: 'Site visit booking not found' };
     }
 
-    const agent = await p.employee.findUnique({ where: { id: agentId } });
+    const agent = await p.employee.findFirst({ where: { id: agentId, company_id: user.companyId } });
     if (!agent) {
       throw { status: 404, message: 'Agent not found' };
     }
@@ -284,8 +284,8 @@ export class SiteVisitService {
   }
 
   static async completeVisit(user: TokenPayload, visitId: number, rating: string, feedback_notes?: string, proof_photo_url?: string) {
-    const visit = await p.siteVisitBooking.findUnique({
-      where: { id: visitId },
+    const visit = await p.siteVisitBooking.findFirst({
+      where: { id: visitId, lead: { company_id: user.companyId } },
       include: { lead: true }
     });
 

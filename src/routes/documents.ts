@@ -9,6 +9,7 @@ import {
   Permissions,
 } from '@rrh-ems/shared';
 import { DocumentService } from '../services/document.service';
+import { DocumentGenerationService } from '../services/document-generation.service';
 import multer from 'multer';
 
 const router = Router();
@@ -28,7 +29,7 @@ router.get(
   '/',
   authenticateToken,
   requirePermission([Permissions.DOCUMENTS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const filters = {
         customer_id: req.query.customer_id ? parseInt(req.query.customer_id as string, 10) : undefined,
@@ -47,8 +48,7 @@ router.get(
       const result = await DocumentService.listDocuments(req.user!, filters);
       return res.status(200).json(result);
     } catch (error: any) {
-      console.error('[Documents] GET / error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to fetch documents.' });
+      next(error);
     }
   }
 );
@@ -57,14 +57,13 @@ router.get(
   '/:id',
   authenticateToken,
   requirePermission([Permissions.DOCUMENTS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const doc = await DocumentService.getDocument(req.user!, id);
       return res.status(200).json({ document: doc });
     } catch (error: any) {
-      console.error('[Documents] GET /:id error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to fetch document.' });
+      next(error);
     }
   }
 );
@@ -79,13 +78,13 @@ router.post(
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({ error: 'File size exceeds maximum of 10MB' });
         }
-        return res.status(400).json({ error: err.message || 'File upload failed' });
+        return res.status(400).json({ error: 'File upload failed' });
       }
       next();
     });
   },
   validateRequestBody(DocumentUploadSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No file provided' });
@@ -93,8 +92,26 @@ router.post(
       const doc = await DocumentService.uploadDocument(req.user!, req.file, req.body);
       return res.status(201).json({ message: 'Document uploaded successfully.', document: doc });
     } catch (error: any) {
-      console.error('[Documents] POST / error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to upload document.' });
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/generate-agreement',
+  authenticateToken,
+  requirePermission([Permissions.DOCUMENTS_CREATE]),
+  async (req: AuthenticatedRequest, res: Response, next) => {
+    try {
+      const { booking_id } = req.body;
+      if (!booking_id) {
+        return res.status(400).json({ error: 'booking_id is required' });
+      }
+      
+      const doc = await DocumentGenerationService.generateAgreement(req.user!, parseInt(booking_id, 10));
+      return res.status(201).json({ message: 'Agreement generated successfully.', document: doc });
+    } catch (error: any) {
+      next(error);
     }
   }
 );
@@ -103,7 +120,7 @@ router.get(
   '/:id/download',
   authenticateToken,
   requirePermission([Permissions.DOCUMENTS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const { fileBuffer, document: doc } = await DocumentService.downloadDocument(req.user!, id);
@@ -111,8 +128,7 @@ router.get(
       res.setHeader('Content-Disposition', 'attachment; filename="' + doc.original_name.replace(/[^a-zA-Z0-9._-]/g, '_') + '"');
       return res.send(Buffer.from(fileBuffer));
     } catch (error: any) {
-      console.error('[Documents] GET /:id/download error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to download document.' });
+      next(error);
     }
   }
 );
@@ -122,15 +138,14 @@ router.patch(
   authenticateToken,
   requirePermission([Permissions.DOCUMENTS_VERIFY]),
   validateRequestBody(DocumentVerifySchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const { status, notes } = req.body;
       const doc = await DocumentService.verifyDocument(req.user!, id, status, notes);
       return res.status(200).json({ message: 'Document ' + status.toLowerCase() + '.', document: doc });
     } catch (error: any) {
-      console.error('[Documents] PATCH /:id/verify error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to verify document.' });
+      next(error);
     }
   }
 );
@@ -140,15 +155,14 @@ router.patch(
   authenticateToken,
   requirePermission([Permissions.DOCUMENTS_DELETE]),
   validateRequestBody(DocumentArchiveSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const { reason } = req.body;
       const doc = await DocumentService.archiveDocument(req.user!, id, reason);
       return res.status(200).json({ message: 'Document archived.', document: doc });
     } catch (error: any) {
-      console.error('[Documents] PATCH /:id/archive error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to archive document.' });
+      next(error);
     }
   }
 );
@@ -157,14 +171,13 @@ router.patch(
   '/:id/restore',
   authenticateToken,
   requirePermission([Permissions.DOCUMENTS_DELETE]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next) => {
     try {
       const id = parseInt(req.params.id, 10);
       const doc = await DocumentService.restoreDocument(req.user!, id);
       return res.status(200).json({ message: 'Document restored.', document: doc });
     } catch (error: any) {
-      console.error('[Documents] PATCH /:id/restore error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to restore document.' });
+      next(error);
     }
   }
 );

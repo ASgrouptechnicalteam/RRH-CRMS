@@ -113,6 +113,18 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   if (err && err.name === 'ZodError') {
     return res.status(400).json({ error: 'Validation failed', details: err.errors });
   }
+  // 3. Prisma Errors
+  if (err && err.name === 'PrismaClientKnownRequestError') {
+    console.error('PKE:', err);
+    if (err.code === 'P2002') return res.status(409).json({ error: 'Conflict' });
+    if (err.code === 'P2003') return res.status(400).json({ error: 'Invalid request' });
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Not found' });
+    return res.status(400).json({ error: 'Invalid request' });
+  }
+  if (err && err.name === 'PrismaClientValidationError') {
+    console.error('PVE:', err.message);
+    return res.status(400).json({ error: 'Invalid request' });
+  }
   console.error(err.stack);
   res.status(500).json({ error: 'Internal Server Error' });
 });

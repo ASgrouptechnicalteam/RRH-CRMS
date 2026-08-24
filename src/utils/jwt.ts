@@ -15,10 +15,15 @@ export interface TokenPayload {
   branchId: number | null;
   roles: string[];
   permissions?: string[];
+  tokenVersion?: number;
 }
 
 export const generateAccessToken = (payload: TokenPayload): string => {
-  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: '24h' });
+  const finalPayload = {
+    ...payload,
+    tokenVersion: payload.tokenVersion ?? 1,
+  };
+  return jwt.sign(finalPayload, JWT_ACCESS_SECRET, { expiresIn: '24h' });
 };
 
 export const generateRefreshToken = (payload: TokenPayload): string => {

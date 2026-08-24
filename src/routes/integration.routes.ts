@@ -80,7 +80,7 @@ router.get(
           error: 'Invalid query parameters',
           details: parsed.error.errors.map((err) => ({
             field: err.path.join('.'),
-            message: err.message,
+            message: 'Invalid value',
           })),
         });
       }
@@ -112,7 +112,7 @@ router.get(
           error: 'Invalid query parameters',
           details: parsed.error.errors.map((err) => ({
             field: err.path.join('.'),
-            message: err.message,
+            message: 'Invalid value',
           })),
         });
       }

@@ -27,33 +27,33 @@ export class OpportunityService {
     const owner_id = data.owner_id || user.employeeId;
 
     // 1. Validate Lead and Company Association
-    const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
-    if (!lead || lead.company_id !== user.companyId) {
-      throw new AppError(403, 'Cross-company access or Lead not found');
+    const lead = await prisma.lead.findFirst({ where: { id: lead_id, company_id: user.companyId } });
+    if (!lead) {
+      throw new AppError(404, 'Lead not found');
     }
 
     // Check if user has permission to mutate this Lead
     // Typically verified by LeadPolicy, but for now we enforce company boundary strictly
     
     // 2. Validate Owner (Employee)
-    const owner = await prisma.employee.findUnique({ where: { id: owner_id } });
-    if (!owner || owner.company_id !== user.companyId) {
-      throw new AppError(403, 'Cross-company Owner assignment not allowed');
+    const owner = await prisma.employee.findFirst({ where: { id: owner_id, company_id: user.companyId } });
+    if (!owner) {
+      throw new AppError(400, 'Owner assignment not allowed or not found');
     }
 
     // 3. Validate Project (if provided)
     if (project_id) {
-      const project = await prisma.project.findUnique({ where: { id: project_id } });
-      if (!project || project.company_id !== user.companyId) {
-        throw new AppError(403, 'Cross-company Project association not allowed');
+      const project = await prisma.project.findFirst({ where: { id: project_id, company_id: user.companyId } });
+      if (!project) {
+        throw new AppError(404, 'Project not found');
       }
     }
 
     // 4. Validate Property (if provided)
     if (property_id) {
-      const property = await prisma.property.findUnique({ where: { id: property_id }, include: { project: true } });
-      if (!property || property.company_id !== user.companyId) {
-        throw new AppError(403, 'Cross-company Property association not allowed');
+      const property = await prisma.property.findFirst({ where: { id: property_id, company_id: user.companyId }, include: { project: true } });
+      if (!property) {
+        throw new AppError(404, 'Property not found');
       }
       
       // Ensure property and project match if both are provided
@@ -119,7 +119,7 @@ export class OpportunityService {
     budget_max?: number;
     expected_close_date?: Date;
   }) {
-    const opp = await prisma.opportunity.findUnique({ where: { id } });
+    const opp = await prisma.opportunity.findFirst({ where: { id, company_id: user.companyId } });
     if (!opp) throw new AppError(404, 'Opportunity not found');
 
     if (!OpportunityPolicy.canMutate(user, opp)) {
@@ -128,17 +128,17 @@ export class OpportunityService {
 
     // Validate Project
     if (data.project_id) {
-      const project = await prisma.project.findUnique({ where: { id: data.project_id } });
-      if (!project || project.company_id !== user.companyId) {
-        throw new AppError(403, 'Cross-company Project association not allowed');
+      const project = await prisma.project.findFirst({ where: { id: data.project_id, company_id: user.companyId } });
+      if (!project) {
+        throw new AppError(404, 'Project not found');
       }
     }
 
     // Validate Property
     if (data.property_id) {
-      const property = await prisma.property.findUnique({ where: { id: data.property_id } });
-      if (!property || property.company_id !== user.companyId) {
-        throw new AppError(403, 'Cross-company Property association not allowed');
+      const property = await prisma.property.findFirst({ where: { id: data.property_id, company_id: user.companyId } });
+      if (!property) {
+        throw new AppError(404, 'Property not found');
       }
     }
 
@@ -183,8 +183,8 @@ export class OpportunityService {
    * Stamps exited_at on the previous history record when leaving a stage.
    */
   static async updateStage(user: TokenPayload, id: number, newStage: string, dropReason?: string) {
-    const opp = await prisma.opportunity.findUnique({
-      where: { id },
+    const opp = await prisma.opportunity.findFirst({
+      where: { id, company_id: user.companyId },
       include: {
         site_visits: true,
       },
@@ -334,7 +334,7 @@ export class OpportunityService {
    * 4b. Get Opportunity Stage History with computed duration
    */
   static async getOpportunityHistory(user: TokenPayload, opportunityId: number) {
-    const opp = await prisma.opportunity.findUnique({ where: { id: opportunityId } });
+    const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, company_id: user.companyId } });
     if (!opp) throw new AppError(404, 'Opportunity not found');
 
     if (!OpportunityPolicy.canView(user, opp)) {
@@ -366,8 +366,8 @@ export class OpportunityService {
    * 5. Get Single Opportunity Dossier
    */
   static async getOpportunityById(user: TokenPayload, id: number) {
-    const opp = await prisma.opportunity.findUnique({
-      where: { id },
+    const opp = await prisma.opportunity.findFirst({
+      where: { id, company_id: user.companyId },
       include: {
         lead: true,
         owner: { select: { id: true, full_name: true, employee_code: true } },
@@ -382,7 +382,7 @@ export class OpportunityService {
       }
     });
 
-    if (!opp) throw new AppError(404, 'Opportunity not found');
+    if (!opp || opp.company_id !== user.companyId) throw new AppError(404, 'Opportunity not found');
 
     if (!OpportunityPolicy.canView(user, opp as any)) {
       throw new AppError(403, 'Unauthorized to view this Opportunity');
@@ -557,7 +557,7 @@ export class OpportunityService {
    */
   static async convertToBooking(user: TokenPayload, opportunityId: number, dto: any) {
     // 1. Verify Opportunity exists and is accessible
-    const opp = await prisma.opportunity.findUnique({
+    const opp = await prisma.opportunity.findFirst({
       where: { id: opportunityId, company_id: user.companyId },
       include: { property: true }
     });

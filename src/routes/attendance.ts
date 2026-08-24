@@ -75,80 +75,171 @@ router.get('/my-status', authenticateToken, async (req: AuthenticatedRequest, re
   }
 });
 
+// Helper to parse and verify payload
+const parseAndVerifyQR = (req: AuthenticatedRequest, qrPayload: any) => {
+  let payload = qrPayload;
+  if (typeof qrPayload === 'string') {
+    try {
+      payload = JSON.parse(qrPayload);
+    } catch (e) {}
+  }
+
+  if (!payload || !payload.employeeId) return null;
+
+  const isValid = verifyQrHmac(
+    payload.employeeId,
+    payload.employeeCode,
+    payload.version || 1,
+    payload.signedToken || payload,
+  );
+
+  return isValid ? payload : null;
+};
+
 // POST /api/v1/attendance/scan - Verify QR and Stamp Attendance (IST rules)
 router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const employeeId = req.user!.employeeId;
-    const { qrPayload } = req.body;
+    const payload = parseAndVerifyQR(req, req.body.qrPayload);
+    if (!payload) return res.status(400).json({ error: 'Invalid or forged QR Code token' });
 
-    let payload = qrPayload;
-    if (typeof qrPayload === 'string') {
-      try {
-        payload = JSON.parse(qrPayload);
-      } catch (e) {
-        // Raw string passed
-      }
+    const targetEmployeeId = payload.employeeId;
+
+    // Load employee and verify Tenant Isolation & Status
+    const scannedEmployee = await p.employee.findUnique({
+      where: { id: targetEmployeeId },
+    });
+
+    if (!scannedEmployee) return res.status(404).json({ error: 'Employee not found' });
+    if (scannedEmployee.company_id !== req.user!.companyId) {
+      return res.status(403).json({ error: 'Employee does not belong to your company' });
     }
-
-    // Verify QR HMAC signature
-    const isValid = verifyQrHmac(
-      payload?.employeeId || employeeId,
-      payload?.employeeCode || req.user!.employeeCode,
-      payload?.version || 1,
-      payload?.signedToken || payload
-    );
-
-    if (!isValid) {
-      return res.status(400).json({ error: 'Invalid or forged QR Code token' });
+    if (scannedEmployee.status !== 'ACTIVE' || !scannedEmployee.attendance_required) {
+      return res.status(403).json({ error: 'Employee is not eligible for attendance' });
     }
 
     const now = new Date();
     const { dateString, timeString } = getISTComponents(now);
 
-    // Check if already checked in today
-    const existingLogs = await p.attendanceLog.findMany({
-      where: { employee_id: employeeId },
-      orderBy: { check_in_at: 'desc' },
-      take: 5,
-    });
+    // Concurrency Protection via Transaction
+    const result = await p.$transaction(
+      async (tx: any) => {
+        const existingLogs = await tx.attendanceLog.findMany({
+          where: { employee_id: targetEmployeeId },
+          orderBy: { check_in_at: 'desc' },
+          take: 5,
+        });
 
-    const alreadyCheckedIn = existingLogs.find((l: any) => {
-      if (!l.check_in_at) return false;
-      return getISTComponents(new Date(l.check_in_at)).dateString === dateString;
-    });
+        const activeCheckIn = existingLogs.find((l: any) => l.check_out_at === null);
+        if (activeCheckIn) return { alreadyStamped: true, log: activeCheckIn };
 
-    if (alreadyCheckedIn) {
+        const alreadyCheckedInToday = existingLogs.find((l: any) => {
+          if (!l.check_in_at) return false;
+          return getISTComponents(new Date(l.check_in_at)).dateString === dateString;
+        });
+
+        if (alreadyCheckedInToday) return { alreadyStamped: true, log: alreadyCheckedInToday };
+
+        const calculatedStatus = calculateAttendanceStatus(now, false);
+        const newLog = await tx.attendanceLog.create({
+          data: {
+            employee_id: targetEmployeeId,
+            check_in_at: now,
+            status: calculatedStatus,
+            source: 'QR_SCAN',
+          },
+        });
+        return { alreadyStamped: false, log: newLog };
+      },
+      { isolationLevel: 'Serializable' },
+    );
+
+    if (result.alreadyStamped) {
       return res.status(200).json({
         message: 'Already checked in for today',
         alreadyStamped: true,
-        status: alreadyCheckedIn.status,
-        checkInAt: alreadyCheckedIn.check_in_at,
+        status: result.log.status,
+        checkInAt: result.log.check_in_at,
         timeIST: timeString,
       });
     }
 
-    const hasApprovedProposal = false;
-    const calculatedStatus = calculateAttendanceStatus(now, hasApprovedProposal);
-
-    const log = await p.attendanceLog.create({
-      data: {
-        employee_id: employeeId,
-        check_in_at: now,
-        status: calculatedStatus,
-        source: 'QR_SCAN',
-      },
+    return res.status(200).json({
+      message: `Attendance stamped successfully as ${result.log.status}`,
+      alreadyStamped: false,
+      status: result.log.status,
+      checkInAt: result.log.check_in_at,
+      timeIST: timeString,
     });
+  } catch (error: any) {
+    if (error.code === 'P2034') {
+      // Transaction conflict / deadlock. Another request won the race.
+      // We can safely assume they are already checked in.
+      return res.status(200).json({
+        message: 'Already checked in (handled concurrent request)',
+        alreadyStamped: true,
+        status: 'PRESENT',
+        timeIST: getISTComponents(new Date()).timeString,
+      });
+    }
+    console.error('Scan attendance error:', error);
+    return res.status(500).json({ error: 'Attendance scan verification failed' });
+  }
+});
+
+// POST /api/v1/attendance/checkout - Verify QR and Stamp Checkout
+router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const payload = parseAndVerifyQR(req, req.body.qrPayload);
+    if (!payload) return res.status(400).json({ error: 'Invalid or forged QR Code token' });
+
+    const targetEmployeeId = payload.employeeId;
+
+    const scannedEmployee = await p.employee.findUnique({ where: { id: targetEmployeeId } });
+    if (!scannedEmployee || scannedEmployee.company_id !== req.user!.companyId) {
+      return res.status(403).json({ error: 'Employee does not belong to your company' });
+    }
+
+    const now = new Date();
+    const { timeString } = getISTComponents(now);
+
+    const result = await p.$transaction(
+      async (tx: any) => {
+        // Find active check-in
+        const activeLog = await tx.attendanceLog.findFirst({
+          where: { employee_id: targetEmployeeId, check_out_at: null },
+          orderBy: { check_in_at: 'desc' },
+        });
+
+        if (!activeLog) return { error: 'No active check-in found for today' };
+
+        const checkInTime = new Date(activeLog.check_in_at).getTime();
+        const diffMs = now.getTime() - checkInTime;
+        const durationMinutes = Math.max(0, Math.round(diffMs / 60000));
+
+        const updatedLog = await tx.attendanceLog.update({
+          where: { id: activeLog.id },
+          data: {
+            check_out_at: now,
+            working_duration_minutes: durationMinutes,
+          },
+        });
+
+        return { log: updatedLog };
+      },
+      { isolationLevel: 'Serializable' },
+    );
+
+    if (result.error) return res.status(400).json({ error: result.error });
 
     return res.status(200).json({
-      message: `Attendance stamped successfully as ${log.status}`,
-      alreadyStamped: false,
-      status: log.status,
-      checkInAt: log.check_in_at,
+      message: 'Checked out successfully',
+      checkOutAt: result.log.check_out_at,
+      working_duration_minutes: result.log.working_duration_minutes,
       timeIST: timeString,
     });
   } catch (error) {
-    console.error('Scan attendance error:', error);
-    return res.status(500).json({ error: 'Attendance scan verification failed' });
+    console.error('Checkout error:', error);
+    return res.status(500).json({ error: 'Attendance checkout failed' });
   }
 });
 
@@ -186,9 +277,11 @@ router.post(
       });
     } catch (error: any) {
       console.error('Late proposal error:', error);
-      return res.status(500).json({ error: 'Failed to submit late proposal', detail: error?.message });
+      return res
+        .status(500)
+        .json({ error: 'Failed to submit late proposal', detail: error?.message });
     }
-  }
+  },
 );
 
 // GET /api/v1/attendance/proposals/queue - HR Manager approval queue
@@ -200,13 +293,13 @@ router.get(
     try {
       const companyEmployees = await p.employee.findMany({
         where: { company_id: req.user!.companyId },
-        select: { id: true }
+        select: { id: true },
       });
 
       const proposals = await p.auditEvent.findMany({
         where: {
           action: 'SUBMIT_LATE_PROPOSAL',
-          actor_id: { in: companyEmployees.map((e: any) => e.id) }
+          actor_id: { in: companyEmployees.map((e: any) => e.id) },
         },
         orderBy: { created_at: 'desc' },
         take: 20,
@@ -216,7 +309,7 @@ router.get(
     } catch (error) {
       return res.status(500).json({ error: 'Failed to load HR proposal queue' });
     }
-  }
+  },
 );
 
 // GET /api/v1/attendance/live - HR Live Attendance Feed (Today only)
@@ -253,7 +346,77 @@ router.get(
       console.error('Live attendance error:', error);
       return res.status(500).json({ error: 'Failed to load live attendance' });
     }
-  }
+  },
+);
+
+// GET /api/v1/attendance/history - HR Paginated Historical Attendance
+router.get(
+  '/history',
+  authenticateToken,
+  requireRole([Roles.HR_MANAGER, Roles.MD, Roles.ADMIN]),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { search, status, startDate, endDate, page = '1', limit = '50' } = req.query;
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const whereClause: any = {
+        employee: {
+          company_id: req.user!.companyId,
+          ...(search && {
+            OR: [
+              { full_name: { contains: search as string } },
+              { employee_code: { contains: search as string } },
+            ],
+          }),
+        },
+      };
+
+      if (status) {
+        whereClause.status = status;
+      }
+
+      if (startDate || endDate) {
+        whereClause.check_in_at = {};
+        if (startDate) whereClause.check_in_at.gte = new Date(startDate as string);
+        if (endDate) {
+          const end = new Date(endDate as string);
+          end.setHours(23, 59, 59, 999);
+          whereClause.check_in_at.lte = end;
+        }
+      }
+
+      const [logs, total] = await Promise.all([
+        p.attendanceLog.findMany({
+          where: whereClause,
+          orderBy: { check_in_at: 'desc' },
+          skip,
+          take: Number(limit),
+          include: {
+            employee: {
+              select: {
+                full_name: true,
+                employee_code: true,
+              },
+            },
+          },
+        }),
+        p.attendanceLog.count({ where: whereClause }),
+      ]);
+
+      return res.status(200).json({
+        logs,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit)),
+        },
+      });
+    } catch (error) {
+      console.error('History attendance error:', error);
+      return res.status(500).json({ error: 'Failed to load attendance history' });
+    }
+  },
 );
 
 export default router;

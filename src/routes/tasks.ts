@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Response , NextFunction} from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
 const p = prisma as any;
 
 // GET /api/v1/tasks/all-team-tasks - MD & Management View of All Employee Tasks
-router.get('/all-team-tasks', authenticateToken, requireAuthz(Permissions.REPORTS_READ_TEAM), async (req: AuthenticatedRequest, res: Response) => {
+router.get('/all-team-tasks', authenticateToken, requireAuthz(Permissions.REPORTS_READ_TEAM), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
 
     const now = new Date();
@@ -69,7 +69,7 @@ router.get('/all-team-tasks', authenticateToken, requireAuthz(Permissions.REPORT
 });
 
 // GET /api/v1/tasks/my-tasks - List assigned tasks with auto-overdue check
-router.get('/my-tasks', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/my-tasks', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const employeeId = req.user!.employeeId;
     const now = new Date();
@@ -97,20 +97,20 @@ router.get('/my-tasks', authenticateToken, async (req: AuthenticatedRequest, res
 });
 
 // POST /api/v1/tasks - Create new task
-router.post('/', authenticateToken, requireAuthz(Permissions.TASKS_CREATE), validateRequestBody(TaskCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, requireAuthz(Permissions.TASKS_CREATE), validateRequestBody(TaskCreateSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { title, description, assignee_id, priority, deadline, lead_id, opportunity_id } = req.body;
     const creatorId = req.user!.employeeId;
 
     // Validate Assignee Company Isolation
-    const assignee = await p.employee.findUnique({ where: { id: assignee_id } });
-    if (!assignee || assignee.company_id !== req.user!.companyId) {
-      return res.status(403).json({ error: 'Forbidden: Cannot assign tasks outside your company.' });
+    const assignee = await p.employee.findFirst({ where: { id: assignee_id, company_id: req.user!.companyId } });
+    if (!assignee) {
+      return res.status(400).json({ error: 'Assignee not found or outside your company.' });
     }
 
     // Validate Lead Access if lead_id is provided
     if (lead_id) {
-      const existingLead = await p.lead.findUnique({ where: { id: lead_id } });
+      const existingLead = await p.lead.findFirst({ where: { id: lead_id, company_id: req.user!.companyId } });
       if (!existingLead) {
         return res.status(404).json({ error: 'Lead not found.' });
       }
@@ -121,12 +121,9 @@ router.post('/', authenticateToken, requireAuthz(Permissions.TASKS_CREATE), vali
 
     // Validate Opportunity Access if opportunity_id is provided
     if (opportunity_id) {
-      const existingOpp = await p.opportunity.findUnique({ where: { id: opportunity_id } });
+      const existingOpp = await p.opportunity.findFirst({ where: { id: opportunity_id, company_id: req.user!.companyId } });
       if (!existingOpp) {
         return res.status(404).json({ error: 'Opportunity not found.' });
-      }
-      if (existingOpp.company_id !== req.user!.companyId) {
-        return res.status(403).json({ error: 'Forbidden: Opportunity belongs to another company.' });
       }
       if (lead_id && existingOpp.lead_id !== lead_id) {
         return res.status(400).json({ error: 'Opportunity does not belong to the specified Lead.' });
@@ -162,23 +159,22 @@ router.post('/', authenticateToken, requireAuthz(Permissions.TASKS_CREATE), vali
 });
 
 // GET /api/v1/tasks/:id/sla - Read SLA status for a Task (Phase 15 V1)
-router.get('/:id/sla', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id/sla', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const taskId = parseInt(req.params.id, 10);
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
 
     // Locate the Task within the user's company scope
-    const task = await p.task.findUnique({
-      where: { id: taskId },
+    const task = await p.task.findFirst({
+      where: { id: taskId, assignee: { company_id: req.user!.companyId } },
       include: { assignee: { select: { company_id: true } } },
     });
 
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
-    }
-
-    // Enforce existing Task read authorization
-    if (task.assignee?.company_id !== req.user!.companyId) {
-      return res.status(403).json({ error: 'Forbidden: Task does not belong to your company' });
     }
 
     // Call deriveTaskSlaStatus using existing helper
@@ -202,14 +198,18 @@ router.get('/:id/sla', authenticateToken, async (req: AuthenticatedRequest, res:
 })
 
 // PATCH /api/v1/tasks/:id/status - Update Task Status & Cheer-up Event
-router.patch('/:id/status', authenticateToken, requireAuthz(Permissions.TASKS_UPDATE), validateRequestBody(TaskUpdateStatusSchema), async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/:id/status', authenticateToken, requireAuthz(Permissions.TASKS_UPDATE), validateRequestBody(TaskUpdateStatusSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const taskId = parseInt(req.params.id, 10);
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(taskId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
     const { status } = req.body;
     const employeeId = req.user!.employeeId;
 
-    const existingTask = await p.task.findUnique({
-      where: { id: taskId },
+    const existingTask = await p.task.findFirst({
+      where: { id: taskId, assignee: { company_id: req.user!.companyId } },
       include: { assignee: { select: { company_id: true } } }
     });
 

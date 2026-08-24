@@ -1,6 +1,8 @@
-import { Router, Response } from 'express';
+import { Router, Response , NextFunction} from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
 import { Permissions } from '@rrh-ems/shared';
+import { OpportunityCreateSchema, OpportunityUpdateSchema } from '@rrh-ems/shared';
+import { validateRequestBody } from '../middleware/validate';
 import { OpportunityService } from '../services/opportunity.service';
 
 const router = Router();
@@ -10,7 +12,7 @@ router.post(
   '/',
   authenticateToken,
   requirePermission([Permissions.LEADS_UPDATE]), // Assuming lead management permissions govern opportunity creation
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const opportunity = await OpportunityService.createFromLead(req.user!, req.body);
       return res.status(201).json({
@@ -19,7 +21,7 @@ router.post(
       });
     } catch (error: any) {
       console.error('Create opportunity error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to create opportunity' });
+      next(error);
     }
   }
 );
@@ -29,7 +31,7 @@ router.get(
   '/',
   authenticateToken,
   requirePermission([Permissions.LEADS_READ]), 
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { stage, owner_id, project_id, property_id, date_from, date_to, expected_close_from, expected_close_to, sort_by, sort_order, limit, offset } = req.query;
       const filters = {
@@ -51,7 +53,7 @@ router.get(
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('Fetch opportunities error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to fetch opportunities' });
+      next(error);
     }
   }
 );
@@ -61,13 +63,13 @@ router.get(
   '/pipeline-metrics',
   authenticateToken,
   requirePermission([Permissions.LEADS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const metrics = await OpportunityService.getPipelineMetrics(req.user!);
       return res.status(200).json({ metrics });
     } catch (error: any) {
       console.error('Fetch pipeline metrics error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to fetch pipeline metrics' });
+      next(error);
     }
   }
 );
@@ -77,13 +79,13 @@ router.get(
   '/conversion-metrics',
   authenticateToken,
   requirePermission([Permissions.LEADS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const metrics = await OpportunityService.getConversionMetrics(req.user!);
       return res.status(200).json({ metrics });
     } catch (error: any) {
       console.error('Fetch conversion metrics error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to fetch conversion metrics' });
+      next(error);
     }
   }
 );
@@ -93,14 +95,18 @@ router.get(
   '/:id/history',
   authenticateToken,
   requirePermission([Permissions.LEADS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const history = await OpportunityService.getOpportunityHistory(req.user!, id);
       return res.status(200).json({ history });
     } catch (error: any) {
       console.error('Fetch opportunity history error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to fetch opportunity history' });
+      next(error);
     }
   }
 );
@@ -110,14 +116,18 @@ router.get(
   '/:id',
   authenticateToken,
   requirePermission([Permissions.LEADS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const opportunity = await OpportunityService.getOpportunityById(req.user!, id);
       return res.status(200).json({ opportunity });
     } catch (error: any) {
       console.error('Fetch opportunity dossier error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to fetch opportunity' });
+      next(error);
     }
   }
 );
@@ -127,9 +137,13 @@ router.patch(
   '/:id',
   authenticateToken,
   requirePermission([Permissions.LEADS_UPDATE]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const opportunity = await OpportunityService.updateOpportunity(req.user!, id, req.body);
       return res.status(200).json({
         message: 'Opportunity updated successfully',
@@ -137,7 +151,7 @@ router.patch(
       });
     } catch (error: any) {
       console.error('Update opportunity error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to update opportunity' });
+      next(error);
     }
   }
 );
@@ -147,9 +161,13 @@ router.patch(
   '/:id/stage',
   authenticateToken,
   requirePermission([Permissions.LEADS_UPDATE]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { stage, drop_reason } = req.body;
       const opportunity = await OpportunityService.updateStage(req.user!, id, stage, drop_reason);
       return res.status(200).json({
@@ -158,7 +176,7 @@ router.patch(
       });
     } catch (error: any) {
       console.error('Update opportunity stage error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to update opportunity stage' });
+      next(error);
     }
   }
 );
@@ -168,9 +186,13 @@ router.post(
   '/:id/convert-to-booking',
   authenticateToken,
   requirePermission([Permissions.LEADS_UPDATE]), // Requires same update permission
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const booking = await OpportunityService.convertToBooking(req.user!, id, req.body);
       return res.status(201).json({
         message: 'Opportunity converted to Booking successfully',
@@ -178,7 +200,7 @@ router.post(
       });
     } catch (error: any) {
       console.error('Convert opportunity to booking error:', error);
-      return res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to convert opportunity to booking' });
+      next(error);
     }
   }
 );

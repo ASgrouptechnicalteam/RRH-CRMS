@@ -53,11 +53,11 @@ export class ComplaintService {
 
   /** Company-scoped fetch; rejects cross-company access with 404 to avoid information disclosure. */
   private static async scopedGet(user: TokenPayload, id: number) {
-    const c = await prisma.complaint.findUnique({
-      where: { id },
+    const c = await prisma.complaint.findFirst({
+      where: { id, company_id: user.companyId },
       include: { customer: true, booking: true, property: true, assigned_employee: true },
     });
-    if (!c || c.company_id !== user.companyId) {
+    if (!c) {
       throw new AppError(404, 'Complaint not found');
     }
     return c;
@@ -78,25 +78,25 @@ export class ComplaintService {
     }
   ) {
     // Company ownership validation for every linked entity
-    const customer = await prisma.customer.findUnique({ where: { id: data.customer_id } });
-    if (!customer || customer.company_id !== user.companyId) {
+    const customer = await prisma.customer.findFirst({ where: { id: data.customer_id, company_id: user.companyId } });
+    if (!customer) {
       throw new AppError(403, 'Customer not found or cross-company access');
     }
     if (data.booking_id) {
-      const b = await prisma.booking.findUnique({ where: { id: data.booking_id } });
-      if (!b || b.company_id !== user.companyId) {
+      const b = await prisma.booking.findFirst({ where: { id: data.booking_id, company_id: user.companyId } });
+      if (!b) {
         throw new AppError(403, 'Booking not found or cross-company access');
       }
     }
     if (data.property_id) {
-      const prop = await prisma.property.findUnique({ where: { id: data.property_id } });
-      if (!prop || prop.company_id !== user.companyId) {
+      const prop = await prisma.property.findFirst({ where: { id: data.property_id, company_id: user.companyId } });
+      if (!prop) {
         throw new AppError(403, 'Property not found or cross-company access');
       }
     }
     if (data.assigned_employee_id) {
-      const emp = await prisma.employee.findUnique({ where: { id: data.assigned_employee_id } });
-      if (!emp || emp.company_id !== user.companyId) {
+      const emp = await prisma.employee.findFirst({ where: { id: data.assigned_employee_id, company_id: user.companyId } });
+      if (!emp) {
         throw new AppError(403, 'Employee not found or cross-company assignment');
       }
     }
@@ -147,8 +147,8 @@ export class ComplaintService {
     if (options?.priority) where.priority = options.priority;
     if (options?.category) where.category = options.category;
     if (options?.customer_id) {
-      const c = await prisma.customer.findUnique({ where: { id: options.customer_id } });
-      if (!c || c.company_id !== user.companyId) {
+      const c = await prisma.customer.findFirst({ where: { id: options.customer_id, company_id: user.companyId } });
+      if (!c) {
         throw new AppError(403, 'Cross-company customer filter');
       }
       where.customer_id = options.customer_id;
@@ -188,8 +188,8 @@ export class ComplaintService {
   // ----------------------------------------------------------------- assign
   static async assign(user: TokenPayload, id: number, employeeId: number) {
     const c = await ComplaintService.scopedGet(user, id);
-    const emp = await prisma.employee.findUnique({ where: { id: employeeId } });
-    if (!emp || emp.company_id !== user.companyId) {
+    const emp = await prisma.employee.findFirst({ where: { id: employeeId, company_id: user.companyId } });
+    if (!emp) {
       throw new AppError(403, 'Employee not found or cross-company assignment');
     }
     if (!['OPEN', 'IN_PROGRESS', 'REOPENED'].includes(c.status)) {

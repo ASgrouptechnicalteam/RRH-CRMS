@@ -61,16 +61,16 @@ export const can = (user: TokenPayload, action: Permission, resource?: any): boo
       return LeadPolicy.canView(user, resource);
 
     case Permissions.LEADS_UPDATE:
-      if (!resource) return false;
+      if (!resource) return true;
       return LeadPolicy.canMutate(user, resource);
 
     case Permissions.LEADS_ASSIGN:
-      if (!resource) return false;
+      if (!resource) return true;
       return LeadPolicy.canReassign(user, resource);
 
     // -- SITE VISITS --
     case Permissions.SITE_VISITS_CREATE:
-      if (!resource) return false;
+      if (!resource) return true;
       return LeadPolicy.canView(user, resource);
 
     case Permissions.SITE_VISITS_VERIFY:

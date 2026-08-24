@@ -21,8 +21,11 @@ const handleServiceError = (error: any, res: Response) => {
 // GET /api/v1/customers - Fetch customers list
 router.get('/', authenticateToken, requireAuthz(Permissions.CUSTOMERS_READ), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const customers = await CustomerService.getCustomers(req.user!);
-    return res.status(200).json({ customers });
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
+    const customers = await CustomerService.getCustomers(req.user!, limit, offset);
+    return res.status(200).json({ customers, pagination: { limit, offset } });
   } catch (error: any) {
     return handleServiceError(error, res);
   }
@@ -82,7 +85,7 @@ router.put(
   '/:id/kyc',
   authenticateToken,
   requireAuthz(Permissions.CUSTOMERS_KYC_WRITE, async (req) => {
-    return await prisma.customer.findUnique({ where: { id: parseInt(req.params.id, 10) } });
+    return await prisma.customer.findFirst({ where: { id: parseInt(req.params.id, 10), company_id: req.user!.companyId } });
   }),
   validateRequestBody(CustomerKycWriteSchema),
   async (req: AuthenticatedRequest, res: Response) => {

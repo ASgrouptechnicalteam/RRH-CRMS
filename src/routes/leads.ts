@@ -24,8 +24,11 @@ router.get(
   requireAuthz(Permissions.LEADS_READ),
   async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const leads = await LeadService.getLeads(req.user!);
-    return res.status(200).json({ leads });
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    
+    const leads = await LeadService.getLeads(req.user!, limit, offset);
+    return res.status(200).json({ leads, pagination: { limit, offset } });
   } catch (error: any) {
     return handleServiceError(error, res);
   }
@@ -147,6 +150,32 @@ router.patch(
         message: `Lead ${updated.lead_code} status updated to ${status}`,
         lead: updated,
       });
+    } catch (error: any) {
+      return handleServiceError(error, res);
+    }
+  }
+);
+
+// GET /api/v1/leads/:id - Fetch single lead
+router.get(
+  '/:id',
+  authenticateToken,
+  requireAuthz(Permissions.LEADS_READ),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const leadId = parseInt(req.params.id, 10);
+      if (isNaN(leadId)) {
+        return res.status(400).json({ error: 'Invalid Lead ID' });
+      }
+      
+      const lead = await LeadService.getLeadById(req.user!, leadId);
+      if (!lead) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      // Authorization already passed at middleware level (role-based)
+      // and getLeadById enforces tenant isolation.
+      return res.status(200).json({ lead });
     } catch (error: any) {
       return handleServiceError(error, res);
     }

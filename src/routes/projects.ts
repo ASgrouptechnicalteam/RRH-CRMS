@@ -27,8 +27,11 @@ router.get(
       status: typeof status === 'string' ? status : undefined,
     };
 
-    const projects = await ProjectService.listProjects(req.user!, filters);
-    return res.status(200).json({ projects });
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
+    const projects = await ProjectService.listProjects(req.user!, filters, limit, offset);
+    return res.status(200).json({ projects, pagination: { limit, offset } });
   } catch (error: any) {
     console.error('Fetch projects error:', error);
     if (error.status) {

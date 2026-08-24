@@ -1,7 +1,8 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { buildProjectScope } from '../authz/dataScope';
-import { ProjectCreateInput, ProjectUpdateInput } from '@rrh-ems/shared';
+import { ProjectCreateInput, ProjectUpdateInput, Roles, Permissions } from '@rrh-ems/shared';
+import { can } from '../authz/authorization';
 import { slugify, generateUniqueSlug } from '../utils/slugify';
 
 const prisma = new PrismaClient();
@@ -165,6 +166,48 @@ export class ProjectService {
     return await p.project.update({
       where: { id: projectId },
       data: { status: 'CANCELLED' }
+    });
+  }
+
+  static async reassignProject(user: TokenPayload, projectId: number, newPmId: number, reason: string) {
+    if (!can(user, Permissions.PROJECTS_UPDATE)) { 
+      throw { status: 403, message: 'Forbidden: Missing permission to reassign project' };
+    }
+    if (!reason || reason.trim() === '') {
+      throw { status: 400, message: 'Reassignment reason is mandatory' };
+    }
+
+    const project = await p.project.findFirst({
+      where: { id: projectId, company_id: user.companyId }
+    });
+    if (!project) throw { status: 404, message: 'Project not found or unauthorized' };
+
+    const newPm = await p.employee.findFirst({
+      where: { id: newPmId, company_id: user.companyId, status: 'ACTIVE' }
+    });
+    if (!newPm) throw { status: 400, message: 'New assignee not found or unauthorized' };
+
+    const oldPmId = project.assigned_pm_id;
+
+    return await p.$transaction(async (tx: any) => {
+      const updated = await tx.project.update({
+        where: { id: projectId },
+        data: { assigned_pm_id: newPmId }
+      });
+
+      await tx.auditEvent.create({
+        data: {
+          actor_id: user.employeeId!,
+          action: 'REASSIGNMENT',
+          entity_type: 'PROJECT',
+          entity_id: projectId,
+          old_value: oldPmId ? oldPmId.toString() : 'UNASSIGNED',
+          new_value: newPmId.toString(),
+          reason: reason
+        }
+      });
+
+      return updated;
     });
   }
 }

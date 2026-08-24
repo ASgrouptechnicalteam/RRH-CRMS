@@ -20,7 +20,7 @@ describe('Phase 0: Baseline Verification', () => {
       }
     });
     
-    // We expect exactly 11 deterministic authoritative role users
-    expect(userCount).toBe(11);
+    // We expect exactly 12 deterministic authoritative role users
+    expect(userCount).toBe(12);
   });
 });

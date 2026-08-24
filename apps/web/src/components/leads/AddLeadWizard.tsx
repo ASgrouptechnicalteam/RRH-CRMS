@@ -32,6 +32,8 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
   const [utmSource, setUtmSource] = useState('');
   const [utmMedium, setUtmMedium] = useState('');
   const [utmCampaign, setUtmCampaign] = useState('');
+  const [referralPersonName, setReferralPersonName] = useState('');
+  const [referralEmployeeId, setReferralEmployeeId] = useState('');
 
   // Step 2: Requirements (Quick Selects)
   const [propertyType, setPropertyType] = useState('RESIDENTIAL_APARTMENT');
@@ -85,6 +87,8 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
           utm_source: utmSource || null,
           utm_medium: utmMedium || null,
           utm_campaign: utmCampaign || null,
+          referral_person_name: source === 'REFERRAL' ? (referralPersonName || null) : null,
+          referral_employee_id: source === 'REFERRAL' && referralEmployeeId ? parseInt(referralEmployeeId, 10) : null,
           // budget_max could be parsed from budgetRange if needed, skipping for now as it's in notes
         }),
       });
@@ -164,30 +168,51 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                   <label className="block text-xs font-bold text-slate-700 mb-1">Lead Source</label>
                   <select value={source} onChange={e => setSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm font-semibold">
                     <option value="ORGANIC_SEARCH">Organic / Website</option>
-                    <option value="FACEBOOK_AD">Facebook / Instagram Ads</option>
-                    <option value="GOOGLE_AD">Google Ads</option>
+                    <option value="FACEBOOK_ADS">Facebook / Instagram Ads</option>
+                    <option value="GOOGLE_ADS">Google Ads</option>
+                    <option value="HOUSING_COM">Housing.com</option>
                     <option value="WALK_IN">Direct Walk-in</option>
                     <option value="REFERRAL">Referral</option>
+                    <option value="MANUAL_ENTRY">Manual Entry</option>
                   </select>
                 </div>
               </div>
+
+              {source === 'REFERRAL' && (
+                <div className="mt-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
+                  <h4 className="text-sm font-bold text-slate-800 mb-3">Referral Details</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Referral Person Name</label>
+                      <input type="text" value={referralPersonName} onChange={e => setReferralPersonName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="Name of referrer" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Referral Employee ID</label>
+                      <input type="number" value={referralEmployeeId} onChange={e => setReferralEmployeeId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="Optional Employee ID" />
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Campaign</label>
-                  <input type="text" value={campaign} onChange={e => setCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. Summer Sale" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">UTM Source</label>
-                  <input type="text" value={utmSource} onChange={e => setUtmSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. google" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">UTM Medium</label>
-                  <input type="text" value={utmMedium} onChange={e => setUtmMedium(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. cpc" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">UTM Campaign</label>
-                  <input type="text" value={utmCampaign} onChange={e => setUtmCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. summer_sale" />
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <h4 className="text-sm font-bold text-slate-800 mb-4">Advanced Marketing Attribution</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Campaign</label>
+                    <input type="text" value={campaign} onChange={e => setCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. Summer Sale" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">UTM Source</label>
+                    <input type="text" value={utmSource} onChange={e => setUtmSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. google" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">UTM Medium</label>
+                    <input type="text" value={utmMedium} onChange={e => setUtmMedium(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. cpc" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">UTM Campaign</label>
+                    <input type="text" value={utmCampaign} onChange={e => setUtmCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. summer_sale" />
+                  </div>
                 </div>
               </div>
             </div>

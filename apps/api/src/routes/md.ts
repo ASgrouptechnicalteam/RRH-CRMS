@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
@@ -14,7 +14,7 @@ router.get(
   '/employees',
   authenticateToken,
   requireAuthz(Permissions.EMPLOYEES_READ),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const employees = await p.employee.findMany({
         where: {
@@ -65,7 +65,7 @@ router.patch(
   '/employees/:id/attendance-requirement',
   authenticateToken,
   requireAuthz(Permissions.EMPLOYEES_UPDATE),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const targetId = parseInt(req.params.id, 10);
       const { attendanceRequired } = req.body;
@@ -113,8 +113,7 @@ router.patch(
         attendanceRequired: updated.attendance_required,
       });
     } catch (error: any) {
-      console.error('❌ PATCH attendance-requirement error:', error);
-      return res.status(500).json({ error: error.message || 'Failed to update attendance requirement' });
+      next(error);
     }
   }
 );
@@ -127,7 +126,7 @@ router.get(
   '/executive-metrics',
   authenticateToken,
   requireAuthz(Permissions.ADMIN_SYSTEM_METRICS),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const companyId = req.user?.companyId || (req.user as any)?.company_id || 1;
       const metrics = await AnalyticsService.getExecutiveMetrics(companyId);

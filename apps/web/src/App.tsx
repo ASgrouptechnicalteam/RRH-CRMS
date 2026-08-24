@@ -28,6 +28,8 @@ import { useIdleTimer } from './hooks/useIdleTimer';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
 import { Roles, Permissions } from '@rrh-ems/shared';
+import { Kiosk } from './components/attendance/Kiosk';
+
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
 const SalesPipelineManagement = lazy(() => import('./components/sales/SalesPipelineManagement').then(m => ({ default: m.SalesPipelineManagement })));
@@ -166,6 +168,14 @@ const AppShell: React.FC = () => {
     return <FirstLoginSetup />;
   }
 
+  if (location.pathname === '/kiosk') {
+    return (
+      <ErrorBoundary>
+        <Kiosk />
+      </ErrorBoundary>
+    );
+  }
+
   const isMD = user?.roles?.includes(Roles.MD);
   const isTechAdmin = user?.roles?.includes(Roles.ADMIN);
   const isHRManager = user?.roles?.includes(Roles.HR_MANAGER);
@@ -175,11 +185,11 @@ const AppShell: React.FC = () => {
   const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager;
 
   // Role-based access for hubs
-  const canManageTargets = user?.roles?.some(r => ['Managing director', 'marketing director', 'Admin (Technical)'].includes(r));
-  const canManageEmployees = user?.roles?.some(r => ['Managing director', 'HR', 'Admin (Technical)'].includes(r));
+  const canManageTargets = user?.roles?.some(r => ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN] as string[]).includes(r));
+  const canManageEmployees = user?.roles?.some(r => ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] as string[]).includes(r));
   const canViewTeamPerformance = user?.roles?.some(r =>
-    ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
-     'Digital Marketing head(manager)', 'accountant', 'Sales manager'].includes(r)
+    ([Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER,
+     Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] as string[]).includes(r)
   );
 
   // Role-to-dashboard resolver — each role gets its own dedicated dashboard

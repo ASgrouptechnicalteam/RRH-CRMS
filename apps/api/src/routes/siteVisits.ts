@@ -1,6 +1,8 @@
-import { Router, Response } from 'express';
+import { Router, Response , NextFunction} from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
 import { Permissions } from '@rrh-ems/shared';
+import { SiteVisitCreateSchema, SiteVisitUpdateSchema } from '@rrh-ems/shared';
+import { validateRequestBody } from '../middleware/validate';
 import { SiteVisitService } from '../services/siteVisit.service';
 
 const router = Router();
@@ -10,7 +12,7 @@ router.get(
   '/',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_READ]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { status, leadId } = req.query;
       const filters = {
@@ -22,7 +24,7 @@ router.get(
       return res.status(200).json({ visits });
     } catch (error: any) {
       console.error('Fetch site visits error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to fetch site visit bookings' });
+      next(error);
     }
   }
 );
@@ -32,7 +34,8 @@ router.post(
   '/',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_CREATE]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  validateRequestBody(SiteVisitCreateSchema),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const booking = await SiteVisitService.bookVisit(req.user!, req.body);
       return res.status(201).json({
@@ -41,7 +44,7 @@ router.post(
       });
     } catch (error: any) {
       console.error('Book site visit error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to book site visit' });
+      next(error);
     }
   }
 );
@@ -51,9 +54,12 @@ router.post(
   '/:id/verify',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_VERIFY]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  validateRequestBody(SiteVisitUpdateSchema),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
+      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { confirmed, verification_notes } = req.body;
 
       const visit = await SiteVisitService.verifyVisit(req.user!, visitId, confirmed, verification_notes);
@@ -65,7 +71,7 @@ router.post(
       });
     } catch (error: any) {
       console.error('Verify site visit error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to verify site visit' });
+      next(error);
     }
   }
 );
@@ -75,9 +81,12 @@ router.post(
   '/:id/assign-agent',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_ASSIGN_AGENT]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  validateRequestBody(SiteVisitUpdateSchema),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
+      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { agent_id, notes } = req.body;
 
       const visit = await SiteVisitService.assignAgent(req.user!, visitId, agent_id, notes);
@@ -87,7 +96,7 @@ router.post(
       });
     } catch (error: any) {
       console.error('Assign agent error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to assign field agent' });
+      next(error);
     }
   }
 );
@@ -97,9 +106,12 @@ router.post(
   '/:id/complete',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_COMPLETE]),
-  async (req: AuthenticatedRequest, res: Response) => {
+  validateRequestBody(SiteVisitUpdateSchema),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
+      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { feedback_notes, rating, proof_photo_url } = req.body;
 
       const visit = await SiteVisitService.completeVisit(req.user!, visitId, rating, feedback_notes, proof_photo_url);
@@ -112,7 +124,7 @@ router.post(
       });
     } catch (error: any) {
       console.error('Complete site visit error:', error);
-      return res.status(error.status || 500).json({ error: error.message || 'Failed to complete site visit' });
+      next(error);
     }
   }
 );

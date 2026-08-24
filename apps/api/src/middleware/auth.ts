@@ -52,7 +52,10 @@ export const authenticateServiceToken = (req: ServiceRequest, res: Response, nex
   next();
 };
 
-export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
+export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -65,6 +68,31 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 
   try {
     const payload = verifyAccessToken(token);
+
+    if (payload.tokenVersion === undefined) {
+      return res.status(401).json({
+        error: 'Token version missing (legacy token)',
+        code: 'TOKEN_EXPIRED',
+      });
+    }
+
+    const employee = await prisma.employee.findUnique({
+      where: { id: payload.employeeId },
+      select: { status: true, token_version: true },
+    });
+
+    if (!employee) {
+      return res.status(401).json({ error: 'User not found', code: 'UNAUTHORIZED' });
+    }
+
+    if (employee.status !== 'ACTIVE') {
+      return res.status(401).json({ error: 'User is inactive or suspended', code: 'UNAUTHORIZED' });
+    }
+
+    if (payload.tokenVersion !== employee.token_version) {
+      return res.status(401).json({ error: 'Token version stale', code: 'TOKEN_EXPIRED' });
+    }
+
     req.user = payload;
     next();
   } catch (err: any) {

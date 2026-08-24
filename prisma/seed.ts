@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { Roles, DepartmentCodes } from '@rrh-ems/shared';
+import { Roles } from '@rrh-ems/shared';
 
-import './fixtures/sonthillu-e2e.fixtures.ts';
 
 // PrismaClient instance shared across seed fixtures
 const prisma = new PrismaClient();
@@ -68,6 +67,7 @@ async function main() {
     { name: Roles.FINANCE, is_system: false, is_invisible: false },
     { name: Roles.AGENT, is_system: false, is_invisible: false },
     { name: Roles.DIGITAL_MARKETING_EXECUTIVE, is_system: false, is_invisible: false },
+    { name: Roles.SALES_MANAGER, is_system: false, is_invisible: false },
   ];
 
   const roleMap: Record<string, any> = {};
@@ -164,23 +164,17 @@ async function main() {
     }
   }
 
-    console.log('dYZ% Full Team Seed Completed Successfully!');
+    console.log('✅ Core RRH seed completed successfully.');
 
   // Step 5: Conditionally run Sonthillu E2E local fixtures (development only).
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      // @ts-expect-error
-      await import('./fixtures/sonthillu-e2e.fixtures.ts');
-    } catch (fixtureErr) {
-      console.error('Sonthillu E2E fixtures skipped:', fixtureErr);
-    }
-  }
+  const { runSonthilluE2EFixtures } = await import('./fixtures/sonthillu-e2e.fixtures');
+  await runSonthilluE2EFixtures(prisma);
 }
 
 main()
   .catch((e) => {
     console.error('Seed script error:', e);
-    process.exit(1);
+    throw e;
   })
   .finally(async () => {
     await prisma.$disconnect();

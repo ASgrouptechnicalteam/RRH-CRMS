@@ -98,8 +98,8 @@ router.post(
 
       const result = await LeadService.bulkUploadLeads(req.user!, rawLeads);
       return res.status(200).json({
-        message: `Successfully processed and auto-distributed ${result.count} leads`,
-        count: result.count,
+        message: `Successfully processed and auto-distributed ${result.successful_imports} leads`,
+        count: result.successful_imports,
       });
     } catch (error: any) {
       return handleServiceError(error, res);

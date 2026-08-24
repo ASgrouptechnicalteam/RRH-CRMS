@@ -85,7 +85,7 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ lead_id: leadBId }); // Company A trying to use Company B lead
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('Cross-company Project rejection', async () => {
@@ -94,7 +94,7 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ lead_id: leadAId, project_id: projectBId });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('Cross-company Property rejection', async () => {
@@ -103,7 +103,7 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ lead_id: leadAId, property_id: propertyBId });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('Cross-company Owner rejection', async () => {
@@ -112,7 +112,7 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ lead_id: leadAId, owner_id: empBId });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(400);
   });
 
   it('Valid stage transition and DROPPED requirement', async () => {
@@ -165,6 +165,6 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
       .get(`/api/v1/opportunities/${oppId}`)
       .set('Authorization', `Bearer ${tokenB}`);
     
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 });

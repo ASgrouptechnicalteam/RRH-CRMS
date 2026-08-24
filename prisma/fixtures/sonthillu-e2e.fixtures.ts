@@ -1,7 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 /**
  * Sonthillu E2E Local Fixtures
  *
@@ -10,21 +8,21 @@ const prisma = new PrismaClient();
  *
  * Idempotent (upsert-based): safe to re-run without creating duplicates.
  */
+export async function runSonthilluE2EFixtures(prisma: PrismaClient) {
+  console.log('\n🧪 Checking Sonthillu E2E local fixtures requirements...');
 
-// Production guard — never run this in production
-if (process.env.NODE_ENV === 'production') {
-  console.error('🚨 sonthillu-e2e fixtures aborted: NODE_ENV is production. ' +
-    'Set NODE_ENV=development (or unset) to run local fixtures.');
-  process.exit(1);
-}
+  // Production guard — never run this in production
+  if (process.env.NODE_ENV === 'production') {
+    console.log('ℹ️ Sonthillu E2E fixtures skipped: production environment.');
+    return;
+  }
 
-// Runtime guard — require the local API key env var
-if (!process.env.SONTHILLU_LOCAL_API_KEY) {
-  console.error('🚨 sonthillu-e2e fixtures aborted: missing SONTHILLU_LOCAL_API_KEY env var.');
-  process.exit(1);
-}
+  // Runtime guard — require the local API key env var
+  if (!process.env.SONTHILLU_LOCAL_API_KEY) {
+    console.log('⚠️ Sonthillu E2E fixtures skipped: SONTHILLU_LOCAL_API_KEY is not configured.');
+    return;
+  }
 
-async function main() {
   console.log('🏗️  Running Sonthillu E2E local fixtures...');
 
   // --- Step 1: Fetch existing org (no creates — avoid duplicates) ---
@@ -32,28 +30,24 @@ async function main() {
     where: { code: 'RRH' },
   });
   if (!company) {
-    console.error('🚨 Could not find company with code=RRH. Run seed.ts first.');
-    process.exit(1);
+    throw new Error('🚨 Could not find company with code=RRH. Core seed must run first.');
   }
 
   const branch = await prisma.branch.findFirst({
     where: { company_id: company.id },
   });
   if (!branch) {
-    console.error('🚨 No branches found for company_id', company.id);
-    process.exit(1);
+    throw new Error(`🚨 No branches found for company_id ${company.id}`);
   }
 
   const admin = await prisma.employee.findFirst({
     where: {
       company_id: company.id,
-      roles: { some: { role: { is: { name: 'Admin (Technical)' } } } }, // prisma Role relation
-      // fallback: just check role_name via raw if needed
+      roles: { some: { role: { name: 'Admin (Technical)' } } },
     },
   });
   if (!admin) {
-    console.error('🚨 No admin employee found for company_id', company.id);
-    process.exit(1);
+    throw new Error(`🚨 No admin employee found for company_id ${company.id}`);
   }
 
   // --- Step 2: Upsert API Key mapped to the primary company ---
@@ -66,13 +60,12 @@ async function main() {
       is_active: true,
     },
   });
-  console.log(`✅ API key upserted for company_id=${company.id}`);
+  console.log('🔑 API key ready.');
 
   // --- Step 3: Upsert exactly 3 Sonthillu properties ---
   const propertiesData = [
     {
       property_code: 'SONTHILLU-E2E-LOC-001',
-      company_id: company.id,
       brand_type: 'SONTHILLU',
       category: 'APARTMENT',
       title: 'Hyderabad Banjara Hills Villa',
@@ -91,7 +84,6 @@ async function main() {
     },
     {
       property_code: 'SONTHILLU-E2E-LOC-002',
-      company_id: company.id,
       brand_type: 'SONTHILLU',
       category: 'APARTMENT',
       title: 'Secunderabad Miyapur Apartment',
@@ -110,7 +102,6 @@ async function main() {
     },
     {
       property_code: 'SONTHILLU-E2E-LOC-003',
-      company_id: company.id,
       brand_type: 'SONTHILLU',
       category: 'APARTMENT',
       title: 'Hyderabad Miyapur Apartment',
@@ -131,14 +122,13 @@ async function main() {
 
   const createdProps: any[] = [];
   for (const pd of propertiesData) {
-    const { company_id, ...rest } = pd;
     const prop = await prisma.property.upsert({
       where: { property_code: pd.property_code },
-      update: { ...rest, company: { connect: { id: company_id } }, created_by: { connect: { id: admin.id } } },
-      create: { ...rest, company: { connect: { id: company_id } }, created_by: { connect: { id: admin.id } } },
+      update: { ...pd, company: { connect: { id: company.id } }, created_by: { connect: { id: admin.id } } },
+      create: { ...pd, company: { connect: { id: company.id } }, created_by: { connect: { id: admin.id } } },
     });
     createdProps.push(prop);
-    console.log(`✅ Property upserted: ${prop.property_code}`);
+    console.log(`🏠 Property upserted: ${prop.property_code}`);
   }
 
   // --- Step 4: Upsert PropertyPublication records for all 3 properties ---
@@ -153,17 +143,7 @@ async function main() {
         published_at: new Date(),
       },
     });
-    console.log(`✅ Publication upserted for property_id=${prop.id}`);
   }
-
-  console.log('🏗️  Sonthillu E2E local fixtures completed successfully.');
+  console.log('📢 Publication upserted...');
+  console.log('✅ Sonthillu E2E local fixtures completed successfully.');
 }
-
-main()
-  .catch((e) => {
-    console.error('❌ sonthillu-e2e fixtures error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

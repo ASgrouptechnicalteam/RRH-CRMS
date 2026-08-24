@@ -443,7 +443,7 @@ describe('Phase 8 Packet 4 - Opportunity Sales Engine & Pipeline Intelligence', 
       .get(`/api/v1/opportunities/${oppA.id}/history`)
       .set('Authorization', `Bearer ${pmBToken}`);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   // ===================== CONVERSION METRICS =====================

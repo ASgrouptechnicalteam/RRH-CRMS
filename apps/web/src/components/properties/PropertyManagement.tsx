@@ -27,20 +27,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Permissions } from '@rrh-ems/shared';
-
-// Static assets (property images) are served from the API origin at `/uploads`,
-// not under `/api/v1`. image_url from the API is a public-safe relative path
-// like `/uploads/property-images/prop-....jpg`.
-const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
-const resolveImageUrl = (url?: string): string | undefined => {
-  if (!url) return undefined;
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${API_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
-};
 import { Roles } from '@rrh-ems/shared';
 import { AddPropertyWizard } from './AddPropertyWizard';
 import { EditPropertyModal } from './EditPropertyModal';
 import { Edit, Building2 } from 'lucide-react';
+
+import { resolveImageUrl } from '../../utils/imageUtils';
 
 interface Property {
   id: number;
@@ -722,6 +714,82 @@ export const PropertyManagement: React.FC = () => {
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   This property is LIVE and visible on public CRM portal!
                 </p>
+              )}
+            </div>
+
+            {/* Property Media / Images */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Property Images</h4>
+                <div className="relative">
+                  <input
+                    type="file"
+                    id={`upload-img-${selectedProperty.id}`}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const formData = new FormData();
+                      formData.append('image', file);
+                      try {
+                        const res = await fetchWithAuth(`${API_BASE_URL}/properties/${selectedProperty.id}/images`, {
+                          method: 'POST',
+                          body: formData // browser sets content-type multipart/form-data
+                        });
+                        if (res.ok) {
+                          // refresh property to show new image
+                          fetchProperties();
+                          showToast('Image uploaded successfully', 'success');
+                          // Close dossier so it refreshes (or we could fetch single property, but closing is safer for beta)
+                          setSelectedProperty(null); 
+                        } else {
+                          showToast('Failed to upload image', 'error');
+                        }
+                      } catch (err) {
+                        showToast('Error uploading image', 'error');
+                      }
+                    }}
+                  />
+                  <label htmlFor={`upload-img-${selectedProperty.id}`} className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg flex items-center gap-1 cursor-pointer transition-colors">
+                    <ImageIcon className="w-4 h-4" />
+                    Upload Image
+                  </label>
+                </div>
+              </div>
+              
+              {selectedProperty.images && selectedProperty.images.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {selectedProperty.images.map((img: any) => (
+                    <div key={img.id} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
+                      <img src={resolveImageUrl(img.image_url)} alt="Property" className="w-full h-full object-cover" />
+                      {img.is_primary && (
+                        <div className="absolute top-2 left-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">COVER</div>
+                      )}
+                      <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                         <button 
+                            onClick={async () => {
+                              if (window.confirm('Delete this image?')) {
+                                try {
+                                  const res = await fetchWithAuth(`${API_BASE_URL}/properties/${selectedProperty.id}/images/${img.id}`, { method: 'DELETE' });
+                                  if (res.ok) {
+                                    showToast('Image deleted', 'success');
+                                    fetchProperties();
+                                    setSelectedProperty(null);
+                                  }
+                                } catch (e) {}
+                              }
+                            }}
+                            className="p-1.5 bg-white text-rose-600 rounded-full hover:bg-rose-50 shadow"
+                          >
+                            <X className="w-4 h-4" />
+                         </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500 italic bg-slate-50 p-4 rounded-xl text-center">No images uploaded yet.</div>
               )}
             </div>
 

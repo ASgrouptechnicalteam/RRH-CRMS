@@ -886,10 +886,17 @@ export const LeadManagement: React.FC = () => {
                   <span className="text-slate-400 text-[10px] uppercase font-bold">Created</span>
                   <div className="font-bold text-slate-800 mt-0.5">{new Date(selectedLead.created_at).toLocaleDateString()}</div>
                 </div>
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Source</span>
-                  <div className="font-bold text-slate-800 mt-0.5">{selectedLead.source}</div>
-                </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold">Source</span>
+                    <div className="font-bold text-slate-800 mt-0.5">
+                      {selectedLead.source}
+                      {selectedLead.source === 'REFERRAL' && selectedLead.referral_person_name && (
+                        <span className="ml-1 text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          by {selectedLead.referral_person_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold">Location</span>
                   <div className="font-bold text-slate-800 mt-0.5">{selectedLead.preferred_location || 'N/A'}</div>

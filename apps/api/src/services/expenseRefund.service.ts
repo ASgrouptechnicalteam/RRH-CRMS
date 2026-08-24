@@ -82,7 +82,7 @@ export class ExpenseRefundService {
   }
 
   static async accountantReview(user: TokenPayload, refundId: number, decision: 'APPROVE' | 'REJECT', note?: string) {
-    const refund = await p.expenseRefund.findUnique({ where: { id: refundId } });
+    const refund = await p.expenseRefund.findFirst({ where: { id: refundId, company_id: user.companyId } });
     if (!refund) throw { status: 404, message: 'Refund request not found' };
 
     if (!can(user, Permissions.EXPENSES_REVIEW, refund)) {
@@ -144,7 +144,7 @@ export class ExpenseRefundService {
   }
 
   static async mdReview(user: TokenPayload, refundId: number, decision: 'APPROVE' | 'REJECT', note?: string) {
-    const refund = await p.expenseRefund.findUnique({ where: { id: refundId } });
+    const refund = await p.expenseRefund.findFirst({ where: { id: refundId, company_id: user.companyId } });
     if (!refund) throw { status: 404, message: 'Refund request not found' };
 
     if (!can(user, Permissions.EXPENSES_MD_APPROVE, refund)) {
@@ -212,7 +212,7 @@ export class ExpenseRefundService {
   }
 
   static async markRefunded(user: TokenPayload, refundId: number) {
-    const refund = await p.expenseRefund.findUnique({ where: { id: refundId } });
+    const refund = await p.expenseRefund.findFirst({ where: { id: refundId, company_id: user.companyId } });
     if (!refund) throw { status: 404, message: 'Refund request not found' };
 
     if (!can(user, Permissions.EXPENSES_MARK_REFUNDED, refund)) {
@@ -254,7 +254,7 @@ export class ExpenseRefundService {
   }
 
   static async getProof(user: TokenPayload, refundId: number) {
-    const refund = await p.expenseRefund.findUnique({ where: { id: refundId } });
+    const refund = await p.expenseRefund.findFirst({ where: { id: refundId, company_id: user.companyId } });
     if (!refund) throw { status: 404, message: 'Refund not found' };
 
     // Use can() fallback for EXPENSES_READ_OWN or just rely on Policy?

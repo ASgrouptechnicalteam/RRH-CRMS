@@ -11,6 +11,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
   "files": [],
   "references": [
     { "path": "./apps/api" },

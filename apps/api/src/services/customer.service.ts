@@ -65,6 +65,13 @@ export class CustomerService {
       }
     }
 
+    if (dto.assigned_to_id) {
+      const emp = await p.employee.findFirst({ where: { id: dto.assigned_to_id, company_id: user.companyId } });
+      if (!emp) {
+        throw new AppError(400, 'Assigned employee not found or cross-company assignment');
+      }
+    }
+
     return await p.customer.create({
       data: {
         customer_code: customerCode,

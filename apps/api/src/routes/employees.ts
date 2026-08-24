@@ -163,6 +163,7 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
       background_education,
       role_name,
       branch_id,
+      additional_branch_ids,
       initial_password,
     } = req.body;
 
@@ -188,6 +189,19 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
     }
     if (!isUserAdmin && branch.company_id !== req.user!.companyId) {
       return res.status(403).json({ error: 'Forbidden: Cannot create employee in another company\'s branch' });
+    }
+
+    const validAdditionalBranchIds: number[] = [];
+    if (Array.isArray(additional_branch_ids)) {
+      const additionalBranches = await prisma.branch.findMany({
+        where: {
+          id: { in: additional_branch_ids.map((id: string) => parseInt(id, 10)) },
+          company_id: isUserAdmin && req.body.company_id ? parseInt(req.body.company_id, 10) : req.user!.companyId
+        }
+      });
+      for (const b of additionalBranches) {
+        if (b.id !== parsedBranchId) validAdditionalBranchIds.push(b.id);
+      }
     }
     
     // Resolve target company ID (Admin can specify, otherwise forced to actor's company)
@@ -256,10 +270,14 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
             role_id: role.id,
           },
         },
+        branches: {
+          create: validAdditionalBranchIds.map(id => ({ branch_id: id }))
+        }
       },
       include: {
         branch: true,
         roles: { include: { role: true } },
+        branches: { include: { branch: true } },
       },
     });
 
@@ -270,6 +288,7 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
         employeeCode: newEmp.employee_code,
         fullName: newEmp.full_name,
         branch: newEmp.branch?.name || 'All Branches',
+        additionalBranches: newEmp.branches.map(b => b.branch.name),
         status: newEmp.status,
         attendanceRequired: newEmp.attendance_required,
         roles: newEmp.roles.map((r) => r.role.name),
@@ -361,26 +380,52 @@ router.patch('/:id', authenticateToken, requireAuthz(Permissions.EMPLOYEES_UPDAT
     if (body.status !== undefined) updateData.status = body.status;
     if (body.attendance_required !== undefined) updateData.attendance_required = Boolean(body.attendance_required);
 
-    if (body.role_name) {
-      const targetRole = await prisma.role.findUnique({ where: { name: body.role_name } });
-      if (targetRole) {
-        await prisma.employeeRole.deleteMany({ where: { employee_id: employeeId } });
-        await prisma.employeeRole.create({
-          data: {
-            employee_id: employeeId,
-            role_id: targetRole.id,
-          },
-        });
-      }
+    let shouldRevokeSessions = false;
+    if (body.status !== undefined && body.status !== targetEmployee.status) {
+      shouldRevokeSessions = true;
     }
 
-    const updatedEmp = await prisma.employee.update({
-      where: { id: employeeId },
-      data: updateData,
-      include: {
-        branch: true,
-        roles: { include: { role: true } },
-      },
+    const updatedEmp = await prisma.$transaction(async (tx) => {
+      if (body.role_name) {
+        const targetRole = await tx.role.findUnique({ where: { name: body.role_name } });
+        if (targetRole) {
+          const currentRoles = await tx.employeeRole.findMany({ where: { employee_id: employeeId }, include: { role: true } });
+          const hasDifferentRole = !currentRoles.some((r: any) => r.role.name === body.role_name);
+          if (hasDifferentRole) {
+            shouldRevokeSessions = true;
+          }
+
+          await tx.employeeRole.deleteMany({ where: { employee_id: employeeId } });
+          await tx.employeeRole.create({
+            data: {
+              employee_id: employeeId,
+              role_id: targetRole.id,
+            },
+          });
+        }
+      }
+
+      if (shouldRevokeSessions) {
+        updateData.token_version = { increment: 1 };
+      }
+
+      const emp = await tx.employee.update({
+        where: { id: employeeId },
+        data: updateData,
+        include: {
+          branch: true,
+          roles: { include: { role: true } },
+        },
+      });
+
+      if (shouldRevokeSessions) {
+        await tx.authSession.updateMany({
+          where: { employee_id: employeeId, revoked: false },
+          data: { revoked: true, revocation_reason: 'AUTHORIZATION_CHANGED' }
+        });
+      }
+
+      return emp;
     });
 
     // ── Universal Notifications ──────────────────────────────────
@@ -460,12 +505,20 @@ router.post('/:id/reset-password', authenticateToken, requireAuthz(Permissions.E
 
     const newHash = await bcrypt.hash('Radhareal@123', 12);
 
-    await prisma.employee.update({
-      where: { id: employeeId },
-      data: {
-        password_hash: newHash,
-        first_login_done: false,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.employee.update({
+        where: { id: employeeId },
+        data: {
+          password_hash: newHash,
+          first_login_done: false,
+          token_version: { increment: 1 }
+        },
+      });
+
+      await tx.authSession.updateMany({
+        where: { employee_id: employeeId, revoked: false },
+        data: { revoked: true, revocation_reason: 'ADMIN_PASSWORD_RESET' }
+      });
     });
 
     // Notify employee their password was reset by admin

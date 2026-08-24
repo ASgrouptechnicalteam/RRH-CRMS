@@ -1,63 +1,72 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import sharp from 'sharp';
+import crypto from 'crypto';
 
-const PROPERTY_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'property-images');
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 
-if (!fs.existsSync(PROPERTY_UPLOAD_DIR)) {
-  fs.mkdirSync(PROPERTY_UPLOAD_DIR, { recursive: true });
-}
-
-const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_EXTS = ['.jpg', '.jpeg', '.png', '.webp'];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, PROPERTY_UPLOAD_DIR),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `prop-${uniqueSuffix}${ext}`);
-  },
-});
-
 export const propertyImageUpload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SIZE },
-  fileFilter: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (ALLOWED_EXTS.includes(ext) && ALLOWED_MIMES.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only JPG, PNG, and WebP images are allowed (max 10MB).'));
-    }
-  },
 });
 
 /**
- * Returns a public-safe relative path for stored file.
- * Never exposes full server filesystem path.
+ * Validates, resizes, and saves the image to local storage using sharp.
+ * @param buffer - File buffer from multer
+ * @param propertyId - ID of the property
+ * @returns Publicly accessible URL path
  */
-export function getPublicPath(filename: string): string {
-  return `/uploads/property-images/${filename}`;
-}
-
-/**
- * Deletes a property image file from disk.
- */
-export function deleteFile(filename: string): void {
-  const filepath = path.join(PROPERTY_UPLOAD_DIR, filename);
-  if (fs.existsSync(filepath)) {
-    fs.unlinkSync(filepath);
+export async function processAndStorePropertyImage(buffer: Buffer, propertyId: number): Promise<string> {
+  const propertyImagesDir = path.join(UPLOAD_DIR, 'properties', String(propertyId), 'images');
+  
+  if (!fs.existsSync(propertyImagesDir)) {
+    fs.mkdirSync(propertyImagesDir, { recursive: true });
   }
+
+  const uuid = crypto.randomUUID();
+  const filename = `${uuid}.webp`;
+  const absolutePath = path.join(propertyImagesDir, filename);
+
+  // Validate, resize (max 2560x2560), and convert to WebP using Sharp
+  await sharp(buffer)
+    .resize(2560, 2560, {
+      fit: 'inside', // Preserves aspect ratio, only downsizes if larger than 2560x2560
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 80 })
+    .toFile(absolutePath);
+
+  // Return public URL path
+  return `/uploads/properties/${propertyId}/images/${filename}`;
 }
 
 /**
- * Extracts the filename from a public path for deletion.
+ * Deletes a property image file from disk securely.
  */
-export function extractFilename(publicPath: string): string | null {
-  const match = publicPath.match(/\/uploads\/property-images\/(.+)$/);
-  return match ? match[1] : null;
+export function deletePropertyImageFile(imageUrl: string): void {
+  // Extract the part after /uploads/ to prevent path traversal
+  // Matches new format: properties/123/images/uuid.webp
+  // Matches legacy format: property-images/prop-xxx.jpg
+  const match = imageUrl.match(/^\/uploads\/(properties\/\d+\/images\/[a-f0-9-]+\.webp|property-images\/prop-[0-9-]+\.[a-z]+)$/i);
+  if (!match) {
+    console.warn(`Invalid or unrecognizable image URL for deletion: ${imageUrl}`);
+    return;
+  }
+  
+  const relativeSafePath = match[1];
+  const absolutePath = path.join(UPLOAD_DIR, relativeSafePath);
+  
+  // Extra safety check: ensure the resolved absolute path starts with UPLOAD_DIR
+  if (absolutePath.startsWith(path.resolve(UPLOAD_DIR)) && fs.existsSync(absolutePath)) {
+    try {
+      fs.unlinkSync(absolutePath);
+    } catch (err) {
+      console.error(`Failed to delete physical file: ${absolutePath}`, err);
+    }
+  }
 }
 
 /**

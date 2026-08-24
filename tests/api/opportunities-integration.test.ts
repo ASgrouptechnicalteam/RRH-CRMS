@@ -81,7 +81,7 @@ beforeAll(async () => {
     companyId: companyAId,
     branchId: null,
     roles: [Roles.PROJECT_MANAGER],
-    permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ, Permissions.SITE_VISITS_CREATE],
+    permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ, Permissions.SITE_VISITS_CREATE, 'tasks.create'],
   });
 
   pmBToken = generateAccessToken({
@@ -90,7 +90,7 @@ beforeAll(async () => {
     companyId: companyBId,
     branchId: null,
     roles: [Roles.PROJECT_MANAGER],
-    permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ, Permissions.SITE_VISITS_CREATE],
+    permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ, Permissions.SITE_VISITS_CREATE, 'tasks.create'],
   });
 
   // Setup Leads
@@ -241,7 +241,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         lead_id: leadB.id,
         project_id: projectA.id,
       });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('7. Task with valid opportunity_id works', async () => {
@@ -272,7 +272,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         opportunity_id: oppA.id
       });
     
-    expect(res.status).toBe(403); // Since leadB belongs to Company B, PM A gets 403. Let's try wrong lead same company.
+    expect(res.status).toBe(404); // Since leadB belongs to Company B, PM A gets 404. Let's try wrong lead same company.
   });
 
   it('8b. Task with mismatched Lead/Opportunity (same company) is rejected', async () => {
@@ -344,7 +344,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         opportunity_id: oppA.id,
         scheduled_date: new Date(Date.now() + 86400).toISOString()
       });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
 });

@@ -28,6 +28,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
   const [email, setEmail] = useState('');
   const [addRole, setAddRole] = useState('telecallers');
   const [addBranchId, setAddBranchId] = useState<string>('');
+  const [additionalBranchIds, setAdditionalBranchIds] = useState<string[]>([]);
   const [initialPassword, setInitialPassword] = useState('Password@123');
 
   // Step 2: Personal Details
@@ -72,6 +73,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         email,
         role_name: addRole,
         branch_id: addBranchId,
+        additional_branch_ids: additionalBranchIds,
         initial_password: initialPassword,
         
         current_address: currentAddress,
@@ -178,6 +180,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
                   <option value="telecallers">telecallers</option>
                   <option value="Agent">Agent</option>
+                  <option value="Sales manager">Sales manager</option>
                   <option value="digital marketing executive">digital marketing executive</option>
                   <option value="Digital lead operator">Digital lead operator</option>
                   <option value="Digital Marketing head(manager)">Digital Marketing head(manager)</option>
@@ -191,13 +194,31 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Branch *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Primary Branch *</label>
                 <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
                   <option value="">-- Select Branch --</option>
                   {branches.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Additional Branches</label>
+                <select 
+                  multiple 
+                  value={additionalBranchIds} 
+                  onChange={e => {
+                    const options = Array.from(e.target.selectedOptions, option => option.value);
+                    setAdditionalBranchIds(options);
+                  }} 
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 min-h-[100px]"
+                >
+                  {branches.filter(b => b.id.toString() !== addBranchId).map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
               </div>
 
               <div className="col-span-1 md:col-span-2 p-4 bg-sky-50 border border-sky-100 rounded-xl flex gap-3">

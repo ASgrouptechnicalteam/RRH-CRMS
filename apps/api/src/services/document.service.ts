@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { Permissions, DOCUMENT_TYPE_ENTITY_REQUIREMENTS } from '@rrh-ems/shared';
 import { DocumentPolicy, KYC_DOCUMENT_TYPES } from '../policies/document.policy';
@@ -91,12 +91,9 @@ async function validateEntitiesExist(
     const entityId = entityIds[field];
     if (!entityId) continue;
 
-    const entity = await tx[entityName].findUnique({ where: { id: entityId } });
+    const entity = await tx[entityName].findFirst({ where: { id: entityId, company_id: userCompanyId } });
     if (!entity) {
       return { valid: false, error: entityName + ' with id ' + entityId + ' not found' };
-    }
-    if (entity.company_id !== userCompanyId) {
-      return { valid: false, error: entityName + ' does not belong to your company' };
     }
   }
 
@@ -324,8 +321,8 @@ export class DocumentService {
   }
 
   static async getDocument(user: TokenPayload, documentId: number) {
-    const doc = await p.document.findUnique({
-      where: { id: documentId },
+    const doc = await p.document.findFirst({
+      where: { id: documentId, company_id: user.companyId },
       select: {
         id: true,
         document_code: true,
@@ -365,7 +362,7 @@ export class DocumentService {
   }
 
   static async downloadDocument(user: TokenPayload, documentId: number) {
-    const doc = await p.document.findUnique({ where: { id: documentId } });
+    const doc = await p.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     if (!doc) throw { status: 404, message: 'Document not found' };
 
     if (!DocumentPolicy.canDownload(user, doc)) {
@@ -397,7 +394,7 @@ export class DocumentService {
     decision: 'VERIFIED' | 'REJECTED',
     notes?: string
   ) {
-    const doc = await p.document.findUnique({ where: { id: documentId } });
+    const doc = await p.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     if (!doc) throw { status: 404, message: 'Document not found' };
 
     if (!DocumentPolicy.canVerify(user, doc)) {
@@ -446,14 +443,14 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
         await KycService.recomputeAndNotifyTx(tx, doc.customer_id, doc.company_id, user.employeeId);
       }
 
-      return tx.document.findUnique({ where: { id: documentId } });
+      return tx.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     });
 
     return result;
   }
 
   static async archiveDocument(user: TokenPayload, documentId: number, reason?: string) {
-    const doc = await p.document.findUnique({ where: { id: documentId } });
+    const doc = await p.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     if (!doc) throw { status: 404, message: 'Document not found' };
 
     if (!DocumentPolicy.canDelete(user, doc)) {
@@ -491,14 +488,14 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
         },
       });
 
-      return tx.document.findUnique({ where: { id: documentId } });
+      return tx.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     });
 
     return result;
   }
 
   static async restoreDocument(user: TokenPayload, documentId: number) {
-    const doc = await p.document.findUnique({ where: { id: documentId } });
+    const doc = await p.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     if (!doc) throw { status: 404, message: 'Document not found' };
 
     if (!DocumentPolicy.canRestore(user, doc)) {
@@ -536,9 +533,127 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
         },
       });
 
-      return tx.document.findUnique({ where: { id: documentId } });
+      return tx.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
     });
 
     return result;
+  }
+
+  static async initiateESignature(user: TokenPayload, documentId: number, signers: { name: string, email: string }[]) {
+    const doc = await p.document.findFirst({ where: { id: documentId, company_id: user.companyId } });
+    if (!doc) throw { status: 404, message: 'Document not found' };
+
+    // In a real application, this is where we would call DocuSign/HelloSign APIs
+    // For this mock, we will generate a fake provider ID and save pending signatures
+    const mockProviderId = 'mock_env_' + crypto.randomBytes(8).toString('hex');
+
+    const result = await p.$transaction(async (tx: any) => {
+      const updated = await tx.document.updateMany({
+        where: { id: documentId, version: doc.version },
+        data: {
+          signature_status: 'PENDING_SIGNATURE',
+          version: { increment: 1 },
+        }
+      });
+
+      if (updated.count === 0) {
+        throw { status: 409, message: 'Document was modified by another user.' };
+      }
+
+      const signatures = await Promise.all(
+        signers.map(signer => 
+          tx.documentSignature.create({
+            data: {
+              document_id: documentId,
+              signer_name: signer.name,
+              signer_email: signer.email,
+              provider_id: mockProviderId,
+              status: 'PENDING',
+            }
+          })
+        )
+      );
+
+      await tx.auditEvent.create({
+        data: {
+          actor_id: user.employeeId,
+          action: 'E_SIGNATURE_INITIATED',
+          entity_type: 'DOCUMENT',
+          entity_id: documentId,
+          old_value: JSON.stringify({ signature_status: doc.signature_status }),
+          new_value: JSON.stringify({ signature_status: 'PENDING_SIGNATURE', provider_id: mockProviderId }),
+        }
+      });
+
+      return { document: doc, signatures, provider_id: mockProviderId };
+    });
+
+    return result;
+  }
+
+  static async handleESignatureWebhook(providerId: string, eventType: string, signerEmail: string) {
+    // Mock webhook handler for e-signature callbacks
+    if (eventType !== 'signer_signed') return;
+
+    const signature = await p.documentSignature.findFirst({
+      where: { provider_id: providerId, signer_email: signerEmail }
+    });
+
+    if (!signature) return;
+
+    await p.$transaction(async (tx: any) => {
+      await tx.documentSignature.update({
+        where: { id: signature.id },
+        data: {
+          status: 'SIGNED',
+          signed_at: new Date(),
+          ip_address: '127.0.0.1', // Mock IP
+          audit_trail_hash: crypto.randomBytes(32).toString('hex'), // Mock hash
+        }
+      });
+
+      // Check if all signatures for this document are complete
+      const pendingSigs = await tx.documentSignature.count({
+        where: {
+          document_id: signature.document_id,
+          status: 'PENDING',
+        }
+      });
+
+      if (pendingSigs === 0) {
+        const doc = await tx.document.findUnique({ where: { id: signature.document_id } });
+        if (doc) {
+          await tx.document.update({
+            where: { id: signature.document_id },
+            data: {
+              signature_status: 'SIGNED',
+              version: { increment: 1 },
+            }
+          });
+
+          await tx.auditEvent.create({
+            data: {
+              actor_id: doc.uploaded_by_id, // System action technically, but assigning to uploader
+              action: 'E_SIGNATURE_COMPLETED',
+              entity_type: 'DOCUMENT',
+              entity_id: signature.document_id,
+              old_value: JSON.stringify({ signature_status: doc.signature_status }),
+              new_value: JSON.stringify({ signature_status: 'SIGNED' }),
+            }
+          });
+        }
+      } else {
+        const doc = await tx.document.findUnique({ where: { id: signature.document_id } });
+        if (doc && doc.signature_status !== 'PARTIALLY_SIGNED') {
+          await tx.document.update({
+            where: { id: signature.document_id },
+            data: {
+              signature_status: 'PARTIALLY_SIGNED',
+              version: { increment: 1 },
+            }
+          });
+        }
+      }
+    });
   }
 }

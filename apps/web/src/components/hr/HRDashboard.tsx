@@ -3,15 +3,20 @@ import { Users, Clock, CalendarCheck, ShieldAlert } from 'lucide-react';
 import { EmployeeManagement } from '../employees/EmployeeManagement';
 import { LateLeaveProposals } from '../attendance/LateLeaveProposals';
 import { LiveAttendanceMonitor } from './LiveAttendanceMonitor';
+import { AttendanceHistory } from './AttendanceHistory';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Roles } from '@rrh-ems/shared';
 
 export const HRDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'employees' | 'proposals' | 'attendance'>('employees');
+  const [activeTab, setActiveTab] = useState<'employees' | 'proposals' | 'attendance' | 'history'>(
+    'employees',
+  );
 
-  const canManageEmployees = user?.roles?.some(r => r === Roles.MD || r === Roles.HR_MANAGER || r === Roles.ADMIN);
+  const canManageEmployees = user?.roles?.some(
+    (r) => r === Roles.MD || r === Roles.HR_MANAGER || r === Roles.ADMIN,
+  );
 
   if (!canManageEmployees) {
     return <Navigate to="/" replace />;
@@ -33,20 +38,20 @@ export const HRDashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('employees')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'employees' 
-                ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+              activeTab === 'employees'
+                ? 'bg-teal-50 text-teal-700 border border-teal-200'
                 : 'text-slate-600 hover:bg-slate-50 border border-transparent'
             }`}
           >
             <Users className="w-4 h-4" />
             Employee Directory
           </button>
-          
+
           <button
             onClick={() => setActiveTab('proposals')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'proposals' 
-                ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+              activeTab === 'proposals'
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
                 : 'text-slate-600 hover:bg-slate-50 border border-transparent'
             }`}
           >
@@ -57,13 +62,25 @@ export const HRDashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('attendance')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'attendance' 
-                ? 'bg-sky-50 text-sky-700 border border-sky-200' 
+              activeTab === 'attendance'
+                ? 'bg-sky-50 text-sky-700 border border-sky-200'
                 : 'text-slate-600 hover:bg-slate-50 border border-transparent'
             }`}
           >
             <CalendarCheck className="w-4 h-4" />
             Live Attendance (Today)
+          </button>
+
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
+              activeTab === 'history'
+                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                : 'text-slate-600 hover:bg-slate-50 border border-transparent'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Attendance History
           </button>
         </div>
       </div>
@@ -73,6 +90,7 @@ export const HRDashboard: React.FC = () => {
         {activeTab === 'employees' && <EmployeeManagement />}
         {activeTab === 'proposals' && <LateLeaveProposals />}
         {activeTab === 'attendance' && <LiveAttendanceMonitor />}
+        {activeTab === 'history' && <AttendanceHistory />}
       </div>
     </div>
   );

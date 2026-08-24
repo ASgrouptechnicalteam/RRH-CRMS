@@ -4,6 +4,7 @@ import { PaymentPolicy } from '../policies/payment.policy';
 import { BookingPolicy } from '../policies/booking.policy';
 import { NotificationService } from './notification.service';
 import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
+import { DocumentGenerationService } from './document-generation.service';
 
 const prisma = new PrismaClient();
 const p = prisma as any;
@@ -131,7 +132,7 @@ export class PaymentService {
       throw new AppError(400, 'Payment is already verified and successful');
     }
 
-    return await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: any) => {
       const updatedPayment = await tx.payment.update({
         where: { id },
         data: { status }
@@ -278,5 +279,13 @@ export class PaymentService {
 
       return updatedPayment;
     });
+
+    if (status === 'SUCCESS') {
+      DocumentGenerationService.generateReceipt(user, id).catch((err) => {
+        console.error('Failed to generate receipt for payment ' + id + ':', err);
+      });
+    }
+
+    return result;
   }
 }

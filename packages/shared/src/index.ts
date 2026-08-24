@@ -568,6 +568,7 @@ export const LeadSource = {
   GOOGLE_ADS: 'GOOGLE_ADS',
   WALK_IN: 'WALK_IN',
   REFERRAL: 'REFERRAL',
+  HOUSING_COM: 'HOUSING_COM',
 } as const;
 
 export const LeadCreateSchema = z.object({
@@ -584,6 +585,8 @@ export const LeadCreateSchema = z.object({
   utm_source: z.string().optional().nullable(),
   utm_medium: z.string().optional().nullable(),
   utm_campaign: z.string().optional().nullable(),
+  referral_person_name: z.string().optional().nullable(),
+  referral_employee_id: z.number().optional().nullable(),
 });
 
 export type LeadCreateInput = z.infer<typeof LeadCreateSchema>;
@@ -1198,4 +1201,52 @@ export const IntegrationMetricsResponseSchema = z.object({
 }).strict();
 
 export type IntegrationMetricsResponse = z.infer<typeof IntegrationMetricsResponseSchema>;
+
+// Opportunity Schemas
+export const OpportunityCreateSchema = z.object({
+  lead_id: z.number().int().positive(),
+  owner_id: z.number().int().positive().optional(),
+  project_id: z.number().int().positive().optional(),
+  property_id: z.number().int().positive().optional(),
+  expected_value: z.number().nonnegative().optional(),
+  probability: z.number().min(0).max(100).optional(),
+  budget_min: z.number().nonnegative().optional(),
+  budget_max: z.number().nonnegative().optional(),
+});
+export type OpportunityCreateInput = z.infer<typeof OpportunityCreateSchema>;
+
+export const OpportunityUpdateSchema = z.object({
+  expected_value: z.number().nonnegative().optional(),
+  probability: z.number().min(0).max(100).optional(),
+  stage: z.string().optional(),
+  drop_reason: z.string().optional(),
+  budget_min: z.number().nonnegative().optional(),
+  budget_max: z.number().nonnegative().optional(),
+  property_id: z.number().int().positive().optional(),
+});
+export type OpportunityUpdateInput = z.infer<typeof OpportunityUpdateSchema>;
+
+// Site Visit Schemas
+export const SiteVisitCreateSchema = z.object({
+  lead_id: z.number().int().positive(),
+  property_id: z.number().int().positive().optional(),
+  scheduled_date: z.string().datetime(),
+  opportunity_id: z.number().int().positive().optional(),
+  pick_up_requested: z.boolean().optional().default(false),
+  pick_up_address: z.string().optional(),
+});
+export type SiteVisitCreateInput = z.infer<typeof SiteVisitCreateSchema>;
+
+export const SiteVisitUpdateSchema = z.object({
+  scheduled_date: z.string().datetime().optional(),
+  status: z.string().optional(),
+  notes: z.string().optional(),
+  confirmed: z.boolean().optional(),
+  verification_notes: z.string().optional(),
+  agent_id: z.number().int().positive().optional(),
+  rating: z.string().optional(),
+  feedback_notes: z.string().optional(),
+  proof_photo_url: z.string().optional(),
+});
+export type SiteVisitUpdateInput = z.infer<typeof SiteVisitUpdateSchema>;
 

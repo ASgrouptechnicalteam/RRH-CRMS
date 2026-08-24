@@ -76,8 +76,9 @@ export class PropertyService {
     const branchId = user.branchId || 1;
     const employeeId = user.employeeId || 1;
 
+    let project = null;
     if (data.project_id) {
-      const project = await p.project.findFirst({
+      project = await p.project.findFirst({
         where: { id: data.project_id, company_id: companyId }
       });
       if (!project) {
@@ -87,16 +88,19 @@ export class PropertyService {
 
     const propertyCode = await this.generateNextPropertyCode();
 
-    let finalPmId = data.assigned_pm_id;
-    if (!finalPmId) {
+    let finalPmId = null;
+    if (data.assigned_pm_id) {
+      // Explicit PM assignment
       const pm = await p.employee.findFirst({
-        where: {
-          company_id: companyId,
-          status: 'ACTIVE',
-          roles: { some: { role: { name: Roles.PROJECT_MANAGER } } },
-        },
+        where: { id: data.assigned_pm_id, company_id: companyId, status: 'ACTIVE' }
       });
-      if (pm) finalPmId = pm.id;
+      if (!pm) {
+        throw { status: 400, message: 'Invalid or unauthorized project manager assigned' };
+      }
+      finalPmId = pm.id;
+    } else if (project && project.assigned_pm_id) {
+      // Inherit from project
+      finalPmId = project.assigned_pm_id;
     }
 
     return await p.$transaction(async (tx: any) => {
@@ -228,7 +232,7 @@ export class PropertyService {
   }
 
   static async verifyProperty(user: TokenPayload, propertyId: number, data: { approved: boolean; notes: string }) {
-    const property = await p.property.findUnique({ where: { id: propertyId } });
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw { status: 404, message: 'Property not found' };
 
     if (!can(user, Permissions.PROPERTIES_VERIFY, property)) {
@@ -274,7 +278,7 @@ export class PropertyService {
   }
 
   static async dmPolishProperty(user: TokenPayload, propertyId: number, data: any) {
-    const property = await p.property.findUnique({ where: { id: propertyId } });
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw { status: 404, message: 'Property not found' };
 
     if (!can(user, Permissions.PROPERTIES_DM_POLISH, property)) {
@@ -320,7 +324,7 @@ export class PropertyService {
   }
 
   static async mdApproveProperty(user: TokenPayload, propertyId: number, data: { approved: boolean; comments?: string }) {
-    const property = await p.property.findUnique({ where: { id: propertyId } });
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw { status: 404, message: 'Property not found' };
 
     if (!can(user, Permissions.PROPERTIES_MD_APPROVE, property)) {
@@ -424,4 +428,47 @@ export class PropertyService {
       include: { company: { select: { id: true, name: true, code: true } } },
     });
   }
+
+  static async reassignProperty(user: TokenPayload, propertyId: number, newPmId: number, reason: string) {
+    if (!can(user, Permissions.PROPERTIES_UPDATE)) { // MD/Admin typically have this
+      throw { status: 403, message: 'Forbidden: Missing permission to reassign property' };
+    }
+    if (!reason || reason.trim() === '') {
+      throw { status: 400, message: 'Reassignment reason is mandatory' };
+    }
+
+    const property = await p.property.findFirst({
+      where: { id: propertyId, company_id: user.companyId }
+    });
+    if (!property) throw { status: 404, message: 'Property not found or unauthorized' };
+
+    const newPm = await p.employee.findFirst({
+      where: { id: newPmId, company_id: user.companyId, status: 'ACTIVE' }
+    });
+    if (!newPm) throw { status: 400, message: 'New assignee not found or unauthorized' };
+
+    const oldPmId = property.assigned_pm_id;
+
+    return await p.$transaction(async (tx: any) => {
+      const updated = await tx.property.update({
+        where: { id: propertyId },
+        data: { assigned_pm_id: newPmId }
+      });
+
+      await tx.auditEvent.create({
+        data: {
+          actor_id: user.employeeId!,
+          action: 'REASSIGNMENT',
+          entity_type: 'PROPERTY',
+          entity_id: propertyId,
+          old_value: oldPmId ? oldPmId.toString() : 'UNASSIGNED',
+          new_value: newPmId.toString(),
+          reason: reason
+        }
+      });
+
+      return updated;
+    });
+  }
 }
+

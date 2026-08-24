@@ -17,6 +17,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
 
   const isEdit = !!initialData;
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState(1);
 
   const [name, setName] = useState(initialData?.name || '');
   const [location, setLocation] = useState(initialData?.location || '');
@@ -112,125 +113,171 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Project Name *</label>
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={e => setName(e.target.value)} 
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
-                  placeholder="e.g. Sonthillu Luxury Villas Phase 1" 
-                />
-              </div>
+        <div className="p-6 flex-1 overflow-hidden flex flex-col">
+          {/* Step Indicator */}
+          <div className="flex gap-2 mb-6">
+            <div className={`h-2 flex-1 rounded-full ${step >= 1 ? 'bg-teal-500' : 'bg-slate-100'}`}></div>
+            <div className={`h-2 flex-1 rounded-full ${step >= 2 ? 'bg-teal-500' : 'bg-slate-100'}`}></div>
+          </div>
 
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Location / City *</label>
-                <div className="relative">
-                  <MapPin className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input 
-                    type="text" 
-                    value={location} 
-                    onChange={e => setLocation(e.target.value)} 
-                    className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
-                    placeholder="e.g. Miyapur, Hyderabad" 
-                  />
-                </div>
-              </div>
+          <div className="overflow-y-auto custom-scrollbar flex-1 -mx-6 px-6 pb-6">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
+              {step === 1 && (
+                <div className="animate-fadeIn space-y-5">
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Basic Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Project Name *</label>
+                      <input 
+                        type="text" 
+                        value={name} 
+                        onChange={e => setName(e.target.value)} 
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                        placeholder="e.g. Sonthillu Luxury Villas Phase 1" 
+                      />
+                    </div>
 
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
-                <textarea 
-                  value={description} 
-                  onChange={e => setDescription(e.target.value)} 
-                  rows={3} 
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
-                  placeholder="Detailed description of the project, amenities, and highlights..."
-                ></textarea>
-              </div>
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Location / City *</label>
+                      <div className="relative">
+                        <MapPin className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                        <input 
+                          type="text" 
+                          value={location} 
+                          onChange={e => setLocation(e.target.value)} 
+                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                          placeholder="e.g. Miyapur, Hyderabad" 
+                        />
+                      </div>
+                    </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Total Area</label>
-                <div className="relative">
-                  <Layout className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input 
-                    type="text" 
-                    value={totalArea} 
-                    onChange={e => setTotalArea(e.target.value)} 
-                    className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
-                    placeholder="e.g. 5 Acres" 
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Launch Date</label>
-                <div className="relative">
-                  <Calendar className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input 
-                    type="date" 
-                    value={launchDate} 
-                    onChange={e => setLaunchDate(e.target.value)} 
-                    className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
-                  />
-                </div>
-              </div>
-
-              {pms.length > 0 && (
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Assign Project Manager</label>
-                  <div className="relative">
-                    <User className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                    <select 
-                      value={assignedPmId} 
-                      onChange={e => setAssignedPmId(e.target.value)} 
-                      className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all"
-                    >
-                      <option value="">-- No PM Assigned --</option>
-                      {pms.map(pm => (
-                        <option key={pm.id} value={pm.id}>{pm.full_name} ({pm.employee_code})</option>
-                      ))}
-                    </select>
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                      <textarea 
+                        value={description} 
+                        onChange={e => setDescription(e.target.value)} 
+                        rows={4} 
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                        placeholder="Detailed description of the project, amenities, and highlights..."
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {isEdit && (
-                <div className="col-span-1 md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <label className="block text-xs font-bold text-slate-700 mb-2">Project Status</label>
-                  <select 
-                    value={status} 
-                    onChange={e => setStatus(e.target.value)} 
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all font-bold"
-                  >
-                    <option value="PLANNING">Planning</option>
-                    <option value="UNDER_CONSTRUCTION">Under Construction</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
+              {step === 2 && (
+                <div className="animate-fadeIn space-y-5">
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Planning & Assignment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Total Area</label>
+                      <div className="relative">
+                        <Layout className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                        <input 
+                          type="text" 
+                          value={totalArea} 
+                          onChange={e => setTotalArea(e.target.value)} 
+                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                          placeholder="e.g. 5 Acres" 
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Launch Date</label>
+                      <div className="relative">
+                        <Calendar className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                        <input 
+                          type="date" 
+                          value={launchDate} 
+                          onChange={e => setLaunchDate(e.target.value)} 
+                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                        />
+                      </div>
+                    </div>
+
+                    {pms.length > 0 && (
+                      <div className="col-span-1 md:col-span-2 p-4 bg-teal-50/50 border border-teal-100 rounded-xl">
+                        <label className="block text-xs font-bold text-teal-800 mb-1">Assign Project Manager</label>
+                        <p className="text-xs text-teal-600 mb-3">The PM will be automatically assigned to all future properties created under this project unless overridden.</p>
+                        <div className="relative">
+                          <User className="w-5 h-5 absolute left-3 top-3 text-teal-500" />
+                          <select 
+                            value={assignedPmId} 
+                            onChange={e => setAssignedPmId(e.target.value)} 
+                            className="w-full p-3 pl-10 bg-white border border-teal-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all"
+                          >
+                            <option value="">-- No PM Assigned --</option>
+                            {pms.map(pm => (
+                              <option key={pm.id} value={pm.id}>{pm.full_name} ({pm.employee_code})</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {isEdit && (
+                      <div className="col-span-1 md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl mt-4">
+                        <label className="block text-xs font-bold text-slate-700 mb-2">Project Status</label>
+                        <select 
+                          value={status} 
+                          onChange={e => setStatus(e.target.value)} 
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all font-bold"
+                        >
+                          <option value="PLANNING">Planning</option>
+                          <option value="UNDER_CONSTRUCTION">Under Construction</option>
+                          <option value="COMPLETED">Completed</option>
+                          <option value="CANCELLED">Cancelled</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 sticky bottom-0 z-10">
-          <button 
-            onClick={onClose}
-            className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex items-center gap-2"
-          >
-            {isLoading ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Project')}
-          </button>
+        <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+          {step === 1 ? (
+            <button 
+              onClick={onClose}
+              className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+          ) : (
+            <button 
+              onClick={() => setStep(1)}
+              className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Back
+            </button>
+          )}
+
+          {step === 1 ? (
+            <button 
+              onClick={() => {
+                if (!name || !location) {
+                  showToast('Name and Location are required', 'error');
+                  return;
+                }
+                setStep(2);
+              }}
+              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition-colors"
+            >
+              Next Step
+            </button>
+          ) : (
+            <button 
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex items-center gap-2"
+            >
+              {isLoading ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Project')}
+            </button>
+          )}
         </div>
       </div>
     </div>

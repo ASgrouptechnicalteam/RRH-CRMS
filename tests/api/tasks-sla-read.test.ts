@@ -138,7 +138,7 @@ describe('Task SLA Read (Phase 15 V1)', () => {
     const response = await request(app)
       .get(`/api/v1/tasks/${crossTaskId}/sla`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
   })
  
   // 4b. Invalid Task lifecycle update is rejected by existing Task workflow rules

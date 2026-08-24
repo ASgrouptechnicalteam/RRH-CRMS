@@ -109,9 +109,8 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
           notes: 'Hacked by TC-B'
         });
 
-      // After refactoring, this MUST be 403
-      // Currently, it will fail the test because the codebase is vulnerable (returns 200).
-      expect(res.status).toBe(403);
+      // After refactoring, this MUST be 403 (or 404 since cross-tenant is invisible)
+      expect(res.status).toBe(404);
     });
 
     it('TC-B CANNOT send WhatsApp proposal for TC-A\'s lead (IDOR)', async () => {
@@ -136,8 +135,8 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
         .post(`/api/v1/leads/${testLeadAId}/whatsapp-proposal/${prop.id}`)
         .set('Authorization', `Bearer ${telecallerBToken}`);
 
-      // After refactoring, this MUST be 403
-      expect(res.status).toBe(403);
+      // After refactoring, this MUST be 403 (or 404)
+      expect(res.status).toBe(404);
     });
   });
 
@@ -264,7 +263,8 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
         companyId: isolatedCompany.id,
         branchId: null,
         roles: [Roles.MD],
-        permissions: [Permissions.LEADS_CREATE]
+        permissions: [Permissions.LEADS_CREATE],
+        tokenVersion: 1
       };
       
       const jwt = require('jsonwebtoken');

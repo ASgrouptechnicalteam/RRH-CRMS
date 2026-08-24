@@ -16,7 +16,8 @@ export const TEST_ROLES = [
   Roles.HR_MANAGER,
   Roles.FINANCE,
   Roles.AGENT,
-  Roles.DIGITAL_MARKETING_EXECUTIVE
+  Roles.DIGITAL_MARKETING_EXECUTIVE,
+  Roles.SALES_MANAGER
 ];
 
 // We define raw deterministic data so tests can predict exactly what exists

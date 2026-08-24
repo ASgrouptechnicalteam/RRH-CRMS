@@ -30,11 +30,13 @@ import {
   User,
   ChevronRight,
   Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { QRCodeVisual } from '../common/QRCodeVisual';
 import { AddEmployeeWizard } from './AddEmployeeWizard';
+import { maskPAN, maskAadhaar, maskBankAccount, formatSalaryRange, formatExactSalary } from '../../utils/maskSensitiveData';
 
 interface Employee {
   id: number;
@@ -644,11 +646,11 @@ export const EmployeeManagement: React.FC = () => {
                 <div className="grid grid-cols-4 gap-3">
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">PAN Number</span>
-                    <span className="font-mono font-bold text-slate-800">{dossierEmp.panNumber}</span>
+                    <span className="font-mono font-bold text-slate-800">{maskPAN(dossierEmp.panNumber)}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Aadhaar UID</span>
-                    <span className="font-mono font-bold text-slate-800">{dossierEmp.aadhaarNumber}</span>
+                    <span className="font-mono font-bold text-slate-800">{maskAadhaar(dossierEmp.aadhaarNumber)}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Bank Name</span>
@@ -656,7 +658,7 @@ export const EmployeeManagement: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Account Number</span>
-                    <span className="font-mono font-bold text-slate-800">{dossierEmp.bankAccountNumber}</span>
+                    <span className="font-mono font-bold text-slate-800">{maskBankAccount(dossierEmp.bankAccountNumber)}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">IFSC Code</span>
@@ -690,7 +692,7 @@ export const EmployeeManagement: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Monthly Salary CTC</span>
-                    <span className="font-mono font-extrabold text-teal-800 text-sm">₹{dossierEmp.salaryCtc?.toLocaleString()}</span>
+                    <span className="font-mono font-extrabold text-teal-800 text-sm">{formatSalaryRange(dossierEmp.salaryCtc)}</span>
                   </div>
                 </div>
 

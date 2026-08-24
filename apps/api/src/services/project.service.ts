@@ -16,7 +16,7 @@ export class ProjectService {
     return `RRH-PJ-${currentYear}-${seq}`;
   }
 
-  static async listProjects(user: TokenPayload, filters: { status?: string }) {
+  static async listProjects(user: TokenPayload, filters: { status?: string }, take: number = 50, skip: number = 0) {
     const whereCondition = await buildProjectScope(user);
 
     if (filters.status) {
@@ -25,6 +25,8 @@ export class ProjectService {
 
     return await p.project.findMany({
       where: whereCondition,
+      take,
+      skip,
       include: {
         assigned_pm: { select: { id: true, employee_code: true, full_name: true, phone: true } },
       },

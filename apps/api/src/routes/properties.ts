@@ -36,8 +36,11 @@ router.get(
       project_id: typeof project_id === 'string' ? parseInt(project_id, 10) : undefined,
     };
 
-    const properties = await PropertyService.listProperties(req.user!, filters);
-    return res.status(200).json({ properties });
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
+    const properties = await PropertyService.listProperties(req.user!, filters, limit, offset);
+    return res.status(200).json({ properties, pagination: { limit, offset } });
   } catch (error: any) {
     console.error('Fetch properties error:', error);
     if (error.status) {

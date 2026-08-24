@@ -20,7 +20,7 @@ const INITIAL_BRANCHES = [
   { name: 'Tarnaka Branch' },
 ];
 
-const DEFAULT_PASSWORD = 'Radhareal@123';
+const DEFAULT_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD;
 
 async function main() {
   console.log('🌱 Seeding Admin Team for Radha Real Homes & Sonthillu...');
@@ -117,7 +117,13 @@ async function main() {
     }
   }
 
-  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
+  if (!DEFAULT_PASSWORD) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: DEFAULT_ADMIN_PASSWORD must be provided in production for seeding.');
+    }
+    console.warn('WARNING: Using insecure default admin password for development seeding.');
+  }
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD || 'Radhareal@123', 12);
 
   // 4. Seed Admin
   const initialEmployees = [

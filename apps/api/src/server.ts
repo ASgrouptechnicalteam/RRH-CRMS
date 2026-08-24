@@ -57,8 +57,13 @@ app.use(cookieParser());
 // Body Parser
 app.use(express.json());
 
-// Serve uploaded files (expense proof images) — authenticated via the /proof endpoint
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+import { apiRateLimiter } from './middleware/rateLimiter';
+
+// Serve ONLY property images publicly. Documents and Expense Proofs are explicitly private.
+app.use('/uploads/properties', express.static(path.join(process.cwd(), 'uploads', 'properties')));
+
+// Global API Rate Limiter
+app.use('/api/', apiRateLimiter);
 
 // Routes
 app.use('/api/v1/health', healthRoutes);
@@ -91,6 +96,11 @@ app.use('/api/v1/integration', integrationRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiSearchRoutes);
+
+// Fallback for unknown API routes
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
 
 // Serve frontend static files from apps/web/dist
 app.use(express.static(path.join(process.cwd(), 'apps/web/dist')));
@@ -180,7 +190,14 @@ const bootstrapHostingerDatabase = async () => {
 
     console.log('[database]: Seeding Hostinger MySQL database with full team roster...');
 
-    const passwordHash = await bcrypt.hash('Radhareal@123', 12);
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+    if (!defaultPassword) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('FATAL: DEFAULT_ADMIN_PASSWORD must be provided in production for initial bootstrap.');
+      }
+      console.warn('WARNING: Using insecure default admin password for development bootstrap.');
+    }
+    const passwordHash = await bcrypt.hash(defaultPassword || 'Radhareal@123', 12);
 
     const initialEmployees = [
       { 

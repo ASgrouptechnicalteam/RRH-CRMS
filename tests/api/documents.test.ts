@@ -505,9 +505,9 @@ describe('Phase 11 - Document Management', () => {
       const crossDocIds = res.body.documents.map((d: any) => d.id);
       expect(crossDocIds).not.toContain(crossDoc.id);
 
-      await prisma.document.deleteMany({ where: { company_id: crossCompanyId } });
-      await prisma.customerNotification.deleteMany({ where: { company_id: crossCompanyId } });
-      await prisma.customer.deleteMany({ where: { company_id: crossCompanyId } });
+      await prisma.document.deleteMany({ where: { customer_id: crossCustomer.id } });
+      await prisma.customerNotification.deleteMany({ where: { customer_id: crossCustomer.id } });
+      await prisma.customer.deleteMany({ where: { id: crossCustomer.id } });
     });
   });
 

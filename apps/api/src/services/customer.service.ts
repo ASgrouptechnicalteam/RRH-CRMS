@@ -22,11 +22,13 @@ export class CustomerService {
     return `RRH-CUST-${currentYear}-${sequentialNum}-${randomHex}`;
   }
 
-  static async getCustomers(user: TokenPayload) {
+  static async getCustomers(user: TokenPayload, take: number = 50, skip: number = 0) {
     const whereCondition = await buildCustomerScope(user);
 
     return await p.customer.findMany({
       where: whereCondition,
+      take,
+      skip,
       include: {
         assigned_to: { select: { id: true, employee_code: true, full_name: true } },
       },

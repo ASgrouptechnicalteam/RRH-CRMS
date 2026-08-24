@@ -39,7 +39,7 @@ export class PropertyService {
     return `RRH-PR-${currentYear}-${seq}`;
   }
 
-  static async listProperties(user: TokenPayload, filters: { brand?: string; status?: string; project_id?: number }) {
+  static async listProperties(user: TokenPayload, filters: { brand?: string; status?: string; project_id?: number }, take: number = 50, skip: number = 0) {
     const whereCondition = await buildPropertyScope(user);
     
     if (filters.brand) {
@@ -54,6 +54,8 @@ export class PropertyService {
 
     return await p.property.findMany({
       where: whereCondition,
+      take,
+      skip,
       include: {
         assigned_pm: { select: { id: true, employee_code: true, full_name: true, phone: true } },
         created_by: { select: { id: true, employee_code: true, full_name: true } },

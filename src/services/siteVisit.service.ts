@@ -52,15 +52,17 @@ export class SiteVisitService {
       orderBy: { scheduled_date: 'asc' },
     });
 
-    console.log('DEBUG LIST VISITS:', {
-      user: { id: user.employeeId, companyId: user.companyId, roles: user.roles },
-      whereCondition: JSON.stringify(whereCondition),
-      returnedCount: visits.length,
-      returnedVisits: visits.map((v: any) => ({
-        visitId: v.id,
-        leadCompanyId: v.lead?.company_id
-      }))
-    });
+    // DEBUG STATEMENT REMOVED - Was logging potentially sensitive visit data for debugging
+// Kept the variable declarations for potential future debugging needs
+// const debugData = {
+//   user: { id: user.employeeId, companyId: user.companyId, roles: user.roles },
+//   whereCondition: JSON.stringify(whereCondition),
+//   returnedCount: visits.length,
+//   returnedVisits: visits.map((v: any) => ({
+//     visitId: v.id,
+//     leadCompanyId: v.lead?.company_id
+//   }))
+// };
 
     return visits;
   }

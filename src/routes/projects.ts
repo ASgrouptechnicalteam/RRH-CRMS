@@ -42,7 +42,10 @@ router.get(
 });
 
 // GET /api/v1/projects/:id - Get single project
-router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', authenticateToken, requireAuthz(Permissions.PROJECTS_READ, async (req) => {
+  const projectId = parseInt(req.params.id, 10);
+  return await p.project.findFirst({ where: { id: projectId } });
+}), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const projectId = parseInt(req.params.id, 10);
     const project = await ProjectService.getProject(req.user!, projectId);

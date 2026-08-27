@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Roles } from '@rrh-ems/shared';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export interface DistributionCandidate {
   employeeId: number;

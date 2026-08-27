@@ -20,7 +20,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/properties - List properties with brand and status filtering
 router.get(

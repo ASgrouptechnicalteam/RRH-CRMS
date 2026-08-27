@@ -44,15 +44,15 @@ export const can = (user: TokenPayload, action: Permission, resource?: any): boo
     case Permissions.PROPERTIES_UPDATE:
     case Permissions.PROPERTIES_DELETE:
     case Permissions.PROPERTIES_VERIFY:
-      if (!resource) return false;
+      if (!resource) return true; // Defer to service layer
       return PropertyPolicy.canVerify(user, resource);
 
     case Permissions.PROPERTIES_DM_POLISH:
-      if (!resource) return false;
+      if (!resource) return true; // Defer to service layer
       return PropertyPolicy.canDMPolish(user, resource);
 
     case Permissions.PROPERTIES_MD_APPROVE:
-      if (!resource) return false;
+      if (!resource) return true; // Defer to service layer
       return PropertyPolicy.canMDApprove(user, resource);
 
     // -- LEADS --

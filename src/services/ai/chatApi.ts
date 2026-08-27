@@ -131,7 +131,7 @@ export interface AIChatApiResponse {
   missingRequirements?: string[];
   searchIntent?: SearchIntent;
   /** Populated only when the chat resolves to COMPLETE and the CRM bridge runs. */
-  results?: unknown[];
+  results?: any[];
 }
 
 /** Map a validated ChatResult into the HTTP response envelope. */

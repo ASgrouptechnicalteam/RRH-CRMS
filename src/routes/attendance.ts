@@ -8,7 +8,7 @@ import { validateRequestBody } from '../middleware/validate';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/attendance/my-qr - Generate personal HMAC QR payload
 router.get('/my-qr', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -122,7 +122,7 @@ router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: R
 
     // Concurrency Protection via Transaction
     const result = await p.$transaction(
-      async (tx: any) => {
+      async (tx: import('@prisma/client').Prisma.TransactionClient) => {
         const existingLogs = await tx.attendanceLog.findMany({
           where: { employee_id: targetEmployeeId },
           orderBy: { check_in_at: 'desc' },
@@ -157,17 +157,17 @@ router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: R
       return res.status(200).json({
         message: 'Already checked in for today',
         alreadyStamped: true,
-        status: result.log.status,
-        checkInAt: result.log.check_in_at,
+        status: result.log?.status,
+        checkInAt: result.log?.check_in_at,
         timeIST: timeString,
       });
     }
 
     return res.status(200).json({
-      message: `Attendance stamped successfully as ${result.log.status}`,
+      message: `Attendance stamped successfully as ${result.log?.status}`,
       alreadyStamped: false,
-      status: result.log.status,
-      checkInAt: result.log.check_in_at,
+      status: result.log?.status,
+      checkInAt: result.log?.check_in_at,
       timeIST: timeString,
     });
   } catch (error: any) {
@@ -203,7 +203,7 @@ router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, re
     const { timeString } = getISTComponents(now);
 
     const result = await p.$transaction(
-      async (tx: any) => {
+      async (tx: import('@prisma/client').Prisma.TransactionClient) => {
         // Find active check-in
         const activeLog = await tx.attendanceLog.findFirst({
           where: { employee_id: targetEmployeeId, check_out_at: null },
@@ -233,8 +233,8 @@ router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, re
 
     return res.status(200).json({
       message: 'Checked out successfully',
-      checkOutAt: result.log.check_out_at,
-      working_duration_minutes: result.log.working_duration_minutes,
+      checkOutAt: result.log?.check_out_at,
+      working_duration_minutes: result.log?.working_duration_minutes,
       timeIST: timeString,
     });
   } catch (error) {

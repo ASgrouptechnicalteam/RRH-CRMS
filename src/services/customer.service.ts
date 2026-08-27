@@ -4,7 +4,7 @@ import { buildCustomerScope } from '../authz/dataScope';
 import { CustomerPolicy } from '../policies/customer.policy';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -130,7 +130,7 @@ export class CustomerService {
     const firstName = nameParts[0];
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const customer = await tx.customer.create({
         data: {
           customer_code: customerCode,

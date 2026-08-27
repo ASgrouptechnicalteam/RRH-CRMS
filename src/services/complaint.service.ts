@@ -8,7 +8,7 @@ import { AppError } from './lead.service';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // ---- Authorized constants (Packet 14-1) ----
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'] as const;

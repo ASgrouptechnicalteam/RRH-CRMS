@@ -76,7 +76,7 @@ export class InvalidChatInputError extends Error {
 }
 
 /** Defense-in-depth: reject any client attempt to supply a tenant/company identifier. */
-export function assertNoTenantOverride(payload: unknown): void {
+export function assertNoTenantOverride(payload: any): void {
   if (!payload || typeof payload !== 'object') return;
   for (const key of Object.keys(payload)) {
     if (RESERVED_TENANT_KEYS.includes(key.toLowerCase())) {
@@ -174,7 +174,7 @@ export class SearchIntentService {
    *                attempt to inject a tenant/company identifier is rejected.
    * @param caller  Server-derived authenticated context - the ONLY source of tenant identity.
    */
-  async extract(payload: unknown, caller: AuthenticatedAICaller): Promise<SearchIntentExtraction> {
+  async extract(payload: any, caller: AuthenticatedAICaller): Promise<SearchIntentExtraction> {
     assertNoTenantOverride(payload);
 
     const parsed = AISearchInputSchema.safeParse(payload);
@@ -229,7 +229,7 @@ export class SearchIntentService {
    * @param caller   Server-derived authenticated context — the ONLY source of
    *                 tenant identity.
    */
-  async chat(payload: unknown, caller: AuthenticatedAICaller): Promise<ChatResult> {
+  async chat(payload: any, caller: AuthenticatedAICaller): Promise<ChatResult> {
     assertNoTenantOverride(payload);
 
     const parsed = AIChatRequestSchema.safeParse(payload);
@@ -274,7 +274,7 @@ export class SearchIntentService {
 
 /** Parse and deterministically validate the provider's structured output. */
 export function parseSearchIntentContent(content: string): SearchIntentExtraction {
-  let raw: unknown;
+  let raw: any;
   try {
     raw = JSON.parse(content);
   } catch {
@@ -293,7 +293,7 @@ export function parseSearchIntentContent(content: string): SearchIntentExtractio
  * searchIntent, so recommendation/ranking/match-% fields can never slip through.
  */
 export function parseChatContent(content: string): ChatResult {
-  let raw: unknown;
+  let raw: any;
   try {
     raw = JSON.parse(content);
   } catch {

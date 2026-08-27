@@ -58,7 +58,7 @@ export function buildOpenRouterBody(request: AIRequest, model: string): Record<s
 
 /** Normalize a raw provider chat-completion response into a canonical AIResponse (pure). */
 export function parseOpenRouterResponse(
-  body: unknown,
+  body: any,
   request: AIRequest,
   provider: string
 ): AIResponse {

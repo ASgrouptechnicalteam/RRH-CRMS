@@ -5,7 +5,7 @@ import { Roles } from '@rrh-ems/shared';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/announcement
 // Publicly fetch the active announcement for the company

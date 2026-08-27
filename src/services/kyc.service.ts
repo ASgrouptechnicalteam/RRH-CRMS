@@ -5,7 +5,7 @@ import { encryptData, decryptData } from '../utils/crypto';
 import { KycStatus } from '@rrh-ems/shared';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -54,7 +54,7 @@ export class KycService {
     const encryptedPan = dto.pan_number !== undefined ? encryptData(dto.pan_number) : undefined;
     const encryptedAadhaar = dto.aadhaar_number !== undefined ? encryptData(dto.aadhaar_number) : undefined;
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       await tx.customer.update({
         where: { id: customerId },
         data: {

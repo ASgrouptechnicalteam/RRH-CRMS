@@ -7,7 +7,7 @@ import AnalyticsService from '../services/analytics.service';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/md/employees - List employees for MD Control (Admin filtered out)
 router.get(
@@ -93,7 +93,7 @@ router.patch(
         data: { attendance_required: attendanceRequired },
       });
 
-      const actorId = req.user?.employeeId || (req.user as any)?.userId || (req.user as any)?.id || 1;
+      const actorId = req.user?.employeeId || 1;
 
       // Write Audit Event per SDD Golden Rule #6
       await p.auditEvent.create({
@@ -128,7 +128,7 @@ router.get(
   requireAuthz(Permissions.ADMIN_SYSTEM_METRICS),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const companyId = req.user?.companyId || (req.user as any)?.company_id || 1;
+      const companyId = req.user?.companyId || 1;
       const metrics = await AnalyticsService.getExecutiveMetrics(companyId);
       return res.status(200).json(metrics);
     } catch (error: any) {

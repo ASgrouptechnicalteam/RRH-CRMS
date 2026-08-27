@@ -11,7 +11,7 @@ import { deriveTaskSlaStatus } from '../services/task-sla.status';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/tasks/all-team-tasks - MD & Management View of All Employee Tasks
 router.get('/all-team-tasks', authenticateToken, requireAuthz(Permissions.REPORTS_READ_TEAM), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -218,11 +218,17 @@ router.patch('/:id/status', authenticateToken, requireAuthz(Permissions.TASKS_UP
     }
 
     // Embed context for authorization.ts
-    existingTask.company_id = existingTask.assignee?.company_id;
     const downstreamIds = await getDownstreamEmployeeIds(req.user!.companyId, employeeId);
-    existingTask._isSubordinate = downstreamIds.includes(existingTask.assignee_id);
+    const taskContext = {
+      ...existingTask,
+      assignee: {
+        ...existingTask.assignee,
+        company_id: existingTask.assignee?.company_id,
+      },
+      _isSubordinate: downstreamIds.includes(existingTask.assignee_id),
+    };
 
-    if (!can(req.user!, Permissions.TASKS_UPDATE, existingTask)) {
+    if (!can(req.user!, Permissions.TASKS_UPDATE, taskContext)) {
       return res.status(403).json({ error: 'Forbidden: Cannot update this task' });
     }
 

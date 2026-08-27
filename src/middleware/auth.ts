@@ -96,6 +96,7 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
     req.user = payload;
     next();
   } catch (err: any) {
+    console.error('JWT VERIFICATION ERROR:', err);
     // If token expired, return clear code so frontend automatically throws user to login page
     return res.status(401).json({
       error: 'Token expired or invalid',

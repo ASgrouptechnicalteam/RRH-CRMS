@@ -19,7 +19,7 @@ export function deriveTaskSlaStatus(
     status: string
     target_date: Date
     completed_at?: Date | null
-    [key: string]: unknown
+    [key: string]: any
   },
   now: Date
 ): "ACTIVE" | "COMPLETED" | "BREACHED" {

@@ -13,7 +13,7 @@ import { PrismaClient } from '@prisma/client';
 import webpush from 'web-push';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // VAPID keys — generate once with: npx web-push generate-vapid-keys
 // Then put them in your .env file

@@ -7,7 +7,7 @@ import { calculatePerformanceScore, calculateLeaderboardScore } from '../service
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // POST /api/v1/performance/reset-score-history - Resets test events across ALL employees back to clean 50.0
 router.post('/reset-score-history', authenticateToken, requireRole([Roles.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {

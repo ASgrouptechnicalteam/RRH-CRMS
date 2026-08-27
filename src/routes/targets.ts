@@ -9,7 +9,7 @@ import { getDownstreamEmployeeIds } from '../utils/hierarchy';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // Helper to generate basic schema for roles
 const generateBasicSchema = (metrics: string[], hasChecklist = false): any[] => {

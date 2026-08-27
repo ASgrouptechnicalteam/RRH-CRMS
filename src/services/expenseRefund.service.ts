@@ -7,7 +7,7 @@ import { notifyEmployee } from '../utils/notifyEmployee';
 import { can } from '../authz/authorization';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class ExpenseRefundService {
   static async listMyRefunds(user: TokenPayload) {
@@ -36,7 +36,7 @@ export class ExpenseRefundService {
 
     const proofImageUrl = file ? `/uploads/expense-proofs/${file.filename}` : null;
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const refund = await tx.expenseRefund.create({
         data: {
           employee_id: user.employeeId,
@@ -94,7 +94,7 @@ export class ExpenseRefundService {
 
     ExpenseRefundWorkflow.validateTransition(refund.status, action);
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.expenseRefund.update({
         where: { id: refundId },
         data: {
@@ -156,7 +156,7 @@ export class ExpenseRefundService {
 
     ExpenseRefundWorkflow.validateTransition(refund.status, action);
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.expenseRefund.update({
         where: { id: refundId },
         data: {
@@ -221,7 +221,7 @@ export class ExpenseRefundService {
 
     ExpenseRefundWorkflow.validateTransition(refund.status, 'MARK_REFUNDED');
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.expenseRefund.update({
         where: { id: refundId },
         data: {

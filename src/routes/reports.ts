@@ -7,7 +7,7 @@ import { getISTComponents } from '../utils/time';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // POST /api/v1/reports/daily - Submit Daily Report with Below-Target Validation
 router.post('/daily', authenticateToken, validateRequestBody(DailyReportSchema), async (req: AuthenticatedRequest, res: Response) => {

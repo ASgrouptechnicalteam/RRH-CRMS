@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { PublicLeadCreateSchema } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
 import { publicReadLimiter, publicWriteLimiter } from '../middleware/rateLimiter';
@@ -7,10 +7,10 @@ import { correlationId } from '../middleware/correlationId';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // Public-safe property allowlist (WR-1/WR-2/WR-3/WR-6)
-const PUBLIC_PROPERTY_SELECT = {
+const PUBLIC_PROPERTY_SELECT: Prisma.PropertySelect = {
   id: true,
   property_code: true,
   title: true,
@@ -47,11 +47,11 @@ const PUBLIC_PROPERTY_SELECT = {
     },
     orderBy: [{ sort_order: 'asc' as const }, { created_at: 'asc' as const }],
   }
-} as const;
+};
 
 // Public-safe property subset for project detail (less than full property detail)
 // Excludes: status (internal), GPS coordinates, seller info, internal workflow fields
-const PUBLIC_PROJECT_PROPERTY_SELECT = {
+const PUBLIC_PROJECT_PROPERTY_SELECT: Prisma.PropertySelect = {
   id: true,
   property_code: true,
   title: true,
@@ -83,10 +83,10 @@ const PUBLIC_PROJECT_PROPERTY_SELECT = {
     },
     orderBy: [{ sort_order: 'asc' as const }, { created_at: 'asc' as const }],
   }
-} as const;
+};
 
 // WR-5/WR-6: Public-safe project allowlist
-const PUBLIC_PROJECT_SELECT = {
+const PUBLIC_PROJECT_SELECT: Prisma.ProjectSelect = {
   id: true,
   project_code: true,
   name: true,
@@ -101,19 +101,19 @@ const PUBLIC_PROJECT_SELECT = {
   // company_id EXCLUDED — internal
   // assigned_pm_id EXCLUDED — internal
   // branch_id EXCLUDED — internal
-} as const;
+};
 
 // WR-5: Project detail extends list with properties
-const PUBLIC_PROJECT_DETAIL_SELECT = {
+const PUBLIC_PROJECT_DETAIL_SELECT: Prisma.ProjectSelect = {
   ...PUBLIC_PROJECT_SELECT,
   properties: {
     select: PUBLIC_PROJECT_PROPERTY_SELECT,
     orderBy: { created_at: 'desc' as const },
   },
-} as const;
+};
 
 // Property detail adds a minimal project subset (WR-5 extends this pattern)
-const PUBLIC_PROPERTY_DETAIL_SELECT = {
+const PUBLIC_PROPERTY_DETAIL_SELECT: Prisma.PropertySelect = {
   ...PUBLIC_PROPERTY_SELECT,
   project: {
     select: {
@@ -124,7 +124,7 @@ const PUBLIC_PROPERTY_DETAIL_SELECT = {
       status: true,
     },
   },
-} as const;
+};
 
 // Public API Key Middleware
 const authenticatePublicKey = async (req: any, res: Response, next: any) => {
@@ -238,7 +238,7 @@ router.get('/:brand/properties', async (req: any, res: Response) => {
     // Brand / publication / availability foundation (unchanged)
     const publishedPropertyIds = await p.propertyPublication.findMany({
       where: {
-        company_id: companyId,
+        company_id: companyId as number,
         is_published: true,
       },
       select: { property_id: true },
@@ -422,7 +422,7 @@ router.get('/:brand/properties/:id', async (req: any, res: Response) => {
     const publication = await p.propertyPublication.findFirst({
       where: {
         property_id: propertyId,
-        company_id: companyId,
+        company_id: companyId as number,
         is_published: true,
       },
     });
@@ -521,7 +521,7 @@ router.get('/:brand/projects', async (req: any, res: Response) => {
             brand_type: brandType,
             publications: {
               some: {
-                company_id: companyId,
+                company_id: companyId as number,
                 is_published: true,
               },
             },
@@ -578,7 +578,7 @@ router.get('/:brand/projects/:id', async (req: any, res: Response) => {
     // Verify project exists and has at least one published property of this brand for this company
     const publicationCheck = await p.propertyPublication.findFirst({
       where: {
-        company_id: companyId,
+        company_id: companyId as number,
         is_published: true,
         property: {
           project_id: projectId,
@@ -640,7 +640,7 @@ router.post('/:brand/leads', publicWriteLimiter, validateRequestBody(PublicLeadC
     const newLead = await p.lead.create({
       data: {
         lead_code: leadCode,
-        company_id: companyId,
+        company_id: companyId as number,
         customer_name,
         phone,
         email,

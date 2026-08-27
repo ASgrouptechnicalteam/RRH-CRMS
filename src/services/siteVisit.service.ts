@@ -9,7 +9,7 @@ import { SiteVisitAction } from '../workflows/siteVisit.workflow';
 import { SiteVisitPolicy } from '../policies/siteVisit.policy';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class SiteVisitService {
   private static async generateNextBookingCode(): Promise<string> {
@@ -118,7 +118,7 @@ export class SiteVisitService {
       }
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       if (!pmId) {
         // Fallback: Notify MD
         const md = await tx.employee.findFirst({
@@ -203,7 +203,7 @@ export class SiteVisitService {
 
     const nextStatus = confirmed ? 'CONFIRMED' : 'CANCELLED';
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.siteVisitBooking.update({
         where: { id: visitId },
         data: {
@@ -263,7 +263,7 @@ export class SiteVisitService {
       throw { status: 409, message: transition.reason || 'Invalid state transition' };
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.siteVisitBooking.update({
         where: { id: visitId },
         data: {
@@ -311,7 +311,7 @@ export class SiteVisitService {
       throw { status: 409, message: transition.reason || 'Invalid state transition' };
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.siteVisitBooking.update({
         where: { id: visitId },
         data: {

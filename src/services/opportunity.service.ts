@@ -174,7 +174,7 @@ export class OpportunityService {
     });
 
     // Check visibility via OpportunityPolicy
-    return opps.filter(opp => OpportunityPolicy.canView(user, opp as any));
+    return opps.filter(opp => OpportunityPolicy.canView(user, opp));
   }
 
   /**
@@ -384,7 +384,7 @@ export class OpportunityService {
 
     if (!opp || opp.company_id !== user.companyId) throw new AppError(404, 'Opportunity not found');
 
-    if (!OpportunityPolicy.canView(user, opp as any)) {
+    if (!OpportunityPolicy.canView(user, opp)) {
       throw new AppError(403, 'Unauthorized to view this Opportunity');
     }
 

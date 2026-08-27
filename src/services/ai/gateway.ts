@@ -52,10 +52,10 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 }
 
 /** Normalize any thrown value into a provider-independent AIProviderErrorInfo. */
-function normalizeError(err: unknown, provider: string): AIProviderErrorInfo {
+function normalizeError(err: any, provider: string): AIProviderErrorInfo {
   if (err instanceof AIProviderError) return err.info;
 
-  const candidate = (err as { info?: unknown })?.info;
+  const candidate = (err as { info?: any })?.info;
   if (
     candidate &&
     typeof candidate === 'object' &&

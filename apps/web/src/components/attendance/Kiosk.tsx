@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { QrCode, CheckCircle2, User, Clock, AlertCircle, RefreshCw, XCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { ScanResult } from '../../types';
 
 export const Kiosk: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const [mode, setMode] = useState<'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [scannedData, setScannedData] = useState<string>('');
-  const [scanResult, setScanResult] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,8 +85,9 @@ export const Kiosk: React.FC = () => {
         resetKiosk();
       }, 5000);
 
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setErrorMessage(message);
       setMode('ERROR');
       setTimeout(() => resetKiosk(), 5000);
     }

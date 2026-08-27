@@ -4,11 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { Roles } from '@rrh-ems/shared';
+import { ProjectFormData, ProjectFormPayload, PmListItem } from '../../types';
 
 interface ProjectFormWizardProps {
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: any; // If provided, acts as Edit mode
+  initialData?: ProjectFormData; // If provided, acts as Edit mode
 }
 
 export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, onSuccess, initialData }) => {
@@ -31,7 +32,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
     initialData?.assigned_pm_id ? initialData.assigned_pm_id.toString() : ''
   );
 
-  const [pms, setPms] = useState<any[]>([]);
+  const [pms, setPms] = useState<PmListItem[]>([]);
 
   useEffect(() => {
     // Fetch PMs if the user has appropriate roles or permissions
@@ -41,7 +42,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
         .then(res => res.json())
         .then(data => {
           if (data.employees) {
-            setPms(data.employees.filter((e: any) => e.roles?.some((r: any) => r.includes(Roles.PROJECT_MANAGER))));
+            setPms(data.employees.filter((e: PmListItem) => e.roles?.some((r: string) => r.includes(Roles.PROJECT_MANAGER))));
           }
         })
         .catch(() => {});
@@ -57,7 +58,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
 
     setIsLoading(true);
     try {
-      const payload: any = {
+      const payload: ProjectFormPayload = {
         name,
         location,
         description,

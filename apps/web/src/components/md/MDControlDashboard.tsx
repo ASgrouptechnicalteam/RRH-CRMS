@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, ShieldCheck, ToggleLeft, ToggleRight, Search, Building2, QrCode, X, Printer, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { EmployeeListItem } from '../../types';
 import { QRCodeVisual } from '../common/QRCodeVisual';
 
 interface ToastState {
@@ -11,7 +12,7 @@ interface ToastState {
 
 export const MDControlDashboard: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -20,7 +21,7 @@ export const MDControlDashboard: React.FC = () => {
   const [toast, setToast] = useState<ToastState | null>(null);
 
   // Selected Employee QR Badge Modal
-  const [selectedQrEmployee, setSelectedQrEmployee] = useState<any | null>(null);
+  const [selectedQrEmployee, setSelectedQrEmployee] = useState<EmployeeListItem | null>(null);
 
   const triggerToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -92,7 +93,7 @@ export const MDControlDashboard: React.FC = () => {
 
   const filteredEmployees = employees.filter((emp) =>
     emp.employeeCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.branch?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     emp.roles.some((r: string) => r.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 

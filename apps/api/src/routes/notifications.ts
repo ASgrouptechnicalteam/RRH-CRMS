@@ -4,7 +4,7 @@ import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/notifications - List notifications for logged in user
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -39,7 +39,7 @@ router.patch('/:id/read', authenticateToken, async (req: AuthenticatedRequest, r
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    if (notification.employee_id !== userId && notification.user_id !== userId) {
+    if (notification.employee_id !== userId && notification.employee_id !== userId) {
       return res.status(403).json({ error: 'Forbidden: Cannot access another user\'s notification' });
     }
 

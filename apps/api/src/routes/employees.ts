@@ -172,8 +172,8 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
     }
 
     const userRoles = req.user!.roles;
-    const isUserAdmin = userRoles.includes(Roles.ADMIN as any);
-    const isUserMD = userRoles.includes(Roles.MD as any);
+    const isUserAdmin = userRoles.includes(Roles.ADMIN);
+    const isUserMD = userRoles.includes(Roles.MD);
 
     if (role_name === Roles.ADMIN && !isUserAdmin) {
       return res.status(403).json({ error: 'Forbidden: Only ADMIN can create ADMIN accounts' });
@@ -229,7 +229,7 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
     }
 
     const passwordHash = await bcrypt.hash(initial_password || 'Radhareal@123', 12);
-    const isExempt = [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(role_name as any);
+    const isExempt = [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(role_name);
 
     const newEmp = await prisma.employee.create({
       data: {

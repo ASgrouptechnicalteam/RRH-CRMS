@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { PerformanceScoreResponse } from '../../types';
 import { Award, TrendingUp, ShieldAlert, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
 export const PerformanceScoreWidget: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [scoreData, setScoreData] = useState<any>(null);
+  const [scoreData, setScoreData] = useState<PerformanceScoreResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchScore = () => {

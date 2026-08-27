@@ -13,7 +13,7 @@ import { buildProjectScope } from '../authz/dataScope';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/projects - List projects
 router.get(

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Target, TrendingUp, DollarSign, Activity } from 'lucide-react';
+import { PipelineMetricsData } from '../../types';
 
 interface MetricsProps {
-  metrics: any;
+  metrics: PipelineMetricsData;
   isLoading: boolean;
 }
 

@@ -53,8 +53,9 @@ export const AttendanceHistory: React.FC = () => {
       
       setLogs(data.logs || []);
       setTotalPages(data.pagination?.totalPages || 1);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
     } finally {
       setIsLoading(false);
     }

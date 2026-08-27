@@ -23,14 +23,15 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { AdminAnalyticsData, AuditLogEntry, SecurityAlertItem } from '../../types';
 
 export const AdminAnalyticsPortal: React.FC = () => {
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
 
-  const [metrics, setMetrics] = useState<any>(null);
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [securityAlerts, setSecurityAlerts] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<AdminAnalyticsData | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLockingDown, setIsLockingDown] = useState(false);
   const [showLockdownConfirm, setShowLockdownConfirm] = useState(false);
@@ -60,9 +61,10 @@ export const AdminAnalyticsPortal: React.FC = () => {
         const alertData = await alertsRes.json();
         setSecurityAlerts(alertData.alerts || []);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
       console.error('Failed to fetch admin data:', e);
-      setMetrics({ databaseStatus: `NETWORK ERROR: ${e.message}` });
+      setMetrics({ databaseStatus: `NETWORK ERROR: ${message}` });
       showToast('Failed to connect to secure admin endpoints', 'error');
     } finally {
       setIsLoading(false);

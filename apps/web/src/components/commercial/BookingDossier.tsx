@@ -6,14 +6,15 @@ import { Permissions } from '@rrh-ems/shared';
 import { ArrowLeft, CheckCircle, XCircle, IndianRupee, FileText, User, MapPin, Clock } from 'lucide-react';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { useToast } from '../../context/ToastContext';
+import { BookingDossierData, HandoffData, PaymentItem } from '../../types';
 
 export const BookingDossier: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchWithAuth, user } = useAuth();
   const { showToast } = useToast();
-  const [booking, setBooking] = useState<any>(null);
-  const [handoff, setHandoff] = useState<any>(null);
+  const [booking, setBooking] = useState<BookingDossierData | null>(null);
+  const [handoff, setHandoff] = useState<HandoffData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -168,7 +169,7 @@ export const BookingDossier: React.FC = () => {
             <p className="text-sm text-slate-500 text-center py-4">No payments recorded yet.</p>
           ) : (
             <div className="divide-y divide-slate-100">
-              {booking.payments?.map((p: any) => (
+              {booking.payments?.map((p: PaymentItem) => (
                 <div key={p.id} className="py-3 flex justify-between items-center">
                   <div>
                     <p className="font-bold text-sm text-slate-800">₹{p.amount.toLocaleString()} <span className="text-xs font-normal text-slate-500">via {p.payment_method}</span></p>

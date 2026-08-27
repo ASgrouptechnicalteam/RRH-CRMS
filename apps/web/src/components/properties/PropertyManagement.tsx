@@ -33,6 +33,7 @@ import { EditPropertyModal } from './EditPropertyModal';
 import { Edit, Building2 } from 'lucide-react';
 
 import { resolveImageUrl } from '../../utils/imageUtils';
+import { ProjectListItem, PropertyListItem, PmListItem, VerificationLogItem, PropertyImage } from '../../types';
 
 interface Property {
   id: number;
@@ -56,8 +57,8 @@ interface Property {
   project?: { id: number; name: string };
   created_by?: { id: number; employee_code: string; full_name: string };
     created_at: string;
-  verification_logs?: any[];
-  images?: { id: number; image_url: string; is_primary: boolean; caption?: string }[];
+  verification_logs?: VerificationLogItem[];
+  images?: PropertyImage[];
 }
 
 const APPROVAL_STAGES = [
@@ -141,7 +142,7 @@ export const PropertyManagement: React.FC = () => {
   const [possessionStatus, setPossessionStatus] = useState('READY_TO_MOVE');
   const [assignedPmId, setAssignedPmId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pms, setPms] = useState<any[]>([]);
+  const [pms, setPms] = useState<PmListItem[]>([]);
   const [viewMode, setViewMode] = useState<'ALL' | 'MY_PROPERTIES'>('ALL');
 
   // Action Inputs for Dossier
@@ -174,7 +175,7 @@ export const PropertyManagement: React.FC = () => {
       const res = await fetchWithAuth(`${API_BASE_URL}/employees`);
       const data = await res.json();
       if (res.ok && data.employees) {
-        setPms(data.employees.filter((e: any) => e.roles?.some((r: any) => r.includes(Roles.PROJECT_MANAGER))));
+        setPms(data.employees.filter((e: PmListItem) => e.roles?.some((r: string) => r.includes(Roles.PROJECT_MANAGER))));
       }
     } catch (e) {}
   };
@@ -392,7 +393,7 @@ export const PropertyManagement: React.FC = () => {
           {isPM && (
             <select
               value={viewMode}
-              onChange={(e) => setViewMode(e.target.value as any)}
+              onChange={(e) => setViewMode(e.target.value as 'ALL' | 'MY_PROPERTIES')}
               className="py-1.5 px-3 text-xs bg-teal-50 border border-teal-200 rounded-xl font-bold text-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600"
             >
               <option value="ALL">All Properties</option>
@@ -760,7 +761,7 @@ export const PropertyManagement: React.FC = () => {
               
               {selectedProperty.images && selectedProperty.images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {selectedProperty.images.map((img: any) => (
+                  {selectedProperty.images.map((img: PropertyImage) => (
                     <div key={img.id} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
                       <img src={resolveImageUrl(img.image_url)} alt="Property" className="w-full h-full object-cover" />
                       {img.is_primary && (
@@ -797,7 +798,7 @@ export const PropertyManagement: React.FC = () => {
             <div className="space-y-2">
               <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Verification History Log</h4>
               <div className="space-y-2 border-l-2 border-slate-200 pl-4 text-xs">
-                {selectedProperty.verification_logs?.map((log: any) => (
+                {selectedProperty.verification_logs?.map((log: VerificationLogItem) => (
                   <div key={log.id} className="space-y-0.5">
                     <div className="font-bold text-slate-800 flex items-center justify-between">
                       <span>{log.actor?.full_name || log.actor?.employee_code}</span>

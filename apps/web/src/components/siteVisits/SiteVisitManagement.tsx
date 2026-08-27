@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
+import { EmployeeListItem } from '../../types';
 
 interface SiteVisit {
   id: number;
@@ -100,7 +101,7 @@ export const SiteVisitManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const [visits, setVisits] = useState<SiteVisit[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals

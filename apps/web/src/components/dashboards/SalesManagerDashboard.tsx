@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import {
-  TrendingUp, Users, Target, Activity, AlertCircle, Calendar, 
+  TrendingUp, Users, Target, Activity, AlertCircle, Calendar,
   CheckCircle, Clock, ShieldAlert, Award, PhoneCall
 } from 'lucide-react';
+import { SalesManagerDashboardData, PipelineStageCount, TeamPerformanceRow, LeadAttributionRow, StalledLeadRow, OverdueTaskRow } from '../../types';
 
 export const SalesManagerDashboard: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<SalesManagerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,8 +68,8 @@ export const SalesManagerDashboard: React.FC = () => {
           <div data-tour="dashboard-pipeline" className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
             <h3 className="font-extrabold text-slate-800 mb-4">Pipeline Distribution</h3>
             <div className="space-y-3">
-              {pipeline.map((p: any) => {
-                const max = Math.max(...pipeline.map((x: any) => x.count), 1);
+              {pipeline.map((p: PipelineStageCount) => {
+                const max = Math.max(...pipeline.map((x: PipelineStageCount) => x.count), 1);
                 const percent = (p.count / max) * 100;
                 return (
                   <div key={p.status} className="flex items-center gap-3">
@@ -104,7 +105,7 @@ export const SalesManagerDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {teamPerformance.map((tp: any) => (
+                {teamPerformance.map((tp: TeamPerformanceRow) => (
                   <tr key={tp.employee.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3">
                       <div className="font-bold text-slate-800">{tp.employee.full_name}</div>
@@ -146,7 +147,7 @@ export const SalesManagerDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-indigo-100/50">
-                {leadAttribution.map((la: any) => (
+                {leadAttribution.map((la: LeadAttributionRow) => (
                   <tr key={la.employee.id} className="hover:bg-indigo-50 transition-colors">
                     <td className="py-3">
                       <div className="font-bold text-indigo-900">{la.employee.full_name}</div>
@@ -196,7 +197,7 @@ export const SalesManagerDashboard: React.FC = () => {
               Site Visits
             </h3>
             <div className="space-y-3">
-              {Object.entries(siteVisits).map(([status, count]: any) => (
+              {Object.entries(siteVisits).map(([status, count]: [string, number]) => (
                 <div key={status} className="flex justify-between items-center text-sm">
                   <span className="font-medium text-slate-600 capitalize">{status.replace(/_/g, ' ').toLowerCase()}</span>
                   <span className="font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-lg">{count}</span>
@@ -215,7 +216,7 @@ export const SalesManagerDashboard: React.FC = () => {
               Stalled Leads ({'>'}7 Days)
             </h3>
             <div className="space-y-3">
-              {stalledLeads.map((l: any) => (
+              {stalledLeads.map((l: StalledLeadRow) => (
                 <div key={l.id} className="text-sm bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
                   <div className="font-bold text-slate-800">Lead #{l.id}</div>
                   <div className="text-xs text-slate-500 mt-1 flex justify-between">
@@ -237,7 +238,7 @@ export const SalesManagerDashboard: React.FC = () => {
               Overdue Follow-ups
             </h3>
             <div className="space-y-3">
-              {overdueTasks.map((t: any) => (
+              {overdueTasks.map((t: OverdueTaskRow) => (
                 <div key={t.id} className="text-sm bg-white p-3 rounded-xl border border-orange-100 shadow-sm">
                   <div className="font-bold text-slate-800">{t.lead?.customer_name || 'No Lead'}</div>
                   <div className="text-xs text-slate-500 mt-1 flex justify-between">

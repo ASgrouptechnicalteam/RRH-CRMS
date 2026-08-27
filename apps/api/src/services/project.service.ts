@@ -6,7 +6,7 @@ import { can } from '../authz/authorization';
 import { slugify, generateUniqueSlug } from '../utils/slugify';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class ProjectService {
   private static async generateNextProjectCode(): Promise<string> {
@@ -191,7 +191,7 @@ export class ProjectService {
 
     const oldPmId = project.assigned_pm_id;
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.project.update({
         where: { id: projectId },
         data: { assigned_pm_id: newPmId }

@@ -117,7 +117,7 @@ router.get(
         });
       }
 
-      const companyId = req.user?.companyId ?? (req.user as any)?.company_id ?? 1;
+      const companyId = req.user?.companyId ?? 1;
       const result = await IntegrationService.getPortalMetrics(companyId, parsed.data);
       res.status(200).json(result);
     } catch (error) {

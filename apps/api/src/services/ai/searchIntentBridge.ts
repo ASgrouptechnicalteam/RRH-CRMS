@@ -79,7 +79,7 @@ const MATCH_PROPERTY_SELECT = {
  * buildCrmSearchWhere). Pure and unit-testable.
  */
 export function translateToPropertyFilters(intent: SearchIntent): Record<string, unknown> {
-  const filter: Record<string, unknown> = {};
+  const filter: any = {};
 
   if (intent.propertyType) filter.category = intent.propertyType;
   if (intent.brandType) filter.brand_type = intent.brandType;
@@ -136,7 +136,7 @@ export function buildLocationConditions(loc: SearchIntent['location'] | null | u
  * appear in results.
  */
 export function buildCrmSearchWhere(intent: SearchIntent, companyId: number): Record<string, unknown> {
-  const where: Record<string, unknown> = {
+  const where: any = {
     ...translateToPropertyFilters(intent),
     company_id: companyId,
     OR: [

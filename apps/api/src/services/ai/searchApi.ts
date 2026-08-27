@@ -25,9 +25,9 @@ export type AISearchRequest = z.infer<typeof AISearchRequestSchema>;
 
 export interface AISearchApiResponse {
   status: 'COMPLETE' | 'INCOMPLETE';
-  searchIntent?: unknown;
+  searchIntent?: any;
   missingRequirements?: string[];
-  ambiguities?: unknown[];
+  ambiguities?: any[];
   unsupportedCriteria?: string[];
   nextAction: 'CRM_SEARCH' | 'AI_CHAT';
   /**
@@ -35,7 +35,7 @@ export interface AISearchApiResponse {
    * (Phase 17-C bridge) runs. This is the CRM's authority, not the AI's — the AI never
    * decides matches. Absent when the CRM search is not invoked.
    */
-  results?: unknown[];
+  results?: any[];
 }
 
 /**

@@ -12,12 +12,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { PropertyListItem } from '../../types';
 import { PropertyManagement } from '../properties/PropertyManagement';
 
 export const PMDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchPMProperties = async () => {

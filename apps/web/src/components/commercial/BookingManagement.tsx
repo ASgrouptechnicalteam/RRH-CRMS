@@ -3,11 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Search, Plus, FileText, CheckCircle2, XCircle, IndianRupee } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { BookingItem } from '../../types';
 
 export const BookingManagement: React.FC = () => {
   const { fetchWithAuth, user } = useAuth();
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');

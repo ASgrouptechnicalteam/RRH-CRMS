@@ -175,6 +175,12 @@ async function main() {
   // Step 5: Conditionally run Sonthillu E2E local fixtures (development only).
   const { runSonthilluE2EFixtures } = await import('./fixtures/sonthillu-e2e.fixtures');
   await runSonthilluE2EFixtures(prisma);
+
+  // Step 6: Conditionally run Development Fixtures (development only).
+  if (process.env.NODE_ENV !== 'production') {
+    const { runDevelopmentFixtures } = await import('./fixtures/development-data.fixtures');
+    await runDevelopmentFixtures(prisma);
+  }
 }
 
 main()

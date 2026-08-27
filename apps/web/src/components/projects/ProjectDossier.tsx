@@ -5,19 +5,20 @@ import { API_BASE_URL } from '../../config';
 import { Permissions } from '@rrh-ems/shared';
 import { useToast } from '../../context/ToastContext';
 import { PropertyManagement } from '../properties/PropertyManagement';
+import { ProjectDossierData, PropertyListItem, ProjectFormData } from '../../types';
 
 interface ProjectDossierProps {
   projectId: number;
   onClose: () => void;
-  onEdit?: (project: any) => void;
+  onEdit?: (project: ProjectFormData) => void;
 }
 
 export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClose, onEdit }) => {
   const { fetchWithAuth, user } = useAuth();
   const { showToast } = useToast();
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<ProjectDossierData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<PropertyListItem[]>([]);
 
   const canEdit = user?.permissions?.includes(Permissions.PROJECTS_UPDATE);
 

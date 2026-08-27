@@ -6,7 +6,7 @@ import { Roles } from '@rrh-ems/shared';
 import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // Property reservation lock duration (24h), consistent with Phase 9 inventory locking.
 const LOCK_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -115,24 +115,24 @@ export class BookingService {
     // Company-scope the customer. A non-existent customer is intentionally NOT
     // rejected here so the booking FK constraint surfaces a Prisma error (500),
     // matching the existing transaction rollback contract (lock is reverted).
-    const customer = await (client as any).customer.findUnique({ where: { id: dto.customer_id } });
+    const customer = await client.customer.findUnique({ where: { id: dto.customer_id } });
     if (customer && customer.company_id !== user.companyId) {
       throw new AppError(404, 'Customer not found in this company');
     }
 
     let assignedEmployeeId = dto.assigned_employee_id ?? user.employeeId ?? null;
     if (assignedEmployeeId) {
-      const emp = await (client as any).employee.findUnique({ where: { id: assignedEmployeeId } });
+      const emp = await client.employee.findUnique({ where: { id: assignedEmployeeId } });
       if (!emp || emp.company_id !== user.companyId) {
         throw new AppError(404, 'Assigned employee not found in this company');
       }
     }
 
     const balance = Math.max(0, Number(dto.agreed_price) - Number(dto.booking_amount));
-    const count = await (client as any).booking.count({ where: { company_id: user.companyId } });
+    const count = await client.booking.count({ where: { company_id: user.companyId } });
     const booking_code = `RRH-BK-${now.getFullYear()}-${String(count + 1).padStart(4, '0')}-${randomBytes(3).toString('hex')}`;
 
-    const booking = await (client as any).booking.create({
+    const booking = await client.booking.create({
       data: {
         booking_code,
         company:   { connect: { id: user.companyId } },
@@ -155,7 +155,7 @@ export class BookingService {
     });
 
     // Claim the property lock.
-    await (client as any).property.update({
+    await client.property.update({
       where: { id: dto.property_id },
       data: {
         status: 'LOCKED',
@@ -218,16 +218,16 @@ export class BookingService {
     const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.booking.update({ where: { id }, data: { status: 'CONFIRMED' } });
 
-      const propRow = await (tx as any).property.findUnique({ where: { id: booking.property_id } });
+      const propRow = await tx.property.findUnique({ where: { id: booking.property_id } });
       if (propRow && propRow.company_id === booking.company_id) {
-        await (tx as any).property.update({ where: { id: booking.property_id }, data: { status: 'BOOKED' } });
+        await tx.property.update({ where: { id: booking.property_id }, data: { status: 'BOOKED' } });
       }
 
-      const existingEvent = await (tx as any).integrationEvent.findFirst({
+      const existingEvent = await tx.integrationEvent.findFirst({
         where: { crms_booking_id: id, event_type: 'BOOKING_PORTAL_HANDOFF' },
       });
       if (!existingEvent) {
-        await (tx as any).integrationEvent.create({
+        await tx.integrationEvent.create({
           data: {
             event_type: 'BOOKING_PORTAL_HANDOFF',
             payload: JSON.stringify(payload),
@@ -238,11 +238,11 @@ export class BookingService {
         });
       }
 
-      const existingMapping = await (tx as any).bookingPortalMapping.findFirst({
+      const existingMapping = await tx.bookingPortalMapping.findFirst({
         where: { crms_booking_id: id },
       });
       if (!existingMapping) {
-        await (tx as any).bookingPortalMapping.create({
+        await tx.bookingPortalMapping.create({
           data: {
             company_id: booking.company_id,
             crms_booking_id: id,
@@ -253,16 +253,16 @@ export class BookingService {
       }
 
       // Transition the associated Opportunity to BOOKED (transactionally atomic with confirmation).
-      const opp = await (tx as any).opportunity.findFirst({ where: { booking_id: id } });
+      const opp = await tx.opportunity.findFirst({ where: { booking_id: id } });
       if (opp) {
-        await (tx as any).opportunity.update({
+        await tx.opportunity.update({
           where: { id: opp.id },
           data: { stage: 'BOOKED' },
         });
       }
 
       // Phase 9 Packet 5 — golden rule audit trail for the confirmation decision.
-      await (tx as any).auditEvent.create({
+      await tx.auditEvent.create({
         data: {
           actor_id: user.employeeId,
           action: 'BOOKING_CONFIRMED',
@@ -283,9 +283,9 @@ export class BookingService {
   static async cancelBooking(user: TokenPayload, id: number) {
     const booking = await BookingService.getBookingById(user, id);
     const updated = await prisma.booking.update({ where: { id }, data: { status: 'CANCELLED' } });
-    const prop = await (p.property as any).findUnique({ where: { id: booking.property_id } });
+    const prop = await p.property.findUnique({ where: { id: booking.property_id } });
     if (prop && prop.company_id === user.companyId) {
-      await (p.property as any).update({
+      await p.property.update({
         where: { id: booking.property_id },
         data: { status: 'LIVE', locked_until: null, locked_by_booking_id: null },
       });

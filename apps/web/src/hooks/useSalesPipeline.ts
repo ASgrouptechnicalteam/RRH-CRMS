@@ -1,14 +1,19 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+import {
+  SalesOpportunity,
+  PipelineMetricsData,
+  ConversionMetricsData,
+} from '../types';
 
 export function useSalesPipeline() {
   const { fetchWithAuth } = useAuth();
   
-  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [opportunities, setOpportunities] = useState<SalesOpportunity[]>([]);
   const [totalOpportunities, setTotalOpportunities] = useState(0);
-  const [pipelineMetrics, setPipelineMetrics] = useState<any>(null);
-  const [conversionMetrics, setConversionMetrics] = useState<any>(null);
+  const [pipelineMetrics, setPipelineMetrics] = useState<PipelineMetricsData | null>(null);
+  const [conversionMetrics, setConversionMetrics] = useState<ConversionMetricsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,8 +33,9 @@ export function useSalesPipeline() {
 
       setOpportunities(data.opportunities || []);
       setTotalOpportunities(data.total || 0);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +66,7 @@ export function useSalesPipeline() {
   }, [fetchWithAuth]);
 
   const updateSalesStage = async (id: number, newStage: string, dropReason?: string) => {
-    const payload: any = { stage: newStage };
+    const payload: { stage: string; drop_reason?: string } = { stage: newStage };
     if (dropReason) payload.drop_reason = dropReason;
 
     const res = await fetchWithAuth(`${API_BASE_URL}/opportunities/${id}/stage`, {

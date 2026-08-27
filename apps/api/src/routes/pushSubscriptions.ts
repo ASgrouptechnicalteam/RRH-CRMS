@@ -11,7 +11,7 @@ import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // GET /api/v1/push/vapid-public-key
 // Returns the VAPID public key so the frontend can subscribe

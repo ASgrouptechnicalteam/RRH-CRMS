@@ -10,7 +10,7 @@ import { generateWhatsAppText } from '../utils/matchingEngine';
 import { buildLeadScope } from '../authz/dataScope';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -196,7 +196,7 @@ export class LeadService {
       validReferralEmployeeId = refEmp.id;
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const lead = await tx.lead.create({
         data: {
           lead_code: leadCode,
@@ -299,7 +299,7 @@ export class LeadService {
             continue;
           }
 
-          await p.$transaction(async (tx: any) => {
+          await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
             const leadCode = await this.generateNextLeadCode(); // Inside transaction to ensure unique code sequentially
             const bestAssignee = await findBestAssigneeForLead(user.companyId);
 
@@ -372,7 +372,7 @@ export class LeadService {
     const assignee = await p.employee.findFirst({ where: { id: assigneeId, company_id: user.companyId } });
     if (!assignee) throw new AppError(404, 'Assignee employee not found');
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.lead.update({
         where: { id: leadId },
         data: {
@@ -427,7 +427,7 @@ export class LeadService {
       throw new AppError(409, transition.reason || 'Invalid state transition');
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.lead.update({
         where: { id: leadId },
         data: {
@@ -510,7 +510,7 @@ export class LeadService {
       throw new AppError(400, 'Invalid relation: Lead and Property belong to different companies');
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const interest = await tx.leadPropertyInterest.upsert({
         where: {
           lead_id_property_id: {
@@ -556,7 +556,7 @@ export class LeadService {
       throw new AppError(404, 'Property interest not found');
     }
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       await tx.leadPropertyInterest.update({
         where: { id: interest.id },
         data: { is_active: false }

@@ -3,6 +3,7 @@ import { Clock, Calendar, Send, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
+import { ProposalItem } from '../../types';
 
 
 export const LateLeaveProposals: React.FC = () => {
@@ -19,7 +20,7 @@ export const LateLeaveProposals: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [queue, setQueue] = useState<any[]>([]);
+  const [queue, setQueue] = useState<ProposalItem[]>([]);
 
   const isHrOrMd = user?.roles.some((r) => r === Roles.HR_MANAGER || r === Roles.MD);
 
@@ -66,8 +67,9 @@ export const LateLeaveProposals: React.FC = () => {
 
       setMessage({ type: 'success', text: 'Late proposal submitted to HR queue!' });
       setReason('');
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setMessage({ type: 'error', text: message });
     } finally {
       setIsLoading(false);
     }

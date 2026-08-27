@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { X, Building } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { PropertyListItem } from '../../types';
 
 interface CreateBookingModalProps {
   customerId: number;
@@ -14,7 +15,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [formData, setFormData] = useState({
     property_id: '',
     agreed_price: '',

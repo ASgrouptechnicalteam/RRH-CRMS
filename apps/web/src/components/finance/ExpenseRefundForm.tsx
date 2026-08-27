@@ -74,8 +74,9 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
         onSuccess();
         onClose();
       }, 1800);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

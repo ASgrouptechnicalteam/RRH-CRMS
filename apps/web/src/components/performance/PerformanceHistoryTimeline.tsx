@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { PerformanceEvent } from '../../types';
 import { History, TrendingUp, TrendingDown, Award, Calendar, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
 export const PerformanceHistoryTimeline: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<PerformanceEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

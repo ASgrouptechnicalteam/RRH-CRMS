@@ -44,9 +44,10 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
         } else {
           setCameraError('Camera API not supported on this browser');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.warn('Camera access denied or unavailable:', err);
-        setCameraError('Camera unavailable or permission denied. Click below to verify QR.');
+        const message = err instanceof Error ? err.message : String(err);
+        setCameraError(`Camera unavailable or permission denied. ${message}`);
       }
     };
 

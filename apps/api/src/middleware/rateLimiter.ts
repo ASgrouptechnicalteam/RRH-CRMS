@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 const skipRateLimitInTests = (req: any) => process.env.NODE_ENV === 'test' && req.headers['x-strict-rate-limit'] !== 'true';
 
 export const apiRateLimiter = rateLimit({

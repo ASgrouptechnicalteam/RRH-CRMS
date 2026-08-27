@@ -1,0 +1,196 @@
+AS ANY (7):
+apps\api\src\routes\admin.ts:8 - const p = prisma as any;
+apps\api\src\routes\md.ts:10 - const p = prisma as any;
+apps\api\src\routes\public.ts:11 - const p = prisma as any;
+apps\api\src\routes\targets.ts:12 - const p = prisma as any;
+apps\api\src\routes\tasks.ts:14 - const p = prisma as any;
+apps\api\src\services\booking.service.ts:9 - const p = prisma as any;
+apps\api\src\services\lead.service.ts:13 - const p = prisma as any;
+
+: ANY (186):
+apps\api\src\authz\authorization.ts:20 - export const can = (user: TokenPayload, action: Permission, resource?: any): boolean => {
+apps\api\src\authz\dataScope.ts:19 - function getBaseScope(user: TokenPayload): any {
+apps\api\src\policies\expenseRefund.policy.ts:10 - static canListOwn(user: TokenPayload): any {
+apps\api\src\policies\expenseRefund.policy.ts:14 - static canListQueue(user: TokenPayload): any {
+apps\api\src\policies\expenseRefund.policy.ts:18 - let statusFilter: any;
+apps\api\src\policies\opportunity.policy.ts:28 - static canList(user: TokenPayload): any {
+apps\api\src\policies\opportunity.policy.ts:32 - const whereCondition: any = {
+apps\api\src\policies\siteVisit.policy.ts:18 - static canList(user: TokenPayload): any {
+apps\api\src\policies\siteVisit.policy.ts:22 - const whereCondition: any = {
+apps\api\src\policies\siteVisit.policy.ts:69 - static canComplete(user: TokenPayload, visit: any): boolean {
+apps\api\src\policies\task.policy.ts:7 - static async canMutate(user: TokenPayload, task: any): Promise<boolean> {
+apps\api\src\policies\task.policy.ts:42 - static canMutateSync(user: TokenPayload, task: any): boolean {
+apps\api\src\routes\admin.ts:68 - const actorIds = [...new Set(events.map((e: any) => e.actor_id))];
+apps\api\src\routes\admin.ts:75 - actors.map((a: any) => [
+apps\api\src\routes\admin.ts:81 - const hydratedEvents = events.map((event: any) => ({
+apps\api\src\routes\admin.ts:112 - actorIdsFilter = { in: companyEmployees.map((e: any) => e.id) };
+apps\api\src\routes\attendance.ts:78 - const parseAndVerifyQR = (req: AuthenticatedRequest, qrPayload: any) => {
+apps\api\src\routes\attendance.ts:361 - const whereClause: any = {
+apps\api\src\routes\booking.routes.ts:30 - async (req: any, res, next) => {
+apps\api\src\routes\booking.routes.ts:43 - async (req: any, res, next) => {
+apps\api\src\routes\booking.routes.ts:56 - async (req: any, res, next) => {
+apps\api\src\routes\booking.routes.ts:69 - async (req: any, res, next) => {
+apps\api\src\routes\booking.routes.ts:83 - async (req: any, res, next) => {
+apps\api\src\routes\booking.routes.ts:96 - async (req: any, res, next) => {
+apps\api\src\routes\booking.routes.ts:111 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:45 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:64 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:78 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:93 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:108 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:123 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:138 - async (req: any, res, next) => {
+apps\api\src\routes\complaint.routes.ts:153 - async (req: any, res, next) => {
+apps\api\src\routes\customers.ts:13 - const handleServiceError = (error: any, res: Response) => {
+apps\api\src\routes\employees.ts:71 - formatted.forEach((emp: any) => {
+apps\api\src\routes\employees.ts:336 - const updateData: any = {};
+apps\api\src\routes\employees.ts:393 - const hasDifferentRole = !currentRoles.some((r: any) => r.role.name === body.role_name);
+apps\api\src\routes\installment.routes.ts:23 - async (req: any, res, next) => {
+apps\api\src\routes\installment.routes.ts:40 - async (req: any, res, next) => {
+apps\api\src\routes\integration.routes.ts:17 - async (req: any, res, next) => {
+apps\api\src\routes\integration.routes.ts:34 - async (req: any, res, next) => {
+apps\api\src\routes\integration.routes.ts:53 - async (req: any, res, next) => {
+apps\api\src\routes\integration.routes.ts:70 - async (req: any, res, next) => {
+apps\api\src\routes\leads.ts:12 - const handleServiceError = (error: any, res: Response) => {
+apps\api\src\routes\md.ts:44 - const formatted = employees.map((emp: any) => ({
+apps\api\src\routes\md.ts:49 - roles: emprisma.roles.map((r: any) => r.role.name),
+apps\api\src\routes\md.ts:87 - if (existing.roles.some((r: any) => r.role.is_invisible)) {
+apps\api\src\routes\payment.routes.ts:30 - async (req: any, res, next) => {
+apps\api\src\routes\payment.routes.ts:44 - async (req: any, res, next) => {
+apps\api\src\routes\payment.routes.ts:58 - async (req: any, res, next) => {
+apps\api\src\routes\performance.ts:116 - const events: any[] = [];
+apps\api\src\routes\performance.ts:275 - const whereClause: any = {
+apps\api\src\routes\properties.ts:358 - const updateData: any = {};
+apps\api\src\routes\public.ts:1 - export interface PublicRequest extends import('express').Request { apiKeyContext?: any; }
+apps\api\src\routes\public.ts:131 - const authenticatePublicKey = async (req: any, res: Response, next: any) => {
+apps\api\src\routes\public.ts:160 - router.get('/:brand/properties', async (req: any, res: Response) => {
+apps\api\src\routes\public.ts:175 - const toNum = (v: any) => {
+apps\api\src\routes\public.ts:248 - const propertyIds = publishedPropertyIds.map((pp: any) => pprisma.property_id);
+apps\api\src\routes\public.ts:255 - const whereCondition: any = {
+apps\api\src\routes\public.ts:363 - let sortBy: any;
+apps\api\src\routes\public.ts:372 - const orderBy: any = {};
+apps\api\src\routes\public.ts:407 - router.get('/:brand/properties/:id', async (req: any, res: Response) => {
+apps\api\src\routes\public.ts:472 - function deriveInventorySummary(properties: any[]) {
+apps\api\src\routes\public.ts:503 - router.get('/:brand/projects', async (req: any, res: Response) => {
+apps\api\src\routes\public.ts:539 - projects.map(async (project: any) => {
+apps\api\src\routes\public.ts:562 - router.get('/:brand/projects/:id', async (req: any, res: Response) => {
+apps\api\src\routes\public.ts:624 - router.post('/:brand/leads', publicWriteLimiter, validateRequestBody(PublicLeadCreateSchema), async (req: any, res: Response) => {
+apps\api\src\routes\reports.ts:24 - let activeTarget: any = null;
+apps\api\src\routes\targets.ts:15 - const generateBasicSchema = (metrics: string[], hasChecklist = false): any[] => {
+apps\api\src\routes\targets.ts:16 - const schema: any[] = metrics.map((m) => ({
+apps\api\src\routes\targets.ts:47 - const ROLE_PRESETS: Record<string, { target_type: string; targets_json: Record<string, any>, form_schema_json: any[] }> = {
+apps\api\src\routes\targets.ts:92 - let empTarget: any = null;
+apps\api\src\routes\targets.ts:111 - let roleTarget: any = null;
+apps\api\src\routes\targets.ts:160 - let targets: any[] = [];
+apps\api\src\routes\targets.ts:200 - let newTarget: any = null;
+apps\api\src\server.ts:119 - app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+apps\api\src\services\ai\openRouterProvider.ts:105 - function looksLikeQuota(err: any): boolean {
+apps\api\src\services\ai\openRouterProvider.ts:111 - export function classifyOpenRouterError(err: any, provider: string): AIProviderErrorInfo {
+apps\api\src\services\ai\searchIntentBridge.ts:176 - prop: any,
+apps\api\src\services\ai\searchIntentBridge.ts:230 - export function scoreAndSortPropertyRows(rows: any[], intent: SearchIntent): SearchMatchResult[] {
+apps\api\src\services\ai\searchIntentBridge.ts:273 - db?: { property: { findMany: (args: any) => Promise<any[]> } }
+apps\api\src\services\analytics.service.ts:82 - opportunity: { pipelineMetrics: any; conversionMetrics: any };
+apps\api\src\services\analytics.service.ts:132 - const res: any = await prisma.$queryRaw`
+apps\api\src\services\analytics.service.ts:152 - const res: any =
+apps\api\src\services\analytics.service.ts:177 - const res: any = await prisma.$queryRaw`
+apps\api\src\services\analytics.service.ts:200 - const where: any = {
+apps\api\src\services\analytics.service.ts:368 - const pipelineCounts = allLeads.reduce((acc, lead: any) => {
+apps\api\src\services\analytics.service.ts:416 - const siteVisits = siteVisitsQuery.reduce((acc, item: any) => {
+apps\api\src\services\analytics.service.ts:434 - const teamPerformance: any[] = [];
+apps\api\src\services\analytics.service.ts:435 - const leadAttribution: any[] = [];
+apps\api\src\services\complaint.service.ts:32 - private static async generateComplaintCode(tx: any, companyId: number): Promise<string> {
+apps\api\src\services\complaint.service.ts:39 - private static async audit(tx: any, user: TokenPayload, action: string, entityId: number, oldValue: string | null, newValue: string | null) {
+apps\api\src\services\complaint.service.ts:144 - const where: any = { company_id: user.companyId };
+apps\api\src\services\complaint.service.ts:174 - const next: any = {};
+apps\api\src\services\customer.service.ts:16 - private static async generateNextCustomerCode(tx: any = prisma): Promise<string> {
+apps\api\src\services\customer.service.ts:56 - static async createCustomer(user: TokenPayload, dto: any) {
+apps\api\src\services\customer.service.ts:92 - static async updateCustomer(user: TokenPayload, id: number, dto: any) {
+apps\api\src\services\customer.service.ts:172 - static async upsertFromLead(user: TokenPayload, leadId: number, tx: any) {
+apps\api\src\services\document.service.ts:77 - tx: any
+apps\api\src\services\document.service.ts:258 - const where: any = {
+apps\api\src\services\integration.service.ts:415 - private static normalizeCounts<T extends string>(known: readonly T[], groups: any[], key: string): Record<string, number> {
+apps\api\src\services\integration.service.ts:445 - const baseWhere: any = { company_id: companyId };
+apps\api\src\services\integration.service.ts:505 - const response: any = {
+apps\api\src\services\integration.service.ts:550 - const where: any = { company_id: companyId, ...this.istDateRangeFilter(from, to) };
+apps\api\src\services\kyc.service.ts:93 - tx: any,
+apps\api\src\services\kyc.service.ts:114 - const data: any = { kyc_status: nextStatus };
+apps\api\src\services\kyc.service.ts:119 - const rejected = docs.find((d: any) => d.verification_status === 'REJECTED');
+apps\api\src\services\kyc.service.ts:185 - private static deriveKycStatus(customer: any, docs: any[]): string {
+apps\api\src\services\kyc.service.ts:186 - const relevant = docs.filter((d: any) => KYC_DOC_TYPES.includes(d.document_type));
+apps\api\src\services\kyc.service.ts:187 - if (relevant.some((d: any) => d.verification_status === 'REJECTED')) {
+apps\api\src\services\kyc.service.ts:191 - (d: any) => d.document_type === 'KYC_PAN' && d.verification_status === 'VERIFIED'
+apps\api\src\services\kyc.service.ts:194 - (d: any) => d.document_type === 'KYC_AADHAAR' && d.verification_status === 'VERIFIED'
+apps\api\src\services\kyc.service.ts:199 - if (relevant.some((d: any) => d.verification_status === 'VERIFIED')) {
+apps\api\src\services\lead.service.ts:103 - assigned_to_id: { in: telecallers.map((t: any) => t.id) },
+apps\api\src\services\lead.service.ts:111 - where: { company_id: companyId, assigned_to_id: { in: telecallers.map((t: any) => t.id) } },
+apps\api\src\services\lead.service.ts:117 - where: { company_id: companyId, status: 'WON', assigned_to_id: { in: telecallers.map((t: any) => t.id) } },
+apps\api\src\services\lead.service.ts:121 - const activeMap = new Map(activeLeadCounts.map((x: any) => [x.assigned_to_id, x._count._all]));
+apps\api\src\services\lead.service.ts:122 - const assignedMap = new Map(totalAssignedCounts.map((x: any) => [x.assigned_to_id, x._count._all]));
+apps\api\src\services\lead.service.ts:123 - const wonMap = new Map(totalWonCounts.map((x: any) => [x.assigned_to_id, x._count._all]));
+apps\api\src\services\lead.service.ts:125 - const monitorData = telecallers.map((emp: any) => {
+apps\api\src\services\lead.service.ts:149 - static calculateLeadScore(leadData: any): number {
+apps\api\src\services\lead.service.ts:164 - static async createLead(user: TokenPayload, dto: any) {
+apps\api\src\services\lead.service.ts:222 - return await prisma.$transaction(async (tx: any) => {
+apps\api\src\services\lead.service.ts:286 - static async bulkUploadLeads(user: TokenPayload, rawLeads: any[]) {
+apps\api\src\services\lead.service.ts:325 - await prisma.$transaction(async (tx: any) => {
+apps\api\src\services\lead.service.ts:398 - return await prisma.$transaction(async (tx: any) => {
+apps\api\src\services\lead.service.ts:453 - return await prisma.$transaction(async (tx: any) => {
+apps\api\src\services\lead.service.ts:536 - return await prisma.$transaction(async (tx: any) => {
+apps\api\src\services\lead.service.ts:582 - return await prisma.$transaction(async (tx: any) => {
+apps\api\src\services\notification.service.ts:32 - tx: any,
+apps\api\src\services\opportunity.service.ts:279 - const where: any = {
+apps\api\src\services\opportunity.service.ts:292 - const dateFilter: any = {};
+apps\api\src\services\opportunity.service.ts:299 - const closeFilter: any = {};
+apps\api\src\services\opportunity.service.ts:558 - static async convertToBooking(user: TokenPayload, opportunityId: number, dto: any) {
+apps\api\src\services\payment.service.ts:27 - const whereCondition: any = { company_id: user.companyId };
+apps\api\src\services\payment.service.ts:52 - static async recordPayment(user: TokenPayload, dto: any) {
+apps\api\src\services\portalClient.ts:9 - body: any;
+apps\api\src\services\portalClient.ts:21 - static async sendHandoff(payload: any, idempotencyKey: string): Promise<PortalHandoffResponse> {
+apps\api\src\services\portalClient.ts:49 - let body: any = null;
+apps\api\src\services\portalClient.ts:67 - static async sendKycStatus(payload: any, idempotencyKey: string): Promise<PortalHandoffResponse> {
+apps\api\src\services\portalClient.ts:95 - let body: any = null;
+apps\api\src\services\portalClient.ts:113 - static async sendPaymentStatus(payload: any, idempotencyKey: string): Promise<PortalHandoffResponse> {
+apps\api\src\services\portalClient.ts:141 - let body: any = null;
+apps\api\src\services\portalClient.ts:160 - static async sendInstallmentStatus(payload: any, idempotencyKey: string): Promise<PortalHandoffResponse> {
+apps\api\src\services\portalClient.ts:188 - let body: any = null;
+apps\api\src\services\portalWorker.ts:105 - private static async processHandoffEvent(event: any): Promise<boolean> {
+apps\api\src\services\portalWorker.ts:119 - let payload: any;
+apps\api\src\services\portalWorker.ts:130 - let response: { statusCode: number; body: any };
+apps\api\src\services\portalWorker.ts:170 - private static async processKycStatusEvent(event: any): Promise<boolean> {
+apps\api\src\services\portalWorker.ts:183 - let payload: any;
+apps\api\src\services\portalWorker.ts:193 - let response: { statusCode: number; body: any };
+apps\api\src\services\portalWorker.ts:232 - private static async processPaymentStatusEvent(event: any): Promise<boolean> {
+apps\api\src\services\portalWorker.ts:233 - let payload: any;
+apps\api\src\services\portalWorker.ts:257 - let response: { statusCode: number; body: any };
+apps\api\src\services\portalWorker.ts:296 - private static async handlePaymentSuccess(event: any, body: any) {
+apps\api\src\services\portalWorker.ts:297 - let payload: any;
+apps\api\src\services\portalWorker.ts:326 - private static async handlePaymentRetryableFailure(event: any, attempt: number, error: string) {
+apps\api\src\services\portalWorker.ts:327 - let payload: any;
+apps\api\src\services\portalWorker.ts:364 - private static async handlePaymentTerminalFailure(event: any, error: string) {
+apps\api\src\services\portalWorker.ts:365 - let payload: any;
+apps\api\src\services\portalWorker.ts:397 - private static async processInstallmentStatusEvent(event: any): Promise<boolean> {
+apps\api\src\services\portalWorker.ts:398 - let payload: any;
+apps\api\src\services\portalWorker.ts:422 - let response: { statusCode: number; body: any };
+apps\api\src\services\portalWorker.ts:461 - private static async handleInstallmentSuccess(event: any, body: any) {
+apps\api\src\services\portalWorker.ts:462 - let payload: any;
+apps\api\src\services\portalWorker.ts:491 - private static async handleInstallmentRetryableFailure(event: any, attempt: number, error: string) {
+apps\api\src\services\portalWorker.ts:492 - let payload: any;
+apps\api\src\services\portalWorker.ts:529 - private static async handleInstallmentTerminalFailure(event: any, error: string) {
+apps\api\src\services\portalWorker.ts:530 - let payload: any;
+apps\api\src\services\portalWorker.ts:558 - private static async handleSuccess(event: any, body: any) {
+apps\api\src\services\portalWorker.ts:591 - private static async handleRetryableFailure(event: any, attempt: number, error: string) {
+apps\api\src\services\portalWorker.ts:623 - private static async handleKycSuccess(event: any, body: any) {
+apps\api\src\services\portalWorker.ts:645 - private static async handleKycRetryableFailure(event: any, attempt: number, error: string) {
+apps\api\src\services\portalWorker.ts:675 - private static async handleKycTerminalFailure(event: any, error: string) {
+apps\api\src\services\portalWorker.ts:696 - private static async handleTerminalFailure(event: any, error: string) {
+apps\api\src\services\project.service.ts:139 - const updateData: any = {};
+apps\api\src\services\property.service.ts:71 - static async createProperty(user: TokenPayload, data: any) {
+apps\api\src\services\property.service.ts:177 - static async updateProperty(user: TokenPayload, propertyId: number, data: any) {
+apps\api\src\services\property.service.ts:211 - const safeData: any = {};
+apps\api\src\services\property.service.ts:284 - static async dmPolishProperty(user: TokenPayload, propertyId: number, data: any) {
+apps\api\src\services\siteVisit.service.ts:69 - static async bookVisit(user: TokenPayload, data: any) {
+apps\api\src\services\siteVisit.service.ts:138 - const bookingData: any = {
+apps\api\src\utils\distributionService.ts:83 - const callCountSum = emp.daily_reports?.reduce((sum: number, r: any) => sum + (r.call_count || 0), 0) || 0;
+apps\api\src\utils\matchingEngine.ts:129 - export const generateWhatsAppText = (lead: any, prop: any, agent: any): string => {
+apps\api\src\workflows\opportunity.workflow.ts:120 - const hasCompleted = visits.some((v: any) => v.status === 'COMPLETED');
+apps\api\src\workflows\types.ts:15 - entity: any;

@@ -37,7 +37,7 @@ import { TokenPayload } from '../utils/jwt';
 import { IntegrationMetricsResponse } from '@rrh-ems/shared';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // ---- typed KPI contracts ----
 export interface CrmKpis {

@@ -3,12 +3,13 @@ import { CheckCircle2, Clock, AlertTriangle, Plus, Sparkles, Filter, ShieldAlert
 import { useAuth } from '../../context/AuthContext';
 import { Roles } from '@rrh-ems/shared';
 import { API_BASE_URL } from '../../config';
+import { TaskItem, EmployeeListItem } from '../../types';
 
 export const TaskManager: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [teamTasks, setTeamTasks] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [teamTasks, setTeamTasks] = useState<TaskItem[]>([]);
+  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [activeTab, setActiveTab] = useState<'my_tasks' | 'team_tasks'>('my_tasks');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [isLoading, setIsLoading] = useState(true);

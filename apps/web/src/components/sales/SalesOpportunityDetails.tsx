@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Building, MapPin, DollarSign, Clock, Target, CalendarDays, CheckSquare, History } from 'lucide-react';
 import { useSalesPipeline } from '../../hooks/useSalesPipeline';
 import { SALES_STAGE_LABELS, SALES_STAGE_COLORS } from './SalesConstants';
+import { SalesOpportunityData, OpportunityHistoryEntry } from '../../types';
 
 interface SalesOpportunityDetailsProps {
   opportunityId: number;
@@ -10,7 +11,7 @@ interface SalesOpportunityDetailsProps {
 
 export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = ({ opportunityId, onClose }) => {
   const { getSalesOpportunityDetails } = useSalesPipeline();
-  const [opportunity, setOpportunity] = useState<any>(null);
+  const [opportunity, setOpportunity] = useState<SalesOpportunityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'journey' | 'tasks' | 'visits'>('journey');
 
@@ -151,7 +152,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
             {activeTab === 'journey' && (
               <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
                 {opportunity.history?.length > 0 ? (
-                  opportunity.history.map((hist: any, index: number) => (
+                  opportunity.history.map((hist: OpportunityHistoryEntry, index: number) => (
                     <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-200 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                         <Clock className="w-4 h-4" />

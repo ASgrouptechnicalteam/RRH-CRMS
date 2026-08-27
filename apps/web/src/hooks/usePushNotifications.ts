@@ -58,7 +58,7 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey) as any,
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
 
       // 4. Send subscription to backend

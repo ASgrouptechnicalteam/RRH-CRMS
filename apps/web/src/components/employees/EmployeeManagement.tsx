@@ -265,8 +265,9 @@ export const EmployeeManagement: React.FC = () => {
       resetForm();
       fetchEmployeesAndMetadata();
       setTimeout(() => setSuccessMessage(null), 4000);
-    } catch (err: any) {
-      setModalError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setModalError(message);
     } finally {
       setIsSubmitting(false);
     }

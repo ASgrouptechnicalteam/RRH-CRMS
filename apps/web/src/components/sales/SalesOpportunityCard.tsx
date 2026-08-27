@@ -1,9 +1,10 @@
 import React from 'react';
 import { User, Building, MapPin, DollarSign, Clock } from 'lucide-react';
+import { SalesOpportunity } from '../../types';
 
 interface SalesOpportunityCardProps {
-  opportunity: any;
-  onClick: (opp: any) => void;
+  opportunity: SalesOpportunity;
+  onClick: (opp: SalesOpportunity) => void;
 }
 
 export const SalesOpportunityCard: React.FC<SalesOpportunityCardProps> = ({ opportunity, onClick }) => {

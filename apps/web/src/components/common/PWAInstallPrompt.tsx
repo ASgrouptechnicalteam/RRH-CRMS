@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { BeforeInstallPromptEvent } from '../../types';
 import { Download, X, Smartphone, Sparkles } from 'lucide-react';
 
 export const PWAInstallPrompt: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsVisible(true);
     };
 

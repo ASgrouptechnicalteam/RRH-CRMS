@@ -44,7 +44,7 @@ import { PortalWorker } from './services/portalWorker';
 const app = express();
 const port = process.env.PORT || 3000;
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 // Proxy Awareness for Rate Limiting (Render architecture)
 app.set('trust proxy', 1);

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { ExecMetricsData } from '../../types';
 import { ShieldCheck, Users, Building, Clock, FileText, Calendar, TrendingUp, Award, CheckCircle2, Users as UsersIcon, Building as BuildingIcon, IndianRupee } from 'lucide-react';
 
 export const MDExecutiveDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
-  const [execMetrics, setExecMetrics] = useState<any | null>(null);
+  const [execMetrics, setExecMetrics] = useState<ExecMetricsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -67,19 +68,19 @@ export const MDExecutiveDashboard: React.FC = () => {
           <div className="space-y-3 text-sm text-neutral-600">
             {(execMetrics?.attendanceExceptionsCount ?? 0) > 0 && (
               <div>
-                <span className="font-medium text-navy">{execMetrics.attendanceExceptionsCount} attendance exception{execMetrics.attendanceExceptionsCount === 1 ? '' : 's'} today</span>
+                <span className="font-medium text-navy">{execMetrics?.attendanceExceptionsCount} attendance exception{execMetrics?.attendanceExceptionsCount === 1 ? '' : 's'} today</span>
                 <a href="/hr-hub" className="font-medium text-primary hover:underline ml-2">Review Attendance</a>
               </div>
             )}
             {(execMetrics?.pendingVerificationPropertiesCount ?? 0) > 0 && (
               <div>
-                <span className="font-medium text-navy">{execMetrics.pendingVerificationPropertiesCount} propert{execMetrics.pendingVerificationPropertiesCount === 1 ? 'y' : 'ies'} pending verification</span>
+                <span className="font-medium text-navy">{execMetrics?.pendingVerificationPropertiesCount} propert{execMetrics?.pendingVerificationPropertiesCount === 1 ? 'y' : 'ies'} pending verification</span>
                 <a href="/properties" className="font-medium text-primary hover:underline ml-2">Review Properties</a>
               </div>
             )}
             {(execMetrics?.pendingApprovalPropertiesCount ?? 0) > 0 && (
               <div>
-                <span className="font-medium text-navy">{execMetrics.pendingApprovalPropertiesCount} propert{execMetrics.pendingApprovalPropertiesCount === 1 ? 'y' : 'ies'} awaiting approval</span>
+                <span className="font-medium text-navy">{execMetrics?.pendingApprovalPropertiesCount} propert{execMetrics?.pendingApprovalPropertiesCount === 1 ? 'y' : 'ies'} awaiting approval</span>
                 <a href="/properties" className="font-medium text-primary hover:underline ml-2">Review Approvals</a>
               </div>
             )}

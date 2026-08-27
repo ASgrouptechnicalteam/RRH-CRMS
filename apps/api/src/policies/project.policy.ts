@@ -7,8 +7,8 @@ import { Roles, Permissions } from '@rrh-ems/shared';
  * Enforces object-level authorization for Project resources.
  *
  * Authorization rules per Phase 5 authoritative documentation:
- * - docs/roadmap/phase-5/03-project-level-authorization.md
- * - docs/roadmap/phase-5/06-phase-5-acceptance-criteria.md
+ * - docs/archive/2026-08/roadmap/phase-5/03-project-level-authorization.md
+ * - docs/archive/2026-08/roadmap/phase-5/06-phase-5-acceptance-criteria.md
  *
  * ADMIN / MD / MANAGEMENT: Full visibility and mutation rights within company_id.
  * PROJECT_MANAGER: Only projects explicitly assigned to them (assigned_pm_id = user.employeeId).

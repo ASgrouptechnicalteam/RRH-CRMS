@@ -11,7 +11,7 @@ import { loginRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter'
 
 const router = Router();
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 
 // POST /api/v1/auth/login
@@ -164,7 +164,7 @@ router.post(
 
       const newHash = await bcrypt.hash(new_password, 12);
 
-      await p.$transaction(async (tx: any) => {
+      await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
         await tx.employee.update({
           where: { id: employeeId },
           data: {
@@ -259,7 +259,7 @@ router.post('/refresh', refreshRateLimiter, async (req, res: Response) => {
     const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
     // Find session inside transaction to prevent concurrent refresh races
-    const result = await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const session = await tx.authSession.findFirst({
         where: { refresh_token_hash: refreshTokenHash }
       });
@@ -322,6 +322,10 @@ router.post('/refresh', refreshRateLimiter, async (req, res: Response) => {
     }
 
     const session = result.session;
+    if (!session) {
+      res.clearCookie('refreshToken');
+      return res.status(401).json({ error: 'Invalid session data', code: 'UNAUTHORIZED' });
+    }
 
     // Fetch employee for fresh permissions
     const employee = await p.employee.findUnique({

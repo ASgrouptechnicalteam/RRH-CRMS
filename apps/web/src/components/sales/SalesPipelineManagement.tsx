@@ -6,6 +6,7 @@ import { SALES_STAGE_LABELS, SALES_STAGE_COLORS } from './SalesConstants';
 import { SalesPipelineMetrics } from './SalesPipelineMetrics';
 import { SalesKanbanBoard } from './SalesKanbanBoard';
 import { SalesStageTransitionModal } from './SalesStageTransitionModal';
+import { SalesOpportunity } from '../../types';
 import { SalesOpportunityDetails } from './SalesOpportunityDetails';
 
 export const SalesPipelineManagement: React.FC = () => {
@@ -46,8 +47,9 @@ export const SalesPipelineManagement: React.FC = () => {
       showToast('Sales stage updated successfully', 'success');
       fetchOpportunities();
       fetchPipelineMetrics();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to update sales stage', 'error');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      showToast(message || 'Failed to update sales stage', 'error');
     }
   };
 
@@ -58,14 +60,15 @@ export const SalesPipelineManagement: React.FC = () => {
       showToast('Sales stage updated successfully', 'success');
       fetchOpportunities();
       fetchPipelineMetrics();
-    } catch (err: any) {
-      showToast(err.message || 'Failed to drop sales opportunity', 'error');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      showToast(message || 'Failed to drop sales opportunity', 'error');
     } finally {
       setTransitionState({ isOpen: false, oppId: null, targetStage: '' });
     }
   };
 
-  const handleOpportunityClick = (opp: any) => {
+  const handleOpportunityClick = (opp: SalesOpportunity) => {
     setSelectedOpportunityId(opp.id);
   };
 
@@ -111,7 +114,7 @@ export const SalesPipelineManagement: React.FC = () => {
       </div>
 
       {/* Metrics Banner */}
-      <SalesPipelineMetrics metrics={pipelineMetrics} isLoading={isLoading && !pipelineMetrics} />
+      <SalesPipelineMetrics metrics={pipelineMetrics ?? {}} isLoading={isLoading && !pipelineMetrics} />
 
       {/* Pipeline Content Area */}
       <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">

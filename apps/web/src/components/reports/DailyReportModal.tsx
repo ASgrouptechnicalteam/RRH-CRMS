@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Send, AlertCircle, X, Mic, MicOff, AlertTriangle, CheckSquare, Hash, Type, AlignLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { FormSchemaField, SpeechRecognitionLike, SpeechRecognitionEventLike } from '../../types';
 
 interface DailyReportModalProps {
   isOpen: boolean;
@@ -14,8 +15,8 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
   const roleName = user?.roles[0] || 'Agent';
 
   // Dynamic Form State
-  const [formSchema, setFormSchema] = useState<any[]>([]);
-  const [formResponses, setFormResponses] = useState<Record<string, any>>({});
+  const [formSchema, setFormSchema] = useState<FormSchemaField[]>([]);
+  const [formResponses, setFormResponses] = useState<Record<string, string | boolean>>({});
   
   // Base Form State
   const [summaryNotes, setSummaryNotes] = useState('');
@@ -34,7 +35,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
 
   // Check speech recognition support
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     setHasSpeechSupport(!!SpeechRecognition);
   }, []);
 
@@ -48,8 +49,8 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
             setFormSchema(data.target.form_schema_json);
             
             // Initialize Responses
-            const initialResponses: Record<string, any> = {};
-            data.target.form_schema_json.forEach((field: any) => {
+            const initialResponses: Record<string, string | boolean> = {};
+            data.target.form_schema_json.forEach((field: FormSchemaField) => {
               if (field.type === 'CHECKLIST') {
                 initialResponses[field.id] = false;
               } else if (field.type === 'COUNT') {
@@ -79,7 +80,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
 
     formSchema.forEach(field => {
       if (field.type === 'COUNT' && field.targetValue && field.targetValue > 0) {
-        const val = parseInt(formResponses[field.id], 10) || 0;
+        const val = parseInt(String(formResponses[field.id]), 10) || 0;
         if (val < field.targetValue) {
           warnings.push(`${field.label} (${val}/${field.targetValue})`);
         }
@@ -96,10 +97,10 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
   }, [formResponses, formSchema]);
 
   // Voice Dictation Toggle with Duplicate Word Prevention
-  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+  const [recognitionInstance, setRecognitionInstance] = useState<SpeechRecognitionLike | null>(null);
 
   const toggleVoiceDictation = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     if (isListening && recognitionInstance) {
@@ -131,7 +132,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
         setRecognitionInstance(null);
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -175,7 +176,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
     for (const field of formSchema) {
       if (field.required) {
         const val = formResponses[field.id];
-        if (val === '' || val === undefined || val === null || (field.type === 'SHORT_TEXT' && val.trim() === '')) {
+        if (val === '' || val === undefined || val === null || (field.type === 'SHORT_TEXT' && String(val).trim() === '')) {
           setErrorMessage(`Field "${field.label}" is required.`);
           return;
         }
@@ -192,9 +193,9 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
       // (The backend looks for these specifically in the legacy target_json logic, but we now use metrics_json)
       formSchema.forEach(field => {
         if (field.type === 'COUNT') {
-          if (field.label.toLowerCase().includes('call')) metrics.callsMade = parseInt(formResponses[field.id], 10) || 0;
-          if (field.label.toLowerCase().includes('visit')) metrics.siteVisits = parseInt(formResponses[field.id], 10) || 0;
-          if (field.label.toLowerCase().includes('deal') || field.label.toLowerCase().includes('qualif')) metrics.leadsQualified = parseInt(formResponses[field.id], 10) || 0;
+          if (field.label.toLowerCase().includes('call')) metrics.callsMade = parseInt(String(formResponses[field.id]), 10) || 0;
+          if (field.label.toLowerCase().includes('visit')) metrics.siteVisits = parseInt(String(formResponses[field.id]), 10) || 0;
+          if (field.label.toLowerCase().includes('deal') || field.label.toLowerCase().includes('qualif')) metrics.leadsQualified = parseInt(String(formResponses[field.id]), 10) || 0;
         }
       });
 
@@ -217,14 +218,15 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResponseChange = (id: string, value: any) => {
+  const handleResponseChange = (id: string, value: string | boolean) => {
     setFormResponses(prev => ({ ...prev, [id]: value }));
   };
 
@@ -277,7 +279,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                     <span>{field.label}</span>
                     {field.required && <span className="text-red-500 ml-1">*</span>}
                     
-                    {field.type === 'COUNT' && field.targetValue > 0 && (
+                    {field.type === 'COUNT' && field.targetValue !== undefined && field.targetValue > 0 && (
                       <span className="ml-auto text-[10px] uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded font-mono">
                         Target: {field.targetValue}
                       </span>
@@ -288,7 +290,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                     {field.type === 'SHORT_TEXT' && (
                       <input
                         type="text"
-                        value={formResponses[field.id] || ''}
+                        value={String(formResponses[field.id] ?? '')}
                         onChange={(e) => handleResponseChange(field.id, e.target.value)}
                         required={field.required}
                         className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
@@ -298,7 +300,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
 
                     {field.type === 'LONG_TEXT' && (
                       <textarea
-                        value={formResponses[field.id] || ''}
+                        value={String(formResponses[field.id] ?? '')}
                         onChange={(e) => handleResponseChange(field.id, e.target.value)}
                         required={field.required}
                         rows={3}
@@ -311,7 +313,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                       <input
                         type="number"
                         min="0"
-                        value={formResponses[field.id] ?? ''}
+                        value={String(formResponses[field.id] ?? '')}
                         onChange={(e) => handleResponseChange(field.id, e.target.value)}
                         required={field.required}
                         className="w-32 p-3 text-lg font-mono text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"

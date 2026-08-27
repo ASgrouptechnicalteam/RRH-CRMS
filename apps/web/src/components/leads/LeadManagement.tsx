@@ -27,6 +27,17 @@ import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { AddLeadWizard } from './AddLeadWizard';
+import {
+  LeadActivity,
+  MonitorData,
+  EmployeeListItem,
+  MatchItem,
+  SavedInterestItem,
+  LeadVisitItem,
+  LeadTaskItem,
+  LeadSalesOppItem,
+  ParsedBulkLeadRow,
+} from '../../types';
 
 interface Lead {
   id: number;
@@ -44,13 +55,14 @@ interface Lead {
   assigned_to?: { id: number; employee_code: string; full_name: string; phone: string };
   created_by?: { id: number; employee_code: string; full_name: string };
   created_at: string;
-  activities?: any[];
+  activities?: LeadActivity[];
   lead_score?: number;
   sla_breach_at?: string | null;
   campaign?: string | null;
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
+  referral_person_name?: string | null;
 }
 
 export const LeadManagement: React.FC = () => {
@@ -58,11 +70,11 @@ export const LeadManagement: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [monitorData, setMonitorData] = useState<any | null>(null);
+  const [monitorData, setMonitorData] = useState<MonitorData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
 
   const fetchEmployees = async () => {
     try {
@@ -84,10 +96,10 @@ export const LeadManagement: React.FC = () => {
 
   // Dossier Tabs & Auto-Matching Engine State
   const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS' | 'FOLLOW_UPS' | 'SALES_OPPS'>('DETAILS');
-  const [matches, setMatches] = useState<any[]>([]);
-  const [savedInterests, setSavedInterests] = useState<any[]>([]);
-  const [leadVisits, setLeadVisits] = useState<any[]>([]);
-  const [leadTasks, setLeadTasks] = useState<any[]>([]);
+  const [matches, setMatches] = useState<MatchItem[]>([]);
+  const [savedInterests, setSavedInterests] = useState<SavedInterestItem[]>([]);
+  const [leadVisits, setLeadVisits] = useState<LeadVisitItem[]>([]);
+  const [leadTasks, setLeadTasks] = useState<LeadTaskItem[]>([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
 
@@ -113,7 +125,7 @@ export const LeadManagement: React.FC = () => {
     }
   };
 
-  const [leadSalesOpps, setLeadSalesOpps] = useState<any[]>([]);
+  const [leadSalesOpps, setLeadSalesOpps] = useState<LeadSalesOppItem[]>([]);
   const [isLoadingSalesOpps, setIsLoadingSalesOpps] = useState(false);
   
   const fetchLeadSalesOpps = async (leadId: number) => {
@@ -124,7 +136,7 @@ export const LeadManagement: React.FC = () => {
       const resAll = await fetchWithAuth(`${API_BASE_URL}/opportunities`);
       const data = await resAll.json();
       if (resAll.ok) {
-        const filtered = (data.opportunities || []).filter((o: any) => o.lead_id === leadId);
+        const filtered = (data.opportunities || []).filter((o: LeadSalesOppItem) => o.lead_id === leadId);
         setLeadSalesOpps(filtered);
       }
     } catch (e) {
@@ -347,7 +359,7 @@ export const LeadManagement: React.FC = () => {
 
   // File Input Ref for native OS File Manager
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [parsedBulkLeads, setParsedBulkLeads] = useState<any[]>([]);
+  const [parsedBulkLeads, setParsedBulkLeads] = useState<ParsedBulkLeadRow[]>([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
 
   // New Lead Form State
@@ -368,7 +380,7 @@ export const LeadManagement: React.FC = () => {
 
   // Local toast state was removed to avoid conflict with useToast
   const isOperatorOrAdmin = user?.roles.some((r: string) =>
-    [Roles.DIGITAL_LEAD_OPERATOR, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN].includes(r as any)
+    [Roles.DIGITAL_LEAD_OPERATOR, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN].includes(r as never)
   );
 
   const handleBulkUploadBtnClick = () => {
@@ -390,7 +402,7 @@ export const LeadManagement: React.FC = () => {
         return;
       }
 
-      const parsedRows: any[] = [];
+      const parsedRows: ParsedBulkLeadRow[] = [];
       const startIdx = lines[0].toLowerCase().includes('phone') || lines[0].toLowerCase().includes('name') ? 1 : 0;
 
       for (let i = startIdx; i < lines.length; i++) {
@@ -635,7 +647,7 @@ export const LeadManagement: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {monitorData.telecallers.map((tc: any) => (
+            {monitorData.telecallers.map((tc: EmployeeListItem) => (
               <div key={tc.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-800">{tc.fullName}</span>
@@ -1046,7 +1058,7 @@ export const LeadManagement: React.FC = () => {
                 <div className="space-y-3">
                   <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Activity & Audit Timeline</h4>
                   <div className="space-y-2 border-l-2 border-slate-200 pl-4">
-                    {selectedLead.activities?.map((act: any) => (
+                    {selectedLead.activities?.map((act: LeadActivity) => (
                       <div key={act.id} className="relative text-xs space-y-0.5">
                         <div className="font-bold text-slate-800 flex items-center justify-between">
                           <span>{act.activity_type.replace(/_/g, ' ')}</span>
@@ -1069,7 +1081,7 @@ export const LeadManagement: React.FC = () => {
                   <div className="py-8 text-center text-xs text-slate-400">No LIVE properties currently match this lead's budget & location requirements.</div>
                 ) : (
                   <div className="space-y-3">
-                    {matches.map((m: any) => (
+                    {matches.map((m: MatchItem) => (
                       <div key={m.propertyId} className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 shadow-sm">
                         <div className="flex items-center justify-between">
                           <span className="font-mono font-bold text-teal-900 text-xs">{m.propertyCode}</span>
@@ -1121,7 +1133,7 @@ export const LeadManagement: React.FC = () => {
                   <div className="py-8 text-center text-xs text-slate-400">No properties have been saved to interests yet.</div>
                 ) : (
                   <div className="space-y-3">
-                    {savedInterests.map((interest: any) => (
+                    {savedInterests.map((interest: SavedInterestItem) => (
                       <div key={interest.id} className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100 space-y-3 shadow-sm relative">
                         <button
                           onClick={() => handleRemoveInterest(selectedLead.id, interest.property_id)}
@@ -1150,7 +1162,7 @@ export const LeadManagement: React.FC = () => {
                   <div className="py-8 text-center text-xs text-slate-400">No site visits booked for this lead.</div>
                 ) : (
                   <div className="space-y-3">
-                    {leadVisits.map((visit: any) => (
+                    {leadVisits.map((visit: LeadVisitItem) => (
                       <div key={visit.id} className="bg-amber-50/50 rounded-2xl p-4 border border-amber-100 shadow-sm">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-mono font-bold text-amber-900 text-xs">{visit.booking_code}</span>
@@ -1245,7 +1257,7 @@ export const LeadManagement: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {leadTasks.map((task: any) => (
+                      {leadTasks.map((task: LeadTaskItem) => (
                         <div key={task.id} className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-start gap-3">
                           <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${task.status === 'PENDING' ? 'bg-amber-400' : task.status === 'COMPLETED' ? 'bg-emerald-400' : 'bg-slate-300'}`} />
                           <div className="flex-1">
@@ -1288,8 +1300,9 @@ export const LeadManagement: React.FC = () => {
                         if (!res.ok) throw new Error('Failed to create sales opportunity');
                         showToast('Sales opportunity created successfully', 'success');
                         fetchLeadSalesOpps(selectedLead.id);
-                      } catch (e: any) {
-                        showToast(e.message, 'error');
+                      } catch (e: unknown) {
+                        const message = e instanceof Error ? e.message : String(e);
+                        showToast(message, 'error');
                       }
                     }}
                     className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
@@ -1309,7 +1322,7 @@ export const LeadManagement: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
-                    {leadSalesOpps.map((opp: any) => (
+                    {leadSalesOpps.map((opp: LeadSalesOppItem) => (
                       <div key={opp.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col gap-3">
                         <div className="flex justify-between items-start">
                           <div>
@@ -1388,7 +1401,7 @@ export const LeadManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {parsedBulkLeads.map((row: any, idx: number) => (
+                  {parsedBulkLeads.map((row: ParsedBulkLeadRow, idx: number) => (
                     <tr key={idx} className="hover:bg-slate-50">
                       <td className="p-2.5 text-slate-400 font-mono">{idx + 1}</td>
                       <td className="p-2.5 font-bold text-slate-900">{row.customer_name}</td>

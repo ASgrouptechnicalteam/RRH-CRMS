@@ -7,7 +7,7 @@ import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
 import { DocumentGenerationService } from './document-generation.service';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -85,7 +85,7 @@ export class PaymentService {
 
     const paymentCode = await this.generateNextPaymentCode();
 
-    return await p.$transaction(async (tx: any) => {
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const payment = await tx.payment.create({
         data: {
           payment_code: paymentCode,
@@ -132,7 +132,7 @@ export class PaymentService {
       throw new AppError(400, 'Payment is already verified and successful');
     }
 
-    const result = await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updatedPayment = await tx.payment.update({
         where: { id },
         data: { status }

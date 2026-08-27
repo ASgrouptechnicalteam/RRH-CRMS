@@ -37,7 +37,7 @@ import {
 } from '../services/ai/application';
 import { AIChatRequestSchema, buildChatApiResponse } from '../services/ai/chatApi';
 
-function mapAIError(err: unknown, res: Response): void {
+function mapAIError(err: any, res: Response): void {
   if (err instanceof AIProviderError) {
     const table: Record<string, { status: number; code: string }> = {
       TIMEOUT: { status: 504, code: 'TIMEOUT' },

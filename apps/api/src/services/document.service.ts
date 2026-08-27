@@ -8,7 +8,7 @@ import path from 'path';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
 const ALLOWED_MIMES: Record<string, string[]> = {
@@ -158,7 +158,7 @@ export class DocumentService {
     const storagePath = await storageService.upload(file.buffer, file.originalname, file.mimetype);
 
     try {
-      const doc = await p.$transaction(async (tx: any) => {
+      const doc = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
         const entityCheck = await validateEntitiesExist(entityIds, user.companyId, tx);
         if (!entityCheck.valid) {
           throw { status: 400, message: entityCheck.error };
@@ -409,7 +409,7 @@ export class DocumentService {
       throw { status: 400, message: 'Rejection reason is required' };
     }
 
-    const result = await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.document.updateMany({
         where: { id: documentId, version: doc.version },
         data: {
@@ -461,7 +461,7 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
       throw { status: 400, message: 'Document is already archived' };
     }
 
-    const result = await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.document.updateMany({
         where: { id: documentId, version: doc.version },
         data: {
@@ -506,7 +506,7 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
       throw { status: 400, message: 'Document is not archived' };
     }
 
-    const result = await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.document.updateMany({
         where: { id: documentId, version: doc.version },
         data: {
@@ -547,7 +547,7 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
     // For this mock, we will generate a fake provider ID and save pending signatures
     const mockProviderId = 'mock_env_' + crypto.randomBytes(8).toString('hex');
 
-    const result = await p.$transaction(async (tx: any) => {
+    const result = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.document.updateMany({
         where: { id: documentId, version: doc.version },
         data: {
@@ -601,7 +601,7 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
 
     if (!signature) return;
 
-    await p.$transaction(async (tx: any) => {
+    await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       await tx.documentSignature.update({
         where: { id: signature.id },
         data: {

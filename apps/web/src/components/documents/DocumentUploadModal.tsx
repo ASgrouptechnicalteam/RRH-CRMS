@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { DocumentType, DOCUMENT_TYPE_ENTITY_REQUIREMENTS } from '@rrh-ems/shared';
+import { JsonValue } from '../../types';
 
 const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -64,11 +65,18 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
       setLoadingEntities((prev) => ({ ...prev, [field]: true }));
       fetchWithAuth(`${API_BASE_URL}/${endpoint}?limit=100`)
         .then((res) => res.json())
-        .then((data: any) => {
-          const raw = Array.isArray(data) ? data : (data.customers || data.leads || data.bookings || data.properties || data.projects || data.payments || data.opportunities || []);
-          const items = raw.map((item: any) => ({
-            id: item.id,
-            label: item.customer_code || item.lead_code || item.booking_code || item.property_code || item.project_code || item.payment_code || item.opportunity_code || `#${item.id}`,
+        .then((data: Record<string, JsonValue>) => {
+          const raw = Array.isArray(data) ? (data as JsonValue[]) : (data.customers || data.leads || data.bookings || data.properties || data.projects || data.payments || data.opportunities || []);
+          const items = (raw as JsonValue[]).map((item: JsonValue) => ({
+            id: (item as { id?: number }).id ?? 0,
+            label: (item as { customer_code?: string; lead_code?: string; booking_code?: string; property_code?: string; project_code?: string; payment_code?: string; opportunity_code?: string; id?: number }).customer_code
+              || (item as { lead_code?: string }).lead_code
+              || (item as { booking_code?: string }).booking_code
+              || (item as { property_code?: string }).property_code
+              || (item as { project_code?: string }).project_code
+              || (item as { payment_code?: string }).payment_code
+              || (item as { opportunity_code?: string }).opportunity_code
+              || `#${String((item as { id?: number }).id ?? 0)}`,
           }));
           setEntityOptions((prev) => ({ ...prev, [field]: items }));
         })
@@ -92,7 +100,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
     }
 
     setFile(selected);
-    setError(null as any);
+    setError('');
 
     if (selected.type.startsWith('image/')) {
       const reader = new FileReader();

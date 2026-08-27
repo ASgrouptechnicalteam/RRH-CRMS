@@ -3,22 +3,23 @@ import { Target, Sparkles, Plus, Save, Calendar, User, ShieldCheck, AlertCircle,
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
+import { TargetListItem, EmployeeListItem, DailyReportPreset } from '../../types';
 
-type FieldType = 'SHORT_TEXT' | 'LONG_TEXT' | 'COUNT' | 'CHECKLIST';
+type FieldType = 'SHORT_TEXT' | 'LONG_TEXT' | 'COUNT' | 'CHECKLIST' | string;
 
 interface FormField {
   id: string;
   type: FieldType;
   label: string;
-  required: boolean;
+  required?: boolean;
   targetValue?: number;
 }
 
 export const TargetConfigurator: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [targetsList, setTargetsList] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [presets, setPresets] = useState<any>({});
+  const [targetsList, setTargetsList] = useState<TargetListItem[]>([]);
+  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
+  const [presets, setPresets] = useState<Record<string, DailyReportPreset>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   // Form State
@@ -42,8 +43,8 @@ export const TargetConfigurator: React.FC = () => {
         fetchWithAuth(`${API_BASE_URL}/md/employees`),
       ]);
 
-      let loadedTargets: any[] = [];
-      let loadedPresets: any = {};
+      let loadedTargets: TargetListItem[] = [];
+      let loadedPresets: Record<string, DailyReportPreset> = {};
       
       if (targetRes.ok) {
         const d = await targetRes.json();
@@ -74,7 +75,7 @@ export const TargetConfigurator: React.FC = () => {
     fetchData();
   }, []);
 
-  const loadSchemaForRole = (role: string, currentTargets: any[] = targetsList, currentPresets: any = presets) => {
+  const loadSchemaForRole = (role: string, currentTargets: TargetListItem[] = targetsList, currentPresets: Record<string, DailyReportPreset> = presets) => {
     // 1. Try to load from active target first
     const activeTarget = currentTargets.find(t => t.role_name === role && !t.employee_id);
     if (activeTarget && activeTarget.form_schema_json && activeTarget.form_schema_json.length > 0) {
@@ -191,8 +192,9 @@ export const TargetConfigurator: React.FC = () => {
       } else {
         throw new Error(data.error || 'Failed to set target');
       }
-    } catch (err: any) {
-      setMessage(`❌ ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setMessage(`❌ ${message}`);
     } finally {
       setIsSubmitting(false);
     }

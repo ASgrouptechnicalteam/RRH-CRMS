@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export interface PropertyMatchResult {
   propertyId: number;
@@ -110,8 +110,8 @@ export const findMatchingPropertiesForLead = async (leadId: number): Promise<Pro
       price: prop.price,
       areaSqft: prop.area_sqft,
       location: prop.location,
-      bedrooms: prop.bedrooms,
-      facing: prop.facing,
+      bedrooms: (prop.bedrooms ?? undefined) as number | undefined,
+      facing: (prop.facing ?? undefined) as string | undefined,
       matchScore: Math.min(100, score),
       matchBreakdown: {
         locationMatch,

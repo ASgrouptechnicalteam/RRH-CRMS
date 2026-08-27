@@ -160,7 +160,7 @@ export class InvalidSearchIntentError extends Error {
 }
 
 /** Deterministic validation. Malformed structured output is rejected before it can enter CRM logic. */
-export function validateSearchIntentExtraction(raw: unknown): SearchIntentExtraction {
+export function validateSearchIntentExtraction(raw: any): SearchIntentExtraction {
   const parsed = SearchIntentExtractionSchema.safeParse(raw);
   if (!parsed.success) {
     const detail = parsed.error.issues
@@ -172,7 +172,7 @@ export function validateSearchIntentExtraction(raw: unknown): SearchIntentExtrac
 }
 
 /** Validate a bare SearchIntent body (for callers that already know it is COMPLETE). */
-export function validateSearchIntent(raw: unknown): SearchIntent {
+export function validateSearchIntent(raw: any): SearchIntent {
   const parsed = SearchIntentSchema.safeParse(raw);
   if (!parsed.success) {
     const detail = parsed.error.issues

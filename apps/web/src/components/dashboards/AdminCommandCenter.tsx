@@ -138,9 +138,10 @@ export const AdminCommandCenter: React.FC = () => {
       }
 
       setLastRefreshedAt(new Date());
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
       console.error('[AdminCommandCenter] telemetry fetch failed:', e);
-      setMetricsError(`Network error: ${e.message}`);
+      setMetricsError(`Network error: ${message}`);
       showToast('Failed to connect to secure admin endpoints', 'error');
     } finally {
       setIsLoading(false);

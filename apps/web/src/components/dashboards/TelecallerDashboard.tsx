@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { LeadListItem } from '../../types';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { TaskManager } from '../tasks/TaskManager';
 
@@ -21,7 +22,7 @@ export const TelecallerDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [assignedLeads, setAssignedLeads] = useState<any[]>([]);
+  const [assignedLeads, setAssignedLeads] = useState<LeadListItem[]>([]);
   const [targetMetrics, setTargetMetrics] = useState<{ achieved: number; target: number }>({ achieved: 0, target: 25 });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -126,7 +127,7 @@ export const TelecallerDashboard: React.FC = () => {
               <div className="py-8 text-center text-xs text-slate-400">No prospects currently assigned. New prospects will be assigned to you based on your performance score!</div>
             ) : (
               <div className="space-y-3">
-                {assignedLeads.map((lead: any) => (
+                {assignedLeads.map((lead: LeadListItem) => (
                   <div
                     key={lead.id}
                     className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 hover:shadow-sm transition-all"

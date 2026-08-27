@@ -3,7 +3,7 @@ import { TokenPayload } from '../utils/jwt';
 import { BookingPolicy } from '../policies/booking.policy';
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string) {

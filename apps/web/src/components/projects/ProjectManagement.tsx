@@ -6,18 +6,19 @@ import { API_BASE_URL } from '../../config';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { ProjectFormWizard } from './ProjectFormWizard';
 import { ProjectDossier } from './ProjectDossier';
+import { ProjectListItem, ProjectFormData } from '../../types';
 
 export const ProjectManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingProject, setEditingProject] = useState<any>(null);
+  const [editingProject, setEditingProject] = useState<ProjectFormData | null>(null);
   const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
 
   const canCreate = user?.permissions?.includes(Permissions.PROJECTS_CREATE) || user?.roles?.includes(Roles.MD) || user?.roles?.includes(Roles.ADMIN);
@@ -188,7 +189,7 @@ export const ProjectManagement: React.FC = () => {
           onSuccess={() => {
             setEditingProject(null);
             fetchProjects();
-            setViewingProjectId(editingProject.id); // Re-open dossier to show updated data
+            setViewingProjectId(editingProject.id ?? null); // Re-open dossier to show updated data
           }}
         />
       )}

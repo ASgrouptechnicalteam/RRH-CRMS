@@ -5,11 +5,12 @@ import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
 import { QRCodeVisual } from '../common/QRCodeVisual';
 import { CameraQRScanner } from '../common/CameraQRScanner';
+import { ScanResult } from '../../types';
 
 export const QRScannerModal: React.FC = () => {
   const { user, fetchWithAuth, setAttendanceStamped } = useAuth();
-  const [qrData, setQrData] = useState<any>(null);
-  const [stampResult, setStampResult] = useState<any>(null);
+  const [qrData, setQrData] = useState<ScanResult | null>(null);
+  const [stampResult, setStampResult] = useState<ScanResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -84,8 +85,9 @@ export const QRScannerModal: React.FC = () => {
       setTimeout(() => {
         setAttendanceStamped(true);
       }, 2000);
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setErrorMessage(message);
     } finally {
       setIsScanning(false);
     }

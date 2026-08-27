@@ -7,7 +7,7 @@ const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000; // IST = UTC+5:30
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const prisma = new PrismaClient();
-const p = prisma as any;
+const p = prisma;
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -82,7 +82,7 @@ export class IntegrationService {
     //    notification. The conditional updateMany guards concurrency: a losing
     //    concurrent duplicate matches 0 rows and creates no notification.
     if (status === 'completed') {
-      const outcome = await p.$transaction(async (tx: any) => {
+      const outcome = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
         const updated = await tx.bookingPortalMapping.updateMany({
           where: { id: mapping.id, handoff_status: 'WAITING_ACTIVATION' },
           data: {
@@ -207,7 +207,7 @@ export class IntegrationService {
     //    only the winner creates the KYC_CALLBACK_SUBMITTED audit (same transaction).
     //    A duplicate (already SUBMITTED) callback matches 0 rows and short-circuits
     //    without any write or audit.
-    const outcome = await p.$transaction(async (tx: any) => {
+    const outcome = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.customer.updateMany({
         where: { id: customer.id, kyc_submission_status: null },
         data: {
@@ -323,7 +323,7 @@ export class IntegrationService {
     // matches count === 1 and only the winner creates the audit (same transaction).
     // A duplicate (already SYNCED) callback matches 0 rows and short-circuits
     // without any write or audit.
-    const outcome = await p.$transaction(async (tx: any) => {
+    const outcome = await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updated = await tx.payment.updateMany({
         where: { id: payment.id, sync_status: 'PENDING_SYNC' },
         data: {

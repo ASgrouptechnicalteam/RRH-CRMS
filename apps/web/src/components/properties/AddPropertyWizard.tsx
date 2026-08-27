@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { ProjectListItem } from '../../types';
 
 interface AddPropertyWizardProps {
   onClose: () => void;
@@ -120,7 +121,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
   // Form State
   const [category, setCategory] = useState<string>('');
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [projectId, setProjectId] = useState<string>('');
 
   React.useEffect(() => {
@@ -180,7 +181,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
   };
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
 
-  const updateDetail = (key: string, value: any) => {
+  const updateDetail = (key: string, value: string | number | boolean) => {
     setDetails(prev => ({ ...prev, [key]: value }));
   };
 

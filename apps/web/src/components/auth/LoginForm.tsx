@@ -3,9 +3,10 @@ import { Lock, User, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle, Sparkles
 import { EMPLOYEE_CODE_REGEX } from '@rrh-ems/shared';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
+import { LoginResponseData } from '../../types';
 
 interface LoginFormProps {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: LoginResponseData) => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
@@ -70,9 +71,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       });
 
       const responseText = await res.text();
-      let responseJson: any = null;
+      const responseJson: LoginResponseData = {};
       try {
-        responseJson = JSON.parse(responseText);
+        responseJson = JSON.parse(responseText) as LoginResponseData;
       } catch (e) {
         // Raw text response fallback
       }
@@ -103,9 +104,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       if (onSuccess) {
         onSuccess(responseJson);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error('[Auth Exception]', err);
-      setErrorMessage(`Network Error: Failed to connect to server.`);
+      setErrorMessage(`Network Error: Failed to connect to server. ${message}`);
     } finally {
       setIsLoading(false);
     }

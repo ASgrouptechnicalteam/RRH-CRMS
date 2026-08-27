@@ -3,10 +3,11 @@ import { SALES_STAGES_ORDER, SALES_STAGE_LABELS, SALES_STAGE_COLORS } from './Sa
 import { SalesOpportunityCard } from './SalesOpportunityCard';
 import { useAuth } from '../../context/AuthContext';
 import { Permissions } from '@rrh-ems/shared';
+import { SalesOpportunity } from '../../types';
 
 interface SalesKanbanBoardProps {
-  opportunities: any[];
-  onOpportunityClick: (opp: any) => void;
+  opportunities: SalesOpportunity[];
+  onOpportunityClick: (opp: SalesOpportunity) => void;
   onStageChange: (opportunityId: number, newStage: string) => void;
 }
 

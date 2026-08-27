@@ -4,9 +4,10 @@ import { resolveImageUrl } from '../../utils/imageUtils';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { EditableProperty, ProjectListItem, LocalImageItem } from '../../types';
 
 interface EditPropertyModalProps {
-  property: any;
+  property: EditableProperty;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -23,7 +24,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
   const [price, setPrice] = useState(property.price?.toString() || '');
   const [description, setDescription] = useState(property.description || '');
   const [projectId, setProjectId] = useState<string>(property.project?.id?.toString() || '');
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
   
   // Location
   const [location, setLocation] = useState(property.location || '');
@@ -47,7 +48,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
   const [propertyType, setPropertyType] = useState(property.category || 'APARTMENT');
   
   // Media State
-  const [localImages, setLocalImages] = useState<any[]>(property.images || []);
+  const [localImages, setLocalImages] = useState<LocalImageItem[]>(property.images || []);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {

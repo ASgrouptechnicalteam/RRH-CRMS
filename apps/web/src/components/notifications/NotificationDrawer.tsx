@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { NotificationItem } from '../../types';
 import { Bell, Check, Sparkles, AlertCircle, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
 export const NotificationDrawer: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 

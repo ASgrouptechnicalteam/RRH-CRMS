@@ -46,8 +46,9 @@ export const ChangePasswordModal: React.FC = () => {
       }
 
       setFirstLoginDone(true);
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }

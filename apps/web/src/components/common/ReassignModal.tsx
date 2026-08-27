@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, FileText, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { EmployeeListItem } from '../../types';
 
 interface ReassignModalProps {
   entityType: 'lead' | 'property' | 'project' | 'customer';
@@ -23,7 +24,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   
-  const [employees, setEmployees] = useState<{ id: number; full_name: string; employee_code: string; department: string; role: { name: string } }[]>([]);
+  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [reason, setReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +38,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
         const data = await res.json();
         
         // Filter out the current assignee
-        const validEmployees = (data.employees || []).filter((e: any) => e.id !== currentAssigneeId && e.status === 'ACTIVE');
+        const validEmployees = (data.employees || []).filter((e: EmployeeListItem) => e.id !== currentAssigneeId && e.status === 'ACTIVE');
         setEmployees(validEmployees);
       } catch (error) {
         showToast('Failed to load eligible employees', 'error');
@@ -97,8 +98,9 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
       
       showToast(`Successfully reassigned ${entityType}`, 'success');
       onSuccess();
-    } catch (error: any) {
-      showToast(error.message, 'error');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      showToast(message, 'error');
     } finally {
       setIsLoading(false);
     }

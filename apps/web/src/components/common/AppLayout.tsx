@@ -156,23 +156,23 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
 
   // SALES
   { id: 'group-customer-sales', label: 'SALES', group: true, icon: undefined },
-  { id: 'leads-clients', label: 'Leads', icon: Users, path: '/leads-clients', requiredPermission: Permissions.LEADS_READ },
-  { id: 'customers', label: 'Customers', path: '/customers', requiredPermission: Permissions.CUSTOMERS_READ },
-  { id: 'site-visits', label: 'Site Visits', icon: CalendarCheck, path: '/site-visits', requiredPermission: Permissions.SITE_VISITS_READ },
-  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline', requiredPermission: Permissions.LEADS_READ },
+  { id: 'leads-clients', label: 'Leads', icon: Users, path: '/leads-clients' },
+  { id: 'customers', label: 'Customers', path: '/customers' },
+  { id: 'site-visits', label: 'Site Visits', icon: CalendarCheck, path: '/site-visits' },
+  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
 
   // PROPERTY
   { id: 'group-property', label: 'PROPERTY', group: true, icon: undefined },
-  { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties', requiredPermission: Permissions.PROPERTIES_READ },
-  { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects', requiredPermission: Permissions.PROJECTS_READ },
+  { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties' },
+  { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects' },
 
   // BOOKINGS
   { id: 'group-transactions', label: 'BOOKINGS', group: true, icon: FileCheck },
-  { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings', requiredPermission: Permissions.BOOKINGS_READ },
+  { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings' },
 
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
-  { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks', requiredPermission: Permissions.TASKS_READ },
+  { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks' },
 
   // FINANCE
   { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },

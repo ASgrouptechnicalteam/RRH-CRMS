@@ -1,0 +1,885 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Building2,
+  PhoneCall,
+  Calendar,
+  ShieldCheck,
+  MapPin,
+  LineChart,
+  Briefcase,
+  X,
+  Plus,
+  UserCheck
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { API_BASE_URL } from '../../config';
+import { Permissions } from '@rrh-ems/shared';
+import {
+  LeadActivity,
+  MatchItem,
+  SavedInterestItem,
+  LeadVisitItem,
+  LeadTaskItem,
+  LeadSalesOppItem
+} from '../../types';
+import { StatusPill } from '../ui/StatusPill';
+
+interface Lead {
+  id: number;
+  lead_code: string;
+  customer_name: string;
+  phone: string;
+  email?: string;
+  source: string;
+  status: string;
+  assignment_type?: string;
+  property_type_preference?: string;
+  preferred_location?: string;
+  budget_min?: number;
+  budget_max?: number;
+  assigned_to?: { id: number; employee_code: string; full_name: string; phone: string };
+  created_by?: { id: number; employee_code: string; full_name: string };
+  created_at: string;
+  activities?: LeadActivity[];
+  lead_score?: number;
+  sla_breach_at?: string | null;
+  campaign?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  referral_person_name?: string | null;
+}
+
+interface LeadDetailModalProps {
+  lead: Lead;
+  onClose: () => void;
+  onUpdateStatus: (leadId: number, newStatus: string) => Promise<void>;
+  onRefreshLeads: () => void;
+}
+
+export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdateStatus, onRefreshLeads }) => {
+  const { user, fetchWithAuth } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
+  const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS' | 'FOLLOW_UPS' | 'SALES_OPPS'>('DETAILS');
+  const [isConverting, setIsConverting] = useState(false);
+
+  const [matches, setMatches] = useState<MatchItem[]>([]);
+  const [savedInterests, setSavedInterests] = useState<SavedInterestItem[]>([]);
+  const [leadVisits, setLeadVisits] = useState<LeadVisitItem[]>([]);
+  const [leadTasks, setLeadTasks] = useState<LeadTaskItem[]>([]);
+  const [leadSalesOpps, setLeadSalesOpps] = useState<LeadSalesOppItem[]>([]);
+
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [isLoadingSalesOpps, setIsLoadingSalesOpps] = useState(false);
+
+  // New Task Form State
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDesc, setNewTaskDesc] = useState('');
+  const [newTaskDeadline, setNewTaskDeadline] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
+  const [newTaskPriority, setNewTaskPriority] = useState('MEDIUM');
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+
+  // Site Visit Schedule Form
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
+  const [scheduleNotes, setScheduleNotes] = useState('Telecaller booked site visit for client discussion.');
+  const [schedulePropertyId, setSchedulePropertyId] = useState<string>('');
+
+  const fetchMatchesForLead = async (leadId: number) => {
+    setIsLoadingMatches(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/matches`);
+      const data = await res.json();
+      if (res.ok) {
+        setMatches(data.matches || []);
+      }
+    } catch (e) {
+      console.error('Fetch matches error:', e);
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
+
+  const fetchSavedInterests = async (leadId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties`);
+      const data = await res.json();
+      if (res.ok) {
+        setSavedInterests(data.interests || []);
+      }
+    } catch (e) {
+      console.error('Fetch interests error:', e);
+    }
+  };
+
+  const fetchLeadVisits = async (leadId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits?leadId=${leadId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setLeadVisits(data.visits || []);
+      }
+    } catch (e) {
+      console.error('Fetch lead visits error:', e);
+    }
+  };
+
+  const fetchLeadTasks = async (leadId: number) => {
+    setIsLoadingTasks(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/tasks`);
+      const data = await res.json();
+      if (res.ok) {
+        setLeadTasks(data.tasks || []);
+      }
+    } catch (e) {
+      console.error('Fetch lead tasks error:', e);
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  };
+
+  const fetchLeadSalesOpps = async (leadId: number) => {
+    setIsLoadingSalesOpps(true);
+    try {
+      const resAll = await fetchWithAuth(`${API_BASE_URL}/opportunities`);
+      const data = await resAll.json();
+      if (resAll.ok) {
+        const filtered = (data.opportunities || []).filter((o: LeadSalesOppItem) => o.lead_id === leadId);
+        setLeadSalesOpps(filtered);
+      }
+    } catch (e) {
+      console.error('Fetch sales opps error:', e);
+    } finally {
+      setIsLoadingSalesOpps(false);
+    }
+  };
+
+  useEffect(() => {
+    if (lead) {
+      fetchMatchesForLead(lead.id);
+      fetchSavedInterests(lead.id);
+      fetchLeadVisits(lead.id);
+    }
+  }, [lead.id]);
+
+  const handleCreateTask = async (leadId: number) => {
+    if (!newTaskTitle) return showToast('Title is required', 'error');
+    setIsCreatingTask(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTaskTitle,
+          description: newTaskDesc,
+          priority: newTaskPriority,
+          deadline: newTaskDeadline,
+          lead_id: leadId,
+          assignee_id: user?.id
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Follow-up task scheduled', 'success');
+        setNewTaskTitle('');
+        setNewTaskDesc('');
+        fetchLeadTasks(leadId);
+      } else {
+        showToast(data.error || 'Failed to create task', 'error');
+      }
+    } catch (e) {
+      showToast('Network error creating task', 'error');
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleAddInterest = async (leadId: number, propertyId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ property_id: propertyId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Property saved to interests', 'success');
+        fetchSavedInterests(leadId);
+      } else {
+        showToast(data.error || 'Failed to save interest', 'error');
+      }
+    } catch (e) {
+      showToast('Network error saving interest', 'error');
+    }
+  };
+
+  const handleRemoveInterest = async (leadId: number, propertyId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties/${propertyId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Property removed from interests', 'success');
+        fetchSavedInterests(leadId);
+      } else {
+        showToast(data.error || 'Failed to remove interest', 'error');
+      }
+    } catch (e) {
+      showToast('Network error removing interest', 'error');
+    }
+  };
+
+  const handleSendWhatsAppProposal = async (leadId: number, propertyId: number, defaultUrl?: string) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/whatsapp-proposal/${propertyId}`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('WhatsApp Proposal generated & logged in activity history!', 'success');
+        const targetUrl = data.whatsAppUrl || defaultUrl;
+        if (targetUrl) {
+          window.open(targetUrl, '_blank');
+        }
+        onRefreshLeads();
+      } else {
+        showToast(data.error || 'Failed to send WhatsApp proposal', 'error');
+      }
+    } catch (e) {
+      showToast('Error generating WhatsApp proposal', 'error');
+    }
+  };
+
+  const handleConvertToCustomer = async (leadId: number) => {
+    setIsConverting(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/convert-to-customer`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      
+      if (res.status === 409) {
+        showToast('Lead has already been converted to a customer.', 'error');
+      } else if (res.ok) {
+        showToast('Successfully converted to Customer!', 'success');
+        onClose();
+        navigate('/customers');
+      } else {
+        showToast(data.error || 'Failed to convert to customer', 'error');
+      }
+    } catch (e) {
+      showToast('Network error converting to customer', 'error');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const getStatusMap = (status: string) => {
+    switch (status) {
+      case 'NEW':
+      case 'QUALIFIED':
+      case 'SITE_VISIT_SCHEDULED':
+      case 'SITE_VISIT_COMPLETED':
+      case 'NEGOTIATION':
+        return 'hot';
+      case 'CONTACTED':
+      case 'DEMO_SCHEDULED':
+      case 'DEMO_COMPLETED':
+        return 'warm';
+      case 'ASSIGNED':
+      case 'QUALIFICATION_PENDING':
+        return 'pending';
+      case 'BOOKING_INITIATED':
+      case 'BOOKED':
+      case 'WON':
+        return 'success';
+      case 'DROPPED':
+      case 'LOST':
+        return 'danger';
+      default:
+        return 'default';
+    }
+  };
+
+  // Determine available statuses based on LEAD-WORKFLOW-SPEC.md
+  // For UI simplicity right now, we allow the main macro transitions from the current state
+  const availableNextTransitions = () => {
+    const current = lead.status;
+    let valid = ['DROPPED']; // Always can be dropped
+    
+    if (current === 'NEW') valid.push('ASSIGNED');
+    if (current === 'ASSIGNED') valid.push('CONTACTED');
+    if (current === 'CONTACTED') valid.push('QUALIFICATION_PENDING', 'QUALIFIED');
+    if (current === 'QUALIFICATION_PENDING') valid.push('QUALIFIED');
+    if (current === 'QUALIFIED') valid.push('DEMO_SCHEDULED', 'SITE_VISIT_SCHEDULED');
+    if (current === 'DEMO_SCHEDULED') valid.push('DEMO_COMPLETED');
+    if (current === 'DEMO_COMPLETED') valid.push('SITE_VISIT_SCHEDULED');
+    if (current === 'SITE_VISIT_SCHEDULED') valid.push('SITE_VISIT_COMPLETED');
+    if (current === 'SITE_VISIT_COMPLETED') valid.push('NEGOTIATION');
+    if (current === 'NEGOTIATION') valid.push('BOOKING_INITIATED');
+    if (current === 'BOOKING_INITIATED') valid.push('BOOKED');
+    if (current === 'DROPPED') valid.push('RECOVERED_TO_POOL');
+
+    // Make sure we include current in the list so it can be selected as the current state, 
+    // but the dropdown/buttons shouldn't show current as a transition
+    return valid.filter(v => v !== current);
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-navy-900 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-3 mb-2">
+            <span className="font-mono font-bold text-navy-800 text-sm">{lead.lead_code}</span>
+            <StatusPill status={lead.status} type={getStatusMap(lead.status)} />
+          </div>
+
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-navy-900 text-2xl">{lead.customer_name}</h3>
+              <p className="text-sm text-slate-500 font-mono mt-1">{lead.phone} {lead.email ? `• ${lead.email}` : ''}</p>
+            </div>
+            {lead.lead_score !== undefined && (
+              <div className="flex flex-col items-end">
+                <div className="px-3 py-1.5 bg-gold-100 text-gold-700 rounded-lg font-bold text-xs shadow-sm border border-gold-200">
+                  {lead.lead_score} PTS
+                </div>
+                {lead.sla_breach_at && new Date(lead.sla_breach_at) < new Date() && (
+                  <span className="text-[10px] text-danger-700 font-bold mt-1">SLA BREACHED</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 p-5 bg-surface rounded-2xl mb-6 text-sm">
+            {/* Attribution block */}
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                <span className="text-slate-400 text-[10px] uppercase font-bold tracking-widest flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-navy-600" /> Introduced By
+                </span>
+                <div className="font-semibold text-navy-900 truncate">
+                  {lead.created_by?.full_name || lead.created_by?.employee_code || 'System'}
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-1 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                <span className="text-slate-400 text-[10px] uppercase font-bold tracking-widest flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-navy-600" /> Assigned To
+                </span>
+                <div className="font-semibold text-navy-900 truncate">
+                  {lead.assigned_to?.full_name || 'Unassigned'}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Source</span>
+              <div className="font-semibold text-navy-900 mt-0.5">
+                {lead.source}
+                {lead.source === 'REFERRAL' && lead.referral_person_name && (
+                  <span className="ml-1 text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                    by {lead.referral_person_name}
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Created</span>
+              <div className="font-semibold text-navy-900 mt-0.5">{new Date(lead.created_at).toLocaleDateString()}</div>
+            </div>
+
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Location</span>
+              <div className="font-semibold text-navy-900 mt-0.5">{lead.preferred_location || 'N/A'}</div>
+            </div>
+            
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Preference & Budget</span>
+              <div className="font-semibold text-navy-900 mt-0.5">
+                {lead.property_type_preference || 'N/A'} 
+                <span className="text-slate-500 ml-1">
+                  (₹{lead.budget_max ? (lead.budget_max / 100000).toFixed(1) + 'L' : 'Flexible'})
+                </span>
+              </div>
+            </div>
+            
+            {lead.campaign && (
+              <div className="col-span-2 mt-2 pt-3 border-t border-slate-200 flex flex-wrap gap-4">
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Campaign</span>
+                  <div className="font-semibold text-navy-900 mt-0.5">{lead.campaign}</div>
+                </div>
+                {lead.utm_source && (
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">UTM Source</span>
+                    <div className="font-semibold text-navy-900 mt-0.5">{lead.utm_source}</div>
+                  </div>
+                )}
+                {lead.utm_medium && (
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">UTM Medium</span>
+                    <div className="font-semibold text-navy-900 mt-0.5">{lead.utm_medium}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex overflow-x-auto gap-2 border-b border-slate-100 mb-5 pb-1 hide-scrollbar">
+            {[
+              { id: 'DETAILS', label: 'Info & Activity' },
+              { id: 'MATCHES', label: `Matches (${matches.length})`, icon: Building2 },
+              { id: 'INTERESTS', label: `Interests (${savedInterests.length})`, icon: ShieldCheck },
+              { id: 'VISITS', label: `Visits (${leadVisits.length})`, icon: MapPin },
+              { id: 'FOLLOW_UPS', label: `Tasks (${leadTasks.length})`, icon: PhoneCall },
+              { id: 'SALES_OPPS', label: 'Sales Opps', icon: LineChart },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setDossierTab(tab.id as any);
+                  if (tab.id === 'MATCHES') fetchMatchesForLead(lead.id);
+                  if (tab.id === 'INTERESTS') fetchSavedInterests(lead.id);
+                  if (tab.id === 'VISITS') fetchLeadVisits(lead.id);
+                  if (tab.id === 'FOLLOW_UPS') fetchLeadTasks(lead.id);
+                  if (tab.id === 'SALES_OPPS') fetchLeadSalesOpps(lead.id);
+                }}
+                className={`px-4 py-2 rounded-t-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors ${
+                  dossierTab === tab.id 
+                    ? 'border-navy-600 text-navy-900 bg-navy-50/50' 
+                    : 'border-transparent text-slate-500 hover:text-navy-700 hover:bg-slate-50'
+                }`}
+              >
+                {tab.icon && <tab.icon className="w-4 h-4 opacity-70" />}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-h-[250px]">
+            {dossierTab === 'DETAILS' && (
+              <div className="space-y-6">
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-navy-900 text-sm">Next Actions</h4>
+                    {user?.permissions?.includes(Permissions.CUSTOMERS_CONVERT) && (
+                      <button
+                        onClick={() => handleConvertToCustomer(lead.id)}
+                        disabled={isConverting}
+                        className="px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Building2 className="w-4 h-4" />
+                        {isConverting ? 'Converting...' : 'Convert to Customer'}
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setShowScheduleModal(true)}
+                      className="px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Book Site Visit / Demo
+                    </button>
+                    
+                    {availableNextTransitions().map(st => (
+                      <button
+                        key={st}
+                        onClick={() => onUpdateStatus(lead.id, st)}
+                        className="px-4 py-2 bg-white hover:bg-slate-50 text-navy-700 border border-slate-200 font-semibold text-xs rounded-lg transition-colors"
+                      >
+                        Move to {st.replace(/_/g, ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-bold text-navy-900 text-sm">Activity Timeline</h4>
+                  <div className="space-y-4 border-l-2 border-slate-100 ml-2 pl-4">
+                    {lead.activities?.map((act: LeadActivity) => (
+                      <div key={act.id} className="relative">
+                        <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-navy-200 ring-4 ring-white" />
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-navy-900 text-sm">{act.activity_type.replace(/_/g, ' ')}</span>
+                          <span className="text-xs text-slate-400 font-mono">
+                            {new Date(act.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 text-sm">{act.notes}</p>
+                      </div>
+                    ))}
+                    {(!lead.activities || lead.activities.length === 0) && (
+                      <p className="text-slate-400 text-sm italic">No activity recorded yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {dossierTab === 'MATCHES' && (
+              <div className="space-y-4">
+                {isLoadingMatches ? (
+                  <div className="py-8 text-center text-sm text-slate-400 flex flex-col items-center">
+                    <div className="w-6 h-6 border-2 border-navy-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    Evaluating live property matches...
+                  </div>
+                ) : matches.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
+                    No properties currently match this lead's requirements.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {matches.map((m: MatchItem) => (
+                      <div key={m.propertyId} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-mono font-semibold text-slate-500 text-xs">{m.propertyCode}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.matchScore >= 80 ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'}`}>
+                              {m.matchScore}% Match
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-navy-900 text-sm mb-1">{m.title}</h4>
+                          <p className="text-xs text-slate-500 mb-3">{m.location} • ₹{(m.price / 100000).toFixed(1)}L • {m.areaSqft} sqft</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-auto">
+                          <button
+                            onClick={() => handleAddInterest(lead.id, m.propertyId)}
+                            className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => handleSendWhatsAppProposal(lead.id, m.propertyId, m.whatsAppUrl)}
+                            className="flex-1 py-1.5 bg-success-600 hover:bg-success-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            <PhoneCall className="w-3.5 h-3.5" /> WhatsApp
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dossierTab === 'INTERESTS' && (
+              <div className="space-y-4">
+                {savedInterests.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
+                    No properties saved to interests.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {savedInterests.map((interest: SavedInterestItem) => (
+                      <div key={interest.id} className="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between shadow-sm group">
+                        <div>
+                          <span className="font-mono font-medium text-slate-400 text-xs">{interest.property.property_code}</span>
+                          <h4 className="font-bold text-navy-900 text-sm mt-0.5">{interest.property.title}</h4>
+                          <p className="text-xs text-slate-500 mt-1">Saved on {new Date(interest.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveInterest(lead.id, interest.property_id)}
+                          className="p-2 text-slate-400 hover:text-danger-600 bg-slate-50 hover:bg-danger-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dossierTab === 'VISITS' && (
+              <div className="space-y-4">
+                {leadVisits.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
+                    No site visits scheduled.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {leadVisits.map((visit: LeadVisitItem) => (
+                      <div key={visit.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono font-medium text-slate-400 text-xs">{visit.booking_code}</span>
+                            <StatusPill status={visit.status} type={getStatusMap(visit.status)} />
+                          </div>
+                          {visit.property && (
+                            <h4 className="font-bold text-navy-900 text-sm mt-1">{visit.property.title}</h4>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{new Date(visit.scheduled_date).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dossierTab === 'FOLLOW_UPS' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-bold text-navy-900 text-sm mb-4">Schedule Follow-up</h4>
+                  <div className="bg-surface rounded-xl p-4 border border-slate-200 space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Task Title"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-navy-600 outline-none"
+                    />
+                    <textarea
+                      placeholder="Notes..."
+                      value={newTaskDesc}
+                      onChange={(e) => setNewTaskDesc(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-navy-600 outline-none min-h-[80px]"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="datetime-local"
+                        value={newTaskDeadline}
+                        onChange={(e) => setNewTaskDeadline(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-navy-600 outline-none"
+                      />
+                      <select
+                        value={newTaskPriority}
+                        onChange={(e) => setNewTaskPriority(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-navy-600 outline-none"
+                      >
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="URGENT">Urgent</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => handleCreateTask(lead.id)}
+                      disabled={isCreatingTask || !newTaskTitle}
+                      className="w-full py-2 bg-navy-900 hover:bg-navy-800 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
+                    >
+                      {isCreatingTask ? 'Scheduling...' : 'Schedule Task'}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-navy-900 text-sm mb-4">Upcoming Tasks</h4>
+                  {isLoadingTasks ? (
+                    <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
+                  ) : leadTasks.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
+                      No pending tasks.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {leadTasks.map((task: LeadTaskItem) => (
+                        <div key={task.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <h5 className={`font-semibold text-sm ${task.status === 'COMPLETED' ? 'line-through text-slate-400' : 'text-navy-900'}`}>
+                              {task.title}
+                            </h5>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${task.priority === 'HIGH' || task.priority === 'URGENT' ? 'bg-danger-100 text-danger-800' : 'bg-slate-100 text-slate-600'}`}>
+                              {task.priority}
+                            </span>
+                          </div>
+                          {task.description && (
+                            <p className="text-xs text-slate-500 mb-2">{task.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(task.target_date).toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {dossierTab === 'SALES_OPPS' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-bold text-navy-900 text-sm">Linked Sales Opportunities</h4>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetchWithAuth(`${API_BASE_URL}/opportunities`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ lead_id: lead.id })
+                        });
+                        if (!res.ok) throw new Error('Failed to create sales opportunity');
+                        showToast('Sales opportunity created', 'success');
+                        fetchLeadSalesOpps(lead.id);
+                      } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : String(e);
+                        showToast(msg, 'error');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-navy-100 hover:bg-navy-200 text-navy-800 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Create Opp
+                  </button>
+                </div>
+                
+                {isLoadingSalesOpps ? (
+                  <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
+                ) : leadSalesOpps.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
+                    No sales opportunities found.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {leadSalesOpps.map((opp: LeadSalesOppItem) => (
+                      <div key={opp.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="text-[10px] font-mono text-slate-400 mb-0.5">#{opp.id}</div>
+                            <h5 className="font-bold text-navy-900 text-sm truncate max-w-[150px]">
+                              {opp.project?.name ? `${opp.project.name} Sales` : 'Open Opportunity'}
+                            </h5>
+                          </div>
+                          <StatusPill status={opp.stage} type="pending" />
+                        </div>
+                        <div className="flex items-center justify-between text-sm mt-4 pt-3 border-t border-slate-100">
+                          <div>
+                            <p className="text-[10px] text-slate-400 font-semibold uppercase">Value</p>
+                            <p className="font-bold text-navy-900">₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L</p>
+                          </div>
+                          <button
+                            onClick={() => navigate('/sales-pipeline')}
+                            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors"
+                          >
+                            View Pipeline
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showScheduleModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100">
+            <div className="bg-gold-600 p-5 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                <h3 className="font-bold text-sm tracking-wide">Book Site Visit</h3>
+              </div>
+              <button onClick={() => setShowScheduleModal(false)} className="hover:bg-black/10 p-1.5 rounded-full transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Scheduled Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Notes</label>
+                <textarea
+                  value={scheduleNotes}
+                  onChange={(e) => setScheduleNotes(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 min-h-[80px]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Attach Property</label>
+                <select
+                  value={schedulePropertyId}
+                  onChange={(e) => setSchedulePropertyId(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                >
+                  <option value="">-- No Property Attached --</option>
+                  {savedInterests.map((interest) => (
+                    <option key={interest.property_id} value={interest.property_id}>
+                      {interest.property.title} ({interest.property.property_code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!scheduleDate) return;
+                    try {
+                      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          lead_id: lead.id,
+                          scheduled_date: scheduleDate,
+                          notes: scheduleNotes,
+                          property_id: schedulePropertyId ? parseInt(schedulePropertyId, 10) : undefined,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        showToast('Site visit booked successfully', 'success');
+                        setShowScheduleModal(false);
+                        onRefreshLeads();
+                      } else {
+                        showToast(data.error || 'Failed to book site visit', 'error');
+                      }
+                    } catch (err) {
+                      showToast('Error booking site visit', 'error');
+                    }
+                  }}
+                  className="px-6 py-2 bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm rounded-xl shadow-md transition-all"
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};

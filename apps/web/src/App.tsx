@@ -216,15 +216,15 @@ const AppShell: React.FC = () => {
 
       <Route path="/leads" element={<LeadManagement />} />
       <Route path="/leads-clients" element={<LeadManagement />} />
-      <Route path="/sales-pipeline" element={user?.permissions?.includes(Permissions.LEADS_READ) ? <SalesPipelineManagement /> : <Navigate to="/" replace />} />
-      <Route path="/customers" element={user?.permissions?.includes(Permissions.CUSTOMERS_READ) ? <CustomerManagement /> : <Navigate to="/" replace />} />
-      <Route path="/projects" element={user?.permissions?.includes(Permissions.PROJECTS_READ) ? <ProjectManagement /> : <Navigate to="/" replace />} />
+      <Route path="/sales-pipeline" element={<SalesPipelineManagement />} />
+      <Route path="/customers" element={<CustomerManagement />} />
+      <Route path="/projects" element={<ProjectManagement />} />
       <Route path="/properties" element={<PropertyManagement />} />
       <Route path="/site-visits" element={<SiteVisitManagement />} />
       <Route path="/tasks" element={<TaskManager />} />
-      <Route path="/bookings" element={user?.permissions?.includes(Permissions.BOOKINGS_READ) ? <BookingManagement /> : <Navigate to="/" replace />} />
-      <Route path="/bookings/:id" element={user?.permissions?.includes(Permissions.BOOKINGS_READ) ? <BookingDossier /> : <Navigate to="/" replace />} />
-      <Route path="/documents" element={user?.permissions?.includes(Permissions.DOCUMENTS_READ) ? <DocumentManagement /> : <Navigate to="/" replace />} />
+      <Route path="/bookings" element={<BookingManagement />} />
+      <Route path="/bookings/:id" element={<BookingDossier />} />
+      <Route path="/documents" element={<DocumentManagement />} />
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/settings" element={<UserSettings />} />
       

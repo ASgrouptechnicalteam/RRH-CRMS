@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PhoneCall,
-  CheckCircle2,
   Calendar,
-  Award,
-  Sparkles,
-  TrendingUp,
+  MessageCircle,
+  Users,
   Clock,
-  Mic,
-  Plus,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -17,6 +13,7 @@ import { API_BASE_URL } from '../../config';
 import { LeadListItem } from '../../types';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { TaskManager } from '../tasks/TaskManager';
+import { StatCard, ListWidget, StatusPill, ListItem } from '../ui';
 
 export const TelecallerDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -74,77 +71,114 @@ export const TelecallerDashboard: React.FC = () => {
     fetchTelecallerData();
   }, []);
 
+  // Compute KPIs from existing data
+  const leadsAssigned = assignedLeads.length;
+  const contactedToday = assignedLeads.filter(l => l.status === 'CONTACTED').length;
+  const qualificationPending = assignedLeads.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
+  const whatsappFollowUps = 0; // Requires task data not currently fetched
+
+  // Transform active leads for the Distinctive Widget
+  // (Since we don't fetch Site Visits yet, we use a placeholder ListWidget for it, 
+  // and show the active prospects below it)
+  const tomorrowVisits: ListItem[] = [];
+
   return (
     <div className="space-y-6">
-      {/* Telecaller Header Banner */}
-      <div className="bg-gradient-to-r from-navy-900 via-slate-900 to-navy-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <PhoneCall className="w-5 h-5 text-navy-400" />
-            <h2 className="text-xl font-extrabold tracking-tight">Daily Calling List & Prospects</h2>
-          </div>
-          <p className="text-xs text-navy-200/80">
-            Welcome back, <strong className="text-white">{user?.employeeCode}</strong>! Your performance score helps assign priority prospects to you.
-          </p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Telecaller Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.employeeCode}. Here's your pipeline overview.</p>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div 
-            onClick={() => navigate('/leads')}
-            className="px-4 py-2 bg-white/10 rounded-2xl border border-white/10 text-center cursor-pointer hover:bg-white/20 transition-colors"
-          >
-            <span className="text-[10px] uppercase font-bold text-navy-300 block">Assigned Prospects</span>
-            <span className="text-lg font-black text-white">{assignedLeads.length} Prospects</span>
-          </div>
-
-          <div className="px-4 py-2 bg-emerald-500/20 rounded-2xl border border-emerald-500/30 text-center">
-            <span className="text-[10px] uppercase font-bold text-emerald-300 block">Daily Call Target</span>
-            <span className="text-lg font-black text-emerald-400">
+        <div className="px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-3">
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-bold text-emerald-600 block">Daily Call Target</span>
+            <span className="text-sm font-black text-emerald-700">
               {targetMetrics.achieved} / {targetMetrics.target} Calls
             </span>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+            <PhoneCall className="w-5 h-5 text-emerald-600" />
           </div>
         </div>
       </div>
 
-      {/* Target Gauge & Score Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
+      {/* Primary KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Leads Assigned" 
+          value={leadsAssigned} 
+          icon={Users} 
+        />
+        <StatCard 
+          label="Contacted Today" 
+          value={contactedToday} 
+          icon={PhoneCall} 
+        />
+        <StatCard 
+          label="Qualification Pending" 
+          value={qualificationPending} 
+          icon={Clock} 
+        />
+        <StatCard 
+          label="WhatsApp Follow-ups" 
+          value={whatsappFollowUps} 
+          icon={MessageCircle} 
+        />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column: Priority Call Queue & Lists */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Distinctive Widget: Reconfirm Tomorrow's Visits */}
+          <ListWidget 
+            title="Reconfirm Tomorrow's Visits"
+            items={tomorrowVisits}
+            emptyStateMessage="No visits pending reconfirmation tomorrow."
+            viewAllLink="/site-visits"
+          />
+
           {/* Today's Priority Call Queue */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                <Clock className="w-4 h-4 text-navy-600" />
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="font-bold text-navy-900 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-action" />
                 <span>Today's High-Priority Prospects</span>
               </h3>
-              <span className="text-xs font-mono font-bold text-navy-800 bg-navy-50 px-2.5 py-1 rounded-full border border-navy-200">
-                {assignedLeads.length} Active Prospects
-              </span>
+              <StatusPill status={`${assignedLeads.length} Active`} type="default" />
             </div>
 
             {isLoading ? (
-              <div className="py-8 text-center text-xs text-slate-400">Loading priority prospects...</div>
+              <div className="py-8 text-center text-sm text-slate-400">Loading priority prospects...</div>
             ) : assignedLeads.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">No prospects currently assigned. New prospects will be assigned to you based on your performance score!</div>
+              <div className="py-8 text-center text-sm text-slate-400">
+                No prospects currently assigned. Keep your performance score high for priority assignments!
+              </div>
             ) : (
               <div className="space-y-3">
                 {assignedLeads.map((lead: LeadListItem) => (
                   <div
                     key={lead.id}
-                    className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 hover:shadow-sm transition-all"
+                    className="p-4 bg-surface rounded-xl border border-slate-200 flex items-center justify-between gap-4 hover:shadow-sm transition-shadow group"
                   >
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-navy-900 text-xs">{lead.lead_code}</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono font-semibold text-navy-600 text-xs">{lead.lead_code}</span>
+                        {lead.status === 'NEW' && <StatusPill status="NEW" type="hot" />}
+                        {lead.status === 'CONTACTED' && <StatusPill status="CONTACTED" type="warm" />}
                       </div>
-                      <h4 className="font-extrabold text-slate-900 text-sm mt-0.5">{lead.customer_name}</h4>
-                      <p className="text-xs text-slate-500 font-mono">{lead.phone} • Prefers: {lead.property_type_preference || 'Villa'}</p>
+                      <h4 className="font-bold text-navy-900 text-sm">{lead.customer_name}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {lead.phone} • {lead.property_type_preference || 'Villa'}
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       <select
                         value={lead.status}
                         onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className="text-[10px] font-bold border border-slate-200 rounded-xl px-2 py-2 bg-white text-slate-700 hover:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-500 transition-all cursor-pointer"
+                        className="text-xs font-medium border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-navy-700 hover:border-navy-300 focus:outline-none focus:ring-2 focus:ring-navy-500 transition-colors cursor-pointer shadow-sm"
                         title="Update Prospect Status"
                       >
                         <option value="NEW">New</option>
@@ -158,10 +192,10 @@ export const TelecallerDashboard: React.FC = () => {
 
                       <a
                         href={`tel:${lead.phone}`}
-                        className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center gap-1.5 shrink-0"
+                        className="px-3 py-1.5 bg-action hover:bg-navy-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5 shrink-0"
                       >
                         <PhoneCall className="w-3.5 h-3.5" />
-                        <span>Call Now</span>
+                        <span>Call</span>
                       </a>
                     </div>
                   </div>
@@ -169,12 +203,12 @@ export const TelecallerDashboard: React.FC = () => {
               </div>
             )}
           </div>
-
-          <TaskManager />
         </div>
 
-        <div>
+        {/* Right Column: Tasks & Score */}
+        <div className="space-y-6">
           <PerformanceScoreWidget />
+          <TaskManager />
         </div>
       </div>
     </div>

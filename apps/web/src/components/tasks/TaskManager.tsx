@@ -257,7 +257,7 @@ export const TaskManager: React.FC = () => {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm text-slate-800">{t.title}</span>
-                  {getPriorityBadge(t.priority)}
+                  {getPriorityBadge(t.priority || 'MEDIUM')}
 
                   {/* Red OVERDUE Status Badge */}
                   {t.status === 'OVERDUE' && (
@@ -278,9 +278,9 @@ export const TaskManager: React.FC = () => {
                 {/* Deadline & Live Countdown Timer Badge */}
                 <div className="flex items-center gap-3 pt-1">
                   <span className="text-[11px] text-slate-400 font-mono">
-                    Deadline: {new Date(t.deadline).toLocaleString()}
+                    Deadline: {new Date(t.deadline || '').toLocaleString()}
                   </span>
-                  {getCountdownBadge(t.deadline, t.status)}
+                  {getCountdownBadge(t.deadline || '', t.status || 'PENDING')}
                 </div>
               </div>
 

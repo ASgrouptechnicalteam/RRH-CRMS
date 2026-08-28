@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building,
-  CheckCircle2,
-  ShieldCheck,
+  CalendarCheck,
   MapPin,
-  Camera,
-  AlertCircle,
-  Clock,
-  Eye,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { PropertyListItem } from '../../types';
 import { PropertyManagement } from '../properties/PropertyManagement';
+import { StatCard, ListWidget, ListItem } from '../ui';
 
 export const PMDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -40,31 +37,64 @@ export const PMDashboard: React.FC = () => {
     fetchPMProperties();
   }, []);
 
+  // Compute KPIs
+  const pendingPropertyAudits = properties.length;
+  // Placeholders since data is not fetched in this layer yet
+  const assignedDemos = 0;
+  const siteVisitsPending = 0;
+  const activeProjects = 0;
+
+  // Placeholder for Distinctive Widget
+  const pendingResponses: ListItem[] = [];
+
   return (
     <div className="space-y-6">
-      {/* PM Header Banner */}
-      <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-navy-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-amber-700/30">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Building className="w-5 h-5 text-amber-400" />
-            <h2 className="text-xl font-extrabold tracking-tight">Project Manager On-Site Verification Queue</h2>
-          </div>
-          <p className="text-xs text-amber-200/80">
-            Stage 1 Inspection Workstation: Verify site boundaries, location coordinates, amenities, and on-site photos.
-          </p>
-        </div>
-
-        <div 
-          onClick={() => navigate('/properties')}
-          className="px-4 py-2 bg-white/10 rounded-2xl border border-white/10 text-center cursor-pointer hover:bg-white/20 transition-colors"
-        >
-          <span className="text-[10px] uppercase font-bold text-amber-300 block">Pending On-Site Audits</span>
-          <span className="text-lg font-black text-white">{properties.length} Properties</span>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Project Manager Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.employeeCode}. Here are your pending actions and audits.</p>
         </div>
       </div>
 
-      {/* Property Pipeline Workspace */}
-      <PropertyManagement />
+      {/* Primary KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Assigned Demos" 
+          value={assignedDemos} 
+          icon={CalendarCheck} 
+        />
+        <StatCard 
+          label="Visits Pending Acceptance" 
+          value={siteVisitsPending} 
+          icon={MapPin} 
+        />
+        <StatCard 
+          label="Active Projects" 
+          value={activeProjects} 
+          icon={Building} 
+        />
+        <StatCard 
+          label="Pending Property Audits" 
+          value={pendingPropertyAudits} 
+          icon={ClipboardList} 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Property Verification Pipeline */}
+        <div className="lg:col-span-2 space-y-6">
+          <PropertyManagement />
+        </div>
+
+        {/* Right Column: Distinctive Widget */}
+        <div className="space-y-6">
+          <ListWidget 
+            title="Pending My Response"
+            items={pendingResponses}
+            emptyStateMessage="No visit requests pending acceptance."
+          />
+        </div>
+      </div>
     </div>
   );
 };

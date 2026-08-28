@@ -92,7 +92,7 @@ export const MDControlDashboard: React.FC = () => {
   };
 
   const filteredEmployees = employees.filter((emp) =>
-    emp.employeeCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (emp.employeeCode || emp.employee_code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     emp.branch?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     emp.roles.some((r: string) => r.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -198,7 +198,7 @@ export const MDControlDashboard: React.FC = () => {
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <button
-                      onClick={() => handleToggleAttendance(emp.id, emp.attendanceRequired)}
+                      onClick={() => handleToggleAttendance(emp.id, emp.attendanceRequired ?? true)}
                       disabled={updatingId === emp.id}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all ${
                         emp.attendanceRequired

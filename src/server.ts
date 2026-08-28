@@ -33,11 +33,11 @@ import pushRoutes from './routes/pushSubscriptions';
 import announcementRoutes from './routes/announcement';
 import bookingRoutes from './routes/booking.routes';
 import paymentRoutes from './routes/payment.routes';
-import documentRoutes from './routes/documents';
 import integrationRoutes from './routes/integration.routes';
 import complaintRoutes from './routes/complaint.routes';
 import analyticsRoutes from './routes/analytics';
 import aiSearchRoutes from './routes/aiSearch';
+import messageTemplateRoutes from './routes/messageTemplates';
 
 import { PortalWorker } from './services/portalWorker';
 
@@ -91,11 +91,11 @@ app.use('/api/v1/push', pushRoutes);
 app.use('/api/v1/announcement', announcementRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
-app.use('/api/v1/documents', documentRoutes);
 app.use('/api/v1/integration', integrationRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiSearchRoutes);
+app.use('/api/v1/message-templates', messageTemplateRoutes);
 
 // Fallback for unknown API routes
 app.all('/api/*', (req, res) => {

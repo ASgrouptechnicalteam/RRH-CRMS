@@ -6,7 +6,6 @@ import { SiteVisitPolicy } from '../policies/siteVisit.policy';
 import { ExpenseRefundPolicy } from '../policies/expenseRefund.policy';
 import { TaskPolicy } from '../policies/task.policy';
 import { ProjectPolicy } from '../policies/project.policy';
-import { DocumentPolicy } from '../policies/document.policy';
 import { KycPolicy } from '../policies/kyc.policy';
 
 /**
@@ -118,19 +117,6 @@ export const can = (user: TokenPayload, action: Permission, resource?: any): boo
     case Permissions.TASKS_UPDATE:
       if (!resource) return false;
       return TaskPolicy.canMutateSync(user, resource);
-
-    // -- DOCUMENTS --
-    case Permissions.DOCUMENTS_READ:
-      if (!resource) return true;
-      return DocumentPolicy.canView(user, resource);
-
-    case Permissions.DOCUMENTS_VERIFY:
-      if (!resource) return false;
-      return DocumentPolicy.canVerify(user, resource);
-
-    case Permissions.DOCUMENTS_DELETE:
-      if (!resource) return false;
-      return DocumentPolicy.canDelete(user, resource);
 
     // -- CUSTOMER KYC --
     case Permissions.CUSTOMERS_KYC_WRITE:

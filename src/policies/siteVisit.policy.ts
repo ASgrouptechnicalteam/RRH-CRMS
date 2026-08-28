@@ -16,13 +16,16 @@ export class SiteVisitPolicy {
   }
 
   /**
-   * §2: "executive department" roles that may see the reassignment `reason`.
-   * Assumed set per §7 open item: MD, Admin, HR Manager, Marketing Director,
-   * Project Manager. Telecallers/Agents cannot inspect the reasoning behind a
-   * reassignment hop — same masking pattern already used for employee PII.
+   * §2 / §8 item #1: "executive department" roles that may see the reassignment
+   * `reason`. Confirmed narrow set: MD, Admin, Marketing Director only
+   * (per spec §8 assumption, now ratified by user). Telecallers, PMs, Agents,
+   * HR cannot inspect the reasoning behind a reassignment hop — same masking
+   * pattern already used for employee PII.
    */
   static canViewReassignmentReason(user: TokenPayload): boolean {
-    return this.isManagement(user);
+    return user.roles.some((r) =>
+      [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(r as any),
+    );
   }
 
   static canList(user: TokenPayload): any {

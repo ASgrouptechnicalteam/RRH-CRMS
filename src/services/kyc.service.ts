@@ -14,8 +14,8 @@ export class AppError extends Error {
   }
 }
 
+/** KYC outbox event type consumed by portalWorker (delivered to the portal). */
 export const KYC_EVENT_TYPE = 'CUSTOMER_KYC_STATUS_CHANGED';
-const KYC_DOC_TYPES = ['KYC_PAN', 'KYC_AADHAAR'];
 
 /**
  * Phase 11 Packet 3C - Customer KYC service.
@@ -86,123 +86,18 @@ export class KycService {
   }
 
   /**
-   * Recomputes a customer's derived kyc_status from KYC document verification.
-   * Called by the document verification workflow after a KYC doc is verified.
-   * Must be invoked inside an existing transaction (tx-scoped).
+   * §7: KYC document handling has moved to the customer portal. The CRM no
+   * longer stores KYC documents (Document model removed), so derived kyc_status
+   * recomputation from documents is retired. This now returns the customer
+   * unchanged — KYC verification/status is owned by the portal and surfaces back
+   * via the portal KYC callback (IntegrationService.processKycCallback).
    */
   static async recomputeAndNotifyTx(
     tx: any,
     customerId: number,
-    companyId: number,
-    actorId: number
+    _companyId: number,
+    _actorId: number
   ) {
-    const customer = await tx.customer.findUnique({ where: { id: customerId } });
-    if (!customer) {
-      return null;
-    }
-
-    const docs = await tx.document.findMany({
-      where: { customer_id: customerId, document_type: { in: KYC_DOC_TYPES } },
-    });
-
-    const nextStatus = this.deriveKycStatus(customer, docs);
-    const prevStatus = customer.kyc_status || KycStatus.PENDING;
-
-    if (nextStatus === prevStatus) {
-      return customer;
-    }
-
-    const data: any = { kyc_status: nextStatus };
-    if (nextStatus === KycStatus.VERIFIED) {
-      data.kyc_verified_at = new Date();
-      data.kyc_rejected_reason = null;
-    } else if (nextStatus === KycStatus.REJECTED) {
-      const rejected = docs.find((d: any) => d.verification_status === 'REJECTED');
-      data.kyc_rejected_reason = rejected?.verification_notes || 'KYC document rejected';
-      data.kyc_verified_at = null;
-    } else {
-      if (prevStatus === KycStatus.VERIFIED) data.kyc_verified_at = null;
-      if (prevStatus === KycStatus.REJECTED) data.kyc_rejected_reason = null;
-    }
-
-    const updated = await tx.customer.update({ where: { id: customerId }, data });
-
-    await tx.auditEvent.create({
-      data: {
-        actor_id: actorId,
-        action: 'CUSTOMER_KYC_STATUS_UPDATED',
-        entity_type: 'Customer',
-        entity_id: customerId,
-        old_value: prevStatus,
-        new_value: nextStatus,
-      },
-    });
-
-    // Conditional crms_booking_id — latest confirmed booking (Packet 3C §3.3).
-    const latestBooking = await tx.booking.findFirst({
-      where: { customer_id: customerId, company_id: companyId, status: 'CONFIRMED' },
-      orderBy: { created_at: 'desc' },
-      select: { id: true },
-    });
-
-    const maskedPan = this.maskPan(decryptData(updated.pan_number));
-
-    await tx.integrationEvent.create({
-      data: {
-        event_type: KYC_EVENT_TYPE,
-        payload: JSON.stringify({
-          event_type: KYC_EVENT_TYPE,
-          company_id: companyId,
-          crms_customer_id: customerId,
-          crms_booking_id: latestBooking?.id ?? null,
-          kyc_status: nextStatus,
-          masked_pan: maskedPan,
-          verified_at: nextStatus === KycStatus.VERIFIED ? updated.kyc_verified_at?.toISOString() ?? null : null,
-        }),
-        status: 'CREATED',
-        company_id: companyId,
-        crms_customer_id: customerId,
-        crms_booking_id: latestBooking?.id ?? null,
-      },
-    });
-
-    // Phase 11 Packet 3E — customer notification for a genuine KYC status change.
-    // Same transaction as the status update/audit/outbox. Content is LOW
-    // sensitivity only (derived status label); raw PAN/Aadhaar never appear.
-    await tx.customerNotification.create({
-      data: {
-        company_id: companyId,
-        customer_id: customerId,
-        booking_id: latestBooking?.id ?? null,
-        type: 'KYC_STATUS_UPDATED',
-        title: 'KYC Status Updated',
-        message: `Your KYC status is now ${nextStatus}.`,
-      },
-    });
-
-    return updated;
-  }
-
-  private static deriveKycStatus(customer: any, docs: any[]): string {
-    const relevant = docs.filter((d) => KYC_DOC_TYPES.includes(d.document_type));
-    if (relevant.some((d) => d.verification_status === 'REJECTED')) {
-      return KycStatus.REJECTED;
-    }
-    const panVerified = relevant.some(
-      (d) => d.document_type === 'KYC_PAN' && d.verification_status === 'VERIFIED'
-    );
-    const aadhaarVerified = relevant.some(
-      (d) => d.document_type === 'KYC_AADHAAR' && d.verification_status === 'VERIFIED'
-    );
-    if (panVerified && aadhaarVerified) {
-      return KycStatus.VERIFIED;
-    }
-    if (relevant.some((d) => d.verification_status === 'VERIFIED')) {
-      return KycStatus.PARTIAL;
-    }
-    if (customer.pan_number || customer.aadhaar_number) {
-      return KycStatus.PARTIAL;
-    }
-    return KycStatus.PENDING;
+    return await tx.customer.findUnique({ where: { id: customerId } });
   }
 }

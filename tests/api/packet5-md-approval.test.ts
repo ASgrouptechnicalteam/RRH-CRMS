@@ -57,7 +57,11 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     await p.customerNotification.deleteMany({});
     await p.booking.deleteMany({});
     await p.opportunity.deleteMany({});
+    await p.siteVisitBooking.deleteMany({});
     await p.lead.deleteMany({});
+    await p.payment.deleteMany({});
+    await p.kycProfile.deleteMany({});
+    await p.customerPreference.deleteMany({});
     await p.property.deleteMany({});
     await p.customer.deleteMany({});
   });

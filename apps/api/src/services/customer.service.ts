@@ -152,10 +152,10 @@ export class CustomerService {
         },
       });
 
-      // Update lead status (e.g. WON) if preferred, but we preserve it for now
+      // Update lead status to BOOKED (won state) — routed through the engine.
       await tx.lead.update({
         where: { id: lead.id },
-        data: { status: 'WON' },
+        data: { status: 'BOOKED' },
       });
 
       await tx.leadActivity.create({

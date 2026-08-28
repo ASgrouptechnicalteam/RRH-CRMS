@@ -155,11 +155,11 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
     });
 
     // WORKFLOW EXPECTED TO FAIL CURRENTLY (We want it to return 409, but it will return 200)
-    it('TC-A CANNOT skip lifecycle stages (e.g. CONTACTED directly to WON without negotiation)', async () => {
+    it('TC-A CANNOT skip lifecycle stages (e.g. CONTACTED directly to BOOKED without negotiation)', async () => {
       const res = await request(app)
         .patch(`/api/v1/leads/${testLeadAId}/status`)
         .set('Authorization', `Bearer ${telecallerAToken}`)
-        .send({ status: 'WON', notes: 'Skipping steps!' });
+        .send({ status: 'BOOKED', notes: 'Skipping steps!' });
 
       // After refactoring, this MUST be 409 Conflict.
       // Currently, it will fail the test because the codebase is vulnerable (returns 200).

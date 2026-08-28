@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -26,13 +27,13 @@ describe('WR-7: Public Property Search Extension', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
-    employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.id;
 
     const mdLogin = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', '192.168.2.200')
-      .send({ employee_code: getCode('Managing director'), password: 'Password@123' });
+      .send({ employee_code: getCode(Roles.MD), password: 'Password@123' });
     mdToken = mdLogin.body.accessToken;
 
     // Create test API key for RRH company
@@ -531,6 +532,7 @@ const publishProperty = async (propertyId: number, companyId: number) => {
       // Create properties with specific city and locality combinations
       propLoc1 = await p.property.create({
         data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: 'LOC-TEST-1',
           company_id: companyId,
           created_by_id: employeeId,
@@ -549,6 +551,7 @@ const publishProperty = async (propertyId: number, companyId: number) => {
 
       propLoc2 = await p.property.create({
         data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: 'LOC-TEST-2',
           company_id: companyId,
           created_by_id: employeeId,
@@ -567,6 +570,7 @@ const publishProperty = async (propertyId: number, companyId: number) => {
 
       propLoc3 = await p.property.create({
         data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: 'LOC-TEST-3',
           company_id: companyId,
           created_by_id: employeeId,

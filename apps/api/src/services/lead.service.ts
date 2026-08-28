@@ -79,7 +79,7 @@ export class LeadService {
       where: {
         company_id: companyId,
         assigned_to_id: { in: telecallers.map((t: any) => t.id) },
-        status: { in: ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED'] },
+        status: { in: ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFICATION_PENDING', 'QUALIFIED', 'DEMO_SCHEDULED', 'DEMO_COMPLETED', 'SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'NEGOTIATION', 'BOOKING_INITIATED'] },
       },
       _count: { _all: true },
     });
@@ -92,7 +92,7 @@ export class LeadService {
 
     const totalWonCounts = await p.lead.groupBy({
       by: ['assigned_to_id'],
-      where: { company_id: companyId, status: 'WON', assigned_to_id: { in: telecallers.map((t: any) => t.id) } },
+      where: { company_id: companyId, status: 'BOOKED', assigned_to_id: { in: telecallers.map((t: any) => t.id) } },
       _count: { _all: true },
     });
 
@@ -408,7 +408,7 @@ export class LeadService {
     });
   }
 
-  static async updateLeadStatus(user: TokenPayload, leadId: number, newStatus: string, notes?: string) {
+  static async updateLeadStatus(user: TokenPayload, leadId: number, newStatus: string, notes?: string, guardFields?: { exit_reason?: string; demo_scheduled_at?: string; demo_handler_id?: number; qualification?: any }) {
     const lead = await p.lead.findFirst({ where: { id: leadId, company_id: user.companyId } });
     if (!lead) throw new AppError(404, 'Lead not found');
 
@@ -416,33 +416,73 @@ export class LeadService {
       throw new AppError(403, 'Forbidden: You do not have permission to mutate this lead');
     }
 
+    // §0: the workflow engine is the ONLY authority allowed to write Lead.status.
+    // We assemble the entity context the engine uses for its field-level guards.
+    const entityContext: any = {
+      ...lead,
+      exit_reason: guardFields?.exit_reason ?? lead.exit_reason,
+      demo_scheduled_at: guardFields?.demo_scheduled_at ?? lead.demo_scheduled_at,
+      demo_handler_id: guardFields?.demo_handler_id ?? lead.demo_handler_id,
+    };
+    if (guardFields?.demo_scheduled_at) {
+      entityContext.demo_scheduled_at = new Date(guardFields.demo_scheduled_at);
+    }
+    // SITE_VISIT_* guards need the linked visits
+    if (newStatus === 'SITE_VISIT_SCHEDULED' || newStatus === 'SITE_VISIT_COMPLETED') {
+      entityContext.site_visits = await p.siteVisitBooking.findMany({ where: { lead_id: leadId } });
+    }
+    // NEGOTIATION / BOOKING_INITIATED guards need the opportunity context
+    if (newStatus === 'NEGOTIATION' || newStatus === 'BOOKING_INITIATED') {
+      entityContext.opportunities = await p.opportunity.findMany({ where: { lead_id: leadId } });
+    }
+
     const transition = WorkflowEngine.canTransition({
       domain: WorkflowDomain.LEAD,
       currentState: lead.status,
       action: newStatus,
       actor: user,
-      entity: lead,
+      entity: entityContext,
     });
 
     if (!transition.allowed) {
       throw new AppError(409, transition.reason || 'Invalid state transition');
     }
 
+    const isDrop = newStatus === 'DROPPED';
+
     return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
-      const updated = await tx.lead.update({
-        where: { id: leadId },
-        data: {
-          status: newStatus,
-          last_contacted_at: new Date(),
-        },
-      });
+      const updateData: any = {
+        status: newStatus,
+        last_contacted_at: new Date(),
+      };
+      if (isDrop) {
+        updateData.exit_reason = guardFields?.exit_reason || null;
+        updateData.exited_from_status = lead.status; // snapshot per §1
+      }
+      // Persist demo fields when entering DEMO_SCHEDULED
+      if (newStatus === 'DEMO_SCHEDULED' && guardFields) {
+        if (guardFields.demo_scheduled_at) updateData.demo_scheduled_at = new Date(guardFields.demo_scheduled_at);
+        if (guardFields.demo_handler_id) updateData.demo_handler_id = guardFields.demo_handler_id;
+      }
+      // Persist qualification fields when entering QUALIFIED
+      if (newStatus === 'QUALIFIED' && guardFields?.qualification) {
+        const q = guardFields.qualification;
+        if (q.budget_min !== undefined) updateData.budget_min = q.budget_min;
+        if (q.budget_max !== undefined) updateData.budget_max = q.budget_max;
+        if (q.property_type_preference !== undefined) updateData.property_type_preference = q.property_type_preference;
+        if (q.preferred_location !== undefined) updateData.preferred_location = q.preferred_location;
+      }
+
+      const updated = await tx.lead.update({ where: { id: leadId }, data: updateData });
 
       await tx.leadActivity.create({
         data: {
           lead_id: leadId,
           actor_id: user.employeeId,
-          activity_type: 'STATUS_CHANGED',
-          notes: `Status updated from ${lead.status} to ${newStatus}${notes ? `: ${notes}` : ''}`,
+          activity_type: isDrop ? 'LEAD_DROPPED' : 'STATUS_CHANGED',
+          notes: isDrop
+            ? `Lead dropped from ${lead.status}. Reason: ${guardFields?.exit_reason || 'n/a'}`
+            : `Status updated from ${lead.status} to ${newStatus}${notes ? `: ${notes}` : ''}`,
         },
       });
 

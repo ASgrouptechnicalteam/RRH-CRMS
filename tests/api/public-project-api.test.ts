@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -45,7 +46,7 @@ describe('Public Project API', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
 
     // Create a test API key
     const testApiKey = `PROJECT-TEST-KEY-${Date.now()}`;
@@ -89,8 +90,8 @@ describe('Public Project API', () => {
         area_sqft: 1500,
         location: 'Miyapur',
         status: 'LIVE',
-        assigned_pm_id: 1,
-        created_by_id: 1,
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
+        created_by_id: (await prisma.employee.findFirst())!.id,
       },
     });
     propertyId = prop.id;
@@ -201,8 +202,8 @@ describe('Public Project API', () => {
           area_sqft: 1200,
           location: 'Test',
           status: 'LIVE',
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -255,8 +256,8 @@ describe('Public Project API', () => {
           area_sqft: 1200,
           location: 'Test',
           status: 'LIVE',
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -385,8 +386,8 @@ describe('Public Project API', () => {
           area_sqft: 1200,
           location: 'Test',
           status: 'LIVE',
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -498,8 +499,8 @@ describe('Public Project API', () => {
           location: 'Test',
           status: 'LOCKED',
           locked_until: new Date(Date.now() - 86400000), // Expired yesterday
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -539,8 +540,8 @@ describe('Public Project API', () => {
           location: 'Test',
           status: 'LOCKED',
           locked_until: new Date(Date.now() + 86400000), // Locked for 24 hours
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -577,8 +578,8 @@ describe('Public Project API', () => {
           area_sqft: 1000,
           location: 'Test',
           status: 'SOLD',
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 

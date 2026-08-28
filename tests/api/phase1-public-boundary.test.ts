@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -29,14 +30,14 @@ describe('Phase 1 — Public Website API Boundary', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    const md = await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } });
+    const md = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } });
     companyId = md!.company_id;
     mdEmployeeId = md!.id;
 
     const loginRes = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', '192.168.3.100')
-      .send({ employee_code: getCode('Managing director'), password: 'Password@123' });
+      .send({ employee_code: getCode(Roles.MD), password: 'Password@123' });
     mdToken = loginRes.body.accessToken;
 
     const testApiKey = `PHASE1-RRH-${Date.now()}`;

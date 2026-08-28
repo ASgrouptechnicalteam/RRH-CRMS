@@ -560,12 +560,6 @@ export const LeadStatus = {
   BOOKED: 'BOOKED',
   DROPPED: 'DROPPED',
   RECOVERED_TO_POOL: 'RECOVERED_TO_POOL',
-  // NOTE: OPPORTUNITY_OPEN / WON / LOST retained for backward compatibility until
-  // the lead→opportunity model is fully retired (see docs/LEAD-WORKFLOW-SPEC.md §0/§4).
-  // They are intentionally absent from the new LeadWorkflow transition matrix.
-  OPPORTUNITY_OPEN: 'OPPORTUNITY_OPEN',
-  WON: 'WON',
-  LOST: 'LOST',
 } as const;
 
 export type LeadStatusType = typeof LeadStatus[keyof typeof LeadStatus];
@@ -625,16 +619,31 @@ export const LeadStatusUpdateSchema = z.object({
     'NEW',
     'ASSIGNED',
     'CONTACTED',
+    'QUALIFICATION_PENDING',
     'QUALIFIED',
+    'DEMO_SCHEDULED',
+    'DEMO_COMPLETED',
     'SITE_VISIT_SCHEDULED',
+    'SITE_VISIT_COMPLETED',
     'NEGOTIATION',
-    'OPPORTUNITY_OPEN',
-    'WON',
-    'LOST',
+    'BOOKING_INITIATED',
+    'BOOKED',
+    'DROPPED',
     'RECOVERED_TO_POOL',
   ]),
   notes: z.string().optional(),
+  // §1 guard fields — required for specific transitions (enforced in service)
+  exit_reason: z.string().optional(), // required when status -> DROPPED
+  demo_scheduled_at: z.string().datetime().optional(), // required when status -> DEMO_SCHEDULED
+  demo_handler_id: z.number().int().positive().optional(), // required when status -> DEMO_SCHEDULED
+  qualification: z.object({
+    budget_min: z.number().nonnegative().optional(),
+    budget_max: z.number().nonnegative().optional(),
+    property_type_preference: z.string().optional(),
+    preferred_location: z.string().optional(),
+  }).partial().optional(),
 });
+
 
 export type LeadStatusUpdateInput = z.infer<typeof LeadStatusUpdateSchema>;
 
@@ -1236,10 +1245,38 @@ export const OpportunityUpdateSchema = z.object({
 });
 export type OpportunityUpdateInput = z.infer<typeof OpportunityUpdateSchema>;
 
-// Site Visit Schemas
+// ─────────────────────────────────────────────────────────────
+// Site Visit Schemas (§2 Site Visit Sub-Workflow)
+// ─────────────────────────────────────────────────────────────
+
+// Full §2 SiteVisitBooking.status state list
+export const SiteVisitStatus = {
+  REQUESTED: 'REQUESTED',
+  PENDING_ACCEPTANCE: 'PENDING_ACCEPTANCE',
+  REASSIGNED: 'REASSIGNED',
+  ESCALATED_TO_MARKETING_DIRECTOR: 'ESCALATED_TO_MARKETING_DIRECTOR',
+  ACCEPTED: 'ACCEPTED',
+  PENDING_CUSTOMER_RECONFIRMATION: 'PENDING_CUSTOMER_RECONFIRMATION',
+  RESCHEDULE_REQUESTED: 'RESCHEDULE_REQUESTED',
+  PENDING_PM_RECONFIRMATION: 'PENDING_PM_RECONFIRMATION',
+  CONFIRMED: 'CONFIRMED',
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type SiteVisitStatusType = typeof SiteVisitStatus[keyof typeof SiteVisitStatus];
+
+export const SiteVisitOutcome = {
+  INTERESTED: 'INTERESTED',
+  NOT_INTERESTED: 'NOT_INTERESTED',
+} as const;
+export type SiteVisitOutcomeType = typeof SiteVisitOutcome[keyof typeof SiteVisitOutcome];
+
 export const SiteVisitCreateSchema = z.object({
   lead_id: z.number().int().positive(),
-  property_id: z.number().int().positive().optional(),
+  // §2: all properties in a single booking must belong to the same project.
+  property_ids: z.array(z.number().int().positive()).min(1).optional(),
+  project_id: z.number().int().positive().optional(),
   scheduled_date: z.string().datetime(),
   opportunity_id: z.number().int().positive().optional(),
   pick_up_requested: z.boolean().optional().default(false),
@@ -1247,6 +1284,55 @@ export const SiteVisitCreateSchema = z.object({
 });
 export type SiteVisitCreateInput = z.infer<typeof SiteVisitCreateSchema>;
 
+// Accept (PM/Agent accepts the routed visit)
+export const SiteVisitAcceptSchema = z.object({
+  notes: z.string().optional(),
+});
+export type SiteVisitAcceptInput = z.infer<typeof SiteVisitAcceptSchema>;
+
+// Reassign (open chain during initial acceptance) — reason required
+export const SiteVisitReassignSchema = z.object({
+  to_employee_id: z.number().int().positive(),
+  reason: z.string().min(3, 'Reassignment reason is required'),
+});
+export type SiteVisitReassignInput = z.infer<typeof SiteVisitReassignSchema>;
+
+// Escalate to Marketing Director (no PM/Agent left to try)
+export const SiteVisitEscalateSchema = z.object({
+  reason: z.string().min(3, 'Escalation reason is required'),
+});
+export type SiteVisitEscalateInput = z.infer<typeof SiteVisitEscalateSchema>;
+
+// Reschedule (customer requested a date/property change) or release
+export const SiteVisitRescheduleSchema = z.object({
+  scheduled_date: z.string().datetime().optional(),
+  property_ids: z.array(z.number().int().positive()).min(1).optional(),
+});
+export type SiteVisitRescheduleInput = z.infer<typeof SiteVisitRescheduleSchema>;
+
+// Confirm PM reconfirmation after a reschedule (or release back to open chain)
+export const SiteVisitReconfirmSchema = z.object({
+  release: z.boolean().optional().default(false),
+});
+export type SiteVisitReconfirmInput = z.infer<typeof SiteVisitReconfirmSchema>;
+
+// Complete — one outcome row per linked property (outcome_reason required if NOT_INTERESTED)
+export const SiteVisitOutcomeSchema = z.object({
+  property_id: z.number().int().positive(),
+  outcome: z.enum(['INTERESTED', 'NOT_INTERESTED']),
+  outcome_reason: z.string().optional(),
+});
+export type SiteVisitOutcomeInput = z.infer<typeof SiteVisitOutcomeSchema>;
+
+export const SiteVisitCompleteSchema = z.object({
+  outcomes: z.array(SiteVisitOutcomeSchema).min(1),
+  feedback_notes: z.string().optional(),
+  proof_photo_url: z.string().optional(),
+});
+export type SiteVisitCompleteInput = z.infer<typeof SiteVisitCompleteSchema>;
+
+// Generic update (used by older/aux endpoints; status is free-form here but
+// routed through the §2 workflow engine in the service layer).
 export const SiteVisitUpdateSchema = z.object({
   scheduled_date: z.string().datetime().optional(),
   status: z.string().optional(),
@@ -1259,4 +1345,15 @@ export const SiteVisitUpdateSchema = z.object({
   proof_photo_url: z.string().optional(),
 });
 export type SiteVisitUpdateInput = z.infer<typeof SiteVisitUpdateSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// Message Template Schema (§5)
+// ─────────────────────────────────────────────────────────────
+export const MessageTemplateSchema = z.object({
+  template_key: z.string().min(2).max(191),
+  name: z.string().min(1).max(191),
+  body_text: z.string().min(1),
+  is_active: z.boolean().optional().default(true),
+});
+export type MessageTemplateInput = z.infer<typeof MessageTemplateSchema>;
 

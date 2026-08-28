@@ -69,6 +69,12 @@ describe('Phase 11.2 - Receipt Generation', () => {
     });
 
     const financeRole = await prisma.role.upsert({ where: { name: Roles.FINANCE }, update: {}, create: { name: Roles.FINANCE } });
+    const docPerm = await prisma.permission.upsert({ where: { name: 'documents.create' }, update: {}, create: { name: 'documents.create' }});
+    await prisma.rolePermission.createMany({
+      data: [{ role_id: financeRole.id, permission_id: docPerm.id }],
+      skipDuplicates: true
+    });
+
     const mdRole = await prisma.role.upsert({ where: { name: Roles.MD }, update: {}, create: { name: Roles.MD } });
 
     await prisma.employeeRole.deleteMany({ where: { employee_id: { in: [financeUserId, mdUser.id] } } });
@@ -118,11 +124,11 @@ describe('Phase 11.2 - Receipt Generation', () => {
         property_id: property.id,
         company_id: testCompanyId,
         booking_date: new Date(),
-        total_amount: 5000000,
         agreed_price: 5000000,
         balance_amount: 5000000,
+        booking_amount: 100000,
         status: 'CONFIRMED',
-        booked_by_id: financeUserId,
+        assigned_employee_id: financeUserId,
       },
     });
     bookingId = booking.id;

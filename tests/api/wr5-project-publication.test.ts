@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -34,9 +35,9 @@ describe('WR-5: Public Project Publication + Detail', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
 
-    const employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.id;
+    const employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.id;
 
     // Create test API key
     const testApiKey = `WR5-PROJECT-${Date.now()}`;

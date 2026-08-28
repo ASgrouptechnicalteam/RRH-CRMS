@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -24,13 +25,13 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
-    employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.id;
 
     const mdLogin = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', '192.168.2.200')
-      .send({ employee_code: getCode('Managing director'), password: 'Password@123' });
+      .send({ employee_code: getCode(Roles.MD), password: 'Password@123' });
     mdToken = mdLogin.body.accessToken;
 
     // Create test API key

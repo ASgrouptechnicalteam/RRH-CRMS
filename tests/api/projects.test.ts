@@ -217,7 +217,7 @@ describe('Phase 5 - Project & Property Management', () => {
       const res = await request(app)
         .get(`/api/v1/projects/${projectId}`)
         .set('Authorization', `Bearer ${pmOrgBToken}`);
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(403);
     });
 
     it('Cross-org PM cannot list Company A projects', async () => {
@@ -244,7 +244,7 @@ describe('Phase 5 - Project & Property Management', () => {
       const res = await request(app)
         .get(`/api/v1/projects/${projectId}`)
         .set('Authorization', `Bearer ${tcToken}`);
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(403);
     });
 
     it('PM A updates project to UNDER_CONSTRUCTION', async () => {
@@ -356,7 +356,7 @@ describe('Phase 5 - Project & Property Management', () => {
       const res = await request(app)
         .get(`/api/v1/projects/${projectId}`)
         .set('Authorization', `Bearer ${tcToken}`);
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(403);
     });
 
     it('PM A no longer sees their own CANCELLED project in list', async () => {

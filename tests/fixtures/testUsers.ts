@@ -122,11 +122,12 @@ export async function setupDeterministicTestUsers() {
         update: {},
         create: { name: roleName }
       });
-      await prisma.employeeRole.create({
-        data: {
+      await prisma.employeeRole.createMany({
+        data: [{
           employee_id: upsertedEmp.id,
           role_id: role.id
-        }
+        }],
+        skipDuplicates: true
       });
     }
   }

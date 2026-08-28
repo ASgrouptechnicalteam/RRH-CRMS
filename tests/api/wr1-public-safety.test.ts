@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -60,7 +61,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
 
     // Create a test API key
     const testApiKey = `WR1-TEST-KEY-${Date.now()}`;
@@ -78,6 +79,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
       data: {
         property_code: `WR1-SAFETY-${Date.now()}`,
         company_id: companyId,
+        assigned_pm_id: mdEmployee!.id,
         title: 'Safety Test Property',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
@@ -85,8 +87,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
         area_sqft: 2000,
         location: 'Test Location',
         status: 'LIVE',
-        assigned_pm_id: 1,
-        created_by_id: 1,
+        created_by_id: (await prisma.employee.findFirst())!.id,
         rejection_reason: 'INTERNAL: Some rejection reason',
       },
     });

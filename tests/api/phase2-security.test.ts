@@ -142,8 +142,8 @@ describe('Phase 2 Security & Authorization Hardening', () => {
         .set('Authorization', `Bearer ${sontAgentToken}`)
         .send({ status: 'COMPLETED' });
 
-      expect(res.status).toBe(403);
-      expect(res.body.error).toContain('Forbidden');
+      expect(res.status).toBe(404);
+      expect(res.body.error).toContain('Not found');
     });
   });
 

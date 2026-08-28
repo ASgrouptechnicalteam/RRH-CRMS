@@ -133,7 +133,7 @@ router.post(
   }
 );
 
-// PATCH /api/v1/leads/:id/status - Update lead status
+// PATCH /api/v1/leads/:id/status - Update lead status (through the workflow engine)
 router.patch(
   '/:id/status',
   authenticateToken,
@@ -142,9 +142,15 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      const { status, notes } = req.body;
+      const { status, notes, exit_reason, demo_scheduled_at, demo_handler_id, qualification } = req.body;
 
-      const updated = await LeadService.updateLeadStatus(req.user!, leadId, status, notes);
+      const updated = await LeadService.updateLeadStatus(
+        req.user!,
+        leadId,
+        status,
+        notes,
+        { exit_reason, demo_scheduled_at, demo_handler_id, qualification }
+      );
 
       return res.status(200).json({
         message: `Lead ${updated.lead_code} status updated to ${status}`,

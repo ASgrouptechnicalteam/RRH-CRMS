@@ -516,6 +516,7 @@ model Project {
   opportunities Opportunity[]
   documents     Document[]
   leads         Lead[]
+  site_visits   SiteVisitBooking[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -658,6 +659,7 @@ model SiteVisitBooking {
   telecaller_id           Int
   project_manager_id      Int?
   assigned_agent_id       Int?
+  project_id              Int? // A 2: authoritative project for this visit (all linked properties share it)
   scheduled_date          DateTime
   status                  String    @default("REQUESTED")
   // §2 Site Visit Sub-Workflow state machine:
@@ -674,6 +676,7 @@ model SiteVisitBooking {
   lead            Lead         @relation(fields: [lead_id], references: [id], onDelete: Cascade)
   opportunity     Opportunity? @relation(fields: [opportunity_id], references: [id], onDelete: SetNull)
   property        Property?    @relation(fields: [property_id], references: [id], onDelete: SetNull)
+  project         Project?     @relation(fields: [project_id], references: [id], onDelete: SetNull)
   telecaller      Employee     @relation("TelecallerBookings", fields: [telecaller_id], references: [id])
   project_manager Employee?    @relation("PMBookings", fields: [project_manager_id], references: [id])
   assigned_agent  Employee?    @relation("AgentBookings", fields: [assigned_agent_id], references: [id])

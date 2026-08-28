@@ -33,7 +33,7 @@ function signToken(payload: any): string {
 function mdToken(companyId: number, employeeId: number): string {
   return signToken({
     employeeId,
-    employeeCode: `PKB-EMP-${employeeId}`,
+    employeeCode: `RRH-EMP-${employeeId.toString().padStart(3, '0')}`,
     companyId,
     branchId: null,
     roles: [Roles.MD],
@@ -42,15 +42,15 @@ function mdToken(companyId: number, employeeId: number): string {
 }
 
 // Telecaller token WITHOUT ADMIN_SYSTEM_METRICS -> used for the 403 test.
-function telecallerToken(companyId: number): string {
-  return signToken({
-    employeeId: 999999,
-    employeeCode: 'PKB-TELECALLER-NO-METRICS',
-    companyId,
-    branchId: null,
-    roles: [Roles.TELECALLER],
-    permissions: [Permissions.LEADS_READ],
-  });
+function telecallerToken(companyId: number, employeeId: number): string {
+    return signToken({
+      employeeId,
+      employeeCode: `RRH-TC-${employeeId.toString().padStart(3, '0')}`,
+      companyId,
+      branchId: null,
+      roles: ['TELECALLER'],
+      permissions: ['LEADS_READ']
+    });
 }
 
 // Unique test-run identifier (process PID ensures uniqueness across Jest runs)
@@ -130,7 +130,8 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
     });
 
     it('requires ADMIN_SYSTEM_METRICS (403 for a telecaller)', async () => {
-      const token = telecallerToken(1);
+      const tcUser = await prisma.employee.findFirst();
+      const token = telecallerToken(1, tcUser!.id);
       const res = await request(app).get('/api/v1/analytics/kpis').set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(403);
     });
@@ -155,7 +156,7 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       await prisma.customer.deleteMany({ where: { company_id: companyId } });
       await prisma.booking.deleteMany({ where: { company_id: companyId } });
 
-      // KPI 1-3: 10 leads -> 7 NEW, 2 SITE_VISIT_SCHEDULED, 1 WON.
+      // KPI 1-3: 10 leads -> 7 NEW, 2 SITE_VISIT_SCHEDULED, 1 BOOKED.
       for (let i = 0; i < 7; i++) {
         await prisma.lead.create({
           data: {
@@ -184,7 +185,7 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
           company_id: companyId,
           customer_name: 'Won Deal',
           phone: '+91772220',
-          status: 'WON',
+          status: 'BOOKED',
         },
       });
 
@@ -357,8 +358,8 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       await prisma.customer.deleteMany({ where: { company_id: companyBId } });
       await prisma.booking.deleteMany({ where: { company_id: companyBId } });
 
-      // Company A: 10 leads (2 WON, 3 SITE_VISIT_SCHEDULED, 5 NEW)
-      const aSpec = [{ n: 2, status: 'WON' }, { n: 3, status: 'SITE_VISIT_SCHEDULED' }, { n: 5, status: 'NEW' }];
+      // Company A: 10 leads (2 BOOKED, 3 SITE_VISIT_SCHEDULED, 5 NEW)
+      const aSpec = [{ n: 2, status: 'BOOKED' }, { n: 3, status: 'SITE_VISIT_SCHEDULED' }, { n: 5, status: 'NEW' }];
       let seq = 0;
       for (const { n, status } of aSpec) {
         for (let i = 0; i < n; i++) {
@@ -375,8 +376,8 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
         }
       }
 
-      // Company B: 100 leads (50 WON, 20 SITE_VISIT_SCHEDULED, 30 NEW) — materially different.
-      const bSpec = [{ n: 50, status: 'WON' }, { n: 20, status: 'SITE_VISIT_SCHEDULED' }, { n: 30, status: 'NEW' }];
+      // Company B: 100 leads (50 BOOKED, 20 SITE_VISIT_SCHEDULED, 30 NEW) — materially different.
+      const bSpec = [{ n: 50, status: 'BOOKED' }, { n: 20, status: 'SITE_VISIT_SCHEDULED' }, { n: 30, status: 'NEW' }];
       let bseq = 0;
       for (const { n, status } of bSpec) {
         for (let i = 0; i < n; i++) {
@@ -429,7 +430,7 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       expect(res.status).toBe(200);
       const body: any = res.body;
 
-      // Company B has 50 WON + 20 SITE_VISIT_SCHEDULED = 110 total. If the
+      // Company B has 50 BOOKED + 20 SITE_VISIT_SCHEDULED = 110 total. If the
       // company filter were missing, these would bleed into A (110 / 52 / 23).
       expect(body.companyId).toBe(companyAId);
       expect(body.crm.totalLeads).toBe(10);

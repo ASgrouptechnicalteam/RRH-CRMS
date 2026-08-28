@@ -38,10 +38,10 @@ describe('Phase 11.3 - Agreement Generation', () => {
     testCompanyId = testCompany.id;
 
     const salesUser = await prisma.employee.upsert({
-      where: { employee_code: 'AGREEMENT-SALES-001' },
+      where: { employee_code: 'RRH-AGR-001' },
       update: { password_hash: hashedPassword, company_id: testCompanyId, status: 'ACTIVE' },
       create: {
-        employee_code: 'AGREEMENT-SALES-001',
+        employee_code: 'RRH-AGR-001',
         full_name: 'Agreement Sales',
         email: 'sales@agreement.test',
         phone: '+919999999222',
@@ -51,6 +51,12 @@ describe('Phase 11.3 - Agreement Generation', () => {
     });
 
     const salesRole = await prisma.role.upsert({ where: { name: Roles.SALES_MANAGER }, update: {}, create: { name: Roles.SALES_MANAGER } });
+    const docPerm = await prisma.permission.upsert({ where: { name: 'documents.create' }, update: {}, create: { name: 'documents.create' }});
+    await prisma.rolePermission.createMany({
+      data: [{ role_id: salesRole.id, permission_id: docPerm.id }],
+      skipDuplicates: true
+    });
+
     await prisma.employeeRole.deleteMany({ where: { employee_id: salesUser.id } });
     await prisma.employeeRole.create({ data: { employee_id: salesUser.id, role_id: salesRole.id } });
 
@@ -95,16 +101,16 @@ describe('Phase 11.3 - Agreement Generation', () => {
         property_id: property.id,
         company_id: testCompanyId,
         booking_date: new Date(),
-        total_amount: 5000000,
         agreed_price: 5000000,
         balance_amount: 5000000,
+        booking_amount: 100000,
         status: 'CONFIRMED',
-        booked_by_id: salesUser.id,
+        assigned_employee_id: salesUser.id,
       },
     });
     bookingId = booking.id;
 
-    const loginRes = await request(app).post('/api/v1/auth/login').send({ employee_code: 'AGREEMENT-SALES-001', password: 'Password@123' });
+    const loginRes = await request(app).post('/api/v1/auth/login').send({ employee_code: 'RRH-AGR-001', password: 'Password@123' });
     salesToken = loginRes.body.accessToken;
   });
 

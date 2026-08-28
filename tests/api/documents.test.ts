@@ -2,7 +2,7 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { Roles, Permissions, RolePermissionsMatrix } from '@rrh-ems/shared';
+import { Roles, Permissions, RolePermissionsMatrix } , Roles } from '@rrh-ems/shared';
 
 
 

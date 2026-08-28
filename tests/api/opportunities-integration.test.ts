@@ -144,7 +144,7 @@ afterAll(async () => {
 
 describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
 
-  it('1. Create Opportunity from valid Lead & check Lead transitions to OPPORTUNITY_OPEN', async () => {
+  it('1. Create Opportunity from valid Lead (lead stays in pipeline; no OPPORTUNITY_OPEN)', async () => {
     const res = await request(app)
       .post('/api/v1/opportunities')
       .set('Authorization', `Bearer ${pmAToken}`)
@@ -158,7 +158,10 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
     oppA = res.body.opportunity;
 
     const leadAfter = await p.lead.findUnique({ where: { id: leadA.id } });
-    expect(leadAfter?.status).toBe('OPPORTUNITY_OPEN');
+    // §4: Opportunity is a subordinate commercial record, not a rival pipeline.
+    // Creating it from a QUALIFIED lead no longer moves the lead to OPPORTUNITY_OPEN;
+    // the macro status is only advanced (→ NEGOTIATION) from SITE_VISIT_COMPLETED.
+    expect(leadAfter?.status).toBe('QUALIFIED');
   });
 
   it('2. Same Lead can create a second Opportunity', async () => {

@@ -131,7 +131,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           area_sqft: 1800,
           location: 'Miyapur',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
       testPropertyId = prop.id;
@@ -181,7 +181,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           area_sqft: 3000,
           location: 'Test',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -215,7 +215,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           area_sqft: 2500,
           location: 'Test',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
       approvalPropId = prop.id;
@@ -295,7 +295,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           area_sqft: 1500,
           location: 'Test',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
       orderPropId = prop.id;
@@ -345,7 +345,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           location: 'Hyderabad',
           status: 'LIVE',
           city: 'Hyderabad',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
       publicPropId = prop.id;
@@ -436,7 +436,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           area_sqft: 2000,
           location: 'Test',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
       propertyIds.push(unpublishProp.id);
@@ -480,7 +480,7 @@ describe('WR-3: Property Media + Public Detail', () => {
           area_sqft: 3000,
           location: 'Test',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 

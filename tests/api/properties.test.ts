@@ -186,6 +186,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const skipCode1 = `TEST-SKIP-1-${Date.now()}`;
       const newProp = await p.property.create({
         data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: skipCode1,
           company_id: companyId,
           title: 'Skip Test',
@@ -212,6 +213,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const skipCode2 = `TEST-SKIP-2-${Date.now()}`;
       const newProp2 = await p.property.create({
         data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: skipCode2,
           company_id: companyId,
           title: 'Skip Test 2',

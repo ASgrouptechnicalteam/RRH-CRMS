@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
+import { Roles } from '@rrh-ems/shared';
 import { deriveAvailability } from '../../apps/api/src/services/property.service';
 import { jest } from '@jest/globals';
 
@@ -67,7 +68,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
       await setupDeterministicTestUsers();
 
       const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-      companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
+      companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
 
       // Create test API key
       const testApiKey = `WR1-AVAIL-${Date.now()}`;
@@ -88,7 +89,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
             area_sqft: 2000,
             location: 'Test Location',
             status,
-            created_by_id: 1,
+            created_by_id: (await prisma.employee.findFirst())!.id,
             ...override,
           },
         });

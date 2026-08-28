@@ -83,6 +83,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
 
     const property = await prisma.property.create({
       data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
         title: 'Packet 4 Title',
         company_id: companyId,
         status: 'BOOKED',

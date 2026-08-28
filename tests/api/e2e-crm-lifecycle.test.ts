@@ -60,6 +60,7 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
 
     const property = await p.property.create({
       data: {
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
         company_id: company.id,
         project_id: projectId,
         property_code: propCode,
@@ -172,6 +173,6 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
     const ourLead = leads.find((l: any) => l.id === leadId);
     
     expect(ourLead).toBeDefined();
-    expect(ourLead.status).toBe('WON');
+    expect(ourLead.status).toBe('BOOKED');
   });
 });

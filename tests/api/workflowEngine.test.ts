@@ -41,9 +41,9 @@ describe('WorkflowEngine (Phase 5 Centralized Engine)', () => {
       expect(res.reason).toMatch(/Invalid lead status transition/);
     });
 
-    it('prevents invalid transition LOST → WON', () => {
+    it('prevents invalid transition DROPPED → BOOKED', () => {
       const res = WorkflowEngine.canTransition(
-        buildReq(WorkflowDomain.LEAD, LeadStatus.LOST, LeadStatus.WON)
+        buildReq(WorkflowDomain.LEAD, LeadStatus.DROPPED, LeadStatus.BOOKED)
       );
       expect(res.allowed).toBe(false);
       expect(res.reason).toMatch(/Invalid lead status transition/);
@@ -85,33 +85,36 @@ describe('WorkflowEngine (Phase 5 Centralized Engine)', () => {
   });
 
   describe('Site Visit Workflow', () => {
-    it('allows valid VERIFY transition', () => {
+    it('allows valid ROUTE transition (REQUESTED → PENDING_ACCEPTANCE)', () => {
       const res = WorkflowEngine.canTransition(
-        buildReq(WorkflowDomain.SITE_VISIT, 'PENDING_VERIFICATION', 'VERIFY')
+        buildReq(WorkflowDomain.SITE_VISIT, 'REQUESTED', 'ROUTE')
       );
       expect(res.allowed).toBe(true);
+      expect(res.nextState).toBe('PENDING_ACCEPTANCE');
     });
 
-    it('allows valid ASSIGN_AGENT transition', () => {
+    it('allows valid ACCEPT transition (PENDING_ACCEPTANCE → ACCEPTED)', () => {
       const res = WorkflowEngine.canTransition(
-        buildReq(WorkflowDomain.SITE_VISIT, 'CONFIRMED', 'ASSIGN_AGENT')
+        buildReq(WorkflowDomain.SITE_VISIT, 'PENDING_ACCEPTANCE', 'ACCEPT')
       );
       expect(res.allowed).toBe(true);
+      expect(res.nextState).toBe('ACCEPTED');
     });
 
-    it('allows valid COMPLETE transition', () => {
+    it('allows valid RECONFIRM_CUSTOMER transition (ACCEPTED → PENDING_CUSTOMER_RECONFIRMATION)', () => {
       const res = WorkflowEngine.canTransition(
-        buildReq(WorkflowDomain.SITE_VISIT, 'ASSIGNED_TO_AGENT', 'COMPLETE')
+        buildReq(WorkflowDomain.SITE_VISIT, 'ACCEPTED', 'RECONFIRM_CUSTOMER')
       );
       expect(res.allowed).toBe(true);
+      expect(res.nextState).toBe('PENDING_CUSTOMER_RECONFIRMATION');
     });
 
-    it('prevents invalid out-of-order transition (COMPLETE from PENDING)', () => {
+    it('prevents invalid out-of-order transition (COMPLETE from REQUESTED)', () => {
       const res = WorkflowEngine.canTransition(
-        buildReq(WorkflowDomain.SITE_VISIT, 'PENDING_VERIFICATION', 'COMPLETE')
+        buildReq(WorkflowDomain.SITE_VISIT, 'REQUESTED', 'COMPLETE')
       );
       expect(res.allowed).toBe(false);
-      expect(res.reason).toMatch(/Invalid workflow transition/);
+      expect(res.reason).toMatch(/Invalid site visit transition/);
     });
   });
 

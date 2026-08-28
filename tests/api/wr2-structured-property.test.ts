@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -23,13 +24,13 @@ describe('WR-2: Structured Property Data', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
 
     // Login as MD
     const loginRes = await request(app)
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', '192.168.2.100')
-      .send({ employee_code: getCode('Managing director'), password: 'Password@123' });
+      .send({ employee_code: getCode(Roles.MD), password: 'Password@123' });
     mdToken = loginRes.body.accessToken;
 
     // Create test API key for public tests
@@ -341,7 +342,7 @@ describe('WR-2: Structured Property Data', () => {
             city: data.city,
             locality: data.locality,
             listing_type: data.listing_type,
-            created_by_id: 1,
+            created_by_id: (await prisma.employee.findFirst())!.id,
           },
         });
         filterPropIds.push(prop.id);
@@ -422,7 +423,7 @@ describe('WR-2: Structured Property Data', () => {
           area_sqft: 2500,
           location: 'Old Location',
           status: 'LIVE',
-          created_by_id: 1,
+          created_by_id: (await prisma.employee.findFirst())!.id,
           // No state, city, locality, pincode, latitude, longitude, listing_type
         },
       });

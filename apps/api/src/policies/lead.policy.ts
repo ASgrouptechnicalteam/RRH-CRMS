@@ -89,11 +89,19 @@ export class LeadPolicy {
   static getValidTransitions(status: string): string[] {
     const map: Record<string, string[]> = {
       NEW: ['ASSIGNED'],
-      ASSIGNED: ['CONTACTED'],
-      CONTACTED: ['QUALIFIED'],
-      QUALIFIED: ['SITE_VISIT_SCHEDULED'],
-      SITE_VISIT_SCHEDULED: ['WON'],
-      WON: [], // WON is terminal
+      ASSIGNED: ['CONTACTED', 'DROPPED'],
+      CONTACTED: ['QUALIFICATION_PENDING', 'QUALIFIED', 'DROPPED'],
+      QUALIFICATION_PENDING: ['QUALIFIED', 'DROPPED'],
+      QUALIFIED: ['DEMO_SCHEDULED', 'SITE_VISIT_SCHEDULED', 'DROPPED'],
+      DEMO_SCHEDULED: ['DEMO_COMPLETED', 'DROPPED'],
+      DEMO_COMPLETED: ['SITE_VISIT_SCHEDULED', 'DROPPED'],
+      SITE_VISIT_SCHEDULED: ['SITE_VISIT_COMPLETED', 'DROPPED'],
+      SITE_VISIT_COMPLETED: ['NEGOTIATION', 'DROPPED'],
+      NEGOTIATION: ['BOOKING_INITIATED', 'DROPPED'],
+      BOOKING_INITIATED: ['BOOKED', 'DROPPED'],
+      BOOKED: [], // terminal won
+      DROPPED: ['RECOVERED_TO_POOL'],
+      RECOVERED_TO_POOL: ['ASSIGNED'],
     };
     return map[status] || [];
   }

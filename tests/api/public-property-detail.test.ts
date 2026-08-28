@@ -1,3 +1,4 @@
+import { Roles } from '@rrh-ems/shared';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
@@ -65,10 +66,10 @@ describe('Public Property Detail API', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    const mdEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } });
+    const mdEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } });
     companyId = mdEmployee!.company_id;
     
-    const pmEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode('Project manager') } });
+    const pmEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.PROJECT_MANAGER) } });
     pmUserId = pmEmployee!.id;
 
     // Create a test API key
@@ -110,8 +111,8 @@ describe('Public Property Detail API', () => {
         status: 'LIVE',
         latitude: 17.4933, // Internal - should NOT be exposed
         longitude: 78.3968, // Internal - should NOT be exposed
-        assigned_pm_id: 1,
-        created_by_id: 1,
+        assigned_pm_id: (await prisma.employee.findFirst())!.id,
+        created_by_id: (await prisma.employee.findFirst())!.id,
         seo_title: '3 BHK Apartment in Miyapur',
         seo_keywords: 'apartment, miyapur, 3bhk',
       },
@@ -341,8 +342,8 @@ describe('Public Property Detail API', () => {
           location: 'Test',
           status: 'LOCKED',
           locked_until: new Date(Date.now() + 86400000), // Locked for 24 hours
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -378,8 +379,8 @@ describe('Public Property Detail API', () => {
           area_sqft: 1000,
           location: 'Test',
           status: 'SOLD',
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 
@@ -415,8 +416,8 @@ describe('Public Property Detail API', () => {
           area_sqft: 1800,
           location: 'Test',
           status: 'LIVE',
-          assigned_pm_id: 1,
-          created_by_id: 1,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          created_by_id: (await prisma.employee.findFirst())!.id,
         },
       });
 

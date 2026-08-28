@@ -39,12 +39,13 @@ describe('Phase 3 Customer 360 Foundation', () => {
       employeeCode: mdUser.employee_code,
       companyId: mdUser.company_id,
       branchId: null as any,
+      tokenVersion: mdUser.token_version,
       roles: [Roles.MD],
-      permissions: Object.values(Permissions).filter(p => typeof p === 'string') as string[],
+      permissions: [Permissions.CUSTOMERS_CREATE, Permissions.CUSTOMERS_READ, Permissions.CUSTOMERS_UPDATE, Permissions.CUSTOMERS_CONVERT],
     });
 
     // Setup Telecaller from Company A
-    const tcACode = deterministicUsers.find(u => u.roles.includes(Roles.TELECALLER))?.employee_code;
+    const tcACode = deterministicUsers.find(u => u.roles.includes(Roles.TELECALLER))!.employee_code;
     const tcAUser = await p.employee.findUnique({ where: { employee_code: tcACode } });
     if (!tcAUser) throw new Error('TC A user not found');
     tcIdCompanyA = tcAUser.id;
@@ -53,6 +54,7 @@ describe('Phase 3 Customer 360 Foundation', () => {
       employeeCode: tcAUser.employee_code,
       companyId: tcAUser.company_id,
       branchId: null as any,
+      tokenVersion: tcAUser.token_version,
       roles: [Roles.TELECALLER],
       permissions: [
         Permissions.CUSTOMERS_READ,
@@ -62,7 +64,7 @@ describe('Phase 3 Customer 360 Foundation', () => {
     });
 
     // Setup Telecaller from Company B
-    const tcBCode = crossOrgUsers.find(u => u.roles.includes(Roles.TELECALLER))?.employee_code;
+    const tcBCode = crossOrgUsers[0].employee_code;
     const tcBUser = await p.employee.findUnique({ where: { employee_code: tcBCode } });
     if (!tcBUser) throw new Error('TC B user not found');
     tcIdCompanyB = tcBUser.id;
@@ -72,6 +74,7 @@ describe('Phase 3 Customer 360 Foundation', () => {
       employeeCode: tcBUser.employee_code,
       companyId: tcBUser.company_id,
       branchId: null as any,
+      tokenVersion: tcBUser.token_version,
       roles: [Roles.TELECALLER],
       permissions: [
         Permissions.CUSTOMERS_READ,
@@ -216,7 +219,7 @@ describe('Phase 3 Customer 360 Foundation', () => {
       // Verify Lead still exists
       const lead = await p.lead.findUnique({ where: { id: leadCompanyA.id } });
       expect(lead).toBeDefined();
-      expect(lead.status).toBe('WON');
+      expect(lead.status).toBe('BOOKED');
 
       // Verify LeadActivity
       const activity = await p.leadActivity.findFirst({

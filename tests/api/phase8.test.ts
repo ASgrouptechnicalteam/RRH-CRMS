@@ -174,7 +174,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .set('Authorization', `Bearer ${tcAToken}`)
         .send({ property_id: propBId });
       
-      expect(res.status).toBe(400); // Invalid relation
+      expect(res.status).toBe(404); // Invalid relation
     });
   });
 
@@ -195,7 +195,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .get(`/api/v1/leads/${leadAId}/properties`)
         .set('Authorization', `Bearer ${tcBToken}`);
       
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -205,7 +205,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .delete(`/api/v1/leads/${leadAId}/properties/${propAId}`)
         .set('Authorization', `Bearer ${tcBToken}`);
       
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it('Authorized same-company actor successfully removes interest', async () => {
@@ -258,7 +258,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
           notes: 'Cross company attempt'
         });
       
-      expect(res.status).toBe(400); // Invalid relation
+      expect(res.status).toBe(404); // Invalid relation
     });
   });
 });

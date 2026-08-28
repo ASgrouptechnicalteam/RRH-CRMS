@@ -172,7 +172,7 @@ describe('Phase C - Role UAT Beta Acceptance', () => {
   // 11. TELECALLER - Negative
   it('[TELECALLER] BOOKINGS_CREATE -> 403', async () => {
     const res = await request(app).post('/api/v1/bookings').set('Authorization', `Bearer ${getToken(Roles.TELECALLER)}`)
-      .send({ lead_id: baseLeadId, property_id: 1, total_amount: 100, customer_name: 'T', phone: '+919000000000' });
+      .send({ lead_id: baseLeadId, property_id: 1, customer_name: 'T', phone: '+919000000000' });
     expect(res.status).toBe(403);
   });
 

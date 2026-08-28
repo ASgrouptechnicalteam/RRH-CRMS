@@ -39,6 +39,10 @@ export interface EmployeeListItem {
   attendanceRequired?: boolean;
   role?: { name?: string | null } | null;
   company_id?: number;
+  company?: { id?: number; name?: string } | null;
+  firstLoginDone?: boolean;
+  activeLeadCount?: number;
+  closureRate?: number;
   created_at?: ISODateTime;
   updated_at?: ISODateTime;
 }
@@ -125,7 +129,12 @@ export interface PropertyVerificationLog {
 }
 
 /** Editable subset of a property passed to EditPropertyModal. */
-export interface EditableProperty extends PropertyListItem {}
+export interface EditableProperty extends PropertyListItem {
+  carpet_area?: number;
+  builtup_area?: number;
+  amenities?: string[];
+  furnishing?: string | null;
+}
 
 export interface LocalImageItem extends PropertyImage {}
 
@@ -756,5 +765,15 @@ export interface PerformanceScoreResponse {
   sub_target_reports?: number;
   uninformed_absences?: number;
   trend?: PerformanceEvent[];
-  breakdown?: { baseScore?: number; taskBoost?: number; reportBoost?: number; presentBoost?: number } | null;
+  breakdown?: {
+    baseScore?: number;
+    taskBoost?: number;
+    reportBoost?: number;
+    presentBoost?: number;
+    latePenalty?: number;
+    halfDayPenalty?: number;
+    belowTargetPenalty?: number;
+    overduePenalty?: number;
+    uninformedAbsentPenalty?: number;
+  } | null;
 }

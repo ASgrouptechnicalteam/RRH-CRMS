@@ -130,11 +130,11 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
           return (
             <div key={s} className={`flex items-center gap-3 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 
-                ${isActive ? 'border-sky-600 text-sky-700 bg-sky-50' : isPassed ? 'border-sky-500 bg-sky-500 text-white' : 'border-slate-300 text-slate-500'}
+                ${isActive ? 'border-navy-600 text-navy-700 bg-navy-50' : isPassed ? 'border-navy-500 bg-navy-500 text-white' : 'border-slate-300 text-slate-500'}
               `}>
                 {isPassed ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
               </div>
-              <span className={`font-semibold text-sm ${isActive ? 'text-sky-900' : 'text-slate-600'}`}>{s}</span>
+              <span className={`font-semibold text-sm ${isActive ? 'text-navy-900' : 'text-slate-600'}`}>{s}</span>
             </div>
           );
         })}
@@ -155,7 +155,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name *</label>
                 <div className="relative">
                   <User className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="Enter full legal name" />
+                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Enter full legal name" />
                 </div>
               </div>
 
@@ -163,7 +163,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Primary Phone Number *</label>
                 <div className="relative">
                   <Phone className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="+91 9876543210" />
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="+91 9876543210" />
                 </div>
               </div>
 
@@ -171,13 +171,13 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Official Email Address</label>
                 <div className="relative">
                   <Mail className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="john.doe@radharealhomes.com" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="john.doe@radharealhomes.com" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">System Role *</label>
-                <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option value="telecallers">telecallers</option>
                   <option value="Agent">Agent</option>
                   <option value="Sales manager">Sales manager</option>
@@ -195,7 +195,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Primary Branch *</label>
-                <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option value="">-- Select Branch --</option>
                   {branches.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
@@ -212,7 +212,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                     const options = Array.from(e.target.selectedOptions, option => option.value);
                     setAdditionalBranchIds(options);
                   }} 
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 min-h-[100px]"
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 min-h-[100px]"
                 >
                   {branches.filter(b => b.id.toString() !== addBranchId).map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
@@ -221,12 +221,12 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <p className="text-[10px] text-slate-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
               </div>
 
-              <div className="col-span-1 md:col-span-2 p-4 bg-sky-50 border border-sky-100 rounded-xl flex gap-3">
-                <Key className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+              <div className="col-span-1 md:col-span-2 p-4 bg-navy-50 border border-navy-100 rounded-xl flex gap-3">
+                <Key className="w-5 h-5 text-navy-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-bold text-sky-900">Initial Password</h4>
-                  <p className="text-xs text-sky-700 mb-2">The employee will be forced to change this upon their first login.</p>
-                  <input type="text" value={initialPassword} onChange={e => setInitialPassword(e.target.value)} className="p-2 border border-sky-200 rounded-lg w-full max-w-xs text-sm" />
+                  <h4 className="text-sm font-bold text-navy-900">Initial Password</h4>
+                  <p className="text-xs text-navy-700 mb-2">The employee will be forced to change this upon their first login.</p>
+                  <input type="text" value={initialPassword} onChange={e => setInitialPassword(e.target.value)} className="p-2 border border-navy-200 rounded-lg w-full max-w-xs text-sm" />
                 </div>
               </div>
             </div>
@@ -242,17 +242,17 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Current Address</label>
-                <textarea value={currentAddress} onChange={e => setCurrentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"></textarea>
+                <textarea value={currentAddress} onChange={e => setCurrentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"></textarea>
               </div>
 
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Permanent Address</label>
-                <textarea value={permanentAddress} onChange={e => setPermanentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"></textarea>
+                <textarea value={permanentAddress} onChange={e => setPermanentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"></textarea>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Blood Group</label>
-                <select value={bloodGroup} onChange={e => setBloodGroup(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                <select value={bloodGroup} onChange={e => setBloodGroup(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
@@ -264,11 +264,11 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">PAN Number</label>
-                    <input type="text" value={panNumber} onChange={e => setPanNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono uppercase" placeholder="ABCDE1234F" />
+                    <input type="text" value={panNumber} onChange={e => setPanNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono uppercase" placeholder="ABCDE1234F" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Aadhaar Number</label>
-                    <input type="text" value={aadhaarNumber} onChange={e => setAadhaarNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono tracking-widest" placeholder="1234 5678 9012" />
+                    <input type="text" value={aadhaarNumber} onChange={e => setAadhaarNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest" placeholder="1234 5678 9012" />
                   </div>
                 </div>
               </div>
@@ -280,15 +280,15 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Name</label>
-                    <input type="text" value={emergencyContactName} onChange={e => setEmergencyContactName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                    <input type="text" value={emergencyContactName} onChange={e => setEmergencyContactName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Relation</label>
-                    <input type="text" value={emergencyContactRelation} onChange={e => setEmergencyContactRelation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Spouse, Father" />
+                    <input type="text" value={emergencyContactRelation} onChange={e => setEmergencyContactRelation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Spouse, Father" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Phone</label>
-                    <input type="text" value={emergencyContactPhone} onChange={e => setEmergencyContactPhone(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                    <input type="text" value={emergencyContactPhone} onChange={e => setEmergencyContactPhone(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                 </div>
               </div>
@@ -308,13 +308,13 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Job Title</label>
                 <div className="relative">
                   <Briefcase className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Senior Telecaller" />
+                  <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Senior Telecaller" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Department</label>
-                <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option>Sales & Leads</option>
                   <option>Marketing</option>
                   <option>Operations</option>
@@ -327,7 +327,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Reporting Manager</label>
-                <select value={reportingManagerId} onChange={e => setReportingManagerId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                <select value={reportingManagerId} onChange={e => setReportingManagerId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option value="">-- No Manager (Independent) --</option>
                   {managers.map(m => (
                     <option key={m.id} value={m.id}>{m.label}</option>
@@ -337,7 +337,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Employment Type</label>
-                <select value={employmentType} onChange={e => setEmploymentType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500">
+                <select value={employmentType} onChange={e => setEmploymentType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option value="FULL_TIME">Full Time</option>
                   <option value="PART_TIME">Part Time</option>
                   <option value="CONTRACT">Contract</option>
@@ -347,14 +347,14 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Date of Joining</label>
-                <input type="date" value={dateOfJoining} onChange={e => setDateOfJoining(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                <input type="date" value={dateOfJoining} onChange={e => setDateOfJoining(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Annual CTC (₹)</label>
                 <div className="relative">
                   <DollarSign className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="number" value={salaryCtc} onChange={e => setSalaryCtc(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" />
+                  <input type="number" value={salaryCtc} onChange={e => setSalaryCtc(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                 </div>
               </div>
 
@@ -362,7 +362,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Background / Education</label>
                 <div className="relative">
                   <GraduationCap className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={backgroundEducation} onChange={e => setBackgroundEducation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. B.Tech Computer Science, MBA Marketing" />
+                  <input type="text" value={backgroundEducation} onChange={e => setBackgroundEducation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. B.Tech Computer Science, MBA Marketing" />
                 </div>
               </div>
             </div>
@@ -380,7 +380,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Bank Name</label>
                 <div className="relative">
                   <Building2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. HDFC Bank" />
+                  <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. HDFC Bank" />
                 </div>
               </div>
 
@@ -388,18 +388,18 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Account Number</label>
                 <div className="relative">
                   <CreditCardIcon className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="password" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono tracking-widest" placeholder="●●●●●●●●●●●●" />
+                  <input type="password" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest" placeholder="●●●●●●●●●●●●" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">IFSC Code</label>
-                  <input type="text" value={bankIfsc} onChange={e => setBankIfsc(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono uppercase" placeholder="HDFC0001234" />
+                  <input type="text" value={bankIfsc} onChange={e => setBankIfsc(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono uppercase" placeholder="HDFC0001234" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Branch Name</label>
-                  <input type="text" value={bankBranch} onChange={e => setBankBranch(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Madhapur" />
+                  <input type="text" value={bankBranch} onChange={e => setBankBranch(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Madhapur" />
                 </div>
               </div>
             </div>
@@ -415,7 +415,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         return (
           <div className="space-y-6 animate-fadeIn">
             <div className="text-center">
-              <CheckCircle2 className="w-16 h-16 text-sky-500 mx-auto mb-4" />
+              <CheckCircle2 className="w-16 h-16 text-navy-500 mx-auto mb-4" />
               <h2 className="text-3xl font-bold text-slate-800">Ready to Onboard</h2>
               <p className="text-slate-500 text-sm mt-2">Please review the details below before creating the employee account.</p>
             </div>
@@ -423,7 +423,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-6 shadow-sm">
               <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-4">
                 <div>
-                  <div className="text-xs font-bold text-sky-700 bg-sky-100 inline-block px-2 py-1 rounded mb-2">{addRole}</div>
+                  <div className="text-xs font-bold text-navy-700 bg-navy-100 inline-block px-2 py-1 rounded mb-2">{addRole}</div>
                   <h3 className="text-xl font-bold text-slate-800">{fullName}</h3>
                   <p className="text-slate-500 text-sm flex items-center gap-1 mt-1"><Phone className="w-3.5 h-3.5" /> {phone}</p>
                 </div>
@@ -483,7 +483,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
             <button 
               onClick={handleNext}
               disabled={step === 1 && (!fullName || !phone || !addBranchId)}
-              className="px-8 py-3 bg-sky-700 text-white font-bold rounded-xl shadow-md hover:bg-sky-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-8 py-3 bg-navy-700 text-white font-bold rounded-xl shadow-md hover:bg-navy-800 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               Continue <ArrowRight className="w-4 h-4" />
             </button>

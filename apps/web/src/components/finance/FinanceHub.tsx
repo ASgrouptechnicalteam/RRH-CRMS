@@ -30,8 +30,8 @@ interface RefundItem {
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
   PENDING:                { label: 'Pending Review',      icon: <Clock className="w-3.5 h-3.5" />,         color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200' },
-  ACCOUNTANT_APPROVED:    { label: 'Verified by Accountant', icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200' },
-  MD_APPROVED:            { label: 'MD Approved',         icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'text-teal-700',   bg: 'bg-teal-50 border-teal-200' },
+  ACCOUNTANT_APPROVED:    { label: 'Verified by Accountant', icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'text-navy-700',   bg: 'bg-navy-50 border-navy-200' },
+  MD_APPROVED:            { label: 'MD Approved',         icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'text-navy-700',   bg: 'bg-navy-50 border-navy-200' },
   REFUNDED:               { label: 'Refunded ✓',          icon: <IndianRupee className="w-3.5 h-3.5" />,  color: 'text-slate-600',  bg: 'bg-slate-50 border-slate-200' },
   REJECTED_BY_ACCOUNTANT: { label: 'Rejected',            icon: <XCircle className="w-3.5 h-3.5" />,      color: 'text-red-700',    bg: 'bg-red-50 border-red-200' },
   REJECTED_BY_MD:         { label: 'Rejected by MD',      icon: <XCircle className="w-3.5 h-3.5" />,      color: 'text-red-700',    bg: 'bg-red-50 border-red-200' },
@@ -81,7 +81,7 @@ export const FinanceHub: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1">
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-            <IndianRupee className="w-6 h-6 text-teal-700" />
+            <IndianRupee className="w-6 h-6 text-navy-700" />
             Finance & Expense Refunds
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Submit and track your petty cash reimbursements</p>
@@ -89,7 +89,7 @@ export const FinanceHub: React.FC = () => {
         {canCreateRequest && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 transition-colors shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-navy-700 text-white rounded-xl text-sm font-bold hover:bg-navy-800 transition-colors shadow-md"
           >
           <Plus className="w-4 h-4" />
           New Request
@@ -99,9 +99,9 @@ export const FinanceHub: React.FC = () => {
 
       {/* Push Notification Banner */}
       {isSupported && permission === 'default' && (
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
-            <Bell className="w-5 h-5 text-indigo-600" />
+        <div className="bg-gradient-to-r from-navy-50 to-navy-50 border border-navy-200 rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-navy-100 flex items-center justify-center shrink-0">
+            <Bell className="w-5 h-5 text-navy-600" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-slate-800 text-sm">Enable Push Notifications</p>
@@ -110,7 +110,7 @@ export const FinanceHub: React.FC = () => {
           <button
             onClick={subscribe}
             disabled={isSubscribing}
-            className="shrink-0 px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            className="shrink-0 px-3 py-2 bg-navy-600 text-white text-xs font-bold rounded-xl hover:bg-navy-700 transition-colors disabled:opacity-50"
           >
             {isSubscribing ? 'Enabling...' : 'Enable'}
           </button>
@@ -127,9 +127,9 @@ export const FinanceHub: React.FC = () => {
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">In Progress</p>
           <p className="text-2xl font-extrabold text-amber-600 mt-1">{totalPending}</p>
         </div>
-        <div className="bg-white rounded-xl border border-teal-100 p-4 shadow-sm bg-gradient-to-br from-teal-50 to-white col-span-2 sm:col-span-1">
-          <p className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">Total Refunded</p>
-          <p className="text-2xl font-extrabold text-teal-800 mt-1">₹{totalRefunded.toLocaleString('en-IN')}</p>
+        <div className="bg-white rounded-xl border border-navy-100 p-4 shadow-sm bg-gradient-to-br from-navy-50 to-white col-span-2 sm:col-span-1">
+          <p className="text-[11px] font-bold text-navy-600 uppercase tracking-wider">Total Refunded</p>
+          <p className="text-2xl font-extrabold text-navy-800 mt-1">₹{totalRefunded.toLocaleString('en-IN')}</p>
         </div>
       </div>
 
@@ -186,7 +186,7 @@ export const FinanceHub: React.FC = () => {
                 <div key={r.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm text-slate-700 font-medium flex-1">{r.purpose}</p>
-                    <p className="shrink-0 font-extrabold text-teal-800 text-base">₹{r.amount.toLocaleString('en-IN')}</p>
+                    <p className="shrink-0 font-extrabold text-navy-800 text-base">₹{r.amount.toLocaleString('en-IN')}</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.bg} ${cfg.color}`}>
@@ -203,7 +203,7 @@ export const FinanceHub: React.FC = () => {
                     </p>
                   )}
                   {r.refunded_at && (
-                    <p className="text-xs text-teal-600 font-semibold">
+                    <p className="text-xs text-navy-600 font-semibold">
                       💚 Refunded on {new Date(r.refunded_at).toLocaleDateString('en-IN')}
                     </p>
                   )}

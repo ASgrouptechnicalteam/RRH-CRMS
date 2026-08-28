@@ -46,7 +46,7 @@ export const BannerControlWidget: React.FC = () => {
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-center gap-2 mb-4">
-        <Image className="w-5 h-5 text-indigo-500" />
+        <Image className="w-5 h-5 text-navy-500" />
         <h3 className="font-extrabold text-slate-900 text-lg">Global Announcement Banner</h3>
       </div>
       <p className="text-xs text-slate-500 mb-6">
@@ -61,7 +61,7 @@ export const BannerControlWidget: React.FC = () => {
             placeholder="https://example.com/banner.jpg"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-500"
           />
         </div>
 
@@ -89,7 +89,7 @@ export const BannerControlWidget: React.FC = () => {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-navy-600 hover:bg-navy-700 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
           >
             {isSaving ? 'Saving...' : saveSuccess ? <><Check className="w-4 h-4" /> Saved Successfully</> : 'Save Banner Settings'}
           </button>

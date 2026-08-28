@@ -49,8 +49,8 @@ export const FirstLoginSetup: React.FC = () => {
     <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl flex flex-col relative overflow-hidden animate-scaleUp">
         <div className="flex flex-col items-center justify-center mb-6 mt-4">
-          <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-3">
-            <ShieldCheck className="w-8 h-8 text-teal-700" />
+          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-3">
+            <ShieldCheck className="w-8 h-8 text-navy-700" />
           </div>
           <h2 className="text-2xl font-black text-slate-800 text-center">Security Setup Required</h2>
           <p className="text-sm text-slate-500 text-center mt-2 px-4">
@@ -68,7 +68,7 @@ export const FirstLoginSetup: React.FC = () => {
                 required
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500"
+                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
                 placeholder="Enter current password"
               />
             </div>
@@ -83,7 +83,7 @@ export const FirstLoginSetup: React.FC = () => {
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500"
+                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
                 placeholder="At least 8 characters"
                 minLength={8}
               />
@@ -99,7 +99,7 @@ export const FirstLoginSetup: React.FC = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500"
+                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
                 placeholder="Type new password again"
                 minLength={8}
               />
@@ -110,7 +110,7 @@ export const FirstLoginSetup: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex justify-center items-center gap-2"
+              className="w-full py-3 bg-navy-700 hover:bg-navy-800 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex justify-center items-center gap-2"
             >
               {isLoading ? 'Updating...' : 'Update Password & Continue'}
             </button>

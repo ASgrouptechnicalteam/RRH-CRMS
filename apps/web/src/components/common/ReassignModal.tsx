@@ -111,7 +111,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slideUp">
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+            <div className="p-2 bg-navy-100 text-navy-700 rounded-lg">
               <UserPlus className="w-5 h-5" />
             </div>
             <div>
@@ -140,7 +140,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
               <select 
                 value={selectedEmployeeId} 
                 onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm font-medium"
               >
                 <option value="">-- Select Employee --</option>
                 {employees.map(emp => (
@@ -160,7 +160,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
                 value={reason} 
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Briefly explain why this is being reassigned..."
-                className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm h-24 resize-none"
+                className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm h-24 resize-none"
               ></textarea>
             </div>
           </div>
@@ -176,7 +176,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
           <button 
             onClick={handleReassign}
             disabled={isLoading || !selectedEmployeeId || !reason.trim()}
-            className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-bold text-white bg-navy-600 hover:bg-navy-700 rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {isLoading ? 'Reassigning...' : 'Confirm Reassignment'}
           </button>

@@ -45,10 +45,10 @@ export const MDAnalyticsDashboard: React.FC = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center">
-        <ShieldCheck className="w-6 h-6 text-teal-600 mr-3" />
+        <ShieldCheck className="w-6 h-6 text-navy-600 mr-3" />
         <div>
           <div className="text-sm text-slate-500">Total Earned</div>
-          <div className="text-xl font-bold text-teal-800">₹{data.totalEarned.toLocaleString()}</div>
+          <div className="text-xl font-bold text-navy-800">₹{data.totalEarned.toLocaleString()}</div>
         </div>
       </div>
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center">
@@ -66,10 +66,10 @@ export const MDAnalyticsDashboard: React.FC = () => {
         </div>
       </div>
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center">
-        <ShieldCheck className="w-6 h-6 text-indigo-600 mr-3" />
+        <ShieldCheck className="w-6 h-6 text-navy-600 mr-3" />
         <div>
           <div className="text-sm text-slate-500">Approvals Awaiting</div>
-          <div className="text-xl font-bold text-indigo-800">{data.upcomingApprovals}</div>
+          <div className="text-xl font-bold text-navy-800">{data.upcomingApprovals}</div>
         </div>
       </div>
     </div>

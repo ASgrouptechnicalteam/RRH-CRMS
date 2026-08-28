@@ -85,7 +85,7 @@ export const ChangePasswordModal: React.FC = () => {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -102,7 +102,7 @@ export const ChangePasswordModal: React.FC = () => {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 placeholder="Min 8 chars, 1 uppercase, 1 number"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -118,7 +118,7 @@ export const ChangePasswordModal: React.FC = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ export const ChangePasswordModal: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-3 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+            className="w-full mt-2 py-3 bg-navy-700 hover:bg-navy-800 text-white font-medium rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

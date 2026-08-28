@@ -160,7 +160,7 @@ export const MobileBottomNav: React.FC = () => {
                           onClick={() => handleNav(item.path || '/')}
                           aria-current={isActive ? 'page' : undefined}
                           className={`w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                            isActive ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                            isActive ? 'bg-navy-50 text-navy-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                           }`}
                         >
                           {item.icon ? (
@@ -184,7 +184,7 @@ export const MobileBottomNav: React.FC = () => {
           <button
             onClick={() => handleNav(homeItem.path || '/')}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-              location.pathname.startsWith(homeItem.path || '') ? 'text-teal-400 font-extrabold bg-teal-950/60' : 'text-slate-400 hover:text-slate-200'
+              location.pathname.startsWith(homeItem.path || '') ? 'text-navy-400 font-extrabold bg-navy-950/60' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {homeItem.icon ? <homeItem.icon className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
@@ -199,7 +199,7 @@ export const MobileBottomNav: React.FC = () => {
               key={item.id}
               onClick={() => handleNav(item.path || '/')}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-                isActive ? 'text-teal-400 font-extrabold bg-teal-950/60' : 'text-slate-400 hover:text-slate-200'
+                isActive ? 'text-navy-400 font-extrabold bg-navy-950/60' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               {item.icon ? <item.icon className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}

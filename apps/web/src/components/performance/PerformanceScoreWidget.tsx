@@ -81,7 +81,7 @@ export const PerformanceScoreWidget: React.FC = () => {
   let statusZone = {
     label: 'SAFE ZONE',
     color: 'text-emerald-700 bg-emerald-100 border-emerald-300',
-    barColor: 'from-emerald-500 to-teal-600',
+    barColor: 'from-emerald-500 to-navy-600',
     description: 'Great performance! You are on track.',
   };
 
@@ -103,7 +103,7 @@ export const PerformanceScoreWidget: React.FC = () => {
     statusZone = {
       label: 'EXCELLENT / TOP PERFORMER',
       color: 'text-purple-800 bg-purple-100 border-purple-300',
-      barColor: 'from-purple-600 to-indigo-600',
+      barColor: 'from-purple-600 to-navy-600',
       description: 'Outstanding execution! Eligible for priority lead allocation.',
     };
   }
@@ -121,7 +121,7 @@ export const PerformanceScoreWidget: React.FC = () => {
           </span>
           <button
             onClick={handleResetTestHistory}
-            className="p-1 text-slate-400 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-1 text-slate-400 hover:text-navy-700 hover:bg-slate-100 rounded-lg transition-colors"
             title="Reset Legacy Test Events (Start Clean at 50.0)"
           >
             <RefreshCw className="w-3.5 h-3.5" />

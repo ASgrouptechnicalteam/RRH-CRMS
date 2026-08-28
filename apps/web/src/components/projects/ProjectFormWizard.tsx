@@ -100,7 +100,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+            <div className="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center text-navy-600">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
@@ -117,8 +117,8 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
         <div className="p-6 flex-1 overflow-hidden flex flex-col">
           {/* Step Indicator */}
           <div className="flex gap-2 mb-6">
-            <div className={`h-2 flex-1 rounded-full ${step >= 1 ? 'bg-teal-500' : 'bg-slate-100'}`}></div>
-            <div className={`h-2 flex-1 rounded-full ${step >= 2 ? 'bg-teal-500' : 'bg-slate-100'}`}></div>
+            <div className={`h-2 flex-1 rounded-full ${step >= 1 ? 'bg-navy-500' : 'bg-slate-100'}`}></div>
+            <div className={`h-2 flex-1 rounded-full ${step >= 2 ? 'bg-navy-500' : 'bg-slate-100'}`}></div>
           </div>
 
           <div className="overflow-y-auto custom-scrollbar flex-1 -mx-6 px-6 pb-6">
@@ -133,7 +133,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                         type="text" 
                         value={name} 
                         onChange={e => setName(e.target.value)} 
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all" 
                         placeholder="e.g. Sonthillu Luxury Villas Phase 1" 
                       />
                     </div>
@@ -146,7 +146,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                           type="text" 
                           value={location} 
                           onChange={e => setLocation(e.target.value)} 
-                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all" 
                           placeholder="e.g. Miyapur, Hyderabad" 
                         />
                       </div>
@@ -158,7 +158,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                         value={description} 
                         onChange={e => setDescription(e.target.value)} 
                         rows={4} 
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all" 
                         placeholder="Detailed description of the project, amenities, and highlights..."
                       ></textarea>
                     </div>
@@ -178,7 +178,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                           type="text" 
                           value={totalArea} 
                           onChange={e => setTotalArea(e.target.value)} 
-                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all" 
                           placeholder="e.g. 5 Acres" 
                         />
                       </div>
@@ -192,21 +192,21 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                           type="date" 
                           value={launchDate} 
                           onChange={e => setLaunchDate(e.target.value)} 
-                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all" 
+                          className="w-full p-3 pl-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all" 
                         />
                       </div>
                     </div>
 
                     {pms.length > 0 && (
-                      <div className="col-span-1 md:col-span-2 p-4 bg-teal-50/50 border border-teal-100 rounded-xl">
-                        <label className="block text-xs font-bold text-teal-800 mb-1">Assign Project Manager</label>
-                        <p className="text-xs text-teal-600 mb-3">The PM will be automatically assigned to all future properties created under this project unless overridden.</p>
+                      <div className="col-span-1 md:col-span-2 p-4 bg-navy-50/50 border border-navy-100 rounded-xl">
+                        <label className="block text-xs font-bold text-navy-800 mb-1">Assign Project Manager</label>
+                        <p className="text-xs text-navy-600 mb-3">The PM will be automatically assigned to all future properties created under this project unless overridden.</p>
                         <div className="relative">
-                          <User className="w-5 h-5 absolute left-3 top-3 text-teal-500" />
+                          <User className="w-5 h-5 absolute left-3 top-3 text-navy-500" />
                           <select 
                             value={assignedPmId} 
                             onChange={e => setAssignedPmId(e.target.value)} 
-                            className="w-full p-3 pl-10 bg-white border border-teal-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all"
+                            className="w-full p-3 pl-10 bg-white border border-navy-200 rounded-xl focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all"
                           >
                             <option value="">-- No PM Assigned --</option>
                             {pms.map(pm => (
@@ -223,7 +223,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                         <select 
                           value={status} 
                           onChange={e => setStatus(e.target.value)} 
-                          className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all font-bold"
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500 focus:outline-none transition-all font-bold"
                         >
                           <option value="PLANNING">Planning</option>
                           <option value="UNDER_CONSTRUCTION">Under Construction</option>
@@ -266,7 +266,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
                 }
                 setStep(2);
               }}
-              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition-colors"
+              className="px-6 py-2.5 bg-navy-600 hover:bg-navy-700 text-white font-bold rounded-xl shadow-md transition-colors"
             >
               Next Step
             </button>
@@ -274,7 +274,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
             <button 
               onClick={handleSubmit}
               disabled={isLoading}
-              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex items-center gap-2"
+              className="px-6 py-2.5 bg-navy-600 hover:bg-navy-700 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex items-center gap-2"
             >
               {isLoading ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Project')}
             </button>

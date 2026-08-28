@@ -155,7 +155,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               placeholder="e.g. RRH-ADMIN-001"
               maxLength={15}
               className={`w-full pl-10 pr-4 py-3 bg-slate-50 border ${
-                codeError ? 'border-red-400 focus:ring-red-400' : 'border-slate-200 focus:ring-teal-600'
+                codeError ? 'border-red-400 focus:ring-red-400' : 'border-slate-200 focus:ring-navy-600'
               } rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all font-mono tracking-wide placeholder:font-sans placeholder:tracking-normal text-slate-800 font-bold`}
             />
           </div>
@@ -182,7 +182,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition-all text-slate-800 font-bold"
+              className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all text-slate-800 font-bold"
             />
             <button
               type="button"
@@ -201,7 +201,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             id="visitingPurpose"
             checked={isVisitingPurpose}
             onChange={(e) => setIsVisitingPurpose(e.target.checked)}
-            className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+            className="w-4 h-4 text-navy-600 rounded border-slate-300 focus:ring-navy-500"
           />
           <label htmlFor="visitingPurpose" className="text-xs text-slate-600 font-medium">
             I am logging in just for visiting/viewing purpose
@@ -212,7 +212,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full mt-2 bg-teal-700 hover:bg-teal-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full mt-2 bg-navy-700 hover:bg-navy-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

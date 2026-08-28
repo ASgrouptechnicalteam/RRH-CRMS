@@ -15,7 +15,7 @@ export const SalesOpportunityCard: React.FC<SalesOpportunityCardProps> = ({ oppo
   return (
     <div 
       onClick={() => onClick(opportunity)}
-      className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all flex flex-col gap-2 group relative"
+      className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm hover:border-navy-300 hover:shadow-md cursor-pointer transition-all flex flex-col gap-2 group relative"
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('application/json', JSON.stringify({ id: opportunity.id, stage: opportunity.stage }));
@@ -26,7 +26,7 @@ export const SalesOpportunityCard: React.FC<SalesOpportunityCardProps> = ({ oppo
       }}
     >
       <div className="flex justify-between items-start gap-2">
-        <h3 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-indigo-700 transition-colors">
+        <h3 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-navy-700 transition-colors">
           {opportunity.lead?.customer_name || 'Unknown Prospect'}
         </h3>
         {probability > 0 && (

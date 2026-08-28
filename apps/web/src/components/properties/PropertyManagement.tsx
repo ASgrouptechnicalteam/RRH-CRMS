@@ -84,7 +84,7 @@ const PropertyPipelineStepper: React.FC<{ status: Property['status'] }> = ({ sta
     <div className="w-full my-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
       <div className="flex items-center justify-between text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
         <span>Approval Workflow</span>
-        <span className="text-teal-800 font-bold">
+        <span className="text-navy-800 font-bold">
           {status === 'LIVE' ? 'Approved & LIVE' : `Stage ${currentIndex + 1} of 3`}
         </span>
       </div>
@@ -320,7 +320,7 @@ export const PropertyManagement: React.FC = () => {
       case 'PENDING_VERIFICATION':
         return 'bg-amber-100 text-amber-800 border-amber-300';
       case 'PENDING_DM_POLISH':
-        return 'bg-sky-100 text-sky-800 border-sky-300';
+        return 'bg-navy-100 text-navy-800 border-navy-300';
       case 'PENDING_MD_APPROVAL':
         return 'bg-purple-100 text-purple-800 border-purple-300';
       case 'LIVE':
@@ -335,20 +335,20 @@ export const PropertyManagement: React.FC = () => {
   return (
     <div className="space-y-6 relative">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-teal-700/30">
+      <div className="bg-gradient-to-r from-slate-900 via-navy-950 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Building className="w-5 h-5 text-teal-400" />
+            <Building className="w-5 h-5 text-navy-400" />
             <h2 className="text-xl font-extrabold tracking-tight">Property Inventory & Verification</h2>
           </div>
-          <p className="text-xs text-teal-200/80">
+          <p className="text-xs text-navy-200/80">
             Manage your properties, inventory and approval pipelines.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-teal-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+          className="px-4 py-2 bg-navy-500 hover:bg-navy-400 text-navy-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
         >
           <Plus className="w-4 h-4" />
           <span>Add Property Listing</span>
@@ -370,10 +370,10 @@ export const PropertyManagement: React.FC = () => {
           <button
             onClick={() => setBrandTab('SONTHILLU')}
             className={`px-4 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-              brandTab === 'SONTHILLU' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              brandTab === 'SONTHILLU' ? 'bg-navy-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Home className="w-3.5 h-3.5 text-teal-300" />
+            <Home className="w-3.5 h-3.5 text-navy-300" />
             <span>Sonthillu (Residential)</span>
           </button>
 
@@ -394,7 +394,7 @@ export const PropertyManagement: React.FC = () => {
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value as 'ALL' | 'MY_PROPERTIES')}
-              className="py-1.5 px-3 text-xs bg-teal-50 border border-teal-200 rounded-xl font-bold text-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600"
+              className="py-1.5 px-3 text-xs bg-navy-50 border border-navy-200 rounded-xl font-bold text-navy-800 focus:outline-none focus:ring-2 focus:ring-navy-600"
             >
               <option value="ALL">All Properties</option>
               <option value="MY_PROPERTIES">My Assigned Properties</option>
@@ -408,14 +408,14 @@ export const PropertyManagement: React.FC = () => {
               placeholder="Search code, title, location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="py-1.5 px-3 text-xs bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            className="py-1.5 px-3 text-xs bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-navy-600"
           >
             <option value="ALL">All Stages</option>
             <option value="PENDING_VERIFICATION">1. PM Verification</option>
@@ -463,7 +463,7 @@ export const PropertyManagement: React.FC = () => {
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
                       prop.brand_type === 'SONTHILLU'
-                        ? 'bg-teal-50 text-teal-800 border-teal-200'
+                        ? 'bg-navy-50 text-navy-800 border-navy-200'
                         : 'bg-slate-900 text-amber-300 border-slate-700'
                     }`}
                   >
@@ -476,10 +476,10 @@ export const PropertyManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="font-mono font-bold text-teal-900 text-[11px] mb-0.5">{prop.property_code}</div>
+                  <div className="font-mono font-bold text-navy-900 text-[11px] mb-0.5">{prop.property_code}</div>
                   <h3 className="font-extrabold text-slate-900 text-base leading-snug line-clamp-1">{prop.title}</h3>
                   {prop.project && (
-                    <div className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full inline-block border border-teal-100 mb-1">
+                    <div className="text-[10px] text-navy-700 bg-navy-50 px-2 py-0.5 rounded-full inline-block border border-navy-100 mb-1">
                       <Building2 className="w-3 h-3 inline mr-1" />
                       {prop.project.name}
                     </div>
@@ -493,18 +493,18 @@ export const PropertyManagement: React.FC = () => {
                 {/* Housing.com Field Badges */}
                 <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 text-xs">
                   <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                    <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
+                    <Maximize2 className="w-3.5 h-3.5 text-navy-600" />
                     <span>{prop.area_sqft} sq.ft</span>
                   </div>
                   {prop.bedrooms && (
                     <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                      <Bed className="w-3.5 h-3.5 text-teal-600" />
+                      <Bed className="w-3.5 h-3.5 text-navy-600" />
                       <span>{prop.bedrooms} BHK</span>
                     </div>
                   )}
                   {prop.facing && (
                     <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                      <Compass className="w-3.5 h-3.5 text-teal-600" />
+                      <Compass className="w-3.5 h-3.5 text-navy-600" />
                       <span>{prop.facing}</span>
                     </div>
                   )}
@@ -515,7 +515,7 @@ export const PropertyManagement: React.FC = () => {
 
                 <div className="flex items-baseline justify-between pt-1">
                   <span className="text-[10px] font-bold uppercase text-slate-400">Asking Price</span>
-                  <span className="text-lg font-black text-teal-950">
+                  <span className="text-lg font-black text-navy-950">
                     ₹{(prop.price / 100000).toFixed(1)} Lakhs
                   </span>
                 </div>
@@ -529,7 +529,7 @@ export const PropertyManagement: React.FC = () => {
 
                 <button
                   onClick={() => setSelectedProperty(prop)}
-                  className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
+                  className="px-3.5 py-1.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
                 >
                   <Eye className="w-3.5 h-3.5" />
                   <span>Details & Verify</span>
@@ -563,7 +563,7 @@ export const PropertyManagement: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-teal-800 text-sm">{selectedProperty.property_code}</span>
+              <span className="font-mono font-bold text-navy-800 text-sm">{selectedProperty.property_code}</span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(selectedProperty.status)}`}>
                 {selectedProperty.status.replace(/_/g, ' ')}
               </span>
@@ -574,7 +574,7 @@ export const PropertyManagement: React.FC = () => {
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-xl">{selectedProperty.title}</h3>
                   {selectedProperty.project && (
-                    <div className="text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full inline-block border border-teal-100 mt-1 mb-2">
+                    <div className="text-[11px] text-navy-700 bg-navy-50 px-2 py-0.5 rounded-full inline-block border border-navy-100 mt-1 mb-2">
                       <Building2 className="w-3.5 h-3.5 inline mr-1" />
                       {selectedProperty.project.name}
                     </div>
@@ -587,7 +587,7 @@ export const PropertyManagement: React.FC = () => {
                 {user?.permissions?.includes(Permissions.PROPERTIES_UPDATE) && (
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="p-2 text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors"
+                    className="p-2 text-navy-600 hover:text-navy-700 bg-navy-50 hover:bg-navy-100 rounded-xl transition-colors"
                     title="Edit Safe Details"
                   >
                     <Edit className="w-4 h-4" />
@@ -603,7 +603,7 @@ export const PropertyManagement: React.FC = () => {
                 <div className={`p-2 rounded-xl border ${selectedProperty.status === 'PENDING_VERIFICATION' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-slate-400 border-slate-200'}`}>
                   1. PM On-Site
                 </div>
-                <div className={`p-2 rounded-xl border ${selectedProperty.status === 'PENDING_DM_POLISH' ? 'bg-sky-100 text-sky-900 border-sky-300' : 'bg-white text-slate-400 border-slate-200'}`}>
+                <div className={`p-2 rounded-xl border ${selectedProperty.status === 'PENDING_DM_POLISH' ? 'bg-navy-100 text-navy-900 border-navy-300' : 'bg-white text-slate-400 border-slate-200'}`}>
                   2. DM Polish
                 </div>
                 <div className={`p-2 rounded-xl border ${selectedProperty.status === 'PENDING_MD_APPROVAL' ? 'bg-purple-100 text-purple-900 border-purple-300' : 'bg-white text-slate-400 border-slate-200'}`}>
@@ -616,9 +616,9 @@ export const PropertyManagement: React.FC = () => {
             </div>
 
             {/* Action Bar based on current stage & user role */}
-            <div className="p-4 bg-teal-50/60 rounded-2xl border border-teal-200/60 space-y-3">
-              <h4 className="font-bold text-teal-900 text-xs uppercase flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-teal-700" />
+            <div className="p-4 bg-navy-50/60 rounded-2xl border border-navy-200/60 space-y-3">
+              <h4 className="font-bold text-navy-900 text-xs uppercase flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-navy-700" />
                 Pipeline Stage Action Bar
               </h4>
 
@@ -633,12 +633,12 @@ export const PropertyManagement: React.FC = () => {
                     placeholder="Enter PM on-site inspection notes..."
                     value={actionNotes}
                     onChange={(e) => setActionNotes(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
                   />
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handlePMVerify(selectedProperty.id, true)}
-                      className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow"
+                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow"
                     >
                       ✅ Pass PM On-Site Verification
                     </button>
@@ -673,7 +673,7 @@ export const PropertyManagement: React.FC = () => {
                   {user?.permissions?.includes(Permissions.PROPERTIES_DM_POLISH) && (
                     <button
                       onClick={() => handleDMPolish(selectedProperty.id)}
-                      className="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
+                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Complete DM Polish $\rightarrow$ Submit to MD</span>
@@ -752,7 +752,7 @@ export const PropertyManagement: React.FC = () => {
                       }
                     }}
                   />
-                  <label htmlFor={`upload-img-${selectedProperty.id}`} className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg flex items-center gap-1 cursor-pointer transition-colors">
+                  <label htmlFor={`upload-img-${selectedProperty.id}`} className="px-3 py-1.5 bg-navy-50 hover:bg-navy-100 text-navy-700 font-bold text-xs rounded-lg flex items-center gap-1 cursor-pointer transition-colors">
                     <ImageIcon className="w-4 h-4" />
                     Upload Image
                   </label>
@@ -765,7 +765,7 @@ export const PropertyManagement: React.FC = () => {
                     <div key={img.id} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
                       <img src={resolveImageUrl(img.image_url)} alt="Property" className="w-full h-full object-cover" />
                       {img.is_primary && (
-                        <div className="absolute top-2 left-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">COVER</div>
+                        <div className="absolute top-2 left-2 bg-navy-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">COVER</div>
                       )}
                       <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                          <button 

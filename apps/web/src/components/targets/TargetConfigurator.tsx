@@ -205,8 +205,8 @@ export const TargetConfigurator: React.FC = () => {
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-50 rounded-xl">
-              <Target className="w-6 h-6 text-indigo-700" />
+            <div className="p-3 bg-navy-50 rounded-xl">
+              <Target className="w-6 h-6 text-navy-700" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-slate-800">Dynamic Daily Log & Target Configurator</h3>
@@ -229,7 +229,7 @@ export const TargetConfigurator: React.FC = () => {
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 font-bold text-slate-800 shadow-sm"
+                className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-600 font-bold text-slate-800 shadow-sm"
               >
                 {Object.values(Roles).map((r) => (
                   <option key={r} value={r}>
@@ -246,7 +246,7 @@ export const TargetConfigurator: React.FC = () => {
               <select
                 value={selectedEmployeeId}
                 onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 font-bold text-slate-800 shadow-sm"
+                className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-600 font-bold text-slate-800 shadow-sm"
               >
                 <option value="">Apply to ALL {selectedRole}s</option>
                 {employees.map((emp) => (
@@ -281,14 +281,14 @@ export const TargetConfigurator: React.FC = () => {
                 </div>
               ) : (
                 formSchema.map((field, index) => (
-                  <div key={field.id} className="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-indigo-300 transition-colors">
+                  <div key={field.id} className="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-navy-300 transition-colors">
                     
                     {/* Left Drag Handle */}
                     <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-50 rounded-l-2xl border-r border-slate-100">
-                      <button type="button" onClick={() => moveField(index, 'UP')} disabled={index === 0} className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30">
+                      <button type="button" onClick={() => moveField(index, 'UP')} disabled={index === 0} className="p-1 text-slate-400 hover:text-navy-600 disabled:opacity-30">
                         ▲
                       </button>
-                      <button type="button" onClick={() => moveField(index, 'DOWN')} disabled={index === formSchema.length - 1} className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30">
+                      <button type="button" onClick={() => moveField(index, 'DOWN')} disabled={index === formSchema.length - 1} className="p-1 text-slate-400 hover:text-navy-600 disabled:opacity-30">
                         ▼
                       </button>
                     </div>
@@ -299,7 +299,7 @@ export const TargetConfigurator: React.FC = () => {
                           type="text"
                           value={field.label}
                           onChange={(e) => handleUpdateField(index, { label: e.target.value })}
-                          className="w-full text-lg font-bold text-slate-800 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-600 focus:outline-none py-1 mb-2 transition-colors"
+                          className="w-full text-lg font-bold text-slate-800 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-navy-600 focus:outline-none py-1 mb-2 transition-colors"
                           placeholder="Question Label"
                         />
                         
@@ -344,7 +344,7 @@ export const TargetConfigurator: React.FC = () => {
                                 className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
                                 style={{ right: field.required ? '0' : 'auto', borderColor: field.required ? '#4f46e5' : '#cbd5e1' }}
                               />
-                              <label className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${field.required ? 'bg-indigo-600' : 'bg-slate-300'}`}></label>
+                              <label className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${field.required ? 'bg-navy-600' : 'bg-slate-300'}`}></label>
                             </div>
                           </label>
                           <div className="w-px h-6 bg-slate-200"></div>
@@ -367,16 +367,16 @@ export const TargetConfigurator: React.FC = () => {
             <div className="p-4 bg-slate-100 border-t border-slate-200">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <span className="text-sm font-bold text-slate-500 mr-2">Add Field:</span>
-                <button type="button" onClick={() => handleAddField('SHORT_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button type="button" onClick={() => handleAddField('SHORT_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
                   <Type className="w-4 h-4" /> Short Text
                 </button>
-                <button type="button" onClick={() => handleAddField('LONG_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button type="button" onClick={() => handleAddField('LONG_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
                   <AlignLeft className="w-4 h-4" /> Paragraph
                 </button>
-                <button type="button" onClick={() => handleAddField('COUNT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button type="button" onClick={() => handleAddField('COUNT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
                   <Hash className="w-4 h-4" /> Number Count
                 </button>
-                <button type="button" onClick={() => handleAddField('CHECKLIST')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-indigo-500 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button type="button" onClick={() => handleAddField('CHECKLIST')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
                   <CheckSquare className="w-4 h-4" /> Checklist
                 </button>
               </div>
@@ -408,7 +408,7 @@ export const TargetConfigurator: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting || formSchema.length === 0}
-            className="w-full py-4 bg-indigo-700 hover:bg-indigo-800 text-white text-lg font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-navy-700 hover:bg-navy-800 text-white text-lg font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-6 h-6" />
             <span>Publish Dynamic Form for {selectedRole}</span>

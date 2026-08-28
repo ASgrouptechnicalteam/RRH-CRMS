@@ -34,7 +34,7 @@ const ZONE_CONFIG = {
     text: 'text-purple-800',
     border: 'border-purple-200',
     badge: 'bg-purple-100 text-purple-700 border-purple-300',
-    bar: 'from-purple-500 to-indigo-600',
+    bar: 'from-purple-500 to-navy-600',
     icon: Star,
   },
   SAFE: {
@@ -43,7 +43,7 @@ const ZONE_CONFIG = {
     text: 'text-emerald-800',
     border: 'border-emerald-200',
     badge: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-    bar: 'from-emerald-500 to-teal-600',
+    bar: 'from-emerald-500 to-navy-600',
     icon: CheckCircle,
   },
   SATISFACTORY: {
@@ -155,7 +155,7 @@ export const TeamPerformanceDashboard: React.FC = () => {
         <p className="text-sm text-red-700 font-medium">{error}</p>
         <button
           onClick={fetchTeam}
-          className="mt-3 px-4 py-2 bg-teal-700 text-white text-xs rounded-xl font-semibold hover:bg-teal-800"
+          className="mt-3 px-4 py-2 bg-navy-700 text-white text-xs rounded-xl font-semibold hover:bg-navy-800"
         >
           Retry
         </button>
@@ -169,7 +169,7 @@ export const TeamPerformanceDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Users className="w-5 h-5 text-teal-600" /> Team Performance Index
+            <Users className="w-5 h-5 text-navy-600" /> Team Performance Index
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Live performance scores for {team.length} team member{team.length !== 1 ? 's' : ''} · Auto-calculated
@@ -177,7 +177,7 @@ export const TeamPerformanceDashboard: React.FC = () => {
         </div>
         <button
           onClick={fetchTeam}
-          className="p-2 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded-xl border border-slate-200 transition-colors"
+          className="p-2 text-slate-500 hover:text-navy-700 hover:bg-navy-50 rounded-xl border border-slate-200 transition-colors"
           title="Refresh"
         >
           <RefreshCw className="w-4 h-4" />
@@ -198,7 +198,7 @@ export const TeamPerformanceDashboard: React.FC = () => {
             <button
               key={zone}
               onClick={() => setZoneFilter(zoneFilter === zone ? 'ALL' : zone)}
-              className={`rounded-2xl p-3 border text-left transition-all ${cfg.bg} ${cfg.border} ${zoneFilter === zone ? 'ring-2 ring-offset-1 ring-teal-500' : ''}`}
+              className={`rounded-2xl p-3 border text-left transition-all ${cfg.bg} ${cfg.border} ${zoneFilter === zone ? 'ring-2 ring-offset-1 ring-navy-500' : ''}`}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className={`text-[10px] font-bold uppercase tracking-wide ${cfg.text}`}>{cfg.label}</span>
@@ -218,13 +218,13 @@ export const TeamPerformanceDashboard: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, code or role..."
-            className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-navy-500"
           />
         </div>
         <select
           value={zoneFilter}
           onChange={(e) => setZoneFilter(e.target.value)}
-          className="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-navy-500"
         >
           <option value="ALL">All Zones</option>
           <option value="EXCELLENT">Excellent</option>
@@ -237,18 +237,18 @@ export const TeamPerformanceDashboard: React.FC = () => {
       {/* Sort Header */}
       <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <div className="col-span-4">
-          <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-teal-700">
+          <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-navy-700">
             Employee {sortBy === 'name' ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />) : null}
           </button>
         </div>
         <div className="col-span-2">
-          <button onClick={() => toggleSort('zone')} className="flex items-center gap-1 hover:text-teal-700">
+          <button onClick={() => toggleSort('zone')} className="flex items-center gap-1 hover:text-navy-700">
             Zone {sortBy === 'zone' ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />) : null}
           </button>
         </div>
         <div className="col-span-4">Score Bar</div>
         <div className="col-span-2 text-right">
-          <button onClick={() => toggleSort('score')} className="flex items-center gap-1 hover:text-teal-700 ml-auto">
+          <button onClick={() => toggleSort('score')} className="flex items-center gap-1 hover:text-navy-700 ml-auto">
             Score {sortBy === 'score' ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />) : null}
           </button>
         </div>
@@ -330,7 +330,7 @@ export const TeamPerformanceDashboard: React.FC = () => {
                     {[
                       { label: 'Tasks Done', value: `+${emp.breakdown.tasksDone}`, color: 'text-emerald-700', hint: '+1.0 each' },
                       { label: 'Reports Filed', value: `+${emp.breakdown.reportsDone}`, color: 'text-emerald-700', hint: '+0.5 each' },
-                      { label: 'On-Time Days', value: `+${emp.breakdown.presentCount}`, color: 'text-teal-700', hint: '+0.5 each' },
+                      { label: 'On-Time Days', value: `+${emp.breakdown.presentCount}`, color: 'text-navy-700', hint: '+0.5 each' },
                       { label: 'Late Check-ins', value: `-${emp.breakdown.lateCount}`, color: 'text-amber-700', hint: '-1.0 each' },
                       { label: 'Overdue Tasks', value: `-${emp.breakdown.tasksOverdue}`, color: 'text-orange-700', hint: '-2.0 each' },
                       { label: 'Sub-Target Logs', value: `-${emp.breakdown.belowTargetCount}`, color: 'text-red-700', hint: '-2.0 each' },

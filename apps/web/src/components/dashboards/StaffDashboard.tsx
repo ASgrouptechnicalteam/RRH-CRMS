@@ -11,7 +11,7 @@ export const StaffDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex items-center gap-4 border border-slate-700">
         <div className="p-3 bg-white/10 rounded-2xl">
-          <Activity className="w-8 h-8 text-teal-400" />
+          <Activity className="w-8 h-8 text-navy-400" />
         </div>
         <div>
           <h2 className="text-xl font-extrabold tracking-tight">My Work</h2>

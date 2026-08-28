@@ -144,7 +144,7 @@ export const AnalyticsHub: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
         <h1 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-teal-600" />
+          <BarChart3 className="w-6 h-6 text-navy-600" />
           Analytics & Goals
         </h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -158,7 +158,7 @@ export const AnalyticsHub: React.FC = () => {
               onClick={() => setActiveTab('overview')}
               className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
                 activeTab === 'overview'
-                  ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                  ? 'bg-navy-50 text-navy-700 border border-navy-200'
                   : 'text-slate-600 hover:bg-slate-50 border border-transparent'
               }`}
             >
@@ -172,7 +172,7 @@ export const AnalyticsHub: React.FC = () => {
               onClick={() => setActiveTab('performance')}
               className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
                 activeTab === 'performance'
-                  ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                  ? 'bg-navy-50 text-navy-700 border border-navy-200'
                   : 'text-slate-600 hover:bg-slate-50 border border-transparent'
               }`}
             >
@@ -216,7 +216,7 @@ export const AnalyticsHub: React.FC = () => {
                 <p className="text-sm text-slate-600 mt-1">{error}</p>
                 <button
                   onClick={fetchKpis}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-teal-600 text-white hover:bg-teal-700 transition-colors"
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-navy-600 text-white hover:bg-navy-700 transition-colors"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Retry
@@ -228,16 +228,16 @@ export const AnalyticsHub: React.FC = () => {
               <>
                 {/* Top-level summary cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <KpiCard icon={<Users className="w-5 h-5 text-teal-600" />} label="Total Leads" value={nf.format(kpis.crm.totalLeads)} accent="bg-teal-50" />
+                  <KpiCard icon={<Users className="w-5 h-5 text-navy-600" />} label="Total Leads" value={nf.format(kpis.crm.totalLeads)} accent="bg-navy-50" />
                   <KpiCard icon={<TrendingUp className="w-5 h-5 text-emerald-600" />} label="Won Leads" value={nf.format(kpis.crm.wonLeads)} accent="bg-emerald-50" />
-                  <KpiCard icon={<Building2 className="w-5 h-5 text-indigo-600" />} label="Total Bookings" value={nf.format(kpis.booking.totalBookings)} accent="bg-indigo-50" />
+                  <KpiCard icon={<Building2 className="w-5 h-5 text-navy-600" />} label="Total Bookings" value={nf.format(kpis.booking.totalBookings)} accent="bg-navy-50" />
                   <KpiCard icon={<Users className="w-5 h-5 text-violet-600" />} label="Active Employees" value={nf.format(kpis.hr.activeEmployees)} accent="bg-violet-50" />
                 </div>
 
                 {/* CRM */}
                 <SectionCard title="CRM Overview" subtitle="Lead pipeline health">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <KpiCard icon={<PhoneCall className="w-5 h-5 text-teal-600" />} label="Total Leads" value={nf.format(kpis.crm.totalLeads)} accent="bg-teal-50" />
+                    <KpiCard icon={<PhoneCall className="w-5 h-5 text-navy-600" />} label="Total Leads" value={nf.format(kpis.crm.totalLeads)} accent="bg-navy-50" />
                     <KpiCard icon={<TrendingUp className="w-5 h-5 text-emerald-600" />} label="Won Leads" value={nf.format(kpis.crm.wonLeads)} accent="bg-emerald-50" />
                     <KpiCard icon={<CalendarCheck className="w-5 h-5 text-amber-600" />} label="Site Visits Scheduled" value={nf.format(kpis.crm.siteVisitsScheduled)} accent="bg-amber-50" />
                   </div>
@@ -321,8 +321,8 @@ export const AnalyticsHub: React.FC = () => {
                 {/* Portal / Integration */}
                 <SectionCard title="Portal / Integration Overview" subtitle="Customer portal & integration events">
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <KpiCard icon={<Inbox className="w-5 h-5 text-teal-600" />} label="Handoffs" value={nf.format(kpis.marketing?.handoffs.total ?? 0)} accent="bg-teal-50" />
-                    <KpiCard icon={<FileText className="w-5 h-5 text-indigo-600" />} label="Outbox" value={nf.format(kpis.marketing?.outbox.total ?? 0)} accent="bg-indigo-50" />
+                    <KpiCard icon={<Inbox className="w-5 h-5 text-navy-600" />} label="Handoffs" value={nf.format(kpis.marketing?.handoffs.total ?? 0)} accent="bg-navy-50" />
+                    <KpiCard icon={<FileText className="w-5 h-5 text-navy-600" />} label="Outbox" value={nf.format(kpis.marketing?.outbox.total ?? 0)} accent="bg-navy-50" />
                     <KpiCard icon={<FileText className="w-5 h-5 text-emerald-600" />} label="KYC" value={nf.format(kpis.marketing?.kyc.total ?? 0)} accent="bg-emerald-50" />
                     <KpiCard icon={<Users className="w-5 h-5 text-amber-600" />} label="Notifications" value={nf.format(kpis.marketing?.notifications.total ?? 0)} accent="bg-amber-50" />
                     <KpiCard icon={<Building2 className="w-5 h-5 text-violet-600" />} label="Payments Synced" value={nf.format(kpis.marketing?.payments.total ?? 0)} accent="bg-violet-50" />

@@ -35,7 +35,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
   if (isLoading) {
     return (
       <div className="fixed inset-y-0 right-0 w-full sm:w-[500px] md:w-[600px] bg-white shadow-2xl z-50 flex items-center justify-center border-l border-slate-200">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-navy-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -81,7 +81,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
               </div>
             </div>
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Target className="w-5 h-5" /></div>
+              <div className="p-2 bg-navy-100 text-navy-600 rounded-lg"><Target className="w-5 h-5" /></div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase">Probability</p>
                 <p className="font-black text-slate-800">{probability}%</p>
@@ -124,7 +124,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
             <button
               onClick={() => setActiveTab('journey')}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === 'journey' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+                activeTab === 'journey' ? 'border-navy-600 text-navy-700' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               <History className="w-4 h-4" /> Sales Journey
@@ -132,7 +132,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
             <button
               onClick={() => setActiveTab('tasks')}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === 'tasks' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+                activeTab === 'tasks' ? 'border-navy-600 text-navy-700' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               <CheckSquare className="w-4 h-4" /> Tasks
@@ -140,7 +140,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
             <button
               onClick={() => setActiveTab('visits')}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === 'visits' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+                activeTab === 'visits' ? 'border-navy-600 text-navy-700' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               <CalendarDays className="w-4 h-4" /> Site Visits

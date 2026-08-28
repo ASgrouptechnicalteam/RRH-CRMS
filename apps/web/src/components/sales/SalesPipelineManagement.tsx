@@ -78,7 +78,7 @@ export const SalesPipelineManagement: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <LayoutGrid className="w-5 h-5 text-indigo-500" />
+            <LayoutGrid className="w-5 h-5 text-navy-500" />
             Property Sales Pipeline
           </h1>
           <p className="text-xs text-slate-500 mt-1">Manage and track property sales opportunities across stages.</p>
@@ -92,7 +92,7 @@ export const SalesPipelineManagement: React.FC = () => {
               aria-label="Kanban view"
               aria-pressed={viewMode === 'kanban'}
               className={`p-1.5 rounded-md flex items-center transition-all ${
-                viewMode === 'kanban' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                viewMode === 'kanban' ? 'bg-white shadow-sm text-navy-600' : 'text-slate-500 hover:text-slate-700'
               }`}
               title="Kanban View"
             >
@@ -103,7 +103,7 @@ export const SalesPipelineManagement: React.FC = () => {
               aria-label="List view"
               aria-pressed={viewMode === 'list'}
               className={`p-1.5 rounded-md flex items-center transition-all ${
-                viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                viewMode === 'list' ? 'bg-white shadow-sm text-navy-600' : 'text-slate-500 hover:text-slate-700'
               }`}
               title="List View"
             >
@@ -121,7 +121,7 @@ export const SalesPipelineManagement: React.FC = () => {
         {isLoading && opportunities.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3 text-slate-400">
-              <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-navy-500 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-sm font-semibold">Loading sales pipeline...</span>
             </div>
           </div>
@@ -153,7 +153,7 @@ export const SalesPipelineManagement: React.FC = () => {
                   <tr
                     key={opp.id}
                     onClick={() => handleOpportunityClick(opp)}
-                    className="border-b border-slate-100 hover:bg-indigo-50/40 cursor-pointer transition-colors"
+                    className="border-b border-slate-100 hover:bg-navy-50/40 cursor-pointer transition-colors"
                   >
                     <td className="py-2.5 px-3 font-semibold text-slate-800">
                       {opp.lead?.customer_name || 'Unknown Prospect'}

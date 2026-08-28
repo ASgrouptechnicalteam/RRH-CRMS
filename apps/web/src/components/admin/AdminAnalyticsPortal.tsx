@@ -299,7 +299,7 @@ export const AdminAnalyticsPortal: React.FC = () => {
                           </div>
                           
                           <div className="text-[11px] text-slate-600">
-                            Actor: <strong className="text-teal-800 font-mono">{log.actor_code}</strong> <span className="text-slate-400">({log.actor_role})</span>
+                            Actor: <strong className="text-navy-800 font-mono">{log.actor_code}</strong> <span className="text-slate-400">({log.actor_role})</span>
                           </div>
                           
                           {(log.old_value || log.new_value) && (

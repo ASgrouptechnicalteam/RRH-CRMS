@@ -26,7 +26,7 @@ export const HRDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
         <h1 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <Users className="w-6 h-6 text-teal-600" />
+          <Users className="w-6 h-6 text-navy-600" />
           HR & Team Management
         </h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -39,7 +39,7 @@ export const HRDashboard: React.FC = () => {
             onClick={() => setActiveTab('employees')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
               activeTab === 'employees'
-                ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                ? 'bg-navy-50 text-navy-700 border border-navy-200'
                 : 'text-slate-600 hover:bg-slate-50 border border-transparent'
             }`}
           >
@@ -63,7 +63,7 @@ export const HRDashboard: React.FC = () => {
             onClick={() => setActiveTab('attendance')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
               activeTab === 'attendance'
-                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                ? 'bg-navy-50 text-navy-700 border border-navy-200'
                 : 'text-slate-600 hover:bg-slate-50 border border-transparent'
             }`}
           >
@@ -75,7 +75,7 @@ export const HRDashboard: React.FC = () => {
             onClick={() => setActiveTab('history')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
               activeTab === 'history'
-                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                ? 'bg-navy-50 text-navy-700 border border-navy-200'
                 : 'text-slate-600 hover:bg-slate-50 border border-transparent'
             }`}
           >

@@ -51,11 +51,11 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLORS: Record<string, string> = {
   KYC_PAN: 'bg-amber-100 text-amber-800',
   KYC_AADHAAR: 'bg-orange-100 text-orange-800',
-  BOOKING_AGREEMENT: 'bg-blue-100 text-blue-800',
+  BOOKING_AGREEMENT: 'bg-navy-100 text-navy-800',
   PAYMENT_RECEIPT: 'bg-green-100 text-green-800',
   BOOKING_RECEIPT: 'bg-emerald-100 text-emerald-800',
   SALE_DEED: 'bg-purple-100 text-purple-800',
-  PROPERTY_TITLE: 'bg-indigo-100 text-indigo-800',
+  PROPERTY_TITLE: 'bg-navy-100 text-navy-800',
   PROPERTY_PLAN: 'bg-cyan-100 text-cyan-800',
   PROPOSAL: 'bg-pink-100 text-pink-800',
   OTHER: 'bg-slate-100 text-slate-800',
@@ -217,8 +217,8 @@ export const DocumentDetailModal: React.FC<Props> = ({ documentId, onClose, onRe
         {/* Sticky Header */}
         <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-10 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <FileText className="w-5 h-5 text-blue-600 shrink-0" />
-            <span className="font-mono font-bold text-teal-900 text-xs bg-teal-50 px-2 py-0.5 rounded border border-teal-200 truncate">
+            <FileText className="w-5 h-5 text-navy-600 shrink-0" />
+            <span className="font-mono font-bold text-navy-900 text-xs bg-navy-50 px-2 py-0.5 rounded border border-navy-200 truncate">
               {doc?.document_code || '...'}
             </span>
           </div>
@@ -231,7 +231,7 @@ export const DocumentDetailModal: React.FC<Props> = ({ documentId, onClose, onRe
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-navy-600 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : doc ? (
             <>
@@ -313,7 +313,7 @@ export const DocumentDetailModal: React.FC<Props> = ({ documentId, onClose, onRe
               <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap gap-2">
                 <button
                   onClick={handleDownload}
-                  className="px-3 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-2 text-xs font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Download
@@ -322,7 +322,7 @@ export const DocumentDetailModal: React.FC<Props> = ({ documentId, onClose, onRe
                 {canVerify && !isArchived && doc.verification_status === 'PENDING' && (
                   <button
                     onClick={() => setShowVerifyModal(true)}
-                    className="px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-2 text-xs font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg flex items-center gap-1.5 transition-colors"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
                     Verify / Reject

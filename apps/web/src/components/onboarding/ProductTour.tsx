@@ -217,7 +217,7 @@ export const ProductTour: React.FC = () => {
       {/* Spotlight Cutout */}
       {targetRect && !isSearching && (
         <div 
-          className="fixed z-[9500] pointer-events-none rounded-md ring-4 ring-teal-500/50 shadow-[0_0_0_9999px_rgba(15,23,42,0.4)] transition-all duration-300 ease-in-out"
+          className="fixed z-[9500] pointer-events-none rounded-md ring-4 ring-navy-500/50 shadow-[0_0_0_9999px_rgba(15,23,42,0.4)] transition-all duration-300 ease-in-out"
           style={{
             top: targetRect.top - 4,
             left: targetRect.left - 4,
@@ -230,7 +230,7 @@ export const ProductTour: React.FC = () => {
       {/* Tooltip Card */}
       <div style={tooltipStyle} className="w-full max-w-[340px]">
         <Card className="shadow-2xl border-0 overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 h-full bg-teal-600"></div>
+          <div className="absolute top-0 left-0 w-1 h-full bg-navy-600"></div>
           <Card.Header title={currentStep.title} />
           <Card.Content>
             <p className="text-slate-600 text-sm leading-relaxed">

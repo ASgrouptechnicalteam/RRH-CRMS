@@ -51,7 +51,7 @@ export const ProjectManagement: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PLANNING': return 'bg-sky-100 text-sky-800 border-sky-300';
+      case 'PLANNING': return 'bg-navy-100 text-navy-800 border-navy-300';
       case 'UNDER_CONSTRUCTION': return 'bg-amber-100 text-amber-800 border-amber-300';
       case 'COMPLETED': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       case 'CANCELLED': return 'bg-rose-100 text-rose-800 border-rose-300';
@@ -62,13 +62,13 @@ export const ProjectManagement: React.FC = () => {
   return (
     <div className="space-y-6 relative">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-teal-700/30">
+      <div className="bg-gradient-to-r from-slate-900 via-navy-950 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Building2 className="w-5 h-5 text-teal-400" />
+            <Building2 className="w-5 h-5 text-navy-400" />
             <h2 className="text-xl font-extrabold tracking-tight">Projects & Sites</h2>
           </div>
-          <p className="text-xs text-teal-200/80">
+          <p className="text-xs text-navy-200/80">
             Manage real estate ventures, layouts, and their associated inventory units.
           </p>
         </div>
@@ -76,7 +76,7 @@ export const ProjectManagement: React.FC = () => {
         {canCreate && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-teal-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+            className="px-4 py-2 bg-navy-500 hover:bg-navy-400 text-navy-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
@@ -99,14 +99,14 @@ export const ProjectManagement: React.FC = () => {
                 placeholder="Search name or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
               />
             </div>
             
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="py-1.5 px-3 text-xs bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600"
+              className="py-1.5 px-3 text-xs bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-navy-600"
             >
               <option value="ALL">All Statuses</option>
               <option value="PLANNING">Planning</option>
@@ -128,7 +128,7 @@ export const ProjectManagement: React.FC = () => {
              <div key={proj.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-teal-900 text-[10px] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    <span className="font-mono font-bold text-navy-900 text-[10px] bg-navy-50 px-2 py-0.5 rounded border border-navy-200">
                       PRJ-{proj.id}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(proj.status)}`}>
@@ -161,7 +161,7 @@ export const ProjectManagement: React.FC = () => {
                    
                    <button
                      onClick={() => setViewingProjectId(proj.id)}
-                     className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
+                     className="px-3.5 py-1.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
                    >
                      <Eye className="w-3.5 h-3.5" /> Details
                    </button>

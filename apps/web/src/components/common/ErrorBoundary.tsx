@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="mt-6 flex justify-center">
             <button
               onClick={this.handleReset}
-              className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md transition-all"
+              className="px-4 py-2 bg-navy-700 hover:bg-navy-800 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md transition-all"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Reload Module Workstation</span>

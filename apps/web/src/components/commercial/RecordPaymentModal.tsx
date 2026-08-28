@@ -71,7 +71,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ bookingI
               min="1"
               value={formData.amount}
               onChange={e => setFormData({...formData, amount: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
               placeholder="e.g. 50000"
             />
           </div>
@@ -81,7 +81,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ bookingI
             <select
               value={formData.payment_method}
               onChange={e => setFormData({...formData, payment_method: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             >
               <option value="CASH">Cash</option>
               <option value="CHEQUE">Cheque</option>
@@ -96,7 +96,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ bookingI
               type="text"
               value={formData.reference_number}
               onChange={e => setFormData({...formData, reference_number: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
               placeholder="Cheque No. or UTR"
             />
           </div>
@@ -106,14 +106,14 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ bookingI
             <textarea
               value={formData.notes}
               onChange={e => setFormData({...formData, notes: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
               rows={2}
             ></textarea>
           </div>
 
           <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg disabled:opacity-50">
+            <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg disabled:opacity-50">
               {loading ? 'Recording...' : 'Record Payment'}
             </button>
           </div>

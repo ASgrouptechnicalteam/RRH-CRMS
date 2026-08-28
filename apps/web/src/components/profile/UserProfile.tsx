@@ -15,13 +15,13 @@ export const UserProfile: React.FC = () => {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Cover */}
-        <div className="h-32 bg-gradient-to-r from-teal-700 to-slate-800"></div>
+        <div className="h-32 bg-gradient-to-r from-navy-700 to-slate-800"></div>
 
         {/* Profile Info */}
         <div className="px-6 pb-6 relative">
           <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-12 sm:-mt-16 gap-4 sm:gap-6 mb-6">
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-white p-1.5 shadow-xl border border-slate-100">
-              <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-teal-800">
+              <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-navy-800">
                 <User className="w-10 h-10 sm:w-12 sm:h-12" />
               </div>
             </div>
@@ -44,7 +44,7 @@ export const UserProfile: React.FC = () => {
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Employment Details</h3>
               <div className="flex items-center gap-3 text-sm text-slate-700">
-                <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-navy-100 text-navy-700 flex items-center justify-center shrink-0">
                   <Briefcase className="w-4 h-4" />
                 </div>
                 <div>
@@ -53,7 +53,7 @@ export const UserProfile: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-700">
-                <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-navy-100 text-navy-700 flex items-center justify-center shrink-0">
                   <Building className="w-4 h-4" />
                 </div>
                 <div>
@@ -76,7 +76,7 @@ export const UserProfile: React.FC = () => {
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Contact Info</h3>
               <div className="flex items-center gap-3 text-sm text-slate-700">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-navy-100 text-navy-700 flex items-center justify-center shrink-0">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div>

@@ -77,13 +77,13 @@ export const TelecallerDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Telecaller Header Banner */}
-      <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-teal-700/30">
+      <div className="bg-gradient-to-r from-navy-900 via-slate-900 to-navy-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <PhoneCall className="w-5 h-5 text-teal-400" />
+            <PhoneCall className="w-5 h-5 text-navy-400" />
             <h2 className="text-xl font-extrabold tracking-tight">Daily Calling List & Prospects</h2>
           </div>
-          <p className="text-xs text-teal-200/80">
+          <p className="text-xs text-navy-200/80">
             Welcome back, <strong className="text-white">{user?.employeeCode}</strong>! Your performance score helps assign priority prospects to you.
           </p>
         </div>
@@ -93,7 +93,7 @@ export const TelecallerDashboard: React.FC = () => {
             onClick={() => navigate('/leads')}
             className="px-4 py-2 bg-white/10 rounded-2xl border border-white/10 text-center cursor-pointer hover:bg-white/20 transition-colors"
           >
-            <span className="text-[10px] uppercase font-bold text-teal-300 block">Assigned Prospects</span>
+            <span className="text-[10px] uppercase font-bold text-navy-300 block">Assigned Prospects</span>
             <span className="text-lg font-black text-white">{assignedLeads.length} Prospects</span>
           </div>
 
@@ -113,10 +113,10 @@ export const TelecallerDashboard: React.FC = () => {
           <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                <Clock className="w-4 h-4 text-teal-600" />
+                <Clock className="w-4 h-4 text-navy-600" />
                 <span>Today's High-Priority Prospects</span>
               </h3>
-              <span className="text-xs font-mono font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
+              <span className="text-xs font-mono font-bold text-navy-800 bg-navy-50 px-2.5 py-1 rounded-full border border-navy-200">
                 {assignedLeads.length} Active Prospects
               </span>
             </div>
@@ -134,7 +134,7 @@ export const TelecallerDashboard: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-teal-900 text-xs">{lead.lead_code}</span>
+                        <span className="font-mono font-bold text-navy-900 text-xs">{lead.lead_code}</span>
                       </div>
                       <h4 className="font-extrabold text-slate-900 text-sm mt-0.5">{lead.customer_name}</h4>
                       <p className="text-xs text-slate-500 font-mono">{lead.phone} • Prefers: {lead.property_type_preference || 'Villa'}</p>
@@ -144,7 +144,7 @@ export const TelecallerDashboard: React.FC = () => {
                       <select
                         value={lead.status}
                         onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className="text-[10px] font-bold border border-slate-200 rounded-xl px-2 py-2 bg-white text-slate-700 hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all cursor-pointer"
+                        className="text-[10px] font-bold border border-slate-200 rounded-xl px-2 py-2 bg-white text-slate-700 hover:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-500 transition-all cursor-pointer"
                         title="Update Prospect Status"
                       >
                         <option value="NEW">New</option>

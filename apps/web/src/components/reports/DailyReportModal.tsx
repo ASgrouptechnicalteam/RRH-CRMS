@@ -241,7 +241,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
         </button>
 
         <div className="text-center mb-6 shrink-0">
-          <div className="w-14 h-14 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+          <div className="w-14 h-14 bg-navy-50 text-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
             <FileText className="w-7 h-7" />
           </div>
           <h2 className="text-2xl font-bold text-slate-800">Daily Work Log</h2>
@@ -258,7 +258,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs sticky top-0 z-10 backdrop-blur-md">
             <span className="text-slate-500 font-medium">Reporting Role:</span>
-            <span className="font-bold text-teal-800 bg-teal-100/70 px-2.5 py-0.5 rounded-md">{roleName}</span>
+            <span className="font-bold text-navy-800 bg-navy-100/70 px-2.5 py-0.5 rounded-md">{roleName}</span>
           </div>
 
           {/* DYNAMIC FORM RENDERING */}
@@ -269,12 +269,12 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
           ) : (
             <div className="space-y-4">
               {formSchema.map((field) => (
-                <div key={field.id} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-teal-300 transition-colors">
+                <div key={field.id} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-navy-300 transition-colors">
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3">
-                    {field.type === 'SHORT_TEXT' && <Type className="w-4 h-4 text-teal-600" />}
-                    {field.type === 'LONG_TEXT' && <AlignLeft className="w-4 h-4 text-teal-600" />}
-                    {field.type === 'COUNT' && <Hash className="w-4 h-4 text-teal-600" />}
-                    {field.type === 'CHECKLIST' && <CheckSquare className="w-4 h-4 text-teal-600" />}
+                    {field.type === 'SHORT_TEXT' && <Type className="w-4 h-4 text-navy-600" />}
+                    {field.type === 'LONG_TEXT' && <AlignLeft className="w-4 h-4 text-navy-600" />}
+                    {field.type === 'COUNT' && <Hash className="w-4 h-4 text-navy-600" />}
+                    {field.type === 'CHECKLIST' && <CheckSquare className="w-4 h-4 text-navy-600" />}
                     
                     <span>{field.label}</span>
                     {field.required && <span className="text-red-500 ml-1">*</span>}
@@ -293,7 +293,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                         value={String(formResponses[field.id] ?? '')}
                         onChange={(e) => handleResponseChange(field.id, e.target.value)}
                         required={field.required}
-                        className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                        className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
                         placeholder="Your answer..."
                       />
                     )}
@@ -304,7 +304,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                         onChange={(e) => handleResponseChange(field.id, e.target.value)}
                         required={field.required}
                         rows={3}
-                        className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                        className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
                         placeholder="Provide details..."
                       />
                     )}
@@ -316,19 +316,19 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                         value={String(formResponses[field.id] ?? '')}
                         onChange={(e) => handleResponseChange(field.id, e.target.value)}
                         required={field.required}
-                        className="w-32 p-3 text-lg font-mono text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                        className="w-32 p-3 text-lg font-mono text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
                         placeholder="0"
                       />
                     )}
 
                     {field.type === 'CHECKLIST' && (
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-teal-50 transition-colors">
+                      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-navy-50 transition-colors">
                         <input
                           type="checkbox"
                           checked={!!formResponses[field.id]}
                           onChange={(e) => handleResponseChange(field.id, e.target.checked)}
                           required={field.required && !formResponses[field.id]} // Standard HTML5 validation hack for required checkbox
-                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                          className="w-5 h-5 text-navy-600 rounded border-slate-300 focus:ring-navy-500"
                         />
                         <span className="text-sm text-slate-700 font-medium">Mark as completed</span>
                       </label>
@@ -381,7 +381,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
                   type="button"
                   onClick={toggleVoiceDictation}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm border ${
-                    isListening ? 'bg-red-500 text-white border-red-600 animate-pulse' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'
+                    isListening ? 'bg-red-500 text-white border-red-600 animate-pulse' : 'bg-white text-navy-700 border-navy-200 hover:bg-navy-50'
                   }`}
                   title={isListening ? 'Stop Listening' : 'Speak to Dictate Notes'}
                 >
@@ -398,7 +398,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
               minLength={5}
               rows={3}
               placeholder="Describe key tasks completed, follow-ups, or accomplishments today..."
-              className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 focus:bg-white"
+              className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white"
             />
           </div>
 
@@ -406,7 +406,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-teal-700 hover:bg-teal-800 text-white font-bold text-lg rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full py-4 bg-navy-700 hover:bg-navy-800 text-white font-bold text-lg rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {isLoading ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />

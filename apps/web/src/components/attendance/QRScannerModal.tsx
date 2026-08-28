@@ -118,7 +118,7 @@ export const QRScannerModal: React.FC = () => {
 
             <button
               onClick={() => setForceScan(true)}
-              className="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
             >
               <QrCode className="w-4 h-4" />
               <span>Mark Early Attendance (Force QR Scan)</span>
@@ -144,7 +144,7 @@ export const QRScannerModal: React.FC = () => {
 
           <button
             onClick={() => setAttendanceStamped(true)}
-            className="mt-6 w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+            className="mt-6 w-full py-3.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
           >
             <span>Proceed to Dashboard</span>
             <ArrowRight className="w-4 h-4" />
@@ -198,7 +198,7 @@ export const QRScannerModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 text-center animate-scaleUp">
-        <div className="w-12 h-12 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
+        <div className="w-12 h-12 bg-navy-50 text-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
           <QrCode className="w-6 h-6" />
         </div>
         <h2 className="text-2xl font-bold text-slate-800">Verify Attendance</h2>
@@ -211,7 +211,7 @@ export const QRScannerModal: React.FC = () => {
           <button
             onClick={() => setScanMode('CAMERA')}
             className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              scanMode === 'CAMERA' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-500'
+              scanMode === 'CAMERA' ? 'bg-white text-navy-800 shadow-sm' : 'text-slate-500'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export const QRScannerModal: React.FC = () => {
           <button
             onClick={() => setScanMode('MY_QR')}
             className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              scanMode === 'MY_QR' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-500'
+              scanMode === 'MY_QR' ? 'bg-white text-navy-800 shadow-sm' : 'text-slate-500'
             }`}
           >
             <QrCode className="w-3.5 h-3.5" />
@@ -239,7 +239,7 @@ export const QRScannerModal: React.FC = () => {
           <div className="space-y-4">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
               {isLoading ? (
-                <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto py-8" />
+                <div className="w-8 h-8 border-2 border-navy-600 border-t-transparent rounded-full animate-spin mx-auto py-8" />
               ) : activeToken ? (
                 <QRCodeVisual value={activeToken} size={190} label={user?.employeeCode} />
               ) : (
@@ -250,7 +250,7 @@ export const QRScannerModal: React.FC = () => {
             <button
               onClick={handleScanAndVerify}
               disabled={isLoading || isScanning}
-              className="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
             >
               <span>Verify QR Badge Attendance</span>
               <ArrowRight className="w-4 h-4" />
@@ -263,7 +263,7 @@ export const QRScannerModal: React.FC = () => {
           onClick={() => setAttendanceStamped(true)}
           className="w-full mt-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 flex items-center justify-center gap-1.5 transition-all"
         >
-          <ShieldCheck className="w-4 h-4 text-teal-700" />
+          <ShieldCheck className="w-4 h-4 text-navy-700" />
           <span>Bypass & Enter System Directly</span>
         </button>
       </div>

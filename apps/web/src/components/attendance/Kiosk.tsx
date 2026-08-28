@@ -116,7 +116,7 @@ export const Kiosk: React.FC = () => {
     <div className="flex flex-col h-screen bg-slate-900 text-white relative overflow-hidden">
       {/* Background Decorative */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-teal-600/20 rounded-full blur-[120px]" />
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-navy-600/20 rounded-full blur-[120px]" />
         <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] bg-emerald-600/10 rounded-full blur-[100px]" />
       </div>
 
@@ -124,7 +124,7 @@ export const Kiosk: React.FC = () => {
       <header className="z-10 p-6 flex justify-between items-center border-b border-slate-800 bg-slate-900/50 backdrop-blur-md">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">RRH-CRMS</h1>
-          <p className="text-teal-400 font-medium text-sm tracking-widest uppercase mt-1">Smart Attendance Kiosk</p>
+          <p className="text-navy-400 font-medium text-sm tracking-widest uppercase mt-1">Smart Attendance Kiosk</p>
         </div>
         <div className="flex items-center gap-4 text-sm text-slate-400 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
           <Clock className="w-4 h-4" />
@@ -136,9 +136,9 @@ export const Kiosk: React.FC = () => {
       <main className="flex-1 flex flex-col items-center justify-center z-10 p-6">
         {mode === 'IDLE' && (
           <div className="text-center max-w-lg w-full animate-fade-in-up">
-            <div className="w-32 h-32 mx-auto mb-8 bg-slate-800 rounded-3xl flex items-center justify-center border-2 border-teal-500/30 shadow-[0_0_50px_rgba(20,184,166,0.1)] relative">
-              <div className="absolute inset-0 border border-teal-400/50 rounded-3xl animate-ping opacity-20" />
-              <QrCode className="w-16 h-16 text-teal-400" />
+            <div className="w-32 h-32 mx-auto mb-8 bg-slate-800 rounded-3xl flex items-center justify-center border-2 border-navy-500/30 shadow-[0_0_50px_rgba(20,184,166,0.1)] relative">
+              <div className="absolute inset-0 border border-navy-400/50 rounded-3xl animate-ping opacity-20" />
+              <QrCode className="w-16 h-16 text-navy-400" />
             </div>
             <h2 className="text-4xl font-bold mb-4 text-slate-100">Show your QR Code</h2>
             <p className="text-slate-400 text-lg mb-8">
@@ -153,7 +153,7 @@ export const Kiosk: React.FC = () => {
                 onChange={(e) => setScannedData(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Scanner Input / Paste QR Token"
-                className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 text-center font-mono text-sm opacity-50 hover:opacity-100 transition-opacity"
+                className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-navy-500 text-center font-mono text-sm opacity-50 hover:opacity-100 transition-opacity"
                 autoFocus
               />
               <p className="text-xs text-slate-500 mt-2">Physical scanner will type here automatically.</p>
@@ -163,7 +163,7 @@ export const Kiosk: React.FC = () => {
 
         {mode === 'PROCESSING' && (
           <div className="text-center animate-fade-in-up">
-            <RefreshCw className="w-24 h-24 mx-auto mb-6 text-teal-500 animate-spin" />
+            <RefreshCw className="w-24 h-24 mx-auto mb-6 text-navy-500 animate-spin" />
             <h2 className="text-3xl font-bold text-slate-100">Verifying Identity...</h2>
             <p className="text-slate-400 mt-2 text-lg">Please wait a moment.</p>
           </div>
@@ -171,7 +171,7 @@ export const Kiosk: React.FC = () => {
 
         {mode === 'SUCCESS' && scanResult && (
           <div className="text-center max-w-md w-full bg-slate-800/80 backdrop-blur-xl rounded-3xl p-8 border border-slate-700 shadow-2xl animate-scale-up">
-            <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${scanResult.type === 'CHECK_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'}`}>
+            <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${scanResult.type === 'CHECK_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-navy-500/20 text-navy-400'}`}>
               {scanResult.type === 'CHECK_IN' ? <CheckCircle2 className="w-12 h-12" /> : <LogOut className="w-12 h-12" />}
             </div>
             
@@ -201,7 +201,7 @@ export const Kiosk: React.FC = () => {
               {scanResult.type === 'CHECK_OUT' && scanResult.duration !== undefined && (
                 <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">
                   <span className="text-slate-400">Working Duration</span>
-                  <span className="text-blue-400 font-bold">{Math.floor(scanResult.duration / 60)}h {scanResult.duration % 60}m</span>
+                  <span className="text-navy-400 font-bold">{Math.floor(scanResult.duration / 60)}h {scanResult.duration % 60}m</span>
                 </div>
               )}
             </div>

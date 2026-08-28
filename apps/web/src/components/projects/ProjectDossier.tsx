@@ -54,7 +54,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
     return (
       <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-center justify-center">
-           <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+           <div className="w-8 h-8 border-4 border-navy-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-slate-500 font-bold mt-4">Loading Project Details...</p>
         </div>
       </div>
@@ -68,17 +68,17 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
       <div className="w-full h-full md:h-[90vh] max-w-6xl bg-slate-50 md:rounded-3xl shadow-2xl flex flex-col relative overflow-hidden animate-scaleUp">
         
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 p-6 text-white flex items-start justify-between relative shrink-0">
+        <div className="bg-gradient-to-r from-slate-900 via-navy-950 to-slate-900 p-6 text-white flex items-start justify-between relative shrink-0">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-teal-900/50 text-teal-300 border-teal-700`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-navy-900/50 text-navy-300 border-navy-700`}>
                 {project.status}
               </span>
-              <span className="font-mono text-teal-200 text-xs px-2 py-0.5 bg-black/20 rounded">PRJ-{project.id}</span>
+              <span className="font-mono text-navy-200 text-xs px-2 py-0.5 bg-black/20 rounded">PRJ-{project.id}</span>
             </div>
             <h2 className="text-2xl font-black tracking-tight">{project.name}</h2>
-            <p className="text-sm text-teal-100/80 flex items-center gap-1.5 mt-1">
-              <MapPin className="w-4 h-4 text-teal-400" />
+            <p className="text-sm text-navy-100/80 flex items-center gap-1.5 mt-1">
+              <MapPin className="w-4 h-4 text-navy-400" />
               {project.location}
             </p>
           </div>
@@ -105,7 +105,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
             {/* Meta Data Card */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-1 space-y-4">
               <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-teal-600" /> Key Information
+                <ShieldCheck className="w-4 h-4 text-navy-600" /> Key Information
               </h3>
               
               <div className="space-y-3 text-sm">
@@ -151,7 +151,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
           {/* Properties Embedded Grid */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
-               <Building2 className="w-4 h-4 text-teal-600" /> Associated Inventory ({properties.length})
+               <Building2 className="w-4 h-4 text-navy-600" /> Associated Inventory ({properties.length})
              </h3>
              
              {properties.length === 0 ? (
@@ -163,7 +163,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
                  {properties.map(prop => (
                    <div key={prop.id} className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                        <span className="font-mono text-xs font-bold text-navy-800 bg-navy-50 px-2 py-0.5 rounded border border-navy-200">
                           {prop.property_code}
                         </span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">

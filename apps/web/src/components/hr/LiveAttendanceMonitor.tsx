@@ -79,10 +79,10 @@ export const LiveAttendanceMonitor: React.FC = () => {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
         <h3 className="font-bold text-slate-800 flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 text-teal-600" />
+          <CheckCircle2 className="w-5 h-5 text-navy-600" />
           Today's Check-ins
         </h3>
-        <span className="text-xs font-semibold bg-teal-100 text-teal-800 px-2.5 py-1 rounded-full">
+        <span className="text-xs font-semibold bg-navy-100 text-navy-800 px-2.5 py-1 rounded-full">
           {logs.length} Total
         </span>
       </div>

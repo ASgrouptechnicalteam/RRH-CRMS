@@ -55,10 +55,10 @@ export const UserSettings: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
           <button 
             onClick={() => setTheme('light')}
-            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-colors ${theme === 'light' ? 'border-teal-600 bg-teal-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-colors ${theme === 'light' ? 'border-navy-600 bg-navy-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
           >
-            <Sun className={`w-8 h-8 mb-2 ${theme === 'light' ? 'text-teal-700' : 'text-slate-400'}`} />
-            <span className={`font-semibold ${theme === 'light' ? 'text-teal-800' : 'text-slate-600'}`}>Light</span>
+            <Sun className={`w-8 h-8 mb-2 ${theme === 'light' ? 'text-navy-700' : 'text-slate-400'}`} />
+            <span className={`font-semibold ${theme === 'light' ? 'text-navy-800' : 'text-slate-600'}`}>Light</span>
           </button>
           
           <button 
@@ -88,7 +88,7 @@ export const UserSettings: React.FC = () => {
         
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${permission === 'granted' ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>
+            <div className={`p-2 rounded-lg ${permission === 'granted' ? 'bg-navy-100 text-navy-700' : 'bg-slate-100 text-slate-500'}`}>
               {permission === 'granted' ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
             </div>
             <div>
@@ -109,7 +109,7 @@ export const UserSettings: React.FC = () => {
               disabled={!isSupported || permission === 'denied' || isSubscribing}
               onChange={handleNotificationsToggle}
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600 disabled:opacity-50"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-navy-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-navy-600 disabled:opacity-50"></div>
           </label>
         </div>
       </section>
@@ -123,7 +123,7 @@ export const UserSettings: React.FC = () => {
         
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-700">
+            <div className="p-2 rounded-lg bg-navy-50 text-navy-700">
               <Navigation className="w-5 h-5" />
             </div>
             <div>
@@ -139,7 +139,7 @@ export const UserSettings: React.FC = () => {
               checked={rememberNav}
               onChange={(e) => setRememberNav(e.target.checked)}
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-navy-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-navy-600"></div>
           </label>
         </div>
       </section>

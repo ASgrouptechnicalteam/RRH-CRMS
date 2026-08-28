@@ -572,15 +572,15 @@ export const LeadManagement: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'NEW':
-        return 'bg-sky-100 text-sky-800 border-sky-300';
+        return 'bg-navy-100 text-navy-800 border-navy-300';
       case 'ASSIGNED':
         return 'bg-purple-100 text-purple-800 border-purple-300';
       case 'CONTACTED':
         return 'bg-amber-100 text-amber-800 border-amber-300';
       case 'QUALIFIED':
-        return 'bg-teal-100 text-teal-800 border-teal-300';
+        return 'bg-navy-100 text-navy-800 border-navy-300';
       case 'SITE_VISIT_SCHEDULED':
-        return 'bg-indigo-100 text-indigo-800 border-indigo-300';
+        return 'bg-navy-100 text-navy-800 border-navy-300';
       case 'WON':
         return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       case 'LOST':
@@ -593,13 +593,13 @@ export const LeadManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-teal-700/30">
+      <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-5 h-5 text-teal-400" />
+            <TrendingUp className="w-5 h-5 text-navy-400" />
             <h2 className="text-xl font-extrabold tracking-tight">Leads & Performance-Weighted Engine</h2>
           </div>
-          <p className="text-xs text-teal-200/80">
+          <p className="text-xs text-navy-200/80">
             Intelligent auto-distribution algorithm based on telecaller score, response speed, and active load
           </p>
         </div>
@@ -619,7 +619,7 @@ export const LeadManagement: React.FC = () => {
               onClick={handleBulkUploadBtnClick}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 shadow"
             >
-              <Upload className="w-4 h-4 text-teal-300" />
+              <Upload className="w-4 h-4 text-navy-300" />
               <span>Bulk CSV Upload</span>
             </button>
           )}
@@ -627,7 +627,7 @@ export const LeadManagement: React.FC = () => {
           <button
             onClick={() => setShowAddModal(true)}
             data-tour="lead-create"
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-teal-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+            className="px-4 py-2 bg-navy-500 hover:bg-navy-400 text-navy-950 font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>Add New Lead</span>
@@ -640,7 +640,7 @@ export const LeadManagement: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-teal-700" />
+              <ShieldCheck className="w-5 h-5 text-navy-700" />
               <h3 className="text-sm font-bold text-slate-800">Telecaller Intake Volume & Weighted Load Balancing</h3>
             </div>
             <span className="text-[11px] font-mono text-slate-400">Total Leads: {monitorData.totalLeadsCount}</span>
@@ -651,7 +651,7 @@ export const LeadManagement: React.FC = () => {
               <div key={tc.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-800">{tc.fullName}</span>
-                  <span className="text-[10px] font-mono font-bold text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-mono font-bold text-navy-700 bg-navy-100 px-1.5 py-0.5 rounded">
                     {tc.employeeCode}
                   </span>
                 </div>
@@ -676,7 +676,7 @@ export const LeadManagement: React.FC = () => {
               placeholder="Search Lead ID, Name, Phone, Assignee..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
             />
           </div>
 
@@ -685,7 +685,7 @@ export const LeadManagement: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="py-1.5 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold text-slate-700"
+              className="py-1.5 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 font-semibold text-slate-700"
             >
               <option value="ALL">All Statuses</option>
               <option value="NEW">NEW</option>
@@ -721,7 +721,7 @@ export const LeadManagement: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {filteredLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-teal-900">{lead.lead_code}</td>
+                    <td className="py-3.5 px-4 font-mono font-bold text-navy-900">{lead.lead_code}</td>
                     <td className="py-3.5 px-4">
                       <div>
                         <div className="font-bold text-slate-800">{lead.customer_name}</div>
@@ -745,7 +745,7 @@ export const LeadManagement: React.FC = () => {
                         <select
                           value={lead.assigned_to?.id || ''}
                           onChange={(e) => handleUpdateLeadAssignment(lead.id, e.target.value)}
-                          className="w-full max-w-[120px] p-1.5 text-[10px] uppercase font-extrabold tracking-wider bg-teal-50 border border-teal-200 rounded text-teal-800 focus:ring-2 focus:ring-teal-500"
+                          className="w-full max-w-[120px] p-1.5 text-[10px] uppercase font-extrabold tracking-wider bg-navy-50 border border-navy-200 rounded text-navy-800 focus:ring-2 focus:ring-navy-500"
                         >
                           <option value="">Unassigned Pool</option>
                           {employees.map(emp => (
@@ -757,7 +757,7 @@ export const LeadManagement: React.FC = () => {
                       ) : (
                         lead.assigned_to ? (
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-[10px]">
+                            <div className="w-6 h-6 rounded-full bg-navy-100 text-navy-800 flex items-center justify-center font-bold text-[10px]">
                               {lead.assigned_to.employee_code.slice(-3)}
                             </div>
                             <div>
@@ -775,7 +775,7 @@ export const LeadManagement: React.FC = () => {
                         <select
                           value={lead.status}
                           onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value, lead.status)}
-                          className={`p-1.5 text-[10px] uppercase font-extrabold tracking-wider border rounded focus:ring-2 focus:ring-teal-500 ${getStatusBadge(lead.status)}`}
+                          className={`p-1.5 text-[10px] uppercase font-extrabold tracking-wider border rounded focus:ring-2 focus:ring-navy-500 ${getStatusBadge(lead.status)}`}
                         >
                           <option value="NEW">NEW</option>
                           <option value="ASSIGNED">ASSIGNED</option>
@@ -841,7 +841,7 @@ export const LeadManagement: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-mono font-bold text-teal-800 text-sm">{selectedLead.lead_code}</span>
+              <span className="font-mono font-bold text-navy-800 text-sm">{selectedLead.lead_code}</span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(selectedLead.status)}`}>
                 {selectedLead.status}
               </span>
@@ -871,14 +871,14 @@ export const LeadManagement: React.FC = () => {
                   className="col-span-2 grid grid-cols-2 gap-3 bg-white rounded-xl p-3 border border-slate-200 shadow-sm"
                 >
                   {/* Introduced By — permanent attribution */}
-                  <div className="flex items-start gap-2.5 p-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
-                    <div className="mt-0.5 p-1.5 bg-indigo-100 rounded-lg flex-shrink-0">
-                      <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                  <div className="flex items-start gap-2.5 p-2.5 bg-navy-50 rounded-xl border border-navy-100">
+                    <div className="mt-0.5 p-1.5 bg-navy-100 rounded-lg flex-shrink-0">
+                      <ShieldCheck className="w-3.5 h-3.5 text-navy-600" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-indigo-500 text-[9px] uppercase font-black tracking-widest block">Introduced By</span>
-                      <div className="font-bold text-indigo-900 mt-0.5 truncate">{selectedLead.created_by?.full_name || selectedLead.created_by?.employee_code || 'System'}</div>
-                      <span className="text-[9px] text-indigo-400 font-semibold">Permanent Attribution</span>
+                      <span className="text-navy-500 text-[9px] uppercase font-black tracking-widest block">Introduced By</span>
+                      <div className="font-bold text-navy-900 mt-0.5 truncate">{selectedLead.created_by?.full_name || selectedLead.created_by?.employee_code || 'System'}</div>
+                      <span className="text-[9px] text-navy-400 font-semibold">Permanent Attribution</span>
                     </div>
                   </div>
                   {/* Assigned To — operational / mutable */}
@@ -955,10 +955,10 @@ export const LeadManagement: React.FC = () => {
                   fetchMatchesForLead(selectedLead.id);
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                  dossierTab === 'MATCHES' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                  dossierTab === 'MATCHES' ? 'bg-navy-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Building2 className="w-3.5 h-3.5 text-teal-300" />
+                <Building2 className="w-3.5 h-3.5 text-navy-300" />
                 <span>Live Matches ({matches.length})</span>
               </button>
               <button
@@ -967,10 +967,10 @@ export const LeadManagement: React.FC = () => {
                   fetchSavedInterests(selectedLead.id);
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                  dossierTab === 'INTERESTS' ? 'bg-indigo-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                  dossierTab === 'INTERESTS' ? 'bg-navy-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
+                <ShieldCheck className="w-3.5 h-3.5 text-navy-300" />
                 <span>Saved Interests ({savedInterests.length})</span>
               </button>
               <button
@@ -1003,10 +1003,10 @@ export const LeadManagement: React.FC = () => {
                   fetchLeadSalesOpps(selectedLead.id);
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                  dossierTab === 'SALES_OPPS' ? 'bg-indigo-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                  dossierTab === 'SALES_OPPS' ? 'bg-navy-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <LineChart className="w-3.5 h-3.5 text-indigo-300" />
+                <LineChart className="w-3.5 h-3.5 text-navy-300" />
                 <span>Sales Opportunities</span>
               </button>
             </div>
@@ -1022,7 +1022,7 @@ export const LeadManagement: React.FC = () => {
                         <button
                           onClick={() => handleConvertToCustomer(selectedLead.id)}
                           disabled={isConverting}
-                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] rounded-xl shadow transition-all flex items-center gap-1 disabled:opacity-70"
+                          className="px-3 py-1 bg-navy-600 hover:bg-navy-700 text-white font-extrabold text-[11px] rounded-xl shadow transition-all flex items-center gap-1 disabled:opacity-70"
                         >
                           <Building2 className="w-3.5 h-3.5" />
                           <span>{isConverting ? 'Converting...' : 'Convert to Customer'}</span>
@@ -1044,7 +1044,7 @@ export const LeadManagement: React.FC = () => {
                         onClick={() => handleUpdateStatus(selectedLead.id, st)}
                         className={`px-3 py-1 rounded-xl text-[11px] font-bold border transition-all ${
                           selectedLead.status === st
-                            ? 'bg-teal-700 text-white border-teal-800 shadow'
+                            ? 'bg-navy-700 text-white border-navy-800 shadow'
                             : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
                         }`}
                       >
@@ -1084,7 +1084,7 @@ export const LeadManagement: React.FC = () => {
                     {matches.map((m: MatchItem) => (
                       <div key={m.propertyId} className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 shadow-sm">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-teal-900 text-xs">{m.propertyCode}</span>
+                          <span className="font-mono font-bold text-navy-900 text-xs">{m.propertyCode}</span>
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${m.matchScore >= 80 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'}`}>
                             {m.matchScore}% Match Score
                           </span>
@@ -1107,7 +1107,7 @@ export const LeadManagement: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleAddInterest(selectedLead.id, m.propertyId)}
-                            className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                            className="flex-1 py-2 bg-navy-50 hover:bg-navy-100 text-navy-700 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
                           >
                             <ShieldCheck className="w-4 h-4" />
                             <span>Save to Interests</span>
@@ -1134,7 +1134,7 @@ export const LeadManagement: React.FC = () => {
                 ) : (
                   <div className="space-y-3">
                     {savedInterests.map((interest: SavedInterestItem) => (
-                      <div key={interest.id} className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100 space-y-3 shadow-sm relative">
+                      <div key={interest.id} className="bg-navy-50/50 rounded-2xl p-4 border border-navy-100 space-y-3 shadow-sm relative">
                         <button
                           onClick={() => handleRemoveInterest(selectedLead.id, interest.property_id)}
                           className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -1143,7 +1143,7 @@ export const LeadManagement: React.FC = () => {
                           <X className="w-4 h-4" />
                         </button>
                         <div className="pr-8">
-                          <span className="font-mono font-bold text-indigo-900 text-xs">{interest.property.property_code}</span>
+                          <span className="font-mono font-bold text-navy-900 text-xs">{interest.property.property_code}</span>
                           <h4 className="font-extrabold text-slate-900 text-sm mt-1">{interest.property.title}</h4>
                           <p className="text-[11px] text-slate-600 mt-0.5">
                             Added on {new Date(interest.created_at).toLocaleDateString()}
@@ -1287,7 +1287,7 @@ export const LeadManagement: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-indigo-600" /> Linked Sales Opportunities
+                    <Briefcase className="w-4 h-4 text-navy-600" /> Linked Sales Opportunities
                   </h4>
                   <button
                     onClick={async () => {
@@ -1305,7 +1305,7 @@ export const LeadManagement: React.FC = () => {
                         showToast(message, 'error');
                       }
                     }}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 bg-navy-600 hover:bg-navy-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> Create Sales Opportunity
                   </button>
@@ -1313,7 +1313,7 @@ export const LeadManagement: React.FC = () => {
                 
                 {isLoadingSalesOpps ? (
                   <div className="py-8 flex justify-center">
-                    <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-navy-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 ) : leadSalesOpps.length === 0 ? (
                   <div className="py-10 text-center text-xs text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
@@ -1331,7 +1331,7 @@ export const LeadManagement: React.FC = () => {
                               {opp.project?.name ? `${opp.project.name} Sales Opportunity` : 'Open Sales Opportunity'}
                             </h5>
                           </div>
-                          <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100">
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-navy-50 text-navy-700 rounded border border-navy-100">
                             {opp.stage.replace(/_/g, ' ')}
                           </span>
                         </div>
@@ -1352,7 +1352,7 @@ export const LeadManagement: React.FC = () => {
                             navigate('/sales-pipeline');
                             showToast(`Navigating to Sales Pipeline for Opportunity #${opp.id}`, 'info');
                           }}
-                          className="mt-2 w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-indigo-700 font-semibold text-xs rounded-lg transition-colors"
+                          className="mt-2 w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors"
                         >
                           View in Sales Pipeline
                         </button>
@@ -1381,7 +1381,7 @@ export const LeadManagement: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-2">
-              <Upload className="w-5 h-5 text-teal-700" />
+              <Upload className="w-5 h-5 text-navy-700" />
               <h3 className="font-extrabold text-slate-800 text-lg">Bulk CSV Lead Importer Preview</h3>
             </div>
             <p className="text-xs text-slate-600">
@@ -1429,7 +1429,7 @@ export const LeadManagement: React.FC = () => {
                 type="button"
                 disabled={isBulkUploading}
                 onClick={handleConfirmBulkUpload}
-                className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5"
+                className="px-5 py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5"
               >
                 {isBulkUploading ? 'Auto-Distributing...' : `Confirm & Import (${parsedBulkLeads.length} Leads)`}
               </button>

@@ -125,7 +125,7 @@ export const MDControlDashboard: React.FC = () => {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-6 h-6 text-teal-700" />
+          <ShieldCheck className="w-6 h-6 text-navy-700" />
           <div>
             <h3 className="text-lg font-bold text-slate-800">MD Employee Control & Attendance Exemption</h3>
             <p className="text-xs text-slate-500">Configure employee QR badges, role privileges, and exemptions</p>
@@ -139,7 +139,7 @@ export const MDControlDashboard: React.FC = () => {
             placeholder="Search code, branch, role..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
           />
         </div>
       </div>
@@ -164,7 +164,7 @@ export const MDControlDashboard: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredEmployees.map((emp) => (
                 <tr key={emp.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-teal-900">
+                  <td className="py-3.5 px-4 font-mono font-bold text-navy-900">
                     {emp.employeeCode}
                   </td>
                   <td className="py-3.5 px-4 text-slate-600">
@@ -192,7 +192,7 @@ export const MDControlDashboard: React.FC = () => {
                       onClick={() => setSelectedQrEmployee(emp)}
                       className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 mx-auto border border-slate-300"
                     >
-                      <QrCode className="w-3.5 h-3.5 text-teal-700" />
+                      <QrCode className="w-3.5 h-3.5 text-navy-700" />
                       <span>QR Badge</span>
                     </button>
                   </td>
@@ -202,13 +202,13 @@ export const MDControlDashboard: React.FC = () => {
                       disabled={updatingId === emp.id}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all ${
                         emp.attendanceRequired
-                          ? 'bg-teal-100 text-teal-800 hover:bg-teal-200'
+                          ? 'bg-navy-100 text-navy-800 hover:bg-navy-200'
                           : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                       }`}
                     >
                       {emp.attendanceRequired ? (
                         <>
-                          <ToggleRight className="w-5 h-5 text-teal-700" />
+                          <ToggleRight className="w-5 h-5 text-navy-700" />
                           <span>Required</span>
                         </>
                       ) : (
@@ -237,7 +237,7 @@ export const MDControlDashboard: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="w-10 h-10 bg-teal-50 text-teal-700 rounded-xl flex items-center justify-center mx-auto mb-2">
+            <div className="w-10 h-10 bg-navy-50 text-navy-700 rounded-xl flex items-center justify-center mx-auto mb-2">
               <QrCode className="w-5 h-5" />
             </div>
 
@@ -256,7 +256,7 @@ export const MDControlDashboard: React.FC = () => {
 
             <button
               onClick={() => window.print()}
-              className="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
             >
               <Printer className="w-4 h-4" />
               <span>Print Employee QR Badge</span>

@@ -58,7 +58,7 @@ export const DocumentVerifyModal: React.FC<Props> = ({ documentId, documentCode,
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-blue-600" />
+            <CheckCircle className="w-5 h-5 text-navy-600" />
             Verify Document
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
@@ -67,7 +67,7 @@ export const DocumentVerifyModal: React.FC<Props> = ({ documentId, documentCode,
         </div>
 
         <p className="text-xs text-slate-500">
-          Document: <span className="font-mono font-bold text-teal-900">{documentCode}</span>
+          Document: <span className="font-mono font-bold text-navy-900">{documentCode}</span>
         </p>
 
         {/* Decision */}
@@ -111,7 +111,7 @@ export const DocumentVerifyModal: React.FC<Props> = ({ documentId, documentCode,
             onChange={(e) => { setNotes(e.target.value); setError(''); }}
             placeholder={decision === 'REJECTED' ? 'Provide a reason for rejection...' : 'Optional notes'}
             rows={3}
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 resize-none"
           />
           {decision === 'REJECTED' && !notes.trim() && (
             <p className="text-xs text-red-500 mt-1">Please provide a reason for rejection.</p>

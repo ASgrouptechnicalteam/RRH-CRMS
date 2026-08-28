@@ -169,7 +169,7 @@ export const TaskManager: React.FC = () => {
       case 'HIGH':
         return <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">HIGH</span>;
       case 'MEDIUM':
-        return <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">MEDIUM</span>;
+        return <span className="bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 rounded">MEDIUM</span>;
       default:
         return <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">LOW</span>;
     }
@@ -185,11 +185,11 @@ export const TaskManager: React.FC = () => {
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative">
       {/* Cheer-Up Toast */}
       {cheerUpToast && (
-        <div className="fixed top-6 right-6 z-50 bg-gradient-to-r from-teal-700 to-emerald-600 text-white p-4 rounded-2xl shadow-2xl border border-teal-400/30 flex items-center gap-3 animate-bounce">
+        <div className="fixed top-6 right-6 z-50 bg-gradient-to-r from-navy-700 to-emerald-600 text-white p-4 rounded-2xl shadow-2xl border border-navy-400/30 flex items-center gap-3 animate-bounce">
           <Sparkles className="w-6 h-6 text-amber-300 shrink-0" />
           <div>
             <h4 className="font-bold text-sm">Celebration Time!</h4>
-            <p className="text-xs text-teal-50">{cheerUpToast}</p>
+            <p className="text-xs text-navy-50">{cheerUpToast}</p>
           </div>
         </div>
       )}
@@ -200,7 +200,7 @@ export const TaskManager: React.FC = () => {
           <button
             onClick={() => setActiveTab('my_tasks')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'my_tasks' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
+              activeTab === 'my_tasks' ? 'bg-navy-700 text-white shadow-md' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
             }`}
           >
             My Assigned Tasks ({tasks.length})
@@ -210,7 +210,7 @@ export const TaskManager: React.FC = () => {
             <button
               onClick={() => setActiveTab('team_tasks')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeTab === 'team_tasks' ? 'bg-teal-700 text-white shadow-md' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
+                activeTab === 'team_tasks' ? 'bg-navy-700 text-white shadow-md' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -222,7 +222,7 @@ export const TaskManager: React.FC = () => {
         {canCreateTask && (
           <button
             onClick={() => setIsCreating(true)}
-            className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+            className="px-3.5 py-2 bg-navy-700 hover:bg-navy-800 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Task</span>
@@ -237,7 +237,7 @@ export const TaskManager: React.FC = () => {
             key={st}
             onClick={() => setFilterStatus(st)}
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-              filterStatus === st ? 'bg-teal-100 text-teal-800 font-bold' : 'text-slate-500 hover:bg-slate-100'
+              filterStatus === st ? 'bg-navy-100 text-navy-800 font-bold' : 'text-slate-500 hover:bg-slate-100'
             }`}
           >
             {st.replace('_', ' ')}
@@ -270,7 +270,7 @@ export const TaskManager: React.FC = () => {
                 {t.description && <p className="text-xs text-slate-500">{t.description}</p>}
 
                 {t.assignee && (
-                  <div className="text-[11px] text-teal-800 font-medium">
+                  <div className="text-[11px] text-navy-800 font-medium">
                     Assigned to: <span className="font-bold">{t.assignee.employee_code}</span>
                   </div>
                 )}
@@ -293,7 +293,7 @@ export const TaskManager: React.FC = () => {
                   <select
                     value={t.status}
                     onChange={(e) => handleUpdateStatus(t.id, e.target.value)}
-                    className="p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-teal-600"
+                    className="p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-navy-600"
                   >
                     <option value="PENDING">PENDING</option>
                     <option value="IN_PROGRESS">IN PROGRESS</option>
@@ -328,7 +328,7 @@ export const TaskManager: React.FC = () => {
                   placeholder="e.g. Review Gachibowli Property Documentation"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
                 />
               </div>
 
@@ -339,7 +339,7 @@ export const TaskManager: React.FC = () => {
                   placeholder="Provide task scope, instructions, or specific criteria..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
                 />
               </div>
 
@@ -349,7 +349,7 @@ export const TaskManager: React.FC = () => {
                   <select
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-medium"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 font-medium"
                   >
                     <option value="">Assign to Myself ({user?.employeeCode})</option>
                     {employees.map((emp) => (
@@ -365,7 +365,7 @@ export const TaskManager: React.FC = () => {
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-600 font-medium"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 font-medium"
                   >
                     <option value="LOW">LOW</option>
                     <option value="MEDIUM">MEDIUM</option>
@@ -382,14 +382,14 @@ export const TaskManager: React.FC = () => {
                   required
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-teal-600"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-navy-600"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2"
+                className="w-full py-3 bg-navy-700 hover:bg-navy-800 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 <span>Create & Assign Task</span>

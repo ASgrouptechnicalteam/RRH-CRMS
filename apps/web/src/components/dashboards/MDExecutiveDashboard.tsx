@@ -44,7 +44,7 @@ export const MDExecutiveDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-canvas rounded-xl p-6 border border-neutral-200">
         <div className="flex items-center gap-3">
-          <ShieldCheck className="w-5 h-5 text-teal-500" />
+          <ShieldCheck className="w-5 h-5 text-navy-500" />
           <div>
             <div className="text-navy font-semibold">Good morning, {user?.fullName || user?.employeeCode || 'Executive'}</div>
             <div className="text-sm text-neutral-500">Here's what needs your attention today</div>

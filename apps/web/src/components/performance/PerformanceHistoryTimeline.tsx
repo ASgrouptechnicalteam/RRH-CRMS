@@ -25,13 +25,13 @@ export const PerformanceHistoryTimeline: React.FC = () => {
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
         <div className="flex items-center gap-2">
-          <History className="w-5 h-5 text-teal-700" />
+          <History className="w-5 h-5 text-navy-700" />
           <div>
             <h3 className="text-lg font-bold text-slate-800">Performance History & Audit Log</h3>
             <p className="text-xs text-slate-500">Track every score boost, attendance stamp, and daily target outcome</p>
           </div>
         </div>
-        <span className="text-xs font-mono font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-xl">
+        <span className="text-xs font-mono font-bold text-navy-800 bg-navy-50 border border-navy-200 px-3 py-1 rounded-xl">
           Base: 50 pts
         </span>
       </div>

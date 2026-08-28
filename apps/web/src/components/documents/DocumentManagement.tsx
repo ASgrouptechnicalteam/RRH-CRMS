@@ -53,11 +53,11 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLORS: Record<string, string> = {
   KYC_PAN: 'bg-amber-100 text-amber-800',
   KYC_AADHAAR: 'bg-orange-100 text-orange-800',
-  BOOKING_AGREEMENT: 'bg-blue-100 text-blue-800',
+  BOOKING_AGREEMENT: 'bg-navy-100 text-navy-800',
   PAYMENT_RECEIPT: 'bg-green-100 text-green-800',
   BOOKING_RECEIPT: 'bg-emerald-100 text-emerald-800',
   SALE_DEED: 'bg-purple-100 text-purple-800',
-  PROPERTY_TITLE: 'bg-indigo-100 text-indigo-800',
+  PROPERTY_TITLE: 'bg-navy-100 text-navy-800',
   PROPERTY_PLAN: 'bg-cyan-100 text-cyan-800',
   PROPOSAL: 'bg-pink-100 text-pink-800',
   OTHER: 'bg-slate-100 text-slate-800',
@@ -156,7 +156,7 @@ export const DocumentManagement: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <FileText className="w-8 h-8 text-blue-600" />
+              <FileText className="w-8 h-8 text-navy-600" />
               Document Management
             </h1>
             <p className="text-sm text-slate-500 font-medium mt-1">
@@ -166,7 +166,7 @@ export const DocumentManagement: React.FC = () => {
           {canCreate && (
             <button
               onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg flex items-center gap-2 transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg flex items-center gap-2 transition-colors"
             >
               <Upload className="w-4 h-4" />
               Upload Document
@@ -193,14 +193,14 @@ export const DocumentManagement: React.FC = () => {
               placeholder="Search by title, code, or filename..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 transition-shadow"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             >
               <option value="">All Types</option>
               {Object.entries(TYPE_LABELS).map(([key, label]) => (
@@ -210,7 +210,7 @@ export const DocumentManagement: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             >
               <option value="">All Status</option>
               <option value="ACTIVE">Active</option>
@@ -219,7 +219,7 @@ export const DocumentManagement: React.FC = () => {
             <select
               value={filterVerification}
               onChange={(e) => setFilterVerification(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             >
               <option value="">All Verification</option>
               <option value="PENDING">Pending</option>
@@ -247,7 +247,7 @@ export const DocumentManagement: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 border-navy-600 border-t-transparent rounded-full animate-spin"></div>
                       <span className="font-semibold text-xs uppercase tracking-widest">Loading Documents...</span>
                     </div>
                   </td>
@@ -264,10 +264,10 @@ export const DocumentManagement: React.FC = () => {
                   <tr
                     key={doc.id}
                     onClick={() => setSelectedDocumentId(doc.id)}
-                    className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
+                    className="hover:bg-navy-50/50 cursor-pointer transition-colors group"
                   >
                     <td className="px-4 py-3 sm:px-6 sm:py-4">
-                      <span className="font-mono font-bold text-teal-900 text-xs bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                      <span className="font-mono font-bold text-navy-900 text-xs bg-navy-50 px-2 py-0.5 rounded border border-navy-200">
                         {doc.document_code}
                       </span>
                     </td>

@@ -31,7 +31,7 @@ export const SalesManagerDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-teal-700">
+      <div className="flex items-center justify-center py-20 text-navy-700">
         <div className="w-8 h-8 border-4 border-current border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -43,9 +43,9 @@ export const SalesManagerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-navy via-slate-900 to-teal-950 p-6 rounded-3xl text-white shadow-xl">
+      <div className="bg-gradient-to-r from-navy via-slate-900 to-navy-950 p-6 rounded-3xl text-white shadow-xl">
         <h1 className="text-2xl font-black mb-2">Sales Manager Command Center</h1>
-        <p className="text-sm text-teal-100 opacity-90">
+        <p className="text-sm text-navy-100 opacity-90">
           Monitor team pipeline execution and lead attribution credit.
         </p>
       </div>
@@ -53,12 +53,12 @@ export const SalesManagerDashboard: React.FC = () => {
       {/* KPI Strip */}
       <div data-tour="dashboard-kpis" className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Total Leads" value={kpis.totalLeads} icon={<Users className="w-5 h-5" />} />
-        <KpiCard label="New Leads" value={kpis.newLeads} icon={<Activity className="w-5 h-5" />} color="bg-blue-50 text-blue-700" />
+        <KpiCard label="New Leads" value={kpis.newLeads} icon={<Activity className="w-5 h-5" />} color="bg-navy-50 text-navy-700" />
         <KpiCard label="Unassigned" value={kpis.unassignedLeads} icon={<AlertCircle className="w-5 h-5" />} color="bg-orange-50 text-orange-700" />
         <KpiCard label="Contacted" value={kpis.contacted} icon={<PhoneCall className="w-5 h-5" />} />
         <KpiCard label="Qualified" value={kpis.qualified} icon={<CheckCircle className="w-5 h-5" />} color="bg-emerald-50 text-emerald-700" />
         <KpiCard label="Site Visits" value={kpis.siteVisits} icon={<Calendar className="w-5 h-5" />} color="bg-purple-50 text-purple-700" />
-        <KpiCard label="Won" value={kpis.won} icon={<Award className="w-5 h-5" />} color="bg-teal-50 text-teal-700" />
+        <KpiCard label="Won" value={kpis.won} icon={<Award className="w-5 h-5" />} color="bg-navy-50 text-navy-700" />
         <KpiCard label="Conversion" value={`${kpis.conversionRate.toFixed(1)}%`} icon={<TrendingUp className="w-5 h-5" />} />
       </div>
 
@@ -75,7 +75,7 @@ export const SalesManagerDashboard: React.FC = () => {
                   <div key={p.status} className="flex items-center gap-3">
                     <span className="w-32 text-xs font-bold text-slate-600 truncate">{p.status}</span>
                     <div className="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
-                      <div className="bg-teal-500 h-full rounded-full transition-all duration-1000" style={{ width: `${percent}%` }} />
+                      <div className="bg-navy-500 h-full rounded-full transition-all duration-1000" style={{ width: `${percent}%` }} />
                     </div>
                     <span className="w-8 text-right text-xs font-bold text-slate-800">{p.count}</span>
                   </div>
@@ -88,7 +88,7 @@ export const SalesManagerDashboard: React.FC = () => {
           <div data-tour="dashboard-team-performance" className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm overflow-x-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-extrabold text-slate-800 flex items-center gap-2">
-                <Users className="w-5 h-5 text-teal-600" />
+                <Users className="w-5 h-5 text-navy-600" />
                 Team Performance
               </h3>
               <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Operational — Based on Assigned Leads</span>
@@ -114,7 +114,7 @@ export const SalesManagerDashboard: React.FC = () => {
                     <td className="py-3 text-right font-medium">{tp.assignedLeads}</td>
                     <td className="py-3 text-right font-medium">{tp.contacted}</td>
                     <td className="py-3 text-right font-medium">{tp.qualified}</td>
-                    <td className="py-3 text-right font-bold text-teal-600">{tp.won}</td>
+                    <td className="py-3 text-right font-bold text-navy-600">{tp.won}</td>
                     <td className="py-3 text-right font-mono text-xs">{tp.conversionRate.toFixed(1)}%</td>
                   </tr>
                 ))}
@@ -128,17 +128,17 @@ export const SalesManagerDashboard: React.FC = () => {
           </div>
 
           {/* Lead Attribution */}
-          <div data-tour="dashboard-lead-attribution" className="bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 shadow-sm overflow-x-auto">
+          <div data-tour="dashboard-lead-attribution" className="bg-navy-50/50 p-5 rounded-3xl border border-navy-100 shadow-sm overflow-x-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-indigo-900 flex items-center gap-2">
-                <Award className="w-5 h-5 text-indigo-600" />
+              <h3 className="font-extrabold text-navy-900 flex items-center gap-2">
+                <Award className="w-5 h-5 text-navy-600" />
                 Top Lead Introducers
               </h3>
-              <span className="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Attribution Credit — Original Introduction</span>
+              <span className="px-2.5 py-1 bg-navy-100 text-navy-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Attribution Credit — Original Introduction</span>
             </div>
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b border-indigo-200/50 text-indigo-700/70">
+                <tr className="border-b border-navy-200/50 text-navy-700/70">
                   <th className="py-2 font-bold">Introduced By</th>
                   <th className="py-2 font-bold text-right">Introduced</th>
                   <th className="py-2 font-bold text-right">Qualified</th>
@@ -146,22 +146,22 @@ export const SalesManagerDashboard: React.FC = () => {
                   <th className="py-2 font-bold text-right">Conv. %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-indigo-100/50">
+              <tbody className="divide-y divide-navy-100/50">
                 {leadAttribution.map((la: LeadAttributionRow) => (
-                  <tr key={la.employee.id} className="hover:bg-indigo-50 transition-colors">
+                  <tr key={la.employee.id} className="hover:bg-navy-50 transition-colors">
                     <td className="py-3">
-                      <div className="font-bold text-indigo-900">{la.employee.full_name}</div>
-                      <div className="text-xs text-indigo-500 font-mono">{la.employee.employee_code}</div>
+                      <div className="font-bold text-navy-900">{la.employee.full_name}</div>
+                      <div className="text-xs text-navy-500 font-mono">{la.employee.employee_code}</div>
                     </td>
-                    <td className="py-3 text-right font-bold text-indigo-700">{la.leadsIntroduced}</td>
-                    <td className="py-3 text-right font-medium text-indigo-800">{la.qualified}</td>
+                    <td className="py-3 text-right font-bold text-navy-700">{la.leadsIntroduced}</td>
+                    <td className="py-3 text-right font-medium text-navy-800">{la.qualified}</td>
                     <td className="py-3 text-right font-bold text-emerald-600">{la.won}</td>
-                    <td className="py-3 text-right font-mono text-xs text-indigo-600">{la.conversionRate.toFixed(1)}%</td>
+                    <td className="py-3 text-right font-mono text-xs text-navy-600">{la.conversionRate.toFixed(1)}%</td>
                   </tr>
                 ))}
                 {leadAttribution.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-indigo-400 text-xs">No attribution data available.</td>
+                    <td colSpan={5} className="text-center py-6 text-navy-400 text-xs">No attribution data available.</td>
                   </tr>
                 )}
               </tbody>
@@ -193,7 +193,7 @@ export const SalesManagerDashboard: React.FC = () => {
           {/* Site Visits */}
           <div data-tour="dashboard-site-visits" className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
             <h3 className="font-extrabold text-slate-800 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-teal-600" />
+              <Calendar className="w-5 h-5 text-navy-600" />
               Site Visits
             </h3>
             <div className="space-y-3">

@@ -32,8 +32,8 @@ interface RefundItem {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   PENDING:                 { label: 'Pending Review',         color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200' },
-  ACCOUNTANT_APPROVED:     { label: 'Accountant Approved',    color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200' },
-  MD_APPROVED:             { label: 'MD Approved — Pay Now',  color: 'text-teal-700',   bg: 'bg-teal-50 border-teal-200' },
+  ACCOUNTANT_APPROVED:     { label: 'Accountant Approved',    color: 'text-navy-700',   bg: 'bg-navy-50 border-navy-200' },
+  MD_APPROVED:             { label: 'MD Approved — Pay Now',  color: 'text-navy-700',   bg: 'bg-navy-50 border-navy-200' },
   REFUNDED:                { label: 'Refunded ✓',             color: 'text-slate-500',  bg: 'bg-slate-50 border-slate-200' },
   REJECTED_BY_ACCOUNTANT:  { label: 'Rejected',               color: 'text-red-700',    bg: 'bg-red-50 border-red-200' },
   REJECTED_BY_MD:          { label: 'Rejected by MD',         color: 'text-red-700',    bg: 'bg-red-50 border-red-200' },
@@ -135,7 +135,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-slate-700 text-sm">
           {isMD ? 'Awaiting Your Final Approval' : 'Refund Requests Queue'}
-          <span className="ml-2 bg-teal-100 text-teal-700 text-xs font-bold px-2 py-0.5 rounded-full">{refunds.length}</span>
+          <span className="ml-2 bg-navy-100 text-navy-700 text-xs font-bold px-2 py-0.5 rounded-full">{refunds.length}</span>
         </h3>
         <button onClick={fetchQueue} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
           <RefreshCw className="w-4 h-4" />
@@ -161,7 +161,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
                   <p className="text-sm text-slate-600 mt-1 line-clamp-2">{r.purpose}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-lg font-extrabold text-teal-800">₹{r.amount.toLocaleString('en-IN')}</p>
+                  <p className="text-lg font-extrabold text-navy-800">₹{r.amount.toLocaleString('en-IN')}</p>
                   <p className="text-[11px] text-slate-400">{new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                 </div>
               </div>
@@ -205,7 +205,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
                     <button
                       disabled={isWorking}
                       onClick={() => setNoteModal({ id: r.id, action: 'approve', forMD: false })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-600 text-white text-xs font-bold hover:bg-navy-700 transition-colors disabled:opacity-50"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
                       Approve
@@ -226,7 +226,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
                   <button
                     disabled={isWorking}
                     onClick={() => handleMarkRefunded(r.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-600 text-white text-xs font-bold hover:bg-navy-700 transition-colors disabled:opacity-50"
                   >
                     {isWorking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <IndianRupee className="w-3.5 h-3.5" />}
                     Mark as Refunded
@@ -239,7 +239,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
                     <button
                       disabled={isWorking}
                       onClick={() => setNoteModal({ id: r.id, action: 'approve', forMD: true })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-600 text-white text-xs font-bold hover:bg-navy-700 transition-colors disabled:opacity-50"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
                       Final Approve
@@ -266,7 +266,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
             <div className="flex items-center gap-3">
               {noteModal.action === 'approve' ? (
-                <CheckCircle className="w-6 h-6 text-teal-600" />
+                <CheckCircle className="w-6 h-6 text-navy-600" />
               ) : (
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               )}
@@ -279,7 +279,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
               onChange={(e) => setNoteText(e.target.value)}
               rows={3}
               placeholder={noteModal.action === 'reject' ? 'Reason for rejection (required)...' : 'Add a note (optional)...'}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-navy-500"
             />
             {noteModal.action === 'reject' && !noteText.trim() && (
               <p className="text-xs text-red-500">Please provide a reason for rejection.</p>
@@ -303,7 +303,7 @@ export const AccountantRefundQueue: React.FC<Props> = ({ isMD }) => {
                 }}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 ${
                   noteModal.action === 'approve'
-                    ? 'bg-teal-700 text-white hover:bg-teal-800'
+                    ? 'bg-navy-700 text-white hover:bg-navy-800'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
               >

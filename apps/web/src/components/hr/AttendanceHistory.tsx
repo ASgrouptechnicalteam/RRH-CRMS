@@ -92,7 +92,7 @@ export const AttendanceHistory: React.FC = () => {
               placeholder="Search employee name or ID..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             />
           </div>
           
@@ -101,13 +101,13 @@ export const AttendanceHistory: React.FC = () => {
               type="date"
               value={date}
               onChange={(e) => { setDate(e.target.value); setPage(1); }}
-              className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-600"
+              className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 text-slate-600"
             />
             
             <select
               value={status}
               onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-              className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-600"
+              className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 text-slate-600"
             >
               <option value="">All Statuses</option>
               <option value="PRESENT">Present</option>
@@ -171,7 +171,7 @@ export const AttendanceHistory: React.FC = () => {
                           {outTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
                         </div>
                       ) : (
-                        <span className="text-xs font-semibold px-2 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100">Active</span>
+                        <span className="text-xs font-semibold px-2 py-1 bg-navy-50 text-navy-600 rounded-md border border-navy-100">Active</span>
                       )}
                     </td>
                     <td className="px-6 py-3">

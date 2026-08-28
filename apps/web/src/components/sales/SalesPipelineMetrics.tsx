@@ -26,8 +26,8 @@ export const SalesPipelineMetrics: React.FC<MetricsProps> = ({ metrics, isLoadin
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {/* Active Pipeline Deals */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4">
-        <div className="bg-indigo-100 p-3 rounded-xl">
-          <Activity className="w-5 h-5 text-indigo-600" />
+        <div className="bg-navy-100 p-3 rounded-xl">
+          <Activity className="w-5 h-5 text-navy-600" />
         </div>
         <div>
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Deals</p>
@@ -53,12 +53,12 @@ export const SalesPipelineMetrics: React.FC<MetricsProps> = ({ metrics, isLoadin
 
       {/* Weighted Sale Value */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4">
-        <div className="bg-blue-100 p-3 rounded-xl">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
+        <div className="bg-navy-100 p-3 rounded-xl">
+          <TrendingUp className="w-5 h-5 text-navy-600" />
         </div>
         <div>
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Weighted Pipeline Value</p>
-          <span className="text-xl font-black text-blue-700">
+          <span className="text-xl font-black text-navy-700">
             ₹{((metrics.totalWeightedValue || 0) / 100000).toFixed(2)} L
           </span>
         </div>
@@ -68,7 +68,7 @@ export const SalesPipelineMetrics: React.FC<MetricsProps> = ({ metrics, isLoadin
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-center">
         <div className="flex justify-between items-center text-sm">
           <span className="font-semibold text-slate-600">Booking Initiated</span>
-          <span className="font-bold text-teal-600">{metrics.bookingInitiatedCount || 0}</span>
+          <span className="font-bold text-navy-600">{metrics.bookingInitiatedCount || 0}</span>
         </div>
         <div className="flex justify-between items-center text-sm mt-1 border-t border-slate-100 pt-1">
           <span className="font-semibold text-slate-600">Dropped Deals</span>

@@ -145,7 +145,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id 
-                  ? 'border-indigo-600 text-indigo-700 bg-white' 
+                  ? 'border-navy-600 text-navy-700 bg-white' 
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'
               }`}
             >
@@ -162,7 +162,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
               <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-5 animate-fadeIn">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Property Title *</label>
-                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -170,12 +170,12 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                     <label className="block text-xs font-bold text-slate-700 mb-1">Price (₹) *</label>
                     <div className="relative">
                       <Coins className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                      <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                      <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Property Category</label>
-                    <select value={propertyType} onChange={e => setPropertyType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+                    <select value={propertyType} onChange={e => setPropertyType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                       <option value="APARTMENT">Apartment</option>
                       <option value="INDEPENDENT_HOUSE">Independent House</option>
                       <option value="DUPLEX">Duplex</option>
@@ -192,7 +192,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
-                  <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"></textarea>
+                  <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"></textarea>
                 </div>
 
                 {projects.length > 0 && (
@@ -200,7 +200,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                     <label className="block text-xs font-bold text-slate-700 mb-1">Associated Project / Site</label>
                     <div className="relative">
                       <Building2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                      <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+                      <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                         <option value="">-- Standalone Property (No Project) --</option>
                         {projects.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
@@ -216,31 +216,31 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
               <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-5 animate-fadeIn">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Searchable Location (City/Area) *</label>
-                  <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Miyapur, Hyderabad" />
+                  <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Miyapur, Hyderabad" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
-                    <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                    <input type="text" value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
-                    <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                    <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Locality / Neighborhood</label>
-                    <input type="text" value={locality} onChange={e => setLocality(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                    <input type="text" value={locality} onChange={e => setLocality(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Pincode</label>
-                    <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                    <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Full Address</label>
-                  <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"></textarea>
+                  <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"></textarea>
                 </div>
               </div>
             )}
@@ -254,21 +254,21 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                         <label className="block text-xs font-bold text-slate-700 mb-1">Bedrooms</label>
                         <div className="relative">
                           <BedDouble className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                          <input type="number" value={bedrooms} onChange={e => setBedrooms(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                          <input type="number" value={bedrooms} onChange={e => setBedrooms(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Bathrooms</label>
                         <div className="relative">
                           <Bath className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                          <input type="number" value={bathrooms} onChange={e => setBathrooms(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                          <input type="number" value={bathrooms} onChange={e => setBathrooms(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                         </div>
                       </div>
                     </>
                   )}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Furnishing</label>
-                    <select value={furnishing} onChange={e => setFurnishing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+                    <select value={furnishing} onChange={e => setFurnishing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                       <option value="">Select...</option>
                       <option value="Fully Furnished">Fully Furnished</option>
                       <option value="Semi-Furnished">Semi-Furnished</option>
@@ -277,7 +277,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Facing</label>
-                    <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+                    <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                       <option value="">Select...</option>
                       <option value="East">East</option>
                       <option value="West">West</option>
@@ -288,17 +288,17 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Carpet Area (sq.ft)</label>
-                    <input type="number" value={carpetArea} onChange={e => setCarpetArea(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                    <input type="number" value={carpetArea} onChange={e => setCarpetArea(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Built-up Area (sq.ft)</label>
-                    <input type="number" value={builtupArea} onChange={e => setBuiltupArea(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                    <input type="number" value={builtupArea} onChange={e => setBuiltupArea(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Amenities (Comma separated)</label>
-                  <textarea value={amenities} onChange={e => setAmenities(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Swimming Pool, Gym, 24x7 Security"></textarea>
+                  <textarea value={amenities} onChange={e => setAmenities(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Swimming Pool, Gym, 24x7 Security"></textarea>
                 </div>
               </div>
             )}
@@ -340,7 +340,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                         }
                       }}
                     />
-                    <label htmlFor={`upload-edit-img-${property.id}`} className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors ${isUploading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer'}`}>
+                    <label htmlFor={`upload-edit-img-${property.id}`} className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors ${isUploading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-navy-50 text-navy-700 hover:bg-navy-100 cursor-pointer'}`}>
                       {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                       {isUploading ? 'Uploading...' : 'Add Photo'}
                     </label>
@@ -350,11 +350,11 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                 {localImages.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {localImages.map(img => (
-                      <div key={img.id} className={`relative group rounded-xl overflow-hidden aspect-square border-2 transition-colors ${img.is_primary ? 'border-indigo-500 shadow-md' : 'border-slate-200'}`}>
+                      <div key={img.id} className={`relative group rounded-xl overflow-hidden aspect-square border-2 transition-colors ${img.is_primary ? 'border-navy-500 shadow-md' : 'border-slate-200'}`}>
                         <img src={resolveImageUrl(img.image_url)} alt="Property" className="w-full h-full object-cover" />
                         
                         {img.is_primary && (
-                          <div className="absolute top-2 left-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
+                          <div className="absolute top-2 left-2 bg-navy-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
                             <Star className="w-3 h-3 fill-current" /> COVER
                           </div>
                         )}
@@ -377,7 +377,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                                   showToast('Failed to set cover', 'error');
                                 }
                               }}
-                              className="px-3 py-1.5 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-indigo-50 transition-colors"
+                              className="px-3 py-1.5 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-navy-50 transition-colors"
                             >
                               Set as Cover
                             </button>
@@ -439,7 +439,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
           <button 
             onClick={handleSubmit}
             disabled={isLoading}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex items-center gap-2"
+            className="px-6 py-2.5 bg-navy-600 hover:bg-navy-700 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex items-center gap-2"
           >
             {isLoading ? 'Saving...' : 'Save All Changes'}
           </button>

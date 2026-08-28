@@ -117,22 +117,22 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
         return (
           <div className="space-y-6 animate-fadeIn">
             {/* Lead Attribution Badge */}
-            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3">
-              <div className="p-1.5 bg-indigo-100 rounded-lg flex-shrink-0">
-                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            <div className="flex items-center gap-3 bg-navy-50 border border-navy-100 rounded-2xl px-4 py-3">
+              <div className="p-1.5 bg-navy-100 rounded-lg flex-shrink-0">
+                <ShieldCheck className="w-4 h-4 text-navy-600" />
               </div>
               <div>
-                <span className="text-indigo-500 text-[9px] uppercase font-black tracking-widest block">Introduced By</span>
-                <span className="text-indigo-900 text-xs font-bold">You — automatically recorded</span>
-                <span className="text-indigo-400 text-[9px] block">Attribution credit is assigned to you and cannot be changed</span>
+                <span className="text-navy-500 text-[9px] uppercase font-black tracking-widest block">Introduced By</span>
+                <span className="text-navy-900 text-xs font-bold">You — automatically recorded</span>
+                <span className="text-navy-400 text-[9px] block">Attribution credit is assigned to you and cannot be changed</span>
               </div>
             </div>
 
-            <div className="bg-sky-50 border-l-4 border-sky-500 p-4 rounded-r-xl mb-6">
-              <h3 className="font-bold text-sky-900 text-sm flex items-center gap-2">
+            <div className="bg-navy-50 border-l-4 border-navy-500 p-4 rounded-r-xl mb-6">
+              <h3 className="font-bold text-navy-900 text-sm flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" /> Lead Capture Prompt:
               </h3>
-              <p className="text-sky-800 text-xs mt-1 italic">
+              <p className="text-navy-800 text-xs mt-1 italic">
                 "Hello, am I speaking with [Name]? I'm calling from Radha Real Homes regarding your recent inquiry..."
               </p>
             </div>
@@ -144,7 +144,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                 <label className="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
                 <div className="relative">
                   <User className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} autoFocus className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-bold" placeholder="e.g. Rahul Sharma" />
+                  <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} autoFocus className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-bold" placeholder="e.g. Rahul Sharma" />
                 </div>
               </div>
 
@@ -152,7 +152,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                 <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
                 <div className="relative">
                   <Phone className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-bold font-mono text-lg" placeholder="98765 43210" />
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-bold font-mono text-lg" placeholder="98765 43210" />
                 </div>
               </div>
 
@@ -161,12 +161,12 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                   <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
                   <div className="relative">
                     <Mail className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="Optional" />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="Optional" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Lead Source</label>
-                  <select value={source} onChange={e => setSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm font-semibold">
+                  <select value={source} onChange={e => setSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm font-semibold">
                     <option value="ORGANIC_SEARCH">Organic / Website</option>
                     <option value="FACEBOOK_ADS">Facebook / Instagram Ads</option>
                     <option value="GOOGLE_ADS">Google Ads</option>
@@ -184,11 +184,11 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Referral Person Name</label>
-                      <input type="text" value={referralPersonName} onChange={e => setReferralPersonName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="Name of referrer" />
+                      <input type="text" value={referralPersonName} onChange={e => setReferralPersonName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="Name of referrer" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Referral Employee ID</label>
-                      <input type="number" value={referralEmployeeId} onChange={e => setReferralEmployeeId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="Optional Employee ID" />
+                      <input type="number" value={referralEmployeeId} onChange={e => setReferralEmployeeId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="Optional Employee ID" />
                     </div>
                   </div>
                 </div>
@@ -199,19 +199,19 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Campaign</label>
-                    <input type="text" value={campaign} onChange={e => setCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. Summer Sale" />
+                    <input type="text" value={campaign} onChange={e => setCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="e.g. Summer Sale" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">UTM Source</label>
-                    <input type="text" value={utmSource} onChange={e => setUtmSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. google" />
+                    <input type="text" value={utmSource} onChange={e => setUtmSource(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="e.g. google" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">UTM Medium</label>
-                    <input type="text" value={utmMedium} onChange={e => setUtmMedium(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. cpc" />
+                    <input type="text" value={utmMedium} onChange={e => setUtmMedium(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="e.g. cpc" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">UTM Campaign</label>
-                    <input type="text" value={utmCampaign} onChange={e => setUtmCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm" placeholder="e.g. summer_sale" />
+                    <input type="text" value={utmCampaign} onChange={e => setUtmCampaign(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm" placeholder="e.g. summer_sale" />
                   </div>
                 </div>
               </div>
@@ -247,7 +247,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                     <button 
                       key={pt.val}
                       onClick={() => setPropertyType(pt.val)}
-                      className={`px-4 py-2 rounded-full border text-sm font-bold transition-colors ${propertyType === pt.val ? 'bg-sky-600 text-white border-sky-700 shadow-md' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                      className={`px-4 py-2 rounded-full border text-sm font-bold transition-colors ${propertyType === pt.val ? 'bg-navy-600 text-white border-navy-700 shadow-md' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                     >
                       {pt.label}
                     </button>
@@ -263,7 +263,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                       <button 
                         key={bhk}
                         onClick={() => setBhkPreference(bhk)}
-                        className={`px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${bhkPreference === bhk ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                        className={`px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${bhkPreference === bhk ? 'bg-navy-600 text-white border-navy-700' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                       >
                         {bhk}
                       </button>
@@ -276,7 +276,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                 <label className="block text-xs font-bold text-slate-700 mb-1">Preferred Location / Area</label>
                 <div className="relative">
                   <MapPin className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={preferredLocation} onChange={e => setPreferredLocation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500" placeholder="e.g. Miyapur, Gachibowli, or Any" />
+                  <input type="text" value={preferredLocation} onChange={e => setPreferredLocation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Miyapur, Gachibowli, or Any" />
                 </div>
               </div>
             </div>
@@ -357,7 +357,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-4 shadow-sm">
               <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">Lead Snapshot</h3>
               <div className="grid grid-cols-2 text-sm gap-y-3">
-                <div><span className="text-slate-400 block text-xs">Name & Phone</span><span className="font-semibold text-sky-800">{customerName} - {phone}</span></div>
+                <div><span className="text-slate-400 block text-xs">Name & Phone</span><span className="font-semibold text-navy-800">{customerName} - {phone}</span></div>
                 <div><span className="text-slate-400 block text-xs">Requirement</span><span className="font-semibold">{propertyType.replace('RESIDENTIAL_', '').replace('COMMERCIAL_', '')} {bhkPreference ? `(${bhkPreference})` : ''}</span></div>
                 <div><span className="text-slate-400 block text-xs">Budget</span><span className="font-semibold">{budgetRange || 'Not specified'}</span></div>
                 <div><span className="text-slate-400 block text-xs">Timeline</span><span className="font-semibold">{buyingTimeline || 'Not specified'}</span></div>
@@ -373,7 +373,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
                 onChange={e => setNotes(e.target.value)} 
                 rows={4} 
                 placeholder="Any specific requests, objections, or general summary of the call..."
-                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 text-sm"
+                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm"
               ></textarea>
             </div>
           </div>
@@ -387,7 +387,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-2 text-sky-700 font-bold">
+          <div className="flex items-center gap-2 text-navy-700 font-bold">
             <Phone className="w-5 h-5" />
             <span>Lead Capture</span>
           </div>
@@ -400,10 +400,10 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
         <div className="flex bg-slate-50 border-b border-slate-100 px-6 py-3">
           {[1,2,3,4].map(num => (
             <div key={num} className="flex-1 flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step >= num ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step >= num ? 'bg-navy-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
                 {num}
               </div>
-              {num < 4 && <div className={`flex-1 h-1 mx-2 rounded-full transition-colors ${step > num ? 'bg-sky-600' : 'bg-slate-200'}`} />}
+              {num < 4 && <div className={`flex-1 h-1 mx-2 rounded-full transition-colors ${step > num ? 'bg-navy-600' : 'bg-slate-200'}`} />}
             </div>
           ))}
         </div>
@@ -427,7 +427,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
             <button 
               onClick={handleNext}
               disabled={step === 1 && (!customerName || !phone)}
-              className="px-8 py-2.5 bg-sky-700 text-white font-bold rounded-xl shadow-md hover:bg-sky-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-8 py-2.5 bg-navy-700 text-white font-bold rounded-xl shadow-md hover:bg-navy-800 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               Continue <ArrowRight className="w-4 h-4" />
             </button>

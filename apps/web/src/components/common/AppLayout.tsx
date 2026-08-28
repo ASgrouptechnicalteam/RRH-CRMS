@@ -93,7 +93,7 @@ export const AppLayout: React.FC<{
                   <NavLink to="/settings" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
                     Settings
                   </NavLink>
-                  <button onClick={() => { setIsProfileMenuOpen(false); window.dispatchEvent(new Event('restart-product-tour')); }} className="w-full text-left px-4 py-2 text-sm text-teal-600 hover:bg-teal-50">
+                  <button onClick={() => { setIsProfileMenuOpen(false); window.dispatchEvent(new Event('restart-product-tour')); }} className="w-full text-left px-4 py-2 text-sm text-navy-600 hover:bg-navy-50">
                     Take Product Tour
                   </button>
                   <button onClick={() => { setIsProfileMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-red-50">
@@ -291,7 +291,7 @@ const SidebarNav: React.FC = () => {
                     data-tour={`sidebar-${item.id}`}
                     className={({ isActive }) =>
                       `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                        isActive ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                        isActive ? 'bg-navy-50 text-navy-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                       }`
                     }
                   >

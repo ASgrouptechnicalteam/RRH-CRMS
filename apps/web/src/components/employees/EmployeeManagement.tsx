@@ -316,7 +316,7 @@ export const EmployeeManagement: React.FC = () => {
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shadow-inner border border-teal-100">
+            <div className="w-12 h-12 rounded-2xl bg-navy-50 text-navy-700 flex items-center justify-center shadow-inner border border-navy-100">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -332,7 +332,7 @@ export const EmployeeManagement: React.FC = () => {
               resetForm();
               setShowAddModal(true);
             }}
-            className="py-3 px-5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
+            className="py-3 px-5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
             <span>Onboard New Employee</span>
@@ -369,9 +369,9 @@ export const EmployeeManagement: React.FC = () => {
             <p className="text-2xl font-extrabold text-amber-800 font-mono mt-0.5">{totalExempt}</p>
           </div>
 
-          <div className="p-3.5 bg-teal-50 rounded-xl border border-teal-200/60">
-            <span className="text-[11px] text-teal-700 font-semibold uppercase">Active Branches</span>
-            <p className="text-2xl font-extrabold text-teal-800 font-mono mt-0.5">{branches.length}</p>
+          <div className="p-3.5 bg-navy-50 rounded-xl border border-navy-200/60">
+            <span className="text-[11px] text-navy-700 font-semibold uppercase">Active Branches</span>
+            <p className="text-2xl font-extrabold text-navy-800 font-mono mt-0.5">{branches.length}</p>
           </div>
         </div>
       </div>
@@ -385,7 +385,7 @@ export const EmployeeManagement: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by Employee ID, Name, Phone, Branch, or Role..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-600 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-navy-600 font-medium"
           />
         </div>
 
@@ -394,7 +394,7 @@ export const EmployeeManagement: React.FC = () => {
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            className="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-navy-600"
           >
             <option value="ALL">All Branches</option>
             {branches.map((b) => (
@@ -407,7 +407,7 @@ export const EmployeeManagement: React.FC = () => {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            className="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-navy-600"
           >
             <option value="ALL">All Roles</option>
             <option value="MD">Managing Director (MD)</option>
@@ -424,7 +424,7 @@ export const EmployeeManagement: React.FC = () => {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-xs text-slate-400 space-y-2">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-teal-600" />
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-navy-600" />
             <p>Loading Employee Details.</p>
           </div>
         ) : filteredEmployees.length === 0 ? (
@@ -453,7 +453,7 @@ export const EmployeeManagement: React.FC = () => {
                     className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                   >
                     <td className="py-3.5 px-4">
-                      <div className="font-mono font-bold text-teal-900">{emp.employeeCode}</div>
+                      <div className="font-mono font-bold text-navy-900">{emp.employeeCode}</div>
                       <div className="font-bold text-slate-800 text-sm">{emp.fullName}</div>
                     </td>
 
@@ -493,7 +493,7 @@ export const EmployeeManagement: React.FC = () => {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setDossierEmp(emp)}
-                          className="p-1.5 text-slate-600 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-colors border border-slate-200"
+                          className="p-1.5 text-slate-600 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors border border-slate-200"
                           title="View Employee Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -501,7 +501,7 @@ export const EmployeeManagement: React.FC = () => {
 
                         <button
                           onClick={() => setQrBadgeEmp(emp)}
-                          className="p-1.5 text-slate-600 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-colors border border-slate-200"
+                          className="p-1.5 text-slate-600 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors border border-slate-200"
                           title="View & Print Visual 2D QR ID Badge"
                         >
                           <QrCode className="w-4 h-4" />
@@ -542,7 +542,7 @@ export const EmployeeManagement: React.FC = () => {
           <div className="w-full max-w-3xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 my-8 animate-scaleUp">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-teal-700 text-white font-bold text-lg flex items-center justify-center shadow-md">
+                <div className="w-12 h-12 rounded-2xl bg-navy-700 text-white font-bold text-lg flex items-center justify-center shadow-md">
                   {dossierEmp.employeeCode.split('-')[1] || 'EMP'}
                 </div>
                 <div>
@@ -574,7 +574,7 @@ export const EmployeeManagement: React.FC = () => {
               {/* Section 1: Contact & Personal */}
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
                 <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-teal-700" />
+                  <User className="w-4 h-4 text-navy-700" />
                   <span>Personal & Contact Information</span>
                 </h4>
                 <div className="grid grid-cols-3 gap-3">
@@ -608,7 +608,7 @@ export const EmployeeManagement: React.FC = () => {
               {/* Section 2: Addresses & Emergency */}
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
                 <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-teal-700" />
+                  <MapPin className="w-4 h-4 text-navy-700" />
                   <span>Addresses & Emergency Contacts</span>
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
@@ -641,7 +641,7 @@ export const EmployeeManagement: React.FC = () => {
               {/* Section 3: Government KYC & Payroll Bank */}
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
                 <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <CreditCard className="w-4 h-4 text-teal-700" />
+                  <CreditCard className="w-4 h-4 text-navy-700" />
                   <span>Government KYC & Payroll Bank Details</span>
                 </h4>
                 <div className="grid grid-cols-4 gap-3">
@@ -675,7 +675,7 @@ export const EmployeeManagement: React.FC = () => {
               {/* Section 4: Employment & Salary CTC */}
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
                 <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <Briefcase className="w-4 h-4 text-teal-700" />
+                  <Briefcase className="w-4 h-4 text-navy-700" />
                   <span>Employment Terms & Salary CTC</span>
                 </h4>
                 <div className="grid grid-cols-4 gap-3">
@@ -693,7 +693,7 @@ export const EmployeeManagement: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Monthly Salary CTC</span>
-                    <span className="font-mono font-extrabold text-teal-800 text-sm">{formatSalaryRange(dossierEmp.salaryCtc)}</span>
+                    <span className="font-mono font-extrabold text-navy-800 text-sm">{formatSalaryRange(dossierEmp.salaryCtc)}</span>
                   </div>
                 </div>
 
@@ -737,7 +737,7 @@ export const EmployeeManagement: React.FC = () => {
 
             <button
               onClick={() => window.print()}
-              className="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
             >
               <Printer className="w-4 h-4" />
               <span>Print Official QR ID Badge</span>

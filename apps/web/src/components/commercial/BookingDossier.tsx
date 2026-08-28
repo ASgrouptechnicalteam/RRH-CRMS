@@ -102,7 +102,7 @@ export const BookingDossier: React.FC = () => {
           <div className="flex gap-2">
             {booking.status === 'PENDING' && user?.permissions?.includes(Permissions.BOOKINGS_CONFIRM) && (
               <>
-                <button onClick={() => handleUpdateStatus('CONFIRMED')} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-teal-700">Confirm Booking</button>
+                <button onClick={() => handleUpdateStatus('CONFIRMED')} className="bg-navy-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-navy-700">Confirm Booking</button>
               </>
             )}
             {booking.status !== 'CANCELLED' && user?.permissions?.includes(Permissions.BOOKINGS_CANCEL) && (
@@ -114,7 +114,7 @@ export const BookingDossier: React.FC = () => {
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="font-bold text-sm text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2">
-              <User className="w-4 h-4 text-teal-600" /> Customer Details
+              <User className="w-4 h-4 text-navy-600" /> Customer Details
             </h3>
             <div className="text-sm">
               <p><strong>Name:</strong> {booking.customer?.first_name} {booking.customer?.last_name}</p>
@@ -122,7 +122,7 @@ export const BookingDossier: React.FC = () => {
             </div>
             
             <h3 className="font-bold text-sm text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2 pt-4">
-              <MapPin className="w-4 h-4 text-teal-600" /> Property Details
+              <MapPin className="w-4 h-4 text-navy-600" /> Property Details
             </h3>
             <div className="text-sm">
               <p><strong>Title:</strong> {booking.property?.title}</p>
@@ -132,7 +132,7 @@ export const BookingDossier: React.FC = () => {
 
           <div className="space-y-4">
             <h3 className="font-bold text-sm text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2">
-              <IndianRupee className="w-4 h-4 text-teal-600" /> Financials
+              <IndianRupee className="w-4 h-4 text-navy-600" /> Financials
             </h3>
             <div className="text-sm bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
               <div className="flex justify-between">
@@ -158,7 +158,7 @@ export const BookingDossier: React.FC = () => {
             Payment History
           </h3>
           {user?.permissions?.includes(Permissions.PAYMENTS_CREATE) && booking.status !== 'CANCELLED' && (
-            <button onClick={() => setShowPaymentModal(true)} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-teal-700 flex items-center gap-1">
+            <button onClick={() => setShowPaymentModal(true)} className="bg-navy-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-navy-700 flex items-center gap-1">
               <IndianRupee className="w-3 h-3" /> Record Payment
             </button>
           )}
@@ -176,7 +176,7 @@ export const BookingDossier: React.FC = () => {
                     <p className="text-[10px] text-slate-400">Ref: {p.reference_number || 'N/A'} • {new Date(p.payment_date).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold ${p.status === 'SUCCESS' ? 'bg-teal-100 text-teal-800' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`}>
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold ${p.status === 'SUCCESS' ? 'bg-navy-100 text-navy-800' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`}>
                       {p.status}
                     </span>
                   </div>

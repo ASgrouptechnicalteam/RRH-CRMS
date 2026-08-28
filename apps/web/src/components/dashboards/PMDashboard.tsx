@@ -43,7 +43,7 @@ export const PMDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* PM Header Banner */}
-      <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-teal-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-amber-700/30">
+      <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-navy-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-amber-700/30">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Building className="w-5 h-5 text-amber-400" />

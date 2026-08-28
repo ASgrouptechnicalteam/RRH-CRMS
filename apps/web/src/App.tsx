@@ -148,7 +148,7 @@ const AppShell: React.FC = () => {
 
   if (authStatus === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-navy-950">
         <LoginForm />
       </div>
     );
@@ -299,7 +299,7 @@ const AppShell: React.FC = () => {
           <Suspense
             fallback={
               <div className="py-20 text-center text-xs text-slate-400 font-semibold flex flex-col items-center justify-center gap-3">
-                <div className="w-7 h-7 border-3 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-7 h-7 border-3 border-navy-600 border-t-transparent rounded-full animate-spin"></div>
                 <span>Loading workstation module...</span>
               </div>
             }
@@ -332,7 +332,7 @@ const AppShell: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={() => { setShowLogoutIntentModal(false); setPendingLogout(true); setShowReportModal(true); }}
-                className="w-full p-3 bg-teal-700 text-white font-bold rounded-xl hover:bg-teal-800 transition-colors shadow-md"
+                className="w-full p-3 bg-navy-700 text-white font-bold rounded-xl hover:bg-navy-800 transition-colors shadow-md"
               >
                 Submit Daily Log & Logout
               </button>

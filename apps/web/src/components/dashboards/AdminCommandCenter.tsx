@@ -224,7 +224,7 @@ export const AdminCommandCenter: React.FC = () => {
       {/* Loading state */}
       {isLoading && !metrics && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 flex flex-col items-center gap-3 text-slate-500">
-          <Activity className="w-7 h-7 animate-pulse text-teal-700" />
+          <Activity className="w-7 h-7 animate-pulse text-navy-700" />
           <span className="text-sm font-semibold">Connecting to secure admin endpoints…</span>
         </div>
       )}
@@ -341,7 +341,7 @@ export const AdminCommandCenter: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-600 mt-1">
-                        Actor: <strong className="font-mono text-teal-800">{log.actor_code}</strong>{' '}
+                        Actor: <strong className="font-mono text-navy-800">{log.actor_code}</strong>{' '}
                         <span className="text-slate-400">({log.actor_role})</span>
                       </div>
                       {(log.old_value || log.new_value) && (

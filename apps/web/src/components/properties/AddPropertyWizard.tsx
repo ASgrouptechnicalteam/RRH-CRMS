@@ -325,11 +325,11 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
           return (
             <div key={s} className={`flex items-center gap-3 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 
-                ${isActive ? 'border-teal-600 text-teal-700 bg-teal-50' : isPassed ? 'border-teal-500 bg-teal-500 text-white' : 'border-slate-300 text-slate-500'}
+                ${isActive ? 'border-navy-600 text-navy-700 bg-navy-50' : isPassed ? 'border-navy-500 bg-navy-500 text-white' : 'border-slate-300 text-slate-500'}
               `}>
                 {isPassed ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
               </div>
-              <span className={`font-semibold text-sm ${isActive ? 'text-teal-900' : 'text-slate-600'}`}>{s}</span>
+              <span className={`font-semibold text-sm ${isActive ? 'text-navy-900' : 'text-slate-600'}`}>{s}</span>
             </div>
           );
         })}
@@ -352,10 +352,10 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                     key={c.id}
                     onClick={() => { setCategory(c.id); handleNext(); }}
                     className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${
-                      category === c.id ? 'border-teal-600 bg-teal-50 shadow-md' : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50'
+                      category === c.id ? 'border-navy-600 bg-navy-50 shadow-md' : 'border-slate-200 hover:border-navy-300 hover:bg-slate-50'
                     }`}
                   >
-                    <c.icon className={`w-8 h-8 ${category === c.id ? 'text-teal-700' : 'text-slate-400'}`} />
+                    <c.icon className={`w-8 h-8 ${category === c.id ? 'text-navy-700' : 'text-slate-400'}`} />
                     <span className="text-sm font-semibold text-slate-700 text-center">{c.label}</span>
                   </button>
                 ))}
@@ -391,7 +391,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Property Title *</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Luxurious 3 BHK in Miyapur" />
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Luxurious 3 BHK in Miyapur" />
               </div>
 
               {projects.length > 0 && (
@@ -399,7 +399,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                   <label className="block text-xs font-bold text-slate-700 mb-1">Associated Project / Site</label>
                   <div className="relative">
                     <Building2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                    <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white text-sm">
+                    <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 bg-white text-sm">
                       <option value="">-- Standalone Property (No Project) --</option>
                       {projects.map(p => (
                         <option key={p.id} value={p.id}>{p.name} ({p.location})</option>
@@ -413,7 +413,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                 <label className="block text-xs font-bold text-slate-700 mb-1">Expected Price (₹) *</label>
                                 <div className="relative">
                   <Coins className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="0.00" />
+                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="0.00" />
                 </div>
                 {price && (
                   <p className="mt-1.5 text-xs text-slate-600">
@@ -438,9 +438,9 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Maximize className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                    <input type="number" value={areaSqft} onChange={e => setAreaSqft(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. 1500" />
+                    <input type="number" value={areaSqft} onChange={e => setAreaSqft(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. 1500" />
                   </div>
-                  <select value={areaUnit} onChange={e => setAreaUnit(e.target.value)} className="w-36 p-2.5 border border-slate-300 rounded-xl bg-white text-sm focus:ring-2 focus:ring-teal-500">
+                  <select value={areaUnit} onChange={e => setAreaUnit(e.target.value)} className="w-36 p-2.5 border border-slate-300 rounded-xl bg-white text-sm focus:ring-2 focus:ring-navy-500">
                     {AREA_UNITS.map(u => (
                       <option key={u.value} value={u.value}>{u.label}</option>
                     ))}
@@ -572,7 +572,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
               {/* Description is universal */}
               <div className="col-span-2 pt-4">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Detailed Description</label>
-                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Describe the key selling points..."></textarea>
+                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Describe the key selling points..."></textarea>
               </div>
             </div>
           </div>
@@ -586,7 +586,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Listing Type *</label>
-                <select value={listingType} onChange={e => setListingType(e.target.value as 'NEW' | 'RESALE')} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500">
+                <select value={listingType} onChange={e => setListingType(e.target.value as 'NEW' | 'RESALE')} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option value="NEW">New</option>
                   <option value="RESALE">Resale</option>
                 </select>
@@ -595,39 +595,39 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
               <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
                 {state !== '__OTHER__' ? (
-                  <select value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white text-sm">
+                  <select value={state} onChange={e => setState(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 bg-white text-sm">
                     <option value="">Select State</option>
                     {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     <option value="__OTHER__">Other (specify)</option>
                   </select>
                 ) : (
-                  <input type="text" value={stateOther} onChange={e => setStateOther(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Enter state" />
+                  <input type="text" value={stateOther} onChange={e => setStateOther(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Enter state" />
                 )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
                 {city !== '__OTHER__' ? (
-                  <select value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white text-sm" disabled={!state || state === '__OTHER__'}>
+                  <select value={city} onChange={e => setCity(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 bg-white text-sm" disabled={!state || state === '__OTHER__'}>
                     <option value="">Select City</option>
                     {(state && state !== '__OTHER__' ? (MAJOR_CITIES[state] || []) : []).map(c => <option key={c} value={c}>{c}</option>)}
                     <option value="__OTHER__">Other (specify)</option>
                   </select>
                 ) : (
-                  <input type="text" value={cityOther} onChange={e => setCityOther(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Enter city" />
+                  <input type="text" value={cityOther} onChange={e => setCityOther(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Enter city" />
                 )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Locality / Area</label>
-                <input type="text" value={locality} onChange={e => setLocality(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Miyapur" />
+                <input type="text" value={locality} onChange={e => setLocality(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Miyapur" />
               </div>
 
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Pincode</label>
                 <div className="flex gap-2">
-                  <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. 500049" />
-                  <button type="button" onClick={lookupPincode} disabled={isLookingUp} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors shrink-0">
+                  <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. 500049" />
+                  <button type="button" onClick={lookupPincode} disabled={isLookingUp} className="px-4 py-2 bg-navy-600 hover:bg-navy-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors shrink-0">
                     {isLookingUp ? '…' : 'Auto-fill'}
                   </button>
                 </div>
@@ -636,19 +636,19 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">City / Region Area *</label>
-                <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="e.g. Miyapur, Hyderabad" />
+                <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Miyapur, Hyderabad" />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Complete Address / Landmark</label>
-              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Plot No. 45, Beside Main Road..."></textarea>
+              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Plot No. 45, Beside Main Road..."></textarea>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Property Facing</label>
-                <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500">
+                <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
                   <option value="">Select Facing Direction</option>
                   <option value="EAST">East</option>
                   <option value="WEST">West</option>
@@ -662,8 +662,8 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">GPS Coordinates (Internal Only — Not Public)</label>
                 <div className="grid grid-cols-2 gap-3">
-                  <input type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Latitude" />
-                  <input type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500" placeholder="Longitude" />
+                  <input type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Latitude" />
+                  <input type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Longitude" />
                 </div>
               </div>
             </div>
@@ -679,7 +679,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {category && (
                 <p className="text-[10px] text-slate-500 mb-2">
-                  Showing amenities for: <span className="font-semibold text-teal-700">{category.replace('_', ' ')}</span>
+                  Showing amenities for: <span className="font-semibold text-navy-700">{category.replace('_', ' ')}</span>
                   {groupForCategory(category) === 'LAND' && ' (Land)'}
                 </p>
               )}
@@ -688,10 +688,10 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                   key={am} 
                   onClick={() => toggleAmenity(am)}
                   className={`p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition-colors ${
-                    amenities.includes(am) ? 'bg-teal-50 border-teal-500 text-teal-800 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:border-teal-300'
+                    amenities.includes(am) ? 'bg-navy-50 border-navy-500 text-navy-800 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:border-navy-300'
                   }`}
                 >
-                  <CheckSquare className={`w-4 h-4 ${amenities.includes(am) ? 'text-teal-600' : 'text-slate-300'}`} />
+                  <CheckSquare className={`w-4 h-4 ${amenities.includes(am) ? 'text-navy-600' : 'text-slate-300'}`} />
                   <span className="text-sm">{am}</span>
                 </div>
               ))}
@@ -711,7 +711,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             </p>
             
             <div className="mt-8 max-w-lg mx-auto">
-              <label className="block p-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 cursor-pointer hover:border-teal-400 transition-colors">
+              <label className="block p-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 cursor-pointer hover:border-navy-400 transition-colors">
                 <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <span className="text-slate-500 font-semibold text-sm">Click to select images (JPG, PNG, WebP)</span>
                 <input
@@ -766,7 +766,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-6 shadow-sm">
               <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-4">
                 <div>
-                  <div className="text-xs font-bold text-teal-700 bg-teal-100 inline-block px-2 py-1 rounded mb-2">{category.replace('_', ' ')}</div>
+                  <div className="text-xs font-bold text-navy-700 bg-navy-100 inline-block px-2 py-1 rounded mb-2">{category.replace('_', ' ')}</div>
                   <h3 className="text-xl font-bold text-slate-800">{title || 'Untitled Property'}</h3>
                   <p className="text-slate-500 text-sm flex items-center gap-1 mt-1"><MapPin className="w-3.5 h-3.5" /> {location}</p>
                 </div>
@@ -779,7 +779,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
                             <div className="grid grid-cols-2 text-sm gap-4">
                 <div className="col-span-2">
                   <span className="text-slate-400 block text-xs">Expected Price</span>
-                  <span className="font-semibold text-teal-800">₹ {Number(price).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-navy-800">₹ {Number(price).toLocaleString('en-IN')}</span>
                   <span className="text-slate-500"> ≈ {formatPriceWords(price) || '—'}</span>
                   {(priceMin || priceMax) && (
                     <span className="text-xs text-slate-500 block mt-0.5">
@@ -889,7 +889,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
             <button 
               onClick={handleNext}
               disabled={step === 1 && !category}
-              className="px-8 py-3 bg-teal-700 text-white font-bold rounded-xl shadow-md hover:bg-teal-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-8 py-3 bg-navy-700 text-white font-bold rounded-xl shadow-md hover:bg-navy-800 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               Continue <ArrowRight className="w-4 h-4" />
             </button>

@@ -79,13 +79,13 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
       <canvas ref={canvasRef} className="hidden" width={640} height={480} />
 
       {/* Auto-Detect Status Badge */}
-      <div className="flex items-center justify-center gap-1.5 text-xs text-teal-800 font-bold bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200 animate-pulse">
-        <Zap className="w-4 h-4 text-teal-600 fill-teal-600" />
+      <div className="flex items-center justify-center gap-1.5 text-xs text-navy-800 font-bold bg-navy-50 px-3 py-1.5 rounded-xl border border-navy-200 animate-pulse">
+        <Zap className="w-4 h-4 text-navy-600 fill-teal-600" />
         <span>Auto-Capture Active • Hold QR inside box</span>
       </div>
 
       {/* Live Video Camera Viewfinder container */}
-      <div className="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden bg-slate-900 border-4 border-teal-700 shadow-2xl flex items-center justify-center">
+      <div className="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden bg-slate-900 border-4 border-navy-700 shadow-2xl flex items-center justify-center">
         {/* Video Element ALWAYS rendered in DOM to keep videoRef active */}
         <video
           ref={videoRef}
@@ -105,18 +105,18 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
         )}
 
         {/* Viewfinder Target Framing Overlay */}
-        <div className="absolute inset-6 border-2 border-teal-400/80 rounded-2xl pointer-events-none flex flex-col justify-between p-2">
+        <div className="absolute inset-6 border-2 border-navy-400/80 rounded-2xl pointer-events-none flex flex-col justify-between p-2">
           <div className="flex justify-between">
-            <div className="w-5 h-5 border-t-4 border-l-4 border-teal-400 rounded-tl-lg" />
-            <div className="w-5 h-5 border-t-4 border-r-4 border-teal-400 rounded-tr-lg" />
+            <div className="w-5 h-5 border-t-4 border-l-4 border-navy-400 rounded-tl-lg" />
+            <div className="w-5 h-5 border-t-4 border-r-4 border-navy-400 rounded-tr-lg" />
           </div>
 
           {/* Laser Scanning Animation Line */}
           <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_8px_#ef4444] animate-pulse" />
 
           <div className="flex justify-between">
-            <div className="w-5 h-5 border-b-4 border-l-4 border-teal-400 rounded-bl-lg" />
-            <div className="w-5 h-5 border-b-4 border-r-4 border-teal-400 rounded-br-lg" />
+            <div className="w-5 h-5 border-b-4 border-l-4 border-navy-400 rounded-bl-lg" />
+            <div className="w-5 h-5 border-b-4 border-r-4 border-navy-400 rounded-br-lg" />
           </div>
         </div>
       </div>
@@ -132,7 +132,7 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
       <button
         onClick={onScanSuccess}
         disabled={isScanning}
-        className="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
+        className="w-full py-3.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
       >
         {isScanning ? (
           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

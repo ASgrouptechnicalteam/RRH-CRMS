@@ -89,7 +89,7 @@ export const LateLeaveProposals: React.FC = () => {
             <button
               onClick={() => setActiveTab('submit')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'submit' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600'
+                activeTab === 'submit' ? 'bg-white text-navy-800 shadow-sm' : 'text-slate-600'
               }`}
             >
               Submit Request
@@ -97,7 +97,7 @@ export const LateLeaveProposals: React.FC = () => {
             <button
               onClick={() => setActiveTab('queue')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'queue' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600'
+                activeTab === 'queue' ? 'bg-white text-navy-800 shadow-sm' : 'text-slate-600'
               }`}
             >
               HR Approval Queue
@@ -128,12 +128,12 @@ export const LateLeaveProposals: React.FC = () => {
               onClick={() => setProposalType('late')}
               className={`p-3 rounded-xl border text-left transition-all ${
                 proposalType === 'late'
-                  ? 'border-teal-600 bg-teal-50/50 text-teal-900 font-bold'
+                  ? 'border-navy-600 bg-navy-50/50 text-navy-900 font-bold'
                   : 'border-slate-200 text-slate-600'
               }`}
             >
               <div className="flex items-center gap-2 text-sm">
-                <Clock className="w-4 h-4 text-teal-700" />
+                <Clock className="w-4 h-4 text-navy-700" />
                 <span>Late Arrival Request</span>
               </div>
               <p className="text-[11px] text-slate-500 font-normal mt-1">
@@ -146,12 +146,12 @@ export const LateLeaveProposals: React.FC = () => {
               onClick={() => setProposalType('leave')}
               className={`p-3 rounded-xl border text-left transition-all ${
                 proposalType === 'leave'
-                  ? 'border-teal-600 bg-teal-50/50 text-teal-900 font-bold'
+                  ? 'border-navy-600 bg-navy-50/50 text-navy-900 font-bold'
                   : 'border-slate-200 text-slate-600'
               }`}
             >
               <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-teal-700" />
+                <Calendar className="w-4 h-4 text-navy-700" />
                 <span>Leave Request</span>
               </div>
               <p className="text-[11px] text-slate-500 font-normal mt-1">
@@ -200,7 +200,7 @@ export const LateLeaveProposals: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-xl text-sm transition-all flex items-center gap-2"
+                className="px-5 py-2.5 bg-navy-700 hover:bg-navy-800 text-white font-medium rounded-xl text-sm transition-all flex items-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 <span>Submit Late Request</span>

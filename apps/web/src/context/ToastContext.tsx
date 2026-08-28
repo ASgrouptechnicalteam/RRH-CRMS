@@ -48,7 +48,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               key={t.id}
               className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl shadow-xl border text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-0 animate-slideInRight ${
                 isSuccess
-                  ? 'bg-teal-900/95 border-teal-700 text-teal-100'
+                  ? 'bg-navy-900/95 border-navy-700 text-navy-100'
                   : isError
                   ? 'bg-rose-900/95 border-rose-700 text-rose-100'
                   : isWarning
@@ -59,7 +59,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {isSuccess && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />}
               {isError && <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />}
               {isWarning && <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />}
-              {!isSuccess && !isError && !isWarning && <Info className="w-4 h-4 shrink-0 text-sky-400 mt-0.5" />}
+              {!isSuccess && !isError && !isWarning && <Info className="w-4 h-4 shrink-0 text-navy-400 mt-0.5" />}
 
               <div className="flex-1 leading-snug">{t.message}</div>
 

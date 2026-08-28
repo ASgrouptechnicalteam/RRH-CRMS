@@ -41,9 +41,9 @@ export const BookingManagement: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING': return <span className="px-2 py-1 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">PENDING</span>;
-      case 'CONFIRMED': return <span className="px-2 py-1 rounded bg-teal-100 text-teal-800 text-[10px] font-bold">CONFIRMED</span>;
+      case 'CONFIRMED': return <span className="px-2 py-1 rounded bg-navy-100 text-navy-800 text-[10px] font-bold">CONFIRMED</span>;
       case 'CANCELLED': return <span className="px-2 py-1 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">CANCELLED</span>;
-      case 'COMPLETED': return <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">COMPLETED</span>;
+      case 'COMPLETED': return <span className="px-2 py-1 rounded bg-navy-100 text-navy-800 text-[10px] font-bold">COMPLETED</span>;
       default: return null;
     }
   };
@@ -54,7 +54,7 @@ export const BookingManagement: React.FC = () => {
       <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-teal-600" />
+            <FileText className="w-5 h-5 text-navy-600" />
             Bookings & Reservations
           </h2>
           <p className="text-xs text-slate-500 mt-1">Manage unit reservations and payments</p>
@@ -69,7 +69,7 @@ export const BookingManagement: React.FC = () => {
             type="text"
             aria-label="Search bookings"
             placeholder="Search by Code, Customer, or Property..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 transition-shadow"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -77,7 +77,7 @@ export const BookingManagement: React.FC = () => {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-navy-500"
         >
           <option value="ALL">All Status</option>
           <option value="PENDING">Pending</option>
@@ -101,7 +101,7 @@ export const BookingManagement: React.FC = () => {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono font-bold text-teal-800 text-xs bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{b.booking_code}</span>
+                  <span className="font-mono font-bold text-navy-800 text-xs bg-navy-50 px-2 py-0.5 rounded border border-navy-200">{b.booking_code}</span>
                   {getStatusBadge(b.status)}
                 </div>
                 <h3 className="font-bold text-slate-800 text-sm">{b.customer?.first_name} {b.customer?.last_name}</h3>

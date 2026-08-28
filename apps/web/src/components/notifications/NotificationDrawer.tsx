@@ -77,17 +77,17 @@ export const NotificationDrawer: React.FC = () => {
                 <div
                   key={n.id}
                   className={`p-3 rounded-xl border text-xs transition-colors flex items-start justify-between ${
-                    n.is_read ? 'bg-slate-50 border-slate-100 text-slate-500' : 'bg-teal-50/50 border-teal-200 text-slate-800 font-medium'
+                    n.is_read ? 'bg-slate-50 border-slate-100 text-slate-500' : 'bg-navy-50/50 border-navy-200 text-slate-800 font-medium'
                   }`}
                 >
                   <div className="space-y-0.5">
-                    <span className="font-bold text-teal-900 block">{n.title}</span>
+                    <span className="font-bold text-navy-900 block">{n.title}</span>
                     <p className="text-[11px] leading-tight">{n.message}</p>
                   </div>
                   {!n.is_read && (
                     <button
                       onClick={() => handleMarkRead(n.id)}
-                      className="p-1 text-teal-700 hover:bg-teal-100 rounded"
+                      className="p-1 text-navy-700 hover:bg-navy-100 rounded"
                       title="Mark as read"
                     >
                       <Check className="w-3.5 h-3.5" />

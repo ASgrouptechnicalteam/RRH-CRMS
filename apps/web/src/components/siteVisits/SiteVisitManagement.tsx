@@ -69,7 +69,7 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
     <div className="w-full my-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
       <div className="flex items-center justify-between text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
         <span>Field Dispatch Progress</span>
-        <span className="text-sky-800 font-bold">
+        <span className="text-navy-800 font-bold">
           {status === 'COMPLETED' ? 'Visit Complete' : `Stage ${currentIndex + 1} of 4`}
         </span>
       </div>
@@ -82,7 +82,7 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
               key={stg.key}
               className={`px-1 py-1 rounded-lg text-[9px] font-bold text-center leading-tight transition-all ${
                 isCurrent
-                  ? 'bg-sky-600 text-white shadow-sm ring-1 ring-sky-400'
+                  ? 'bg-navy-600 text-white shadow-sm ring-1 ring-navy-400'
                   : isPassed
                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                   : 'bg-slate-200/70 text-slate-500'
@@ -240,7 +240,7 @@ export const SiteVisitManagement: React.FC = () => {
       case 'PENDING_VERIFICATION':
         return 'bg-amber-100 text-amber-900 border-amber-300';
       case 'CONFIRMED':
-        return 'bg-sky-100 text-sky-900 border-sky-300';
+        return 'bg-navy-100 text-navy-900 border-navy-300';
       case 'ASSIGNED_TO_AGENT':
         return 'bg-purple-100 text-purple-900 border-purple-300';
       case 'COMPLETED':
@@ -253,20 +253,20 @@ export const SiteVisitManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-sky-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-teal-700/30">
+      <div className="bg-gradient-to-r from-navy-950 via-slate-900 to-navy-950 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <MapPin className="w-5 h-5 text-teal-400" />
+            <MapPin className="w-5 h-5 text-navy-400" />
             <h2 className="text-xl font-extrabold tracking-tight">On-Site Visit & Field Agent Dispatch Workflow</h2>
           </div>
-          <p className="text-xs text-teal-200/80">
+          <p className="text-xs text-navy-200/80">
             Real-time pipeline: Telecaller Booking $\rightarrow$ Verification Call Confirmation $\rightarrow$ PM Agent Dispatch $\rightarrow$ Field Visit Completion & On-Site Feedback Upload.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 bg-white/10 rounded-2xl border border-white/10 text-center">
-            <span className="text-[10px] uppercase font-bold text-teal-300 block">Total Site Visits</span>
+            <span className="text-[10px] uppercase font-bold text-navy-300 block">Total Site Visits</span>
             <span className="text-lg font-black text-white">{visits.length} Scheduled</span>
           </div>
         </div>
@@ -286,7 +286,7 @@ export const SiteVisitManagement: React.FC = () => {
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-teal-900 text-xs">{visit.booking_code}</span>
+                  <span className="font-mono font-bold text-navy-900 text-xs">{visit.booking_code}</span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${getStatusBadge(visit.status)}`}>
                     {visit.status.replace(/_/g, ' ')}
                   </span>
@@ -302,7 +302,7 @@ export const SiteVisitManagement: React.FC = () => {
 
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5 text-xs">
                   <div className="flex items-center gap-2 text-slate-700 font-semibold">
-                    <Calendar className="w-4 h-4 text-teal-600 shrink-0" />
+                    <Calendar className="w-4 h-4 text-navy-600 shrink-0" />
                     <span>Scheduled: {new Date(visit.scheduled_date).toLocaleString()}</span>
                   </div>
 
@@ -345,7 +345,7 @@ export const SiteVisitManagement: React.FC = () => {
                       setSelectedVisit(visit);
                       setShowVerifyModal(true);
                     }}
-                    className="w-full py-2 bg-sky-700 hover:bg-sky-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                    className="w-full py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
                   >
                     <PhoneCall className="w-3.5 h-3.5" />
                     <span>Call & Confirm Schedule</span>
@@ -408,7 +408,7 @@ export const SiteVisitManagement: React.FC = () => {
                   placeholder="e.g. Client confirmed availability for tomorrow 11 AM at Gachibowli site..."
                   value={verificationNotes}
                   onChange={(e) => setVerificationNotes(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-600"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
                 />
               </div>
 
@@ -423,7 +423,7 @@ export const SiteVisitManagement: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 bg-sky-700 hover:bg-sky-800 text-white font-extrabold text-xs rounded-xl shadow-md"
+                  className="px-5 py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow-md"
                 >
                   {isSubmitting ? 'Confirming...' : 'Confirm & Transfer to PM'}
                 </button>

@@ -164,7 +164,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <Upload className="w-4 h-4 text-teal-600" />
+            <Upload className="w-4 h-4 text-navy-600" />
             Upload Document
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
@@ -180,7 +180,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
             <select
               value={documentType}
               onChange={(e) => { setDocumentType(e.target.value); setEntityIds({}); }}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white"
             >
               <option value="">Select document type</option>
               {Object.values(DocumentType).map((type) => (
@@ -197,7 +197,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter document title"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             />
           </div>
 
@@ -209,7 +209,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional notes"
               rows={2}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 resize-none"
             />
           </div>
 
@@ -222,7 +222,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
               <select
                 value={entityIds[field] || ''}
                 onChange={(e) => setEntityIds((prev) => ({ ...prev, [field]: e.target.value ? parseInt(e.target.value) : undefined }))}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white"
                 disabled={loadingEntities[field]}
               >
                 <option value="">{loadingEntities[field] ? 'Loading...' : `Select ${ENTITY_LABELS[field]}`}</option>
@@ -241,7 +241,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
               <select
                 value={entityIds[field] || ''}
                 onChange={(e) => setEntityIds((prev) => ({ ...prev, [field]: e.target.value ? parseInt(e.target.value) : undefined }))}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white"
                 disabled={loadingEntities[field]}
               >
                 <option value="">None</option>
@@ -265,15 +265,15 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-teal-400 hover:bg-teal-50/50 transition-colors"
+              className="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-navy-400 hover:bg-navy-50/50 transition-colors"
             >
               {file ? (
                 <div className="flex items-center gap-3">
                   {preview ? (
                     <img src={preview} alt="Preview" className="w-14 h-14 rounded-lg object-cover" />
                   ) : (
-                    <div className="w-14 h-14 rounded-lg bg-teal-100 flex items-center justify-center shrink-0">
-                      <FileText className="w-7 h-7 text-teal-600" />
+                    <div className="w-14 h-14 rounded-lg bg-navy-100 flex items-center justify-center shrink-0">
+                      <FileText className="w-7 h-7 text-navy-600" />
                     </div>
                   )}
                   <div className="text-left flex-1 min-w-0">
@@ -319,7 +319,7 @@ export const DocumentUploadModal: React.FC<Props> = ({ onClose, onSuccess }) => 
           <button
             onClick={handleSubmit}
             disabled={loading || !documentType || !title.trim() || !file}
-            className="px-4 py-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {loading ? (
               <>

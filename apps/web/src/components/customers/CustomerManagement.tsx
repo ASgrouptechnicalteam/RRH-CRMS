@@ -142,7 +142,7 @@ export const CustomerManagement: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-indigo-600" />
+              <Building2 className="w-8 h-8 text-navy-600" />
               Customer Details
             </h1>
             <p className="text-sm text-slate-500 font-medium mt-1">
@@ -157,7 +157,7 @@ export const CustomerManagement: React.FC = () => {
               placeholder="Search by code, name, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium"
+              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:bg-white transition-all font-medium"
             />
           </div>
         </div>
@@ -181,7 +181,7 @@ export const CustomerManagement: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 border-navy-600 border-t-transparent rounded-full animate-spin"></div>
                       <span className="font-semibold text-xs uppercase tracking-widest">Loading Customers...</span>
                     </div>
                   </td>
@@ -198,7 +198,7 @@ export const CustomerManagement: React.FC = () => {
                   <tr
                     key={cust.id}
                     onClick={() => openDossier(cust)}
-                    className="hover:bg-indigo-50/50 cursor-pointer transition-colors group"
+                    className="hover:bg-navy-50/50 cursor-pointer transition-colors group"
                   >
                     <td className="px-4 py-3 sm:px-6 sm:py-4">
                       <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md text-xs font-mono font-bold text-slate-700">
@@ -210,7 +210,7 @@ export const CustomerManagement: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 sm:px-6 sm:py-4">
                       <div className="flex items-center gap-1 text-slate-600 text-xs font-medium">
-                        <PhoneCall className="w-3.5 h-3.5 text-indigo-500" />
+                        <PhoneCall className="w-3.5 h-3.5 text-navy-500" />
                         {cust.phone}
                       </div>
                       {cust.email && <div className="text-[10px] text-slate-400 mt-0.5">{cust.email}</div>}
@@ -220,14 +220,14 @@ export const CustomerManagement: React.FC = () => {
                         <select
                           value={cust.status}
                           onChange={(e) => handleStatusChange(cust.id, e.target.value, cust.status)}
-                          className="p-1.5 text-[10px] uppercase font-extrabold tracking-wider bg-indigo-50 border border-indigo-200 rounded text-indigo-800 focus:ring-2 focus:ring-indigo-500"
+                          className="p-1.5 text-[10px] uppercase font-extrabold tracking-wider bg-navy-50 border border-navy-200 rounded text-navy-800 focus:ring-2 focus:ring-navy-500"
                         >
                           <option value="ACTIVE">ACTIVE</option>
                           <option value="INACTIVE">INACTIVE</option>
                           <option value="BLACKLISTED">BLACKLISTED</option>
                         </select>
                       ) : (
-                        <span className="inline-flex px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-[10px] font-extrabold uppercase tracking-wider">
+                        <span className="inline-flex px-2 py-1 bg-navy-100 text-navy-800 rounded text-[10px] font-extrabold uppercase tracking-wider">
                           {cust.status}
                         </span>
                       )}
@@ -235,7 +235,7 @@ export const CustomerManagement: React.FC = () => {
                     <td className="px-4 py-3 sm:px-6 sm:py-4">
                       {cust.assigned_to ? (
                         <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
-                          <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+                          <UserCheck className="w-3.5 h-3.5 text-navy-600" />
                           <span>{cust.assigned_to.full_name}</span>
                         </div>
                       ) : (
@@ -258,15 +258,15 @@ export const CustomerManagement: React.FC = () => {
             {/* Header */}
             <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-10 shrink-0">
               <div className="flex items-center gap-3 sm:gap-4">
-                <div className="bg-indigo-100 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border border-indigo-200">
-                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-700" />
+                <div className="bg-navy-100 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border border-navy-200">
+                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-navy-700" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded font-mono font-bold tracking-wider">
                       {dossierCustomer.customer_code}
                     </span>
-                    <span className="bg-indigo-100 text-indigo-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                    <span className="bg-navy-100 text-navy-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                       {dossierCustomer.status}
                     </span>
                   </div>
@@ -277,7 +277,7 @@ export const CustomerManagement: React.FC = () => {
               </div>
               <div className="flex gap-2 items-center">
                 {user?.permissions?.includes(Permissions.BOOKINGS_CREATE) && (
-                  <button onClick={() => setShowBookingModal(true)} className="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-teal-700">
+                  <button onClick={() => setShowBookingModal(true)} className="bg-navy-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-navy-700">
                     Create Booking
                   </button>
                 )}
@@ -299,7 +299,7 @@ export const CustomerManagement: React.FC = () => {
                   <div className="flex flex-col">
                     <span className="text-slate-400 text-xs mb-1">Phone Number</span>
                     <span className="font-bold text-slate-800 flex items-center gap-2">
-                      <PhoneCall className="w-4 h-4 text-indigo-500" />
+                      <PhoneCall className="w-4 h-4 text-navy-500" />
                       {dossierCustomer.phone}
                     </span>
                   </div>
@@ -326,7 +326,7 @@ export const CustomerManagement: React.FC = () => {
                     <div className="flex flex-col">
                       <span className="text-slate-400 text-xs mb-1">Assigned Employee</span>
                       <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <UserCheck className="w-4 h-4 text-teal-600" />
+                        <UserCheck className="w-4 h-4 text-navy-600" />
                         {dossierCustomer.assigned_to.full_name}
                         <span className="text-xs text-slate-400 font-normal font-mono bg-slate-100 px-1 py-0.5 rounded ml-2">
                           {dossierCustomer.assigned_to.employee_code}

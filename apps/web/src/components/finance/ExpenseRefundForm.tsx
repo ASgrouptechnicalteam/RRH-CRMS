@@ -86,14 +86,14 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-teal-700 to-slate-800 px-6 py-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-navy-700 to-slate-800 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
               <IndianRupee className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-white font-bold text-base">Expense Reimbursement</h2>
-              <p className="text-teal-200 text-xs">Submit your petty cash refund request</p>
+              <p className="text-navy-200 text-xs">Submit your petty cash refund request</p>
             </div>
           </div>
           <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
@@ -103,8 +103,8 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
 
         {success ? (
           <div className="p-12 flex flex-col items-center gap-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center animate-bounce">
-              <CheckCircle2 className="w-8 h-8 text-teal-600" />
+            <div className="w-16 h-16 rounded-full bg-navy-50 flex items-center justify-center animate-bounce">
+              <CheckCircle2 className="w-8 h-8 text-navy-600" />
             </div>
             <div>
               <p className="font-bold text-slate-800 text-lg">Request Submitted!</p>
@@ -123,7 +123,7 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
                 onChange={(e) => setPurpose(e.target.value)}
                 rows={3}
                 placeholder="e.g. Purchased printer cartridges for the office, Travel expenses for client visit..."
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-navy-500 resize-none"
               />
             </div>
 
@@ -141,7 +141,7 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-navy-500"
                 />
               </div>
             </div>
@@ -159,12 +159,12 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
                 className="hidden"
               />
               {file ? (
-                <div className="border border-teal-200 rounded-xl bg-teal-50 p-3 flex items-center gap-3">
+                <div className="border border-navy-200 rounded-xl bg-navy-50 p-3 flex items-center gap-3">
                   {preview ? (
-                    <img src={preview} alt="Bill preview" className="w-14 h-14 rounded-lg object-cover border border-teal-200 shrink-0" />
+                    <img src={preview} alt="Bill preview" className="w-14 h-14 rounded-lg object-cover border border-navy-200 shrink-0" />
                   ) : (
-                    <div className="w-14 h-14 rounded-lg bg-teal-100 flex items-center justify-center shrink-0">
-                      <FileText className="w-7 h-7 text-teal-600" />
+                    <div className="w-14 h-14 rounded-lg bg-navy-100 flex items-center justify-center shrink-0">
+                      <FileText className="w-7 h-7 text-navy-600" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -183,7 +183,7 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="w-full border-2 border-dashed border-slate-200 rounded-xl py-5 flex flex-col items-center gap-2 text-slate-400 hover:border-teal-400 hover:text-teal-600 transition-colors group"
+                  className="w-full border-2 border-dashed border-slate-200 rounded-xl py-5 flex flex-col items-center gap-2 text-slate-400 hover:border-navy-400 hover:text-navy-600 transition-colors group"
                 >
                   <Upload className="w-6 h-6 group-hover:scale-110 transition-transform" />
                   <span className="text-xs font-semibold">Click to upload bill/receipt</span>
@@ -211,7 +211,7 @@ export const ExpenseRefundForm: React.FC<Props> = ({ onClose, onSuccess }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 py-3 rounded-xl bg-teal-700 text-white text-sm font-bold hover:bg-teal-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-navy-700 text-white text-sm font-bold hover:bg-navy-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <><Loader2 className="w-4 h-4 animate-spin" />Submitting...</>

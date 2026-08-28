@@ -34,6 +34,7 @@ import { Edit, Building2 } from 'lucide-react';
 
 import { resolveImageUrl } from '../../utils/imageUtils';
 import { ProjectListItem, PropertyListItem, PmListItem, VerificationLogItem, PropertyImage } from '../../types';
+import { PropertyCard } from '../ui/PropertyCard';
 
 interface Property {
   id: number;
@@ -434,109 +435,45 @@ export const PropertyManagement: React.FC = () => {
         <div className="py-12 text-center text-xs text-slate-400">No properties found in selected view.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredProperties.map((prop) => (
-            <div
-              key={prop.id}
-              className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
-                        >
-              {/* Cover image (prefer primary) */}
-              <div className="relative">
-                {prop.images && prop.images.length > 0 ? (
-                  <img
-                    src={resolveImageUrl(
-                      prop.images.find((i) => i.is_primary)?.image_url || prop.images[0].image_url,
-                    )}
-                    alt={prop.title}
-                    className="w-full h-44 object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-44 flex items-center justify-center bg-slate-100">
-                    <ImageIcon className="w-10 h-10 text-slate-400" />
-                  </div>
-                )}
-              </div>
+          {filteredProperties.map((prop) => {
+            const displayImage = (prop.images && prop.images.length > 0 
+              ? resolveImageUrl(prop.images.find((i) => i.is_primary)?.image_url || prop.images[0].image_url) 
+              : '') || '';
+              
+            // Mocking interested leads randomly for visual CRM linkage until backend supports it
+            const mockInterestedLeads = (prop.id % 5) + 1;
 
-              <div className="p-5 space-y-3">
-                {/* Header Tag */}
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                      prop.brand_type === 'SONTHILLU'
-                        ? 'bg-navy-50 text-navy-800 border-navy-200'
-                        : 'bg-slate-900 text-amber-300 border-slate-700'
-                    }`}
-                  >
-                    {prop.brand_type === 'SONTHILLU' ? 'Sonthillu Residential' : 'Radha Real Homes Commercial'}
+            return (
+              <PropertyCard
+                key={prop.id}
+                property={{
+                  id: prop.id,
+                  name: prop.title,
+                  location: prop.location,
+                  bhk: prop.bedrooms || 0,
+                  sqft: prop.area_sqft,
+                  price: `₹${(prop.price / 100000).toFixed(1)} L`,
+                  imageUrl: displayImage,
+                  interestedLeads: mockInterestedLeads,
+                }}
+                onClick={() => setSelectedProperty(prop)}
+                brandBadge={
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold border shadow-sm ${
+                    prop.brand_type === 'SONTHILLU'
+                      ? 'bg-navy-50 text-navy-800 border-navy-200'
+                      : 'bg-slate-900 text-amber-300 border-slate-700'
+                  }`}>
+                    {prop.brand_type === 'SONTHILLU' ? 'Sonthillu' : 'Radha Real Homes'}
                   </span>
-
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(prop.status)}`}>
+                }
+                statusBadge={
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border shadow-sm ${getStatusBadge(prop.status)}`}>
                     {prop.status.replace(/_/g, ' ')}
                   </span>
-                </div>
-
-                <div>
-                  <div className="font-mono font-bold text-navy-900 text-[11px] mb-0.5">{prop.property_code}</div>
-                  <h3 className="font-extrabold text-slate-900 text-base leading-snug line-clamp-1">{prop.title}</h3>
-                  {prop.project && (
-                    <div className="text-[10px] text-navy-700 bg-navy-50 px-2 py-0.5 rounded-full inline-block border border-navy-100 mb-1">
-                      <Building2 className="w-3 h-3 inline mr-1" />
-                      {prop.project.name}
-                    </div>
-                  )}
-                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {prop.location}
-                  </p>
-                </div>
-
-                {/* Housing.com Field Badges */}
-                <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 text-xs">
-                  <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                    <Maximize2 className="w-3.5 h-3.5 text-navy-600" />
-                    <span>{prop.area_sqft} sq.ft</span>
-                  </div>
-                  {prop.bedrooms && (
-                    <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                      <Bed className="w-3.5 h-3.5 text-navy-600" />
-                      <span>{prop.bedrooms} BHK</span>
-                    </div>
-                  )}
-                  {prop.facing && (
-                    <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                      <Compass className="w-3.5 h-3.5 text-navy-600" />
-                      <span>{prop.facing}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 4-Stage Approval Workflow Stepper */}
-                <PropertyPipelineStepper status={prop.status} />
-
-                <div className="flex items-baseline justify-between pt-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400">Asking Price</span>
-                  <span className="text-lg font-black text-navy-950">
-                    ₹{(prop.price / 100000).toFixed(1)} Lakhs
-                  </span>
-                </div>
-              </div>
-
-              {/* Card Footer Button */}
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-[10px] text-slate-400 font-mono">
-                  PM: {prop.assigned_pm?.full_name || prop.assigned_pm?.employee_code || 'Unassigned'}
-                </span>
-
-                <button
-                  onClick={() => setSelectedProperty(prop)}
-                  className="px-3.5 py-1.5 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Details & Verify</span>
-                </button>
-              </div>
-            </div>
-          ))}
+                }
+              />
+            );
+          })}
         </div>
       )}
 

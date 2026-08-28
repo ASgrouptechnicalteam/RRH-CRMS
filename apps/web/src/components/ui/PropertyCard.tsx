@@ -12,15 +12,18 @@ interface PropertyCardProps {
     imageUrl: string;
     isFeatured?: boolean;
     isFavorite?: boolean;
+    interestedLeads?: number;
   };
   onFavoriteToggle?: (id: string | number) => void;
   onClick?: (id: string | number) => void;
+  statusBadge?: React.ReactNode;
+  brandBadge?: React.ReactNode;
 }
 
-export function PropertyCard({ property, onFavoriteToggle, onClick }: PropertyCardProps) {
+export function PropertyCard({ property, onFavoriteToggle, onClick, statusBadge, brandBadge }: PropertyCardProps) {
   return (
     <div 
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full"
+      className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full relative"
       onClick={() => onClick && onClick(property.id)}
     >
       <div className="relative h-48 w-full overflow-hidden bg-slate-100">
@@ -35,10 +38,17 @@ export function PropertyCard({ property, onFavoriteToggle, onClick }: PropertyCa
         
         {/* Top actions */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-          <div>
+          <div className="flex flex-col gap-2 items-start">
             {property.isFeatured && (
-              <span className="bg-gold-500 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wide shadow-sm">
+              <span className="bg-gold-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide shadow-sm">
                 Featured
+              </span>
+            )}
+            {brandBadge}
+            {statusBadge}
+            {property.interestedLeads !== undefined && property.interestedLeads > 0 && (
+              <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse">
+                🔥 {property.interestedLeads} Interested Leads
               </span>
             )}
           </div>

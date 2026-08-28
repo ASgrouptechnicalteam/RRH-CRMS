@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Search, Plus, FileText, CheckCircle2, XCircle, IndianRupee } from 'lucide-react';
+import { FileText, CheckCircle2, IndianRupee, Users, Building, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BookingItem } from '../../types';
+import { DataTable, ColumnDef } from '../ui/DataTable';
+import { StatCard } from '../ui/StatCard';
+import { StatusPill } from '../ui/StatusPill';
 
 export const BookingManagement: React.FC = () => {
   const { fetchWithAuth, user } = useAuth();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   useEffect(() => {
@@ -31,93 +33,154 @@ export const BookingManagement: React.FC = () => {
     }
   };
 
-  const filteredBookings = bookings.filter((b) => {
-    const searchStr = `${b.booking_code} ${b.customer?.first_name} ${b.customer?.last_name} ${b.property?.title}`.toLowerCase();
-    const matchesSearch = searchStr.includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'ALL' || b.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredBookings = bookings.filter((b) => filterStatus === 'ALL' || b.status === filterStatus);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING': return <span className="px-2 py-1 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">PENDING</span>;
-      case 'CONFIRMED': return <span className="px-2 py-1 rounded bg-navy-100 text-navy-800 text-[10px] font-bold">CONFIRMED</span>;
-      case 'CANCELLED': return <span className="px-2 py-1 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">CANCELLED</span>;
-      case 'COMPLETED': return <span className="px-2 py-1 rounded bg-navy-100 text-navy-800 text-[10px] font-bold">COMPLETED</span>;
-      default: return null;
+  // Quick Stats
+  const activeBookings = bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PENDING').length;
+  const pendingPayments = bookings.filter(b => b.balance_amount > 0 && b.status !== 'CANCELLED').length;
+  const totalRevenue = bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'COMPLETED').reduce((sum, b) => sum + (b.agreed_price - b.balance_amount), 0);
+
+  const columns: ColumnDef<BookingItem>[] = [
+    {
+      key: 'booking_code',
+      header: 'Booking',
+      sortable: true,
+      render: (b) => (
+        <div>
+          <div className="font-mono font-bold text-navy-800 text-[11px] mb-0.5">{b.booking_code}</div>
+          <div className="text-xs font-semibold text-slate-500">#{b.id}</div>
+        </div>
+      )
+    },
+    {
+      key: 'crm_linkage',
+      header: 'CRM Pipeline Origin',
+      render: (b) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-sm">
+            <Users className="w-3.5 h-3.5 text-navy-500" />
+            <span className="font-bold text-navy-900">{b.customer?.first_name} {b.customer?.last_name}</span>
+          </div>
+          <div className="text-[10px] text-slate-500 flex items-center gap-1">
+            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Assigned To:</span>
+            <span className="font-semibold">{b.assigned_employee?.full_name || 'System'}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'property',
+      header: 'Property Details',
+      render: (b) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+            <Building className="w-3.5 h-3.5 text-slate-400" />
+            <span className="line-clamp-1">{b.property?.title}</span>
+          </div>
+          <div className="text-[10px] font-mono text-slate-400">Unit ID: {b.property?.id}</div>
+        </div>
+      )
+    },
+    {
+      key: 'financials',
+      header: 'Financials',
+      render: (b) => (
+        <div className="flex flex-col gap-1">
+          <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
+            <span className="text-slate-400">Total:</span> 
+            ₹{b.agreed_price.toLocaleString()}
+          </div>
+          {b.balance_amount > 0 ? (
+            <div className="text-[10px] font-bold text-rose-600 flex items-center gap-1 bg-rose-50 w-max px-1.5 py-0.5 rounded border border-rose-100">
+              <AlertTriangle className="w-3 h-3" />
+              Bal: ₹{b.balance_amount.toLocaleString()}
+            </div>
+          ) : (
+            <div className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Paid in Full
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (b) => {
+        let type: 'pending' | 'success' | 'danger' = 'pending';
+        if (b.status === 'CONFIRMED' || b.status === 'COMPLETED') type = 'success';
+        if (b.status === 'CANCELLED') type = 'danger';
+        return <StatusPill status={b.status} type={type} />;
+      }
     }
-  };
+  ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
         <div>
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-navy-600" />
-            Bookings & Reservations
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">Manage unit reservations and payments</p>
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="w-5 h-5 text-gold-500" />
+            <h2 className="text-xl font-extrabold tracking-tight">Bookings & Reservations</h2>
+          </div>
+          <p className="text-xs text-navy-200/80">
+            Manage active unit reservations, payment collections, and CRM booking pipelines.
+          </p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            aria-label="Search bookings"
-            placeholder="Search by Code, Customer, or Property..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 transition-shadow"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-navy-500"
-        >
-          <option value="ALL">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="CONFIRMED">Confirmed</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
+      {/* Quick Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard 
+          label="Active Bookings" 
+          value={activeBookings} 
+          icon={FileText} 
+        />
+        <StatCard 
+          label="Accounts with Balance" 
+          value={pendingPayments} 
+          icon={AlertTriangle} 
+          trend={{ direction: 'down', value: 'Requires follow up', label: 'CRM task' }}
+        />
+        <StatCard 
+          label="Collected Revenue" 
+          value={`₹${(totalRevenue / 100000).toFixed(1)}L`} 
+          icon={IndianRupee} 
+          trend={{ direction: 'up', value: 'Healthy', label: 'Cashflow' }}
+        />
       </div>
 
-      {/* List */}
-      <div className="divide-y divide-slate-100">
-        {loading ? (
-          <div className="p-8 text-center text-sm text-slate-500">Loading bookings...</div>
-        ) : filteredBookings.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">No bookings found.</div>
-        ) : (
-          filteredBookings.map((b) => (
-            <div
-              key={b.id}
-              onClick={() => navigate(`/bookings/${b.id}`)}
-              className="p-4 sm:p-6 hover:bg-slate-50 transition-colors cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      {/* Main Content Area */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-2">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-500">Filter Status:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-navy-500"
             >
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono font-bold text-navy-800 text-xs bg-navy-50 px-2 py-0.5 rounded border border-navy-200">{b.booking_code}</span>
-                  {getStatusBadge(b.status)}
-                </div>
-                <h3 className="font-bold text-slate-800 text-sm">{b.customer?.first_name} {b.customer?.last_name}</h3>
-                <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                  <IndianRupee className="w-3 h-3" />
-                  Agreed: {b.agreed_price.toLocaleString()} • Bal: {b.balance_amount.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-right flex flex-col items-end">
-                <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded">Property: {b.property?.title}</span>
-                <span className="text-[10px] text-slate-400 mt-2">
-                  Assigned: {b.assigned_employee?.full_name || 'N/A'}
-                </span>
-              </div>
-            </div>
-          ))
+              <option value="ALL">All Bookings</option>
+              <option value="PENDING">PENDING</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center text-slate-500">Loading bookings pipeline...</div>
+        ) : (
+          <DataTable 
+            columns={columns}
+            data={filteredBookings}
+            searchable={true}
+            emptyMessage="No bookings found matching your criteria."
+            onRowClick={(b) => navigate(`/bookings/${b.id}`)}
+          />
         )}
       </div>
     </div>

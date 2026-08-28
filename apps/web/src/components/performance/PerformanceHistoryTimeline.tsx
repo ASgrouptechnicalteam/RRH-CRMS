@@ -41,7 +41,8 @@ export const PerformanceHistoryTimeline: React.FC = () => {
       ) : (
         <div className="relative border-l-2 border-slate-100 ml-4 pl-6 space-y-6">
           {events.map((ev) => {
-            const isBoost = ev.points > 0;
+            const points = ev.points || 0;
+            const isBoost = points > 0;
             return (
               <div key={ev.id} className="relative group">
                 {/* Timeline Node Dot */}
@@ -62,7 +63,7 @@ export const PerformanceHistoryTimeline: React.FC = () => {
                         isBoost ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {isBoost ? `+${ev.points}` : ev.points} pts
+                      {isBoost ? `+${points}` : points} pts
                     </span>
                   </div>
 
@@ -70,7 +71,7 @@ export const PerformanceHistoryTimeline: React.FC = () => {
 
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
                     <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>{new Date(ev.timestamp).toLocaleString()}</span>
+                    <span>{new Date(ev.timestamp || '').toLocaleString()}</span>
                   </div>
                 </div>
               </div>

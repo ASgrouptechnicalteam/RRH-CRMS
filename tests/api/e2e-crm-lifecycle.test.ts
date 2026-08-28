@@ -2,9 +2,9 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { Roles } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
   let mdToken: string;

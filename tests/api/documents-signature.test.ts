@@ -1,11 +1,11 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Roles } from '@rrh-ems/shared';
 import { DocumentService } from '../../apps/api/src/services/document.service';
 
-const prisma = new PrismaClient();
+
 
 let salesToken = '';
 let testCompanyId = 0;
@@ -40,7 +40,7 @@ describe('Phase 11.4 - E-Signature Workflow', () => {
     });
     salesUserId = salesUser.id;
 
-    const salesRole = await prisma.role.upsert({ where: { name: Roles.SALES }, update: {}, create: { name: Roles.SALES } });
+    const salesRole = await prisma.role.upsert({ where: { name: Roles.SALES_MANAGER }, update: {}, create: { name: Roles.SALES_MANAGER } });
     await prisma.employeeRole.deleteMany({ where: { employee_id: salesUser.id } });
     await prisma.employeeRole.create({ data: { employee_id: salesUser.id, role_id: salesRole.id } });
 

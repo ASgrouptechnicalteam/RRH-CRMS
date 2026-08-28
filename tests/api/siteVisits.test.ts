@@ -1,14 +1,14 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 5A - Site Visit Domain Baseline', () => {

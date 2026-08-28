@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 const REQUEST_TIMEOUT_MS = 30000;

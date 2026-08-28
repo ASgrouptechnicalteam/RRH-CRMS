@@ -1,10 +1,10 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Roles } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 7 - Data Access & Tenant Isolation Hardening', () => {

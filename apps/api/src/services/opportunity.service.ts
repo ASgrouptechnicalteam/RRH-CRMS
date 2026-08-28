@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Opportunity, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { OpportunityPolicy } from '../policies/opportunity.policy';
@@ -7,7 +8,7 @@ import { WorkflowDomain } from '../workflows/types';
 import { CustomerService } from './customer.service';
 import { BookingService } from './booking.service';
 
-const prisma = new PrismaClient();
+
 
 export class OpportunityService {
   /**

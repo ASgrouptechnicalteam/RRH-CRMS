@@ -1,8 +1,9 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Installment } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { BookingPolicy } from '../policies/booking.policy';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

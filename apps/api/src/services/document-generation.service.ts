@@ -1,9 +1,9 @@
 type Browser = any;
 import { TokenPayload } from './../utils/jwt';
 import { DocumentService } from './document.service';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 let browserInstance: Browser | null = null;
 

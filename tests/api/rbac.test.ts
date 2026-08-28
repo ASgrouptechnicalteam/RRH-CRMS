@@ -1,10 +1,10 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 1 Stage 2 - Central RBAC & Authorization (P0 Matrix)', () => {
   let mdToken: string;

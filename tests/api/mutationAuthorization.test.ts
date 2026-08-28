@@ -2,10 +2,10 @@ import { describe, expect, it, beforeAll } from '@jest/globals';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 4 - Authorization Architecture Consolidation & Mutation Hardening', () => {
   let mdToken: string;

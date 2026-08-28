@@ -413,8 +413,8 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
   ]
 };
 
-// Employee Code Regex: e.g. RRH-EX-001 (MD), RRH-EX-002 (Admin), RRH-HR-001 (HR), RRH-SL-001 (Sales/Telecaller)
-export const EMPLOYEE_CODE_REGEX = /^RRH-[A-Z]{2,5}-\d{3,5}$/;
+// Employee Code Regex: e.g. RRH-EX-001 (MD), RRH-EX-002 (Admin), RRH-HR-001 (HR), RRH-SL-001 (Sales/Telecaller), DEV-SM-001
+export const EMPLOYEE_CODE_REGEX = /^(RRH|DEV|SON)-[A-Z]{2,5}-\d{3,5}$/;
 
 
 // Login Request Schema
@@ -549,13 +549,23 @@ export const LeadStatus = {
   NEW: 'NEW',
   ASSIGNED: 'ASSIGNED',
   CONTACTED: 'CONTACTED',
+  QUALIFICATION_PENDING: 'QUALIFICATION_PENDING',
   QUALIFIED: 'QUALIFIED',
+  DEMO_SCHEDULED: 'DEMO_SCHEDULED',
+  DEMO_COMPLETED: 'DEMO_COMPLETED',
   SITE_VISIT_SCHEDULED: 'SITE_VISIT_SCHEDULED',
+  SITE_VISIT_COMPLETED: 'SITE_VISIT_COMPLETED',
   NEGOTIATION: 'NEGOTIATION',
+  BOOKING_INITIATED: 'BOOKING_INITIATED',
+  BOOKED: 'BOOKED',
+  DROPPED: 'DROPPED',
+  RECOVERED_TO_POOL: 'RECOVERED_TO_POOL',
+  // NOTE: OPPORTUNITY_OPEN / WON / LOST retained for backward compatibility until
+  // the lead→opportunity model is fully retired (see docs/LEAD-WORKFLOW-SPEC.md §0/§4).
+  // They are intentionally absent from the new LeadWorkflow transition matrix.
   OPPORTUNITY_OPEN: 'OPPORTUNITY_OPEN',
   WON: 'WON',
   LOST: 'LOST',
-  RECOVERED_TO_POOL: 'RECOVERED_TO_POOL',
 } as const;
 
 export type LeadStatusType = typeof LeadStatus[keyof typeof LeadStatus];

@@ -1,13 +1,13 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(45000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
@@ -61,6 +61,8 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
     await prisma.payment.deleteMany({});
     await prisma.installment.deleteMany({});
     await prisma.booking.deleteMany({});
+    await prisma.document.deleteMany({});
+    await prisma.complaint.deleteMany({});
     await prisma.customer.deleteMany({});
     await prisma.property.deleteMany({});
     // Phase 11 Packet 3F/3H — clear outbox events too (shared worker queue).

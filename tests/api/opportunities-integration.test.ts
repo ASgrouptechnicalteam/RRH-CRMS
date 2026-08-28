@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { generateAccessToken } from '../../apps/api/src/utils/jwt';
 import { Roles, Permissions } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 let companyAId: number;

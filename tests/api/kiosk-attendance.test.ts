@@ -1,11 +1,11 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { generateQrHmac } from '../../apps/api/src/utils/qr';
 import { getISTComponents } from '../../apps/api/src/utils/time';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Attendance Kiosk End-to-End (Backend)', () => {

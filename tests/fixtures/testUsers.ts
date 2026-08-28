@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Roles, Permissions, RolePermissionsMatrix } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 
 // The 13 authoritative roles defined by the Phase 0 audit (using their canonical names)
 export const TEST_ROLES = [
@@ -75,6 +75,17 @@ export async function setupDeterministicTestUsers() {
       code: 'TEST_COMP_02'
     }
   });
+
+  let testBranch = await prisma.branch.findFirst({ where: { company_id: testCompany.id, name: 'Test Branch' } });
+  if (!testBranch) {
+    testBranch = await prisma.branch.create({ data: { company_id: testCompany.id, name: 'Test Branch' } });
+  }
+
+  let crossOrgBranch = await prisma.branch.findFirst({ where: { company_id: crossOrgCompany.id, name: 'Cross Org Branch' } });
+  if (!crossOrgBranch) {
+    crossOrgBranch = await prisma.branch.create({ data: { company_id: crossOrgCompany.id, name: 'Cross Org Branch' } });
+  }
+
 
   const allUsers = [...deterministicUsers, ...crossOrgUsers];
 

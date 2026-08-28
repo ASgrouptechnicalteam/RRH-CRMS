@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { buildLeadScope, buildEmployeeScope, buildPropertyScope } from '../../apps/api/src/authz/dataScope';
 import { Roles } from '@rrh-ems/shared';
 import { TokenPayload } from '../../apps/api/src/utils/jwt';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 3 - Central Data Scope Engine (Security Matrix)', () => {
   const companyId = 1;

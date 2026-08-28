@@ -1,9 +1,9 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+
 
 describe('SECURITY REGRESSION — JWT Session Revocation (Phase 2)', () => {
   let employee: any;

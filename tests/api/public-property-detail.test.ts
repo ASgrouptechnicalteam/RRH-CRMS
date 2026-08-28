@@ -1,17 +1,18 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Public Property Detail API', () => {
   let apiKey: string;
   let companyId: number;
+  let pmUserId: number;
   let propertyId: number;
   let propertyCode: string;
 
@@ -64,7 +65,11 @@ describe('Public Property Detail API', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } }))!.company_id;
+    const mdEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode('Managing director') } });
+    companyId = mdEmployee!.company_id;
+    
+    const pmEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode('Project manager') } });
+    pmUserId = pmEmployee!.id;
 
     // Create a test API key
     const testApiKey = `PROPERTY-DETAIL-TEST-${Date.now()}`;
@@ -83,6 +88,7 @@ describe('Public Property Detail API', () => {
       data: {
         property_code: propertyCode,
         company_id: companyId,
+        assigned_pm_id: pmUserId,
         title: 'Detail Test Property',
         description: 'A beautiful test property for detail API testing',
         brand_type: 'SONTHILLU',
@@ -326,6 +332,7 @@ describe('Public Property Detail API', () => {
         data: {
           property_code: `LOCKED-${Date.now()}`,
           company_id: companyId,
+          assigned_pm_id: pmUserId,
           title: 'Locked Property',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
@@ -363,6 +370,7 @@ describe('Public Property Detail API', () => {
         data: {
           property_code: `SOLD-${Date.now()}`,
           company_id: companyId,
+          assigned_pm_id: pmUserId,
           title: 'Sold Property',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
@@ -399,6 +407,7 @@ describe('Public Property Detail API', () => {
         data: {
           property_code: `UNPUB-${Date.now()}`,
           company_id: companyId,
+          assigned_pm_id: pmUserId,
           title: 'Unpublished Property',
           brand_type: 'SONTHILLU',
           category: 'VILLA',

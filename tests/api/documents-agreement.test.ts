@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Roles } from '@rrh-ems/shared';
 
@@ -16,7 +16,7 @@ jest.mock('puppeteer', () => ({
   }),
 }));
 
-const prisma = new PrismaClient();
+
 
 let salesToken = '';
 let testCompanyId = 0;
@@ -50,7 +50,7 @@ describe('Phase 11.3 - Agreement Generation', () => {
       },
     });
 
-    const salesRole = await prisma.role.upsert({ where: { name: Roles.SALES }, update: {}, create: { name: Roles.SALES } });
+    const salesRole = await prisma.role.upsert({ where: { name: Roles.SALES_MANAGER }, update: {}, create: { name: Roles.SALES_MANAGER } });
     await prisma.employeeRole.deleteMany({ where: { employee_id: salesUser.id } });
     await prisma.employeeRole.create({ data: { employee_id: salesUser.id, role_id: salesRole.id } });
 
@@ -96,6 +96,7 @@ describe('Phase 11.3 - Agreement Generation', () => {
         company_id: testCompanyId,
         booking_date: new Date(),
         total_amount: 5000000,
+        agreed_price: 5000000,
         balance_amount: 5000000,
         status: 'CONFIRMED',
         booked_by_id: salesUser.id,

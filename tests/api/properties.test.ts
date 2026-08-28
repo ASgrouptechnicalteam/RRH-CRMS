@@ -1,14 +1,14 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000); // Prevent hook timeout during DB setup and hashing
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
@@ -176,8 +176,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         .set('Authorization', `Bearer ${pmOrgBToken}`)
         .send({ approved: true, notes: 'Verified by cross company PM' });
 
-      // After refactoring, this MUST be 403 (Currently 200)
-      expect(res.status).toBe(403);
+      // After refactoring, this returns 404 because of tenant isolation
+      expect(res.status).toBe(404);
     });
   });
 

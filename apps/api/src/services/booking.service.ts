@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { AppError } from './lead.service';
@@ -5,7 +6,7 @@ import { BookingPolicy } from '../policies/booking.policy';
 import { Roles } from '@rrh-ems/shared';
 import { randomBytes } from 'crypto';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // Property reservation lock duration (24h), consistent with Phase 9 inventory locking.

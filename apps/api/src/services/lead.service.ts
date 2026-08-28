@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Lead, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { Roles } from '@rrh-ems/shared';
@@ -9,7 +10,7 @@ import { findBestAssigneeForLead } from '../utils/distributionService';
 import { generateWhatsAppText } from '../utils/matchingEngine';
 import { buildLeadScope } from '../authz/dataScope';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

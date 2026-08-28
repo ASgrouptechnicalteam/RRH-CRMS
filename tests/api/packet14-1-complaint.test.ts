@@ -2,10 +2,10 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { generateAccessToken } from '../../apps/api/src/utils/jwt';
 import { Roles, Permissions } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 const ALL_PERMS = Object.values(Permissions).filter((p) => typeof p === 'string') as string[];
 const COMPLAINT_ALL = [
   Permissions.COMPLAINTS_CREATE,

@@ -1,8 +1,8 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 1 - Authentication & Session Security', () => {
   const testIp1 = '192.168.1.100';

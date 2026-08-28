@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { Router, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PublicLeadCreateSchema } from '@rrh-ems/shared';
@@ -6,7 +7,7 @@ import { publicReadLimiter, publicWriteLimiter } from '../middleware/rateLimiter
 import { correlationId } from '../middleware/correlationId';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // Public-safe property allowlist (WR-1/WR-2/WR-3/WR-6)

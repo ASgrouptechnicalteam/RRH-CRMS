@@ -1,7 +1,7 @@
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { Roles, INSTALLMENT_EVENT_TYPE, PAYMENT_EVENT_TYPE } from '@rrh-ems/shared';
@@ -9,7 +9,7 @@ import { PortalWorker } from '../../apps/api/src/services/portalWorker';
 
 jest.setTimeout(45000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {

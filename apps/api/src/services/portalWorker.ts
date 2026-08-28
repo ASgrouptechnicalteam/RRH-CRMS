@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { PortalClient } from './portalClient';
 import { KYC_EVENT_TYPE } from './kyc.service';
 import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 const POLL_INTERVAL_MS = parseInt(process.env.PORTAL_POLL_INTERVAL_MS || '30000', 10);

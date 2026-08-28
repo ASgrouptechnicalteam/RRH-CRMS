@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { PortalCallbackInput, KycCallbackInput, PaymentCallbackInput, PAYMENT_EVENT_TYPE, IntegrationMetricsQueryInput } from '@rrh-ems/shared';
 import { NotificationService } from './notification.service';
 import { getISTComponents } from '../utils/time';
@@ -6,7 +6,7 @@ import { getISTComponents } from '../utils/time';
 const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000; // IST = UTC+5:30
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

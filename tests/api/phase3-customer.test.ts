@@ -1,11 +1,11 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { generateAccessToken } from '../../apps/api/src/utils/jwt';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 3 Customer 360 Foundation', () => {

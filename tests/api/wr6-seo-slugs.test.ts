@@ -1,13 +1,13 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { slugify, generateUniqueSlug } from '../../apps/api/src/utils/slugify';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('WR-6: SEO-Friendly Public Identifiers', () => {

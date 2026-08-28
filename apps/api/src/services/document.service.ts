@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { Permissions, DOCUMENT_TYPE_ENTITY_REQUIREMENTS } from '@rrh-ems/shared';
 import { DocumentPolicy, KYC_DOCUMENT_TYPES } from '../policies/document.policy';
@@ -7,7 +7,7 @@ import { LocalStorageService, StorageService } from './storage.service';
 import path from 'path';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
@@ -585,7 +585,8 @@ const auditAction = decision === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_RE
         }
       });
 
-      return { document: doc, signatures, provider_id: mockProviderId };
+      const updatedDoc = await tx.document.findUnique({ where: { id: documentId } });
+      return { document: updatedDoc, signatures, provider_id: mockProviderId };
     });
 
     return result;

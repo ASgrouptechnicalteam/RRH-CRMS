@@ -1,5 +1,6 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { PrismaClient } from '@prisma/client';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
 import { Roles } from '@rrh-ems/shared';
@@ -7,7 +8,7 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 11 Packet 3D - Portal KYC Submission Callback', () => {

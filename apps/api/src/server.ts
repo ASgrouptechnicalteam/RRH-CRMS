@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Roles } from '@rrh-ems/shared';
 
@@ -43,7 +43,7 @@ import { PortalWorker } from './services/portalWorker';
 
 const app = express();
 const port = process.env.PORT || 3000;
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // Proxy Awareness for Rate Limiting (Render architecture)

@@ -1,12 +1,12 @@
 import { Router, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import AnalyticsService from '../services/analytics.service';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // GET /api/v1/md/employees - List employees for MD Control (Admin filtered out)

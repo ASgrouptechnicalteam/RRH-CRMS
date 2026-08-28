@@ -1,9 +1,10 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Customer } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { buildCustomerScope } from '../authz/dataScope';
 import { CustomerPolicy } from '../policies/customer.policy';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

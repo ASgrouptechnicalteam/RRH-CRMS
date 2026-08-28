@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { Roles } from '@rrh-ems/shared';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
@@ -9,7 +9,7 @@ import fs from 'fs';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 const TEST_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'property-images');
@@ -152,7 +152,7 @@ describe('WR-3: Property Media + Public Detail', () => {
       expect(res.body.image.status).toBe('PENDING');
       expect(res.body.image.alt_text).toBe('Test Image');
       expect(res.body.image.sort_order).toBe(0);
-      expect(res.body.image.image_url).toContain('/uploads/property-images/');
+      expect(res.body.image.image_url).toMatch(/\/uploads\/properties\/\d+\/images\//);
       imageIds.push(res.body.image.id);
 
       // Clean up test file

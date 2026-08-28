@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
@@ -10,7 +10,7 @@ import { encryptData } from '../utils/crypto';
 import { buildEmployeeScope } from '../authz/dataScope';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 
 
@@ -66,7 +66,7 @@ router.get('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), asy
     }));
 
     // SENSITIVE DATA FILTERING (Stage 2)
-    const canViewSensitive = can(req.user!, Permissions.EMPLOYEES_VIEW_SENSITIVE);
+    const canViewSensitive = can(req.user!, Permissions.EMPLOYEES_VIEW_SENSITIVE, { company_id: req.user!.companyId });
     if (!canViewSensitive) {
       formatted.forEach((emp: any) => {
         delete emp.panNumber;

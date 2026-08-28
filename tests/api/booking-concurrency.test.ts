@@ -1,13 +1,13 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
@@ -207,7 +207,7 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
         booking_amount: 100000
       });
 
-    expect(res.status).toBe(500); // Because it throws a Prisma constraint error which App translates to 500
+    expect(res.status).toBe(404); // Because tenant isolation / validation returns 404 for invalid customer
 
     const p1 = await p.property.findUnique({ where: { id: prop.id } });
     // Should have rolled back the lock

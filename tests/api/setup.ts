@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -46,7 +46,7 @@ try {
 }
 
 // 4. Safe to instantiate PrismaClient using the overridden DATABASE_URL
-const prisma = new PrismaClient();
+
 
 beforeAll(async () => {
   // We explicitly avoid wiping or altering the database here in Phase 0

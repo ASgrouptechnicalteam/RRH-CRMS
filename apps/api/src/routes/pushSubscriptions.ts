@@ -6,11 +6,11 @@
  */
 
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // GET /api/v1/push/vapid-public-key

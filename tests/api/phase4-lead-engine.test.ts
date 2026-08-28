@@ -1,9 +1,9 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 4 - Lead Management Engine', () => {
   let telecallerToken: string;

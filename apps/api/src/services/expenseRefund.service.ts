@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { Roles, Permissions, ExpenseRefundStatus } from '@rrh-ems/shared';
 import { ExpenseRefundPolicy } from '../policies/expenseRefund.policy';
@@ -6,7 +6,7 @@ import { ExpenseRefundWorkflow, ExpenseRefundAction } from '../workflows/expense
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { can } from '../authz/authorization';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class ExpenseRefundService {

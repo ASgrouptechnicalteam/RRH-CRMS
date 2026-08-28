@@ -1,7 +1,7 @@
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 0: Baseline Verification', () => {
   beforeAll(async () => {

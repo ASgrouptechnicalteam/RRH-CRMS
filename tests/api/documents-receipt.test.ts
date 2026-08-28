@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Roles, Permissions } from '@rrh-ems/shared';
 
@@ -16,7 +16,7 @@ jest.mock('puppeteer', () => ({
   }),
 }));
 
-const prisma = new PrismaClient();
+
 
 let financeToken = '';
 let financeUserId = 0;
@@ -88,7 +88,7 @@ describe('Phase 11.2 - Receipt Generation', () => {
 
     const project = await prisma.project.create({
       data: {
-        project_code: 'RECEIPT-PROJ-001',
+        project_code: `RECEIPT-PROJ-${Date.now()}`,
         name: 'Receipt Project',
         location: 'Hyderabad',
         company_id: testCompanyId,
@@ -119,6 +119,7 @@ describe('Phase 11.2 - Receipt Generation', () => {
         company_id: testCompanyId,
         booking_date: new Date(),
         total_amount: 5000000,
+        agreed_price: 5000000,
         balance_amount: 5000000,
         status: 'CONFIRMED',
         booked_by_id: financeUserId,

@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -10,7 +10,7 @@ import { validateRequestBody } from '../middleware/validate';
 import { loginRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 

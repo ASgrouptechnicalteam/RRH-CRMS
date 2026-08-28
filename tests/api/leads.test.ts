@@ -1,10 +1,10 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles, Permissions } from '@rrh-ems/shared';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
   let mdToken: string;

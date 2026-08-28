@@ -1,10 +1,10 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { Roles } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 
 describe('Phase C - Role UAT Beta Acceptance', () => {
   const tokens: Record<string, string> = {};

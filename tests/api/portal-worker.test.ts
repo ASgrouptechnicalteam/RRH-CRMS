@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { Roles } from '@rrh-ems/shared';
@@ -8,7 +8,7 @@ import { PortalWorker } from '../../apps/api/src/services/portalWorker';
 
 jest.setTimeout(30000);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 11 Packet 3B - Portal Worker', () => {

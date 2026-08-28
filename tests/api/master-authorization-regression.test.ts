@@ -53,6 +53,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
     compAUser = await prisma.employee.findUnique({ where: { employee_code: deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!.employee_code } });
     compBUser = await prisma.employee.findUnique({ where: { employee_code: crossOrgUsers[0].employee_code } });
+    const compBBranch = await prisma.branch.findFirst({ where: { company_id: compBUser!.company_id } });
 
     // Create Company B Resources
     const bLead = await prisma.lead.upsert({
@@ -63,9 +64,9 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         phone: '+919999900001',
         source: 'WEBSITE',
         status: 'NEW',
-        company: { connect: { id: 2 } },
-        branch: { connect: { id: 2 } },
-        created_by: { connect: { id: compBUser.id } },
+        company: { connect: { id: compBUser!.company_id } },
+        branch: { connect: { id: compBBranch!.id } },
+        created_by: { connect: { id: compBUser!.id } },
         assigned_to: { connect: { id: compBUser.id } },
         lead_code: 'LD-999-B'
       }
@@ -81,7 +82,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         last_name: 'Customer',
         phone: '+919999900002',
         email: 'b@example.com',
-        company: { connect: { id: 2 } }
+        company: { connect: { id: compBUser!.company_id } }
       }
     });
     compBCustomerId = bCustomer.id;

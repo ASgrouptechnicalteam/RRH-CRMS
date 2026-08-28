@@ -2,12 +2,12 @@
 // Authorized scope: Complaint Management only (backend).
 // Reuses existing repository architecture: AppError, PrismaClient, AuditEvent,
 // centralized lifecycle transition map, company isolation on every query.
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { AppError } from './lead.service';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // ---- Authorized constants (Packet 14-1) ----

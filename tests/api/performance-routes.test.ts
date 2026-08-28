@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { Roles } from '@rrh-ems/shared';
 
@@ -25,7 +25,7 @@ import { Roles } from '@rrh-ems/shared';
 const EXPECTED_FULL_SCORE = 52.0; // 50 + 2 + 0.5 + 0.5 - 1
 const EXPECTED_LEADERBOARD_SCORE = 52.5; // 50 + 2 + 0.5 (reduced)
 
-const prisma = new PrismaClient();
+
 
 describe('Phase 16 Packet A — /performance route integration', () => {
   let mdToken: string;

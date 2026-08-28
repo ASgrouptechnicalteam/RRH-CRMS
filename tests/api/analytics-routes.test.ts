@@ -17,11 +17,11 @@
  */
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
 import { Roles, Permissions } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const jwt = require('jsonwebtoken');
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 

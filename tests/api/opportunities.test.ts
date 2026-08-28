@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { Permissions, Roles } from '@rrh-ems/shared';
 import { generateAccessToken } from '../../apps/api/src/utils/jwt';
 import opportunityRoutes from '../../apps/api/src/routes/opportunities';
@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use('/api/v1/opportunities', opportunityRoutes);
 
-const prisma = new PrismaClient();
+
 const p = prisma as any;
 
 describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {

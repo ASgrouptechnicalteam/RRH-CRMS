@@ -1,10 +1,10 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { Roles } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 
 const login = async (employeeCode: string): Promise<string> => {
   const res = await request(app)

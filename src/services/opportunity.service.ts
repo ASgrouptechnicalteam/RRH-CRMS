@@ -93,12 +93,25 @@ export class OpportunityService {
         },
       });
 
-      // Update Lead Status to OPPORTUNITY_OPEN if appropriate (e.g. not WON/LOST/CLOSED/NEGOTIATION already)
-      // Assuming Lead status enum includes OPPORTUNITY_OPEN based on user prompt
-      if (!['WON', 'LOST', 'OPPORTUNITY_OPEN', 'NEGOTIATION'].includes(lead.status)) {
+      // §4: the Opportunity is a subordinate commercial record, not a competing
+      // pipeline. Per §1, the lead enters NEGOTIATION from SITE_VISIT_COMPLETED
+      // when an interested outcome exists. We advance it through the workflow
+      // engine (the only authority allowed to write Lead.status) rather than a
+      // raw update. OPPORTUNITY_OPEN no longer exists.
+      if (lead.status === 'SITE_VISIT_COMPLETED') {
+        const transition = WorkflowEngine.canTransition({
+          domain: WorkflowDomain.LEAD,
+          currentState: lead.status,
+          action: 'NEGOTIATION',
+          actor: user,
+          entity: { ...lead, opportunities: [opportunity] },
+        });
+        if (!transition.allowed) {
+          throw new AppError(409, transition.reason || 'Cannot advance lead to NEGOTIATION');
+        }
         await tx.lead.update({
           where: { id: lead_id },
-          data: { status: 'OPPORTUNITY_OPEN' }
+          data: { status: 'NEGOTIATION' },
         });
       }
 

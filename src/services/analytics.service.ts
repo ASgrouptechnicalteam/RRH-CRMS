@@ -112,9 +112,9 @@ export class AnalyticsService {
     return await p.lead.count({ where: { company_id: companyId } });
   }
 
-  /** COUNT(*) WHERE company_id AND status='WON' (KPI 2). Do not reinterpret WON. */
+  /** COUNT(*) WHERE company_id AND status='BOOKED' (KPI 2). */
   private static async countWonLeads(companyId: number): Promise<number> {
-    return await p.lead.count({ where: { company_id: companyId, status: 'WON' } });
+    return await p.lead.count({ where: { company_id: companyId, status: 'BOOKED' } });
   }
 
   /** COUNT(*) WHERE company_id AND status='SITE_VISIT_SCHEDULED' (KPI 3). */
@@ -362,8 +362,8 @@ export class AnalyticsService {
       contacted: allLeads.filter((l: any) => l.status === 'CONTACTED').length,
       qualified: allLeads.filter((l: any) => l.status === 'QUALIFIED').length,
       siteVisits: allLeads.filter((l: any) => l.status === 'SITE_VISIT_SCHEDULED').length,
-      won: allLeads.filter((l: any) => l.status === 'WON').length,
-      conversionRate: allLeads.length > 0 ? (allLeads.filter((l: any) => l.status === 'WON').length / allLeads.length) * 100 : 0
+      won: allLeads.filter((l: any) => l.status === 'BOOKED').length,
+      conversionRate: allLeads.length > 0 ? (allLeads.filter((l: any) => l.status === 'BOOKED').length / allLeads.length) * 100 : 0
     };
 
     const pipelineCounts = allLeads.reduce((acc: any, lead: any) => {
@@ -371,7 +371,7 @@ export class AnalyticsService {
       return acc;
     }, {});
     
-    const statuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED', 'NEGOTIATION', 'WON', 'LOST'];
+    const statuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFICATION_PENDING', 'QUALIFIED', 'DEMO_SCHEDULED', 'DEMO_COMPLETED', 'SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'NEGOTIATION', 'BOOKING_INITIATED', 'BOOKED', 'DROPPED', 'RECOVERED_TO_POOL'];
     const pipeline = statuses.map(status => ({
       status,
       count: pipelineCounts[status] || 0
@@ -380,7 +380,7 @@ export class AnalyticsService {
     const stalledLeadsQuery = await p.lead.findMany({
       where: {
         company_id: companyId,
-        status: { notIn: ['WON', 'LOST'] },
+        status: { notIn: ['BOOKED', 'DROPPED'] },
         OR: [
           { last_contacted_at: { lt: sevenDaysAgo } },
           { last_contacted_at: null, created_at: { lt: sevenDaysAgo } }
@@ -444,8 +444,8 @@ export class AnalyticsService {
           contacted: assigned.filter((l: any) => l.status === 'CONTACTED').length,
           qualified: assigned.filter((l: any) => l.status === 'QUALIFIED').length,
           siteVisits: assigned.filter((l: any) => l.status === 'SITE_VISIT_SCHEDULED').length,
-          won: assigned.filter((l: any) => l.status === 'WON').length,
-          conversionRate: (assigned.filter((l: any) => l.status === 'WON').length / assigned.length) * 100
+          won: assigned.filter((l: any) => l.status === 'BOOKED').length,
+          conversionRate: (assigned.filter((l: any) => l.status === 'BOOKED').length / assigned.length) * 100
         });
       }
 
@@ -456,8 +456,8 @@ export class AnalyticsService {
           leadsIntroduced: introduced.length,
           qualified: introduced.filter((l: any) => l.status === 'QUALIFIED').length,
           siteVisits: introduced.filter((l: any) => l.status === 'SITE_VISIT_SCHEDULED').length,
-          won: introduced.filter((l: any) => l.status === 'WON').length,
-          conversionRate: (introduced.filter((l: any) => l.status === 'WON').length / introduced.length) * 100
+          won: introduced.filter((l: any) => l.status === 'BOOKED').length,
+          conversionRate: (introduced.filter((l: any) => l.status === 'BOOKED').length / introduced.length) * 100
         });
       }
     });

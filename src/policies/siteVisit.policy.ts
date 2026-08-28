@@ -15,6 +15,16 @@ export class SiteVisitPolicy {
     );
   }
 
+  /**
+   * §2: "executive department" roles that may see the reassignment `reason`.
+   * Assumed set per §7 open item: MD, Admin, HR Manager, Marketing Director,
+   * Project Manager. Telecallers/Agents cannot inspect the reasoning behind a
+   * reassignment hop — same masking pattern already used for employee PII.
+   */
+  static canViewReassignmentReason(user: TokenPayload): boolean {
+    return this.isManagement(user);
+  }
+
   static canList(user: TokenPayload): any {
     const isManagement = this.isManagement(user);
     
@@ -78,5 +88,30 @@ export class SiteVisitPolicy {
       return true;
     }
     return visit.assigned_agent_id === user.employeeId;
+  }
+
+  /**
+   * §2: only the PM/Agent the visit is currently routed to (PENDING_ACCEPTANCE)
+   * may accept / reconfirm. For ACCEPTED visits, the assigned PM is the acceptor.
+   */
+  static canAccept(user: TokenPayload, visit: { project_manager_id?: number | null; status: string }): boolean {
+    if (!(user.permissions || []).includes(Permissions.SITE_VISITS_ASSIGN_AGENT)) {
+      return false;
+    }
+    // The routed PM/Agent is the acceptor.
+    return visit.project_manager_id === user.employeeId;
+  }
+
+  /**
+   * §2 reassignment chain: only PROJECT_MANAGER and AGENT roles may be
+   * reassignment targets — never Telecaller, HR, or any other role.
+   */
+  static canReassignTarget(user: TokenPayload, target: { roles?: string[]; role?: string; id: number }): boolean {
+    const targetRoles: string[] = target.roles
+      ? target.roles
+      : target.role
+      ? [target.role]
+      : [];
+    return targetRoles.includes(Roles.PROJECT_MANAGER) || targetRoles.includes(Roles.AGENT);
   }
 }

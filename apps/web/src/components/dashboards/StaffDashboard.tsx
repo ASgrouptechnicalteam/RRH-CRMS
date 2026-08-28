@@ -2,30 +2,51 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { TaskManager } from '../tasks/TaskManager';
-import { Activity } from 'lucide-react';
+import { Briefcase, Calendar, TrendingUp } from 'lucide-react';
+import { StatCard } from '../ui';
 
 export const StaffDashboard: React.FC = () => {
   const { user } = useAuth();
   
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex items-center gap-4 border border-slate-700">
-        <div className="p-3 bg-white/10 rounded-2xl">
-          <Activity className="w-8 h-8 text-navy-400" />
-        </div>
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <h2 className="text-xl font-extrabold tracking-tight">My Work</h2>
-          <p className="text-xs text-slate-300">
-            Welcome back, <strong className="text-white">{user?.employeeCode}</strong>. Manage your tasks and view your performance metrics.
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">My Workspace</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Welcome back, <strong className="text-navy-700">{user?.fullName || user?.employeeCode}</strong>. Manage your tasks and performance.
           </p>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <TaskManager />
+      {/* Primary KPI Row - Data not currently fetched by this component, using placeholders for now */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard 
+          label="My Tasks" 
+          value="—" 
+          icon={Briefcase} 
+        />
+        <StatCard 
+          label="My Attendance" 
+          value="—" 
+          icon={Calendar} 
+        />
+        <StatCard 
+          label="Performance Score" 
+          value="—" 
+          icon={TrendingUp} 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <h3 className="font-bold text-navy-900 mb-4">Task Management</h3>
+            <TaskManager />
+          </div>
         </div>
-        <div>
+        
+        <div className="space-y-6">
           <PerformanceScoreWidget />
         </div>
       </div>

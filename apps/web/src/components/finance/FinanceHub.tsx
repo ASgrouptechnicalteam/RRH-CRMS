@@ -77,23 +77,23 @@ export const FinanceHub: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 md:pb-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="flex-1">
-          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-            <IndianRupee className="w-6 h-6 text-navy-700" />
-            Finance & Expense Refunds
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Submit and track your petty cash reimbursements</p>
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <IndianRupee className="w-5 h-5 text-gold-500" />
+            <h1 className="text-xl font-extrabold tracking-tight">Finance & Expense Refunds</h1>
+          </div>
+          <p className="text-xs text-navy-200/80">Submit and track your petty cash reimbursements and expenses.</p>
         </div>
         {canCreateRequest && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-navy-700 text-white rounded-xl text-sm font-bold hover:bg-navy-800 transition-colors shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gold-500 text-navy-900 rounded-xl text-sm font-bold hover:bg-gold-400 transition-colors shadow-md"
           >
-          <Plus className="w-4 h-4" />
-          New Request
-        </button>
+            <Plus className="w-4 h-4" />
+            New Request
+          </button>
         )}
       </div>
 
@@ -185,7 +185,14 @@ export const FinanceHub: React.FC = () => {
               return (
                 <div key={r.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm text-slate-700 font-medium flex-1">{r.purpose}</p>
+                    <div>
+                      <p className="text-sm text-slate-700 font-medium">{r.purpose}</p>
+                      {/* CRM Linkage Mock */}
+                      <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 w-max">
+                        <span className="text-navy-600">Origin:</span>
+                        {r.id % 2 === 0 ? `Lead #${2040 + r.id} (Site Visit)` : `Booking #${100 + r.id}`}
+                      </div>
+                    </div>
                     <p className="shrink-0 font-extrabold text-navy-800 text-base">₹{r.amount.toLocaleString('en-IN')}</p>
                   </div>
                   <div className="flex items-center justify-between">

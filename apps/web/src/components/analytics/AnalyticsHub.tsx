@@ -140,6 +140,14 @@ export const AnalyticsHub: React.FC = () => {
       ]
     : [];
 
+  const mockDropOffData = [
+    { stage: 'NEW', dropoffs: 210 },
+    { stage: 'CONTACTED', dropoffs: 145 },
+    { stage: 'QUALIFIED', dropoffs: 85 },
+    { stage: 'SITE_VISIT', dropoffs: 42 },
+    { stage: 'NEGOTIATION', dropoffs: 12 },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -241,6 +249,27 @@ export const AnalyticsHub: React.FC = () => {
                     <KpiCard icon={<TrendingUp className="w-5 h-5 text-emerald-600" />} label="Won Leads" value={nf.format(kpis.crm.wonLeads)} accent="bg-emerald-50" />
                     <KpiCard icon={<CalendarCheck className="w-5 h-5 text-amber-600" />} label="Site Visits Scheduled" value={nf.format(kpis.crm.siteVisitsScheduled)} accent="bg-amber-50" />
                   </div>
+                </SectionCard>
+
+                {/* Pipeline Drop-off Analysis */}
+                <SectionCard title="Pipeline Drop-off Analysis" subtitle="Leads lost by exit stage (exited_from_status)">
+                  <div className="h-64 mt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={mockDropOffData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="stage" type="category" axisLine={false} tickLine={false} style={{ fontSize: '11px', fontWeight: 'bold', fill: '#64748b' }} />
+                        <RechartsTooltip cursor={{ fill: '#f1f5f9' }} />
+                        <Bar dataKey="dropoffs" name="Lost Leads" radius={[0, 4, 4, 0]}>
+                          {mockDropOffData.map((_, idx) => (
+                            <Cell key={`cell-${idx}`} fill={idx > 2 ? '#f43f5e' : '#f59e0b'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2 text-center">
+                    * Note: Data mocked visually for UX demo until backend exposes `exited_from_status` distribution.
+                  </p>
                 </SectionCard>
 
                 {/* Property + Targets side by side */}

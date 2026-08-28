@@ -160,10 +160,10 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
                       <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-3 rounded border border-slate-200 shadow-sm">
                         <div className="flex items-center justify-between space-x-2 mb-1">
                           <div className="font-bold text-slate-800 text-xs">
-                            {SALES_STAGE_LABELS[hist.to_stage] || hist.to_stage}
+                            {hist.to_stage ? SALES_STAGE_LABELS[hist.to_stage] || hist.to_stage : 'Unknown Stage'}
                           </div>
                           <time className="text-[10px] text-slate-400 font-medium">
-                            {new Date(hist.created_at).toLocaleDateString()}
+                            {new Date(hist.created_at || '').toLocaleDateString()}
                           </time>
                         </div>
                         <div className="text-[10px] text-slate-500">

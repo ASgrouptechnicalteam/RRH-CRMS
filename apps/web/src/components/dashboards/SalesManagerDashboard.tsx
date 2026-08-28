@@ -197,13 +197,13 @@ export const SalesManagerDashboard: React.FC = () => {
               Site Visits
             </h3>
             <div className="space-y-3">
-              {Object.entries(siteVisits).map(([status, count]: [string, number]) => (
+              {Object.entries(siteVisits || {}).map(([status, count]: [string, number | unknown]) => (
                 <div key={status} className="flex justify-between items-center text-sm">
                   <span className="font-medium text-slate-600 capitalize">{status.replace(/_/g, ' ').toLowerCase()}</span>
-                  <span className="font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-lg">{count}</span>
+                  <span className="font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-lg">{String(count)}</span>
                 </div>
               ))}
-              {Object.keys(siteVisits).length === 0 && (
+              {Object.keys(siteVisits || {}).length === 0 && (
                 <div className="text-xs text-slate-400 text-center py-2">No site visits recorded.</div>
               )}
             </div>
@@ -221,7 +221,7 @@ export const SalesManagerDashboard: React.FC = () => {
                   <div className="font-bold text-slate-800">Lead #{l.id}</div>
                   <div className="text-xs text-slate-500 mt-1 flex justify-between">
                     <span>{l.assigned_to?.full_name || 'Unassigned'}</span>
-                    <span className="text-rose-600 font-bold">{new Date(l.last_contacted_at || l.created_at).toLocaleDateString()}</span>
+                    <span className="text-rose-600 font-bold">{new Date(l.last_contacted_at || l.created_at || '').toLocaleDateString()}</span>
                   </div>
                 </div>
               ))}
@@ -243,7 +243,7 @@ export const SalesManagerDashboard: React.FC = () => {
                   <div className="font-bold text-slate-800">{t.lead?.customer_name || 'No Lead'}</div>
                   <div className="text-xs text-slate-500 mt-1 flex justify-between">
                     <span>{t.assignee?.full_name}</span>
-                    <span className="text-orange-600 font-bold">{new Date(t.target_date).toLocaleDateString()}</span>
+                    <span className="text-orange-600 font-bold">{new Date(t.target_date || '').toLocaleDateString()}</span>
                   </div>
                 </div>
               ))}

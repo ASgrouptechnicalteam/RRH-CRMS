@@ -280,8 +280,8 @@ export class PaymentService {
     });
 
     if (status === 'SUCCESS') {
-      // §7: receipt generation has moved to the customer portal (Document module
-      // removed from CRM). No-op here — the portal owns agreement/receipt docs.
+      // §7: receipt generation has moved to the customer portal (the document
+      // module was removed from CRM). No-op here — the portal owns agreement/receipt docs.
       console.info('Payment ' + id + ' succeeded; receipt generation is portal-owned (§7).');
     }
 

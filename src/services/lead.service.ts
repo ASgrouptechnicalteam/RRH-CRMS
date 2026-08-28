@@ -9,7 +9,7 @@ import { WorkflowDomain } from '../workflows/types';
 import { OpportunityService } from './opportunity.service';
 import { CustomerPortalService } from './customerPortal.service';
 import { findBestAssigneeForLead } from '../utils/distributionService';
-import { generateWhatsAppText } from '../utils/matchingEngine';
+import { MessageTemplateService } from '../services/messageTemplate.service';
 import { buildLeadScope } from '../authz/dataScope';
 
 
@@ -376,15 +376,18 @@ export class LeadService {
     if (!assignee) throw new AppError(404, 'Assignee employee not found');
 
     return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
-      const updated = await tx.lead.update({
-        where: { id: leadId },
-        data: {
+      const newStatus = lead.status === 'NEW' ? 'ASSIGNED' : lead.status;
+      const updated = await WorkflowEngine.transition(
+        tx,
+        leadId,
+        newStatus,
+        { actor: user, entity: lead },
+        {
           assigned_to_id: assigneeId,
           assigned_at: new Date(),
           assignment_type: 'MANUAL_OVERRIDE',
-          status: lead.status === 'NEW' ? 'ASSIGNED' : lead.status,
-        },
-      });
+        }
+      );
 
       await tx.leadActivity.create({
         data: {
@@ -429,25 +432,25 @@ export class LeadService {
     if (guardFields?.demo_scheduled_at) {
       entityContext.demo_scheduled_at = new Date(guardFields.demo_scheduled_at);
     }
-    // SITE_VISIT_* guards need the linked visits
-    if (newStatus === 'SITE_VISIT_SCHEDULED' || newStatus === 'SITE_VISIT_COMPLETED') {
+    // Always pull activities — the CALL_LOGGED guard (§1 row 2) needs them
+    entityContext.activities = await p.leadActivity.findMany({ where: { lead_id: leadId } });
+    // SITE_VISIT_* guards need the linked visits AND their property outcomes
+    if (newStatus === 'SITE_VISIT_SCHEDULED' || newStatus === 'SITE_VISIT_COMPLETED' || newStatus === 'DROPPED') {
       entityContext.site_visits = await p.siteVisitBooking.findMany({ where: { lead_id: leadId } });
+      if (newStatus === 'DROPPED') {
+        // Pull SiteVisitProperty outcomes for the DROPPED-from-SITE_VISIT_COMPLETED guard
+        const visits = entityContext.site_visits;
+        const visitIds = visits.map((v: any) => v.id);
+        if (visitIds.length > 0) {
+          entityContext.site_visit_properties = await p.siteVisitProperty.findMany({
+            where: { visit_id: { in: visitIds } },
+          });
+        }
+      }
     }
     // NEGOTIATION / BOOKING_INITIATED guards need the opportunity context
     if (newStatus === 'NEGOTIATION' || newStatus === 'BOOKING_INITIATED') {
       entityContext.opportunities = await p.opportunity.findMany({ where: { lead_id: leadId } });
-    }
-
-    const transition = WorkflowEngine.canTransition({
-      domain: WorkflowDomain.LEAD,
-      currentState: lead.status,
-      action: newStatus,
-      actor: user,
-      entity: entityContext,
-    });
-
-    if (!transition.allowed) {
-      throw new AppError(409, transition.reason || 'Invalid state transition');
     }
 
     // §3: emit a distinct activity_type for each macro-transition
@@ -470,7 +473,6 @@ export class LeadService {
 
     return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const updateData: any = {
-        status: newStatus,
         last_contacted_at: new Date(),
       };
       if (isDrop) {
@@ -491,7 +493,13 @@ export class LeadService {
         if (q.preferred_location !== undefined) updateData.preferred_location = q.preferred_location;
       }
 
-      const updated = await tx.lead.update({ where: { id: leadId }, data: updateData });
+      const updated = await WorkflowEngine.transition(
+        tx,
+        leadId,
+        newStatus,
+        { actor: user, entity: entityContext },
+        updateData
+      );
 
       const activityType = activityTypeForTransition(lead.status, newStatus);
       await tx.leadActivity.create({
@@ -560,20 +568,55 @@ export class LeadService {
     const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw new AppError(404, 'Property not found');
 
-    const text = generateWhatsAppText(lead, property, lead.assigned_to);
+    // §5: resolve WhatsApp body from the MessageTemplate table (template_key
+    // LEAD_QUALIFIED_PROPERTIES), never from a hardcoded string. Falls back to
+    // a safe inline text when no active template is configured.
+    const templateKey = 'LEAD_QUALIFIED_PROPERTIES';
+    const resolved = await MessageTemplateService.resolve(templateKey, {
+      customer_name: lead.customer_name ?? '',
+      property_name: property.title ?? '',
+      pm_name:
+        lead.assigned_to?.full_name ??
+        lead.assigned_to?.employee_code ??
+        'Radha Real Homes Advisory Desk',
+      visit_date: new Date().toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+    });
+
+    const text = resolved?.body_text ??
+      // Safe fallback when admin hasn't populated the template yet.
+      `🏡 *EXCLUSIVE PROPERTY PROPOSAL*
+
+Dear *${lead.customer_name}*,
+
+We found a premium property matching your requirements!
+
+📌 *Title*: ${property.title}
+📍 *Location*: ${property.location}
+💰 *Asking Price*: ${(property.price / 100000).toFixed(1)} Lakhs
+
+Reply to this message or call us to schedule a site visit.`;
+
     const cleanPhone = lead.phone.replace(/[^0-9]/g, '');
     const whatsAppUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(text)}`;
+
+    // §3: emit WHATSAPP_SENT with the template key embedded in notes
+    // (the spec §3 registry item: "WHATSAPP_SENT (with which template key)").
+    const activityNotes = `WhatsApp proposal sent using template ${templateKey} for Property ${property.property_code} (${property.title})`;
 
     await p.leadActivity.create({
       data: {
         lead_id: leadId,
         actor_id: user.employeeId,
-        activity_type: 'WHATSAPP_PROPOSAL_SENT',
-        notes: `WhatsApp Proposal sent for Property ${property.property_code} (${property.title})`,
+        activity_type: 'WHATSAPP_SENT',
+        notes: activityNotes,
       },
     });
 
-    return { whatsAppUrl, whatsAppText: text };
+    return { whatsAppUrl, whatsAppText: text, templateKey };
   }
 
   static async addPropertyInterest(user: TokenPayload, leadId: number, propertyId: number) {

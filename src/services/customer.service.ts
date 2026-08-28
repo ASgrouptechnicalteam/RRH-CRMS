@@ -3,6 +3,7 @@ import { PrismaClient, Customer } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { buildCustomerScope } from '../authz/dataScope';
 import { CustomerPolicy } from '../policies/customer.policy';
+import { WorkflowEngine } from '../workflows/workflowEngine';
 
 
 const p = prisma;
@@ -153,10 +154,12 @@ export class CustomerService {
       });
 
       // Update lead status to BOOKED (won state) — routed through the engine.
-      await tx.lead.update({
-        where: { id: lead.id },
-        data: { status: 'BOOKED' },
-      });
+      await WorkflowEngine.transition(
+        tx,
+        lead.id,
+        'BOOKED',
+        { actor: user, entity: lead }
+      );
 
       await tx.leadActivity.create({
         data: {

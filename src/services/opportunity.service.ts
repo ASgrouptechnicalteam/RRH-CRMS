@@ -78,18 +78,8 @@ export class OpportunityService {
           owner_id: owner_id,
           project_id: project_id,
           property_id: property_id,
-          stage: 'PROSPECT_QUALIFIED', // Default initial stage
-          expected_value: opportunityData.expected_value || 0,
-          probability: opportunityData.probability || 10,
           budget_min: opportunityData.budget_min,
           budget_max: opportunityData.budget_max,
-          history: {
-            create: {
-              from_stage: 'NONE',
-              to_stage: 'PROSPECT_QUALIFIED',
-              changed_by_id: user.employeeId,
-            }
-          }
         },
       });
 
@@ -99,20 +89,12 @@ export class OpportunityService {
       // engine (the only authority allowed to write Lead.status) rather than a
       // raw update. OPPORTUNITY_OPEN no longer exists.
       if (lead.status === 'SITE_VISIT_COMPLETED') {
-        const transition = WorkflowEngine.canTransition({
-          domain: WorkflowDomain.LEAD,
-          currentState: lead.status,
-          action: 'NEGOTIATION',
-          actor: user,
-          entity: { ...lead, opportunities: [opportunity] },
-        });
-        if (!transition.allowed) {
-          throw new AppError(409, transition.reason || 'Cannot advance lead to NEGOTIATION');
-        }
-        await tx.lead.update({
-          where: { id: lead_id },
-          data: { status: 'NEGOTIATION' },
-        });
+        await WorkflowEngine.transition(
+          tx,
+          lead_id,
+          'NEGOTIATION',
+          { actor: user, entity: { ...lead, opportunities: [opportunity] } }
+        );
       }
 
       return opportunity;
@@ -156,8 +138,6 @@ export class OpportunityService {
         company_id: lead.company_id,
         lead_id: lead.id,
         owner_id: actingEmployeeId,
-        // §4: seed in the NEGOTIATION sub-stage of the macro pipeline.
-        stage: 'NEGOTIATION',
         expected_value: property?.price ?? null,
         probability: 30,
         expected_close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -241,91 +221,11 @@ export class OpportunityService {
     return opps.filter(opp => OpportunityPolicy.canView(user, opp));
   }
 
-  /**
-   * 3. Update Opportunity Stage (Workflow Engine Integration)
-   * Passes the full entity with relations to the workflow for business invariant enforcement.
-   * Stamps exited_at on the previous history record when leaving a stage.
-   */
-  static async updateStage(user: TokenPayload, id: number, newStage: string, dropReason?: string) {
-    const opp = await prisma.opportunity.findFirst({
-      where: { id, company_id: user.companyId },
-      include: {
-        site_visits: true,
-      },
-    });
-    if (!opp) throw new AppError(404, 'Opportunity not found');
-
-    if (!OpportunityPolicy.canChangeStage(user, opp)) {
-      throw new AppError(403, 'Unauthorized to change stage for this Opportunity');
-    }
-
-    // Build entity context for workflow invariant checks
-    const entityContext = {
-      ...opp,
-      drop_reason: dropReason,
-    };
-
-    const transitionReq = {
-      domain: WorkflowDomain.OPPORTUNITY,
-      currentState: opp.stage,
-      action: newStage,
-      actor: user,
-      entity: entityContext,
-    };
-
-    const transitionRes = WorkflowEngine.canTransition(transitionReq);
-
-    if (!transitionRes.allowed) {
-      throw new AppError(409, transitionRes.reason || 'Workflow transition denied');
-    }
-
-    const finalStage = transitionRes.nextState || newStage;
-    const now = new Date();
-
-    return await prisma.$transaction(async (tx) => {
-      // Stamp exited_at on the most recent history record for the current stage
-      const lastHistory = await tx.opportunityHistory.findFirst({
-        where: {
-          opportunity_id: opp.id,
-          to_stage: opp.stage,
-          exited_at: null,
-        },
-        orderBy: { created_at: 'desc' },
-      });
-
-      if (lastHistory) {
-        await tx.opportunityHistory.update({
-          where: { id: lastHistory.id },
-          data: { exited_at: now },
-        });
-      }
-
-      const updatedOpp = await tx.opportunity.update({
-        where: { id },
-        data: {
-          stage: finalStage,
-          drop_reason: finalStage === 'DROPPED' ? dropReason : opp.drop_reason,
-        },
-      });
-
-      await tx.opportunityHistory.create({
-        data: {
-          opportunity_id: opp.id,
-          from_stage: opp.stage,
-          to_stage: finalStage,
-          changed_by_id: user.employeeId,
-        },
-      });
-
-      return updatedOpp;
-    });
-  }
 
   /**
    * 4. List Opportunities with Company Scope, Filtering, Sorting, and Pagination
    */
   static async getOpportunities(user: TokenPayload, filters: {
-    stage?: string;
     owner_id?: string | number;
     project_id?: string | number;
     property_id?: string | number;
@@ -346,7 +246,7 @@ export class OpportunityService {
       ]
     };
 
-    if (filters.stage) where.AND.push({ stage: filters.stage });
+
     if (filters.owner_id) where.AND.push({ owner_id: Number(filters.owner_id) });
     if (filters.project_id) where.AND.push({ project_id: Number(filters.project_id) });
     if (filters.property_id) where.AND.push({ property_id: Number(filters.property_id) });
@@ -367,7 +267,7 @@ export class OpportunityService {
     }
 
     // Sorting
-    const allowedSortFields = ['created_at', 'updated_at', 'expected_value', 'probability', 'expected_close_date', 'stage'];
+    const allowedSortFields = ['created_at', 'updated_at', 'expected_value', 'probability', 'expected_close_date'];
     const sortBy = allowedSortFields.includes(filters.sort_by || '') ? filters.sort_by! : 'updated_at';
     const sortOrder = filters.sort_order === 'asc' ? 'asc' : 'desc';
 
@@ -395,38 +295,6 @@ export class OpportunityService {
   }
 
   /**
-   * 4b. Get Opportunity Stage History with computed duration
-   */
-  static async getOpportunityHistory(user: TokenPayload, opportunityId: number) {
-    const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, company_id: user.companyId } });
-    if (!opp) throw new AppError(404, 'Opportunity not found');
-
-    if (!OpportunityPolicy.canView(user, opp)) {
-      throw new AppError(403, 'Unauthorized to view this Opportunity history');
-    }
-
-    const history = await prisma.opportunityHistory.findMany({
-      where: { opportunity_id: opportunityId },
-      include: {
-        changed_by: { select: { id: true, full_name: true, employee_code: true } },
-      },
-      orderBy: { created_at: 'asc' },
-    });
-
-    // Compute duration_minutes from timestamps (exited_at - created_at)
-    return history.map((h) => {
-      const durationMs = h.exited_at
-        ? new Date(h.exited_at).getTime() - new Date(h.created_at).getTime()
-        : null;
-      const durationMinutes = durationMs !== null ? Math.round(durationMs / 60000) : null;
-      return {
-        ...h,
-        duration_minutes: durationMinutes,
-      };
-    });
-  }
-
-  /**
    * 5. Get Single Opportunity Dossier
    */
   static async getOpportunityById(user: TokenPayload, id: number) {
@@ -437,10 +305,6 @@ export class OpportunityService {
         owner: { select: { id: true, full_name: true, employee_code: true } },
         project: true,
         property: true,
-        history: {
-          orderBy: { created_at: 'desc' },
-          include: { changed_by: { select: { full_name: true } } }
-        },
         tasks: true,
         site_visits: true
       }
@@ -466,7 +330,7 @@ export class OpportunityService {
       where: policyWhere,
       select: {
         id: true,
-        stage: true,
+        lead: { select: { status: true } },
         expected_value: true,
         probability: true,
         drop_reason: true,
@@ -481,13 +345,14 @@ export class OpportunityService {
     });
 
     const TERMINAL_STAGES = ['BOOKED', 'DROPPED'];
-    const activeOpps = allOpps.filter(o => !TERMINAL_STAGES.includes(o.stage));
+    const activeOpps = allOpps.filter(o => !TERMINAL_STAGES.includes(o.lead?.status || ''));
     const now = Date.now();
 
     // --- Count by stage ---
     const countByStage: Record<string, number> = {};
     allOpps.forEach(o => {
-      countByStage[o.stage] = (countByStage[o.stage] || 0) + 1;
+      const stage = o.lead?.status || 'UNKNOWN';
+      countByStage[stage] = (countByStage[stage] || 0) + 1;
     });
 
     // --- Pipeline values ---
@@ -529,15 +394,15 @@ export class OpportunityService {
     });
 
     // --- Terminal states ---
-    const droppedOpps = allOpps.filter(o => o.stage === 'DROPPED');
+    const droppedOpps = allOpps.filter(o => o.lead?.status === 'DROPPED');
     const droppedReasons: Record<string, number> = {};
     droppedOpps.forEach(o => {
       const reason = o.drop_reason || 'No reason provided';
       droppedReasons[reason] = (droppedReasons[reason] || 0) + 1;
     });
 
-    const bookingInitiatedCount = allOpps.filter(o => o.stage === 'BOOKING_INITIATED').length;
-    const bookedCount = allOpps.filter(o => o.stage === 'BOOKED').length;
+    const bookingInitiatedCount = allOpps.filter(o => o.lead?.status === 'BOOKING_INITIATED').length;
+    const bookedCount = allOpps.filter(o => o.lead?.status === 'BOOKED').length;
 
     // --- Opportunity age ---
     const ages = activeOpps.map(o => Math.round((now - new Date(o.created_at).getTime()) / 86400000));
@@ -561,61 +426,6 @@ export class OpportunityService {
   }
 
   /**
-   * 7. Conversion & Stage Analytics (Company + Policy Scoped)
-   * Stage aging is computed from OpportunityHistory timestamps (exited_at - created_at).
-   */
-  static async getConversionMetrics(user: TokenPayload) {
-    const policyWhere = OpportunityPolicy.canList(user);
-
-    // Get IDs of opportunities the user can see (scoped at DB level)
-    const visibleOpps = await prisma.opportunity.findMany({
-      where: policyWhere,
-      select: { id: true },
-    });
-    const visibleIds = visibleOpps.map(o => o.id);
-
-    if (visibleIds.length === 0) {
-      return { stageAging: {}, transitionCount: 0, stageTransitions: {} };
-    }
-
-    // Fetch all history records for visible opportunities
-    const allHistory = await prisma.opportunityHistory.findMany({
-      where: { opportunity_id: { in: visibleIds } },
-      orderBy: { created_at: 'asc' },
-    });
-
-    // --- Stage Aging: average time spent in each stage ---
-    const stageDurations: Record<string, number[]> = {};
-    allHistory.forEach(h => {
-      if (h.exited_at && h.to_stage) {
-        const durationMs = new Date(h.exited_at).getTime() - new Date(h.created_at).getTime();
-        const durationMinutes = Math.round(durationMs / 60000);
-        if (!stageDurations[h.to_stage]) stageDurations[h.to_stage] = [];
-        stageDurations[h.to_stage].push(durationMinutes);
-      }
-    });
-
-    const stageAging: Record<string, { avgMinutes: number; count: number }> = {};
-    for (const [stage, durations] of Object.entries(stageDurations)) {
-      const avg = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
-      stageAging[stage] = { avgMinutes: avg, count: durations.length };
-    }
-
-    // --- Transition counts per stage pair ---
-    const stageTransitions: Record<string, number> = {};
-    allHistory.forEach(h => {
-      const key = `${h.from_stage || 'NONE'} → ${h.to_stage}`;
-      stageTransitions[key] = (stageTransitions[key] || 0) + 1;
-    });
-
-    return {
-      stageAging,
-      transitionCount: allHistory.length,
-      stageTransitions,
-    };
-  }
-
-  /**
    * Phase 9 Packet 3 - Opportunity -> Customer -> Booking Integration
    * Convert an Opportunity into a Booking atomically.
    */
@@ -623,7 +433,7 @@ export class OpportunityService {
     // 1. Verify Opportunity exists and is accessible
     const opp = await prisma.opportunity.findFirst({
       where: { id: opportunityId, company_id: user.companyId },
-      include: { property: true }
+      include: { property: true, lead: true }
     });
 
     if (!opp) {
@@ -634,9 +444,9 @@ export class OpportunityService {
       throw new AppError(403, 'Unauthorized to convert this Opportunity');
     }
 
-    // 2. Validate Stage
-    if (opp.stage !== 'BOOKING_INITIATED') {
-      throw new AppError(400, 'Opportunity must be in BOOKING_INITIATED stage to convert to booking');
+    // 2. Validate Stage (via Lead)
+    if (opp.lead.status !== 'BOOKING_INITIATED') {
+      throw new AppError(400, 'Lead must be in BOOKING_INITIATED status to convert Opportunity to booking');
     }
 
     // 3. Check existing booking (Idempotency)

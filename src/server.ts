@@ -59,7 +59,7 @@ app.use(express.json());
 
 import { apiRateLimiter } from './middleware/rateLimiter';
 
-// Serve ONLY property images publicly. Documents and Expense Proofs are explicitly private.
+// Serve ONLY property images publicly.
 app.use('/uploads/properties', express.static(path.join(process.cwd(), 'uploads', 'properties')));
 
 // Global API Rate Limiter

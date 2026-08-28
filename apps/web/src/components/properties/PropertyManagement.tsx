@@ -803,7 +803,7 @@ export const PropertyManagement: React.FC = () => {
                     <div className="font-bold text-slate-800 flex items-center justify-between">
                       <span>{log.actor?.full_name || log.actor?.employee_code}</span>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(log.created_at || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     <p className="text-slate-600 text-[11px]">{log.notes}</p>

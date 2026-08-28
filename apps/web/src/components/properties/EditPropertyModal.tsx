@@ -40,10 +40,10 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
   const [facing, setFacing] = useState(property.facing || '');
   const [carpetArea, setCarpetArea] = useState(property.carpet_area?.toString() || '');
   const [builtupArea, setBuiltupArea] = useState(property.builtup_area?.toString() || '');
-  const [amenities, setAmenities] = useState<string>(property.amenities || '');
+  const [amenities, setAmenities] = useState<string>(property.amenities?.join(', ') || '');
   
   // Details JSON parsing
-  const initialDetails = property.details || {};
+  const initialDetails = (property.details as Record<string, any>) || {};
   const [furnishing, setFurnishing] = useState(initialDetails.furnishing || '');
   const [propertyType, setPropertyType] = useState(property.category || 'APARTMENT');
   

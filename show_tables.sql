@@ -1,0 +1,2 @@
+SHOW DATABASES LIKE 'test\_db';
+SHOW TABLES FROM test_db;

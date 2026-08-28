@@ -131,6 +131,7 @@ export const Permissions = {
   ADMIN_AUDIT_LOGS: 'admin.audit_logs',
   ADMIN_SECURITY_ALERTS: 'admin.security_alerts',
   ADMIN_EMERGENCY_LOCKDOWN: 'admin.emergency_lockdown',
+  MESSAGE_TEMPLATES_MANAGE: 'message_templates.manage', // §5 admin template editor
   
   PUBLIC_PROPERTIES_READ: 'public.properties.read',
   PUBLIC_LEADS_CREATE: 'public.leads.create',
@@ -1356,4 +1357,19 @@ export const MessageTemplateSchema = z.object({
   is_active: z.boolean().optional().default(true),
 });
 export type MessageTemplateInput = z.infer<typeof MessageTemplateSchema>;
+
+// §5 — stable template_key values for the WhatsApp deep-link touchpoints.
+// These are the canonical lookup keys used by resolveTemplate() and by the
+// admin template editor. The body_text of each supports the placeholders
+// {customer_name}, {property_name}, {pm_name}, {visit_date}.
+export const MessageTemplateKey = {
+  LEAD_QUALIFIED_PROPERTIES: 'LEAD_QUALIFIED_PROPERTIES', // matched property list + invite to discuss
+  DEMO_SCHEDULED: 'DEMO_SCHEDULED', // confirm demo date/time
+  SITE_VISIT_ACCEPTED: 'SITE_VISIT_ACCEPTED', // attending PM/Agent name, phone, property, date/time
+  DAY_BEFORE_RECONFIRMATION: 'DAY_BEFORE_RECONFIRMATION', // "confirming your visit tomorrow at X"
+  RESCHEDULE_CONFIRMED: 'RESCHEDULE_CONFIRMED', // new date/time confirmation
+  POST_VISIT_INTERESTED: 'POST_VISIT_INTERESTED', // thank-you + next steps toward booking
+  BOOKING_CONFIRMED: 'BOOKING_CONFIRMED', // welcome + portal credentials
+} as const;
+export type MessageTemplateKeyType = typeof MessageTemplateKey[keyof typeof MessageTemplateKey];
 

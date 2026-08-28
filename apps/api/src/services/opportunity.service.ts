@@ -122,6 +122,56 @@ export class OpportunityService {
   }
 
   /**
+   * §4 (transaction-scoped): auto-create an Opportunity when a Lead enters
+   * NEGOTIATION, inside the caller's existing Prisma transaction.
+   *
+   * Unlike the public `createFromLead` (which is a standalone route handler),
+   * this is invoked by LeadService.updateLeadStatus after the workflow engine
+   * has approved the SITE_VISIT_COMPLETED → NEGOTIATION transition. Opportunity
+   * is a subordinate commercial record (spec §0): Lead.status stays the only
+   * macro-status source of truth.
+   */
+  static async createFromLeadTx(
+    tx: Prisma.TransactionClient,
+    lead: { id: number; company_id: number; source?: string | null; campaign?: string | null; utm_source?: string | null; utm_medium?: string | null; utm_campaign?: string | null },
+    actingEmployeeId: number,
+    interestedPropertyId?: number | null,
+  ) {
+    // Avoid duplicates if an Opportunity was already created for this lead.
+    const existing = await tx.opportunity.findFirst({ where: { lead_id: lead.id } });
+    if (existing) return existing;
+
+    const property = interestedPropertyId
+      ? await tx.property.findFirst({ where: { id: interestedPropertyId } })
+      : null;
+
+    const currentYear = new Date().getFullYear();
+    const seq = await tx.opportunity.count({
+      where: { company_id: lead.company_id, created_at: { gte: new Date(`${currentYear}-01-01`) } },
+    });
+
+    return await tx.opportunity.create({
+      data: {
+        opportunity_code: `RRH-OPP-${currentYear}-${(seq + 1).toString().padStart(4, '0')}`,
+        company_id: lead.company_id,
+        lead_id: lead.id,
+        owner_id: actingEmployeeId,
+        // §4: seed in the NEGOTIATION sub-stage of the macro pipeline.
+        stage: 'NEGOTIATION',
+        expected_value: property?.price ?? null,
+        probability: 30,
+        expected_close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        source: lead.source ?? null,
+        campaign: lead.campaign ?? null,
+        utm_source: lead.utm_source ?? null,
+        utm_medium: lead.utm_medium ?? null,
+        utm_campaign: lead.utm_campaign ?? null,
+        ...(interestedPropertyId ? { property_id: interestedPropertyId } : {}),
+      },
+    });
+  }
+
+  /**
    * 2. Update Opportunity Commercial Fields
    */
   static async updateOpportunity(user: TokenPayload, id: number, data: {

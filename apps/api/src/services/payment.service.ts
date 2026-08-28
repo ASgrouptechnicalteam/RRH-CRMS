@@ -5,8 +5,6 @@ import { PaymentPolicy } from '../policies/payment.policy';
 import { BookingPolicy } from '../policies/booking.policy';
 import { NotificationService } from './notification.service';
 import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
-import { DocumentGenerationService } from './document-generation.service';
-
 
 const p = prisma;
 
@@ -282,9 +280,9 @@ export class PaymentService {
     });
 
     if (status === 'SUCCESS') {
-      DocumentGenerationService.generateReceipt(user, id).catch((err) => {
-        console.error('Failed to generate receipt for payment ' + id + ':', err);
-      });
+      // §7: receipt generation has moved to the customer portal (Document module
+      // removed from CRM). No-op here — the portal owns agreement/receipt docs.
+      console.info('Payment ' + id + ' succeeded; receipt generation is portal-owned (§7).');
     }
 
     return result;

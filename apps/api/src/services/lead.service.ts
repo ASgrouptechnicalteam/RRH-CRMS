@@ -6,6 +6,8 @@ import { can } from '../authz/authorization';
 import { Permissions } from '@rrh-ems/shared';
 import { WorkflowEngine } from '../workflows/workflowEngine';
 import { WorkflowDomain } from '../workflows/types';
+import { OpportunityService } from './opportunity.service';
+import { CustomerPortalService } from './customerPortal.service';
 import { findBestAssigneeForLead } from '../utils/distributionService';
 import { generateWhatsAppText } from '../utils/matchingEngine';
 import { buildLeadScope } from '../authz/dataScope';
@@ -448,6 +450,22 @@ export class LeadService {
       throw new AppError(409, transition.reason || 'Invalid state transition');
     }
 
+    // §3: emit a distinct activity_type for each macro-transition
+    // (see docs/LEAD-WORKFLOW-SPEC.md §3 for the full registry).
+    const activityTypeForTransition = (from: string, to: string): string => {
+      if (to === 'DROPPED') return 'LEAD_DROPPED';
+      if (to === 'RECOVERED_TO_POOL') return 'LEAD_RECOVERED';
+      if (to === 'DEMO_SCHEDULED') return 'DEMO_SCHEDULED';
+      if (to === 'DEMO_COMPLETED') return 'DEMO_COMPLETED';
+      if (to === 'SITE_VISIT_SCHEDULED') return 'SITE_VISIT_REQUESTED';
+      if (to === 'SITE_VISIT_COMPLETED') return 'SITE_VISIT_COMPLETED';
+      if (to === 'NEGOTIATION') return 'STATUS_CHANGED'; // Opportunity auto-created (§4) below
+      if (to === 'BOOKING_INITIATED') return 'STATUS_CHANGED'; // portal provision stub (§6) below
+      if (to === 'BOOKED') return 'STATUS_CHANGED';
+      if (from === 'NEW' && to === 'ASSIGNED') return 'ASSIGNED_TO_AGENT';
+      return 'STATUS_CHANGED';
+    };
+
     const isDrop = newStatus === 'DROPPED';
 
     return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
@@ -475,16 +493,38 @@ export class LeadService {
 
       const updated = await tx.lead.update({ where: { id: leadId }, data: updateData });
 
+      const activityType = activityTypeForTransition(lead.status, newStatus);
       await tx.leadActivity.create({
         data: {
           lead_id: leadId,
           actor_id: user.employeeId,
-          activity_type: isDrop ? 'LEAD_DROPPED' : 'STATUS_CHANGED',
+          activity_type: activityType,
           notes: isDrop
             ? `Lead dropped from ${lead.status}. Reason: ${guardFields?.exit_reason || 'n/a'}`
             : `Status updated from ${lead.status} to ${newStatus}${notes ? `: ${notes}` : ''}`,
         },
       });
+
+      // §4: auto-create Opportunity when entering NEGOTIATION
+      if (newStatus === 'NEGOTIATION') {
+        // Find the INTERESTED property outcome that unlocked NEGOTIATION (§1:
+        // SITE_VISIT_COMPLETED → NEGOTIATION requires ≥1 INTERESTED property).
+        const interested = await tx.siteVisitProperty.findFirst({
+          where: { outcome: 'INTERESTED' },
+          include: { visit: true },
+        });
+        const interestedLeadId = interested?.visit?.lead_id;
+        if (interestedLeadId && interestedLeadId === leadId) {
+          await OpportunityService.createFromLeadTx(tx, lead, user.employeeId, interested.property_id);
+        } else {
+          await OpportunityService.createFromLeadTx(tx, lead, user.employeeId);
+        }
+      }
+
+      // §6: customer-portal provisioning stub on successful booking
+      if (newStatus === 'BOOKED') {
+        await CustomerPortalService.provisionStub(tx, lead, user);
+      }
 
       return updated;
     });

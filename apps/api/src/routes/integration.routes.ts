@@ -1,10 +1,12 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { authenticateServiceToken, authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { validateRequestBody } from '../middleware/validate';
 import { PortalCallbackSchema, KycCallbackSchema, PaymentCallbackSchema, CustomerNotificationReadSchema, IntegrationMetricsQuerySchema, Permissions } from '@rrh-ems/shared';
 import { IntegrationService } from '../services/integration.service';
 import { NotificationService } from '../services/notification.service';
+import { CustomerPortalService } from '../services/customerPortal.service';
 
 const router = Router();
 
@@ -124,6 +126,36 @@ router.get(
       next(error);
     }
   }
+);
+
+// §6 — Customer-portal provisioning endpoint (stub).
+//
+// The real portal contract is TBD (spec §8 item #3). This route exposes the
+// provisioning call behind the standard integration surface. Today it delegates
+// to CustomerPortalService.provisionStub (no-op + audit log); when the portal's
+// real API is finalized, swap the stub for the real provisioner — the route
+// shape stays unchanged.
+router.post(
+  '/customer-portal/provision',
+  authenticateToken,
+  requireAuthz(Permissions.MESSAGE_TEMPLATES_MANAGE),
+  validateRequestBody(
+    // Minimal contract: which booking/lead to provision for.
+    z.object({
+      lead_id: z.number().int(),
+      customer_id: z.number().int().optional(),
+    }),
+  ),
+  async (req: any, res, next) => {
+    try {
+      // Hand off to the (stub) provisioner. The internal BOOKED transition in
+      // LeadService already calls this; this route is the explicit external trigger.
+      const result = await CustomerPortalService.provisionStubForLead(req.user, req.body.lead_id);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
 );
 
 export default router;

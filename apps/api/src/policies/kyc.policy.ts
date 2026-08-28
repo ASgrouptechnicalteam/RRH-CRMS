@@ -5,7 +5,9 @@ interface CustomerLike {
   company_id: number;
 }
 
-// KYC-authorized tier mirrors document.policy.ts:30-35 (Phase 11).
+// KYC-authorized tier (Phase 11). Note: document-based KYC verification was
+// retired with the Document module removal (spec §7); KYC status is now owned
+// by the customer portal and surfaces back via IntegrationService.processKycCallback.
 const KYC_AUTHORIZED_ROLES = [
   Roles.MD,
   Roles.ADMIN,

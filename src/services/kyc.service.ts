@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { KycPolicy } from '../policies/kyc.policy';
 import { encryptData, decryptData } from '../utils/crypto';
 import { KycStatus } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

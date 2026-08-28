@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { Roles } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export interface DistributionCandidate {

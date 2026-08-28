@@ -9,10 +9,10 @@
  *  2. Sends a Web Push notification to all subscribed devices
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import webpush from 'web-push';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // VAPID keys — generate once with: npx web-push generate-vapid-keys

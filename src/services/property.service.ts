@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Property } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { Roles, PropertyAvailabilityType } from '@rrh-ems/shared';
@@ -9,7 +10,7 @@ import { PropertyPolicy } from '../policies/property.policy';
 import { buildPropertyScope } from '../authz/dataScope';
 import { slugify, generateUniqueSlug } from '../utils/slugify';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 /**

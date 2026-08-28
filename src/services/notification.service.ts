@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { CustomerNotificationReadInput, CustomerNotificationTypeValue } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

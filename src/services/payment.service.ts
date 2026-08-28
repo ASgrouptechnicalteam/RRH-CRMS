@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Payment } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { PaymentPolicy } from '../policies/payment.policy';
@@ -6,7 +7,7 @@ import { NotificationService } from './notification.service';
 import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
 import { DocumentGenerationService } from './document-generation.service';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class AppError extends Error {

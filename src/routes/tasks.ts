@@ -1,5 +1,5 @@
 import { Router, Response , NextFunction} from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
 import { TaskCreateSchema, TaskUpdateStatusSchema, Roles, Permissions } from '@rrh-ems/shared';
@@ -10,7 +10,7 @@ import { getDownstreamEmployeeIds } from '../utils/hierarchy';
 import { deriveTaskSlaStatus } from '../services/task-sla.status';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // GET /api/v1/tasks/all-team-tasks - MD & Management View of All Employee Tasks

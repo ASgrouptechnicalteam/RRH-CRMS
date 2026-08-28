@@ -86,6 +86,15 @@ export const can = (user: TokenPayload, action: Permission, resource?: any): boo
       return SiteVisitPolicy.canAssignAgent(user, resource);
 
     // -- EMPLOYEES --
+    case Permissions.EMPLOYEES_READ:
+    case Permissions.EMPLOYEES_UPDATE:
+    case Permissions.EMPLOYEES_DELETE:
+    case Permissions.EMPLOYEES_RESET_PASSWORD:
+      if (!resource) return true;
+      if (user.roles.includes(Roles.ADMIN)) return true;
+      if (resource.company_id && resource.company_id !== user.companyId) return false;
+      return true;
+
     case Permissions.EMPLOYEES_VIEW_SENSITIVE:
       if (!resource) return false;
       if (user.roles.includes(Roles.ADMIN)) return true;

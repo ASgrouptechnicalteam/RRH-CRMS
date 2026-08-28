@@ -1,12 +1,12 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { calculatePerformanceScore, calculateLeaderboardScore } from '../services/performance-metric';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // POST /api/v1/performance/reset-score-history - Resets test events across ALL employees back to clean 50.0

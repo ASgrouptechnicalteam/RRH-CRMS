@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
 import { DailyTargetSetSchema, Roles, Permissions } from '@rrh-ems/shared';
@@ -8,7 +8,7 @@ import { can } from '../authz/authorization';
 import { getDownstreamEmployeeIds } from '../utils/hierarchy';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // Helper to generate basic schema for roles

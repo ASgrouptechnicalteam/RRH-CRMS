@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { Router, Response , NextFunction} from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
@@ -19,7 +20,7 @@ import {
 import { PrismaClient, Prisma } from '@prisma/client';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // GET /api/v1/properties - List properties with brand and status filtering
@@ -44,7 +45,7 @@ router.get(
   } catch (error: any) {
     console.error('Fetch properties error:', error);
     if (error.status) {
-      next(error);
+      return next(error);
     }
     return res.status(500).json({ error: 'Failed to fetch properties' });
   }
@@ -66,7 +67,7 @@ router.post(
   } catch (error: any) {
     console.error('Create property error:', error);
     if (error.status) {
-      next(error);
+      return next(error);
     }
     return res.status(500).json({ error: 'Failed to create property listing' });
   }
@@ -93,7 +94,7 @@ router.put(
     } catch (error: any) {
       console.error('Update property error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to update property listing' });
     }
@@ -122,7 +123,7 @@ router.post(
     } catch (error: any) {
       console.error('PM Verify error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to execute PM verification step' });
     }
@@ -151,7 +152,7 @@ router.post(
     } catch (error: any) {
       console.error('DM Polish error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to execute DM polish step' });
     }
@@ -180,7 +181,7 @@ router.post(
     } catch (error: any) {
       console.error('MD Approve error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to execute MD approval step' });
     }
@@ -219,7 +220,7 @@ router.post(
     } catch (error: any) {
       console.error('Toggle publication error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to toggle publication' });
     }
@@ -243,7 +244,7 @@ router.get(
     } catch (error: any) {
       console.error('Get publications error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to fetch publications' });
     }
@@ -306,7 +307,7 @@ router.post(
     } catch (error: any) {
       console.error('Upload property image error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to upload image' });
     }
@@ -375,7 +376,7 @@ router.put(
     } catch (error: any) {
       console.error('Update property image error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to update image' });
     }
@@ -444,7 +445,7 @@ router.delete(
     } catch (error: any) {
       console.error('Delete property image error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to delete image' });
     }
@@ -490,7 +491,7 @@ router.post(
     } catch (error: any) {
       console.error('Approve image error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to approve image' });
     }
@@ -536,7 +537,7 @@ router.post(
     } catch (error: any) {
       console.error('Reject image error:', error);
       if (error.status) {
-        next(error);
+        return next(error);
       }
       return res.status(500).json({ error: 'Failed to reject image' });
     }

@@ -5,10 +5,10 @@ import { Roles, Permissions, CustomerCreateSchema, CustomerUpdateSchema, Custome
 import { validateRequestBody } from '../middleware/validate';
 import { CustomerService, AppError } from '../services/customer.service';
 import { KycService } from '../services/kyc.service';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 const handleServiceError = (error: any, res: Response) => {
   if (error instanceof AppError) {

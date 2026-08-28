@@ -1,3 +1,4 @@
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { buildProjectScope } from '../authz/dataScope';
@@ -5,7 +6,7 @@ import { ProjectCreateInput, ProjectUpdateInput, Roles, Permissions } from '@rrh
 import { can } from '../authz/authorization';
 import { slugify, generateUniqueSlug } from '../utils/slugify';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 export class ProjectService {

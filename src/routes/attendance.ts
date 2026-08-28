@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { generateQrHmac, verifyQrHmac } from '../utils/qr';
 import { calculateAttendanceStatus, getISTComponents } from '../utils/time';
@@ -7,7 +7,7 @@ import { Roles, LateProposalSchema } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // GET /api/v1/attendance/my-qr - Generate personal HMAC QR payload

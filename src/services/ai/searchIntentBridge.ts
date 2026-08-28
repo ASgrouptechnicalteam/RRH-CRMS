@@ -17,11 +17,11 @@
  * fields; strict filtering safely ignores them (no CRM column is invented for an unsupported term).
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { PropertyAvailabilityType } from '@rrh-ems/shared';
 import { SearchIntent } from './searchIntent';
 
-const prisma = new PrismaClient();
+
 
 /** Safe client-facing shape of a matched property. Never carries internal CRM fields. */
 export interface SearchMatchResult {

@@ -28,7 +28,7 @@
  *    `payment.installment_id`, so summing both double-counts; and no existing
  *    helper reconciles them under one "received" definition. Do not guess.
  */
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { calculatePerformanceScore, roundPerformanceScore } from './performance-metric';
 import { IntegrationService } from './integration.service';
 import { OpportunityService } from './opportunity.service';
@@ -36,7 +36,7 @@ import { getISTComponents } from '../utils/time';
 import { TokenPayload } from '../utils/jwt';
 import { IntegrationMetricsResponse } from '@rrh-ems/shared';
 
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // ---- typed KPI contracts ----

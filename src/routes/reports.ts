@@ -1,12 +1,12 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
 import { DailyReportSchema, Roles } from '@rrh-ems/shared';
 import { getISTComponents } from '../utils/time';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // POST /api/v1/reports/daily - Submit Daily Report with Below-Target Validation

@@ -8,11 +8,11 @@ import {
 } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
 import { ProjectService } from '../services/project.service';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { buildProjectScope } from '../authz/dataScope';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 const p = prisma;
 
 // GET /api/v1/projects - List projects

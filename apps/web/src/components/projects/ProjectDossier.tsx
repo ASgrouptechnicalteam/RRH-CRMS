@@ -167,7 +167,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
                           {prop.property_code}
                         </span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                          {prop.status.replace(/_/g, ' ')}
+                          {(prop.status || 'UNKNOWN').replace(/_/g, ' ')}
                         </span>
                       </div>
                       <h4 className="font-bold text-slate-800 text-sm line-clamp-1">{prop.title}</h4>

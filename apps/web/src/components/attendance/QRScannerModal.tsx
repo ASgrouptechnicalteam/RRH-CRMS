@@ -169,7 +169,7 @@ export const QRScannerModal: React.FC = () => {
             <div className="flex justify-between">
               <span className="text-slate-500">Recorded Time:</span>
               <span className="font-mono font-bold text-slate-800">
-                {new Date(stampResult.check_in_at).toLocaleTimeString()} IST
+                {stampResult.check_in_at ? new Date(stampResult.check_in_at).toLocaleTimeString() : 'N/A'} IST
               </span>
             </div>
             <div className="flex justify-between items-center">

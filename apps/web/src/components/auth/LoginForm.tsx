@@ -71,7 +71,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       });
 
       const responseText = await res.text();
-      const responseJson: LoginResponseData = {};
+      let responseJson: LoginResponseData = {};
       try {
         responseJson = JSON.parse(responseText) as LoginResponseData;
       } catch (e) {
@@ -97,7 +97,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         } else {
           localStorage.removeItem('rrh_visiting_purpose');
         }
-        login(responseJson.user, responseJson.accessToken);
+        const u = responseJson.user;
+        const userProfile = {
+          id: u.id,
+          employeeCode: u.employeeCode || u.employee_code || '',
+          fullName: u.fullName || u.full_name || '',
+          department: u.department || '',
+          company: u.company?.name || 'RRH EMS',
+          branch: u.branch || 'HO',
+          roles: u.roles || [],
+          permissions: responseJson.permissions || [],
+          attendanceRequired: u.attendanceRequired ?? true,
+          firstLoginDone: u.firstLoginDone ?? false,
+        };
+        login(userProfile, responseJson.accessToken);
       }
 
 

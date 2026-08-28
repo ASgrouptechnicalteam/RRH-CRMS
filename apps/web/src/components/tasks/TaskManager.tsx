@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, AlertTriangle, Plus, Sparkles, Filter, ShieldAlert, X, Send, Users, Eye } from 'lucide-react';
+import { 
+  CheckCircle2, Clock, AlertTriangle, Plus, Sparkles, X, Send, Users, Briefcase, ListTodo, CheckSquare, Calendar, Building2
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Roles } from '@rrh-ems/shared';
 import { API_BASE_URL } from '../../config';
 import { TaskItem, EmployeeListItem } from '../../types';
+import { DataTable, ColumnDef } from '../ui/DataTable';
+import { StatusPill } from '../ui/StatusPill';
+import { StatCard } from '../ui/StatCard';
 
 export const TaskManager: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -24,8 +29,8 @@ export const TaskManager: React.FC = () => {
   const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canViewTeam = user?.roles.includes(Roles.MD) || user?.roles.includes(Roles.MARKETING_DIRECTOR) || user?.roles.includes(Roles.ADMIN) || user?.roles.includes(Roles.HR_MANAGER);
-  const canCreateTask = user?.roles.some((r: string) => r === Roles.MD || r === Roles.HR_MANAGER || r === Roles.ADMIN || r === Roles.MARKETING_DIRECTOR);
+  const canViewTeam = user?.roles.includes(Roles.MD) || user?.roles.includes(Roles.MARKETING_DIRECTOR) || user?.roles.includes(Roles.ADMIN) || user?.roles.includes(Roles.HR_MANAGER) || user?.roles.includes(Roles.PROJECT_MANAGER) || user?.roles.includes(Roles.SALES_MANAGER);
+  const canCreateTask = user?.roles.some((r: string) => [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.SALES_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_LEAD_OPERATOR].includes(r as never));
 
   const fetchTasks = async () => {
     setIsLoading(true);
@@ -51,6 +56,7 @@ export const TaskManager: React.FC = () => {
   };
 
   const fetchEmployees = async () => {
+    if (!canCreateTask) return;
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/md/employees`);
       const data = await res.json();
@@ -79,6 +85,7 @@ export const TaskManager: React.FC = () => {
 
       if (res.ok) {
         setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
+        setTeamTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
         if (data.cheerUp) {
           setCheerUpToast(`🎉 Fantastic work! Task completed! +1.0 Performance Boost added to your score!`);
           setTimeout(() => setCheerUpToast(null), 5000);
@@ -137,9 +144,9 @@ export const TaskManager: React.FC = () => {
       const hoursOverdue = Math.floor(minsOverdue / 60);
       const remMins = minsOverdue % 60;
       return (
-        <span className="bg-red-100 text-red-800 font-mono font-bold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 border border-red-200 animate-pulse">
+        <span className="bg-red-100 text-red-800 font-mono font-bold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 border border-red-200 animate-pulse w-max">
           <AlertTriangle className="w-3 h-3 text-red-600" />
-          <span>Overdue by {hoursOverdue > 0 ? `${hoursOverdue}h ${remMins}m` : `${minsOverdue}m`}</span>
+          <span>Overdue {hoursOverdue > 0 ? `${hoursOverdue}h ${remMins}m` : `${minsOverdue}m`}</span>
         </span>
       );
     }
@@ -152,7 +159,7 @@ export const TaskManager: React.FC = () => {
 
     return (
       <span
-        className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 border ${
+        className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 border w-max ${
           isUrgentWindow ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse' : 'bg-slate-100 text-slate-700 border-slate-200'
         }`}
       >
@@ -165,191 +172,297 @@ export const TaskManager: React.FC = () => {
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case 'URGENT':
-        return <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded">URGENT</span>;
+        return <span className="bg-danger-100 text-danger-800 text-[10px] font-bold px-2 py-0.5 rounded border border-danger-200">URGENT</span>;
       case 'HIGH':
-        return <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">HIGH</span>;
+        return <span className="bg-warning-100 text-warning-800 text-[10px] font-bold px-2 py-0.5 rounded border border-warning-200">HIGH</span>;
       case 'MEDIUM':
-        return <span className="bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 rounded">MEDIUM</span>;
+        return <span className="bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 rounded border border-navy-200">MEDIUM</span>;
       default:
-        return <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">LOW</span>;
+        return <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">LOW</span>;
     }
   };
 
   const currentTaskList = activeTab === 'my_tasks' ? tasks : teamTasks;
-  const filteredTasks = currentTaskList.filter((t) => {
-    if (filterStatus === 'ALL') return true;
-    return t.status === filterStatus;
-  });
+  const filteredTasks = currentTaskList.filter((t) => filterStatus === 'ALL' || t.status === filterStatus);
+
+  // Quick Metrics Calcs
+  const now = new Date().getTime();
+  const pendingCount = currentTaskList.filter(t => t.status !== 'COMPLETED').length;
+  const overdueCount = currentTaskList.filter(t => t.status !== 'COMPLETED' && new Date(t.deadline).getTime() < now).length;
+  
+  // Tasks completed today
+  const startOfToday = new Date();
+  startOfToday.setHours(0,0,0,0);
+  const completedTodayCount = currentTaskList.filter(t => {
+    if (t.status !== 'COMPLETED' || !t.completed_at) return false;
+    return new Date(t.completed_at) >= startOfToday;
+  }).length;
+
+  const columns: ColumnDef<TaskItem>[] = [
+    {
+      key: 'title',
+      header: 'Task Details',
+      sortable: true,
+      render: (t) => (
+        <div className="space-y-1 max-w-[300px]">
+          <div className="flex items-center gap-2">
+            <span className={`font-bold text-sm ${t.status === 'COMPLETED' ? 'text-slate-400 line-through' : 'text-slate-800'} truncate`}>
+              {t.title}
+            </span>
+            {t.status !== 'COMPLETED' && getPriorityBadge(t.priority || 'MEDIUM')}
+          </div>
+          {t.description && (
+            <p className="text-xs text-slate-500 line-clamp-1">{t.description}</p>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'lead',
+      header: 'CRM Link',
+      render: (t) => (
+        t.lead ? (
+          <div className="flex items-center gap-1.5 text-xs">
+            <Building2 className="w-3.5 h-3.5 text-gold-600" />
+            <span className="font-semibold text-navy-800">{t.lead.customer_name}</span>
+          </div>
+        ) : (
+          <span className="text-slate-400 text-xs italic">General Task</span>
+        )
+      )
+    },
+    {
+      key: 'deadline',
+      header: 'Timeline',
+      sortable: true,
+      render: (t) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono">
+            <Calendar className="w-3.5 h-3.5" />
+            {new Date(t.deadline || '').toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+          </div>
+          {getCountdownBadge(t.deadline || '', t.status || 'PENDING')}
+        </div>
+      )
+    },
+    {
+      key: 'assignee',
+      header: 'Assignee',
+      render: (t) => (
+        t.assignee ? (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-navy-100 text-navy-800 flex items-center justify-center font-bold text-[10px] shrink-0">
+              {(t.assignee.employee_code || '').slice(-3)}
+            </div>
+            <span className="text-xs font-semibold text-slate-700">{t.assignee.full_name || t.assignee.employee_code}</span>
+          </div>
+        ) : <span className="text-xs text-slate-400">Unassigned</span>
+      )
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (t) => (
+        <StatusPill 
+          status={t.status || 'PENDING'} 
+          type={t.status === 'COMPLETED' ? 'success' : t.status === 'OVERDUE' ? 'danger' : 'pending'} 
+        />
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Action',
+      render: (t) => (
+        <div className="flex items-center justify-end gap-2">
+          {t.status === 'COMPLETED' ? (
+            <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+              <CheckCircle2 className="w-4 h-4" /> Done
+            </span>
+          ) : (
+            <>
+              <select
+                value={t.status}
+                onChange={(e) => handleUpdateStatus(t.id, e.target.value)}
+                className="p-1.5 text-[11px] font-bold bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-navy-500"
+              >
+                <option value="PENDING">PENDING</option>
+                <option value="IN_PROGRESS">IN PROGRESS</option>
+              </select>
+              <button
+                onClick={() => handleUpdateStatus(t.id, 'COMPLETED')}
+                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors border border-emerald-200"
+                title="Mark as Completed"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative">
+    <div className="space-y-6">
       {/* Cheer-Up Toast */}
       {cheerUpToast && (
-        <div className="fixed top-6 right-6 z-50 bg-gradient-to-r from-navy-700 to-emerald-600 text-white p-4 rounded-2xl shadow-2xl border border-navy-400/30 flex items-center gap-3 animate-bounce">
-          <Sparkles className="w-6 h-6 text-amber-300 shrink-0" />
+        <div className="fixed top-6 right-6 z-50 bg-gradient-to-r from-navy-800 to-navy-900 text-white p-4 rounded-2xl shadow-2xl border border-gold-500/30 flex items-center gap-3 animate-bounce">
+          <Sparkles className="w-6 h-6 text-gold-400 shrink-0" />
           <div>
-            <h4 className="font-bold text-sm">Celebration Time!</h4>
-            <p className="text-xs text-navy-50">{cheerUpToast}</p>
+            <h4 className="font-bold text-sm text-gold-400">Celebration Time!</h4>
+            <p className="text-xs text-slate-200">{cheerUpToast}</p>
           </div>
         </div>
       )}
 
-      {/* Main Tab Bar (My Tasks vs MD All Team Tasks) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('my_tasks')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'my_tasks' ? 'bg-navy-700 text-white shadow-md' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
-            }`}
-          >
-            My Assigned Tasks ({tasks.length})
-          </button>
-
-          {canViewTeam && (
-            <button
-              onClick={() => setActiveTab('team_tasks')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeTab === 'team_tasks' ? 'bg-navy-700 text-white shadow-md' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>All Team Tasks & Progress ({teamTasks.length})</span>
-            </button>
-          )}
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <ListTodo className="w-5 h-5 text-gold-500" />
+            <h2 className="text-xl font-extrabold tracking-tight">Task Management</h2>
+          </div>
+          <p className="text-xs text-navy-200/80">
+            Log calls, accept visits, and manage follow-ups. Every task drives the CRM funnel forward.
+          </p>
         </div>
 
         {canCreateTask && (
           <button
             onClick={() => setIsCreating(true)}
-            className="px-3.5 py-2 bg-navy-700 hover:bg-navy-800 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+            className="px-4 py-2 bg-gold-600 hover:bg-gold-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
-            <span>New Task</span>
+            <span>Create New Task</span>
           </button>
         )}
       </div>
 
-      {/* Filter Status Tabs */}
-      <div className="flex gap-2 border-b border-slate-100 pb-3 mb-4 overflow-x-auto text-xs">
-        {['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE'].map((st) => (
-          <button
-            key={st}
-            onClick={() => setFilterStatus(st)}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-              filterStatus === st ? 'bg-navy-100 text-navy-800 font-bold' : 'text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            {st.replace('_', ' ')}
-          </button>
-        ))}
+      {/* Quick Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard 
+          label="Pending Tasks" 
+          value={pendingCount} 
+          icon={Briefcase} 
+        />
+        <StatCard 
+          label="Overdue Tasks" 
+          value={overdueCount} 
+          icon={AlertTriangle} 
+          trend={{ direction: 'down', value: String(overdueCount), label: 'Requires Attention' }}
+        />
+        <StatCard 
+          label="Completed Today" 
+          value={completedTodayCount} 
+          icon={CheckSquare} 
+          trend={{ direction: 'up', value: 'Great job!', label: 'Performance Boost' }}
+        />
       </div>
 
-      {/* Task Cards List */}
-      {isLoading ? (
-        <div className="py-8 text-center text-xs text-slate-400">Loading tasks...</div>
-      ) : filteredTasks.length === 0 ? (
-        <div className="py-8 text-center text-xs text-slate-400">No tasks found for this filter.</div>
-      ) : (
-        <div className="space-y-3">
-          {filteredTasks.map((t) => (
-            <div key={t.id} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-white transition-colors flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-slate-800">{t.title}</span>
-                  {getPriorityBadge(t.priority || 'MEDIUM')}
+      {/* Main Content Area */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-2">
+          
+          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab('my_tasks')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'my_tasks' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              My Tasks ({tasks.length})
+            </button>
+            {canViewTeam && (
+              <button
+                onClick={() => setActiveTab('team_tasks')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'team_tasks' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Team Tasks ({teamTasks.length})</span>
+              </button>
+            )}
+          </div>
 
-                  {/* Red OVERDUE Status Badge */}
-                  {t.status === 'OVERDUE' && (
-                    <span className="bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded flex items-center gap-1 animate-pulse">
-                      <AlertTriangle className="w-3 h-3" /> OVERDUE
-                    </span>
-                  )}
-                </div>
-
-                {t.description && <p className="text-xs text-slate-500">{t.description}</p>}
-
-                {t.assignee && (
-                  <div className="text-[11px] text-navy-800 font-medium">
-                    Assigned to: <span className="font-bold">{t.assignee.employee_code}</span>
-                  </div>
-                )}
-
-                {/* Deadline & Live Countdown Timer Badge */}
-                <div className="flex items-center gap-3 pt-1">
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    Deadline: {new Date(t.deadline || '').toLocaleString()}
-                  </span>
-                  {getCountdownBadge(t.deadline || '', t.status || 'PENDING')}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {t.status === 'COMPLETED' ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 font-bold px-3 py-1 rounded-xl text-xs">
-                    <CheckCircle2 className="w-4 h-4" /> Completed
-                  </span>
-                ) : (
-                  <select
-                    value={t.status}
-                    onChange={(e) => handleUpdateStatus(t.id, e.target.value)}
-                    className="p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-navy-600"
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="IN_PROGRESS">IN PROGRESS</option>
-                    <option value="COMPLETED">COMPLETE (MARK DONE)</option>
-                  </select>
-                )}
-              </div>
-            </div>
-          ))}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-500">Filter Status:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-navy-500"
+            >
+              <option value="ALL">All Tasks</option>
+              <option value="PENDING">PENDING</option>
+              <option value="IN_PROGRESS">IN PROGRESS</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="OVERDUE">OVERDUE</option>
+            </select>
+          </div>
         </div>
-      )}
+
+        {isLoading ? (
+          <div className="py-12 text-center text-slate-500">Loading tasks...</div>
+        ) : (
+          <DataTable 
+            columns={columns}
+            data={filteredTasks}
+            searchable={true}
+            emptyMessage="No tasks found matching your criteria."
+          />
+        )}
+      </div>
 
       {/* New Task Creation Modal */}
       {isCreating && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative animate-scaleUp">
-            <button
-              onClick={() => setIsCreating(false)}
-              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-scaleUp">
+            
+            <div className="bg-navy-900 p-5 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <ListTodo className="w-5 h-5 text-gold-500" />
+                <h3 className="font-bold text-sm tracking-wide">Create New Task</h3>
+              </div>
+              <button
+                onClick={() => setIsCreating(false)}
+                className="p-1.5 text-slate-300 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-            <h3 className="text-xl font-bold text-slate-800 mb-4">Create New Task</h3>
-
-            <form onSubmit={handleCreateTask} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateTask} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Task Title *</label>
+                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Task Title *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Review Gachibowli Property Documentation"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
+                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Description (Optional)</label>
+                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Description (Optional)</label>
                 <textarea
                   rows={2}
                   placeholder="Provide task scope, instructions, or specific criteria..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600"
+                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 text-sm"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Assignee</label>
+                  <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Assignee</label>
                   <select
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 font-medium"
+                    className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 text-sm font-semibold text-slate-700"
                   >
                     <option value="">Assign to Myself ({user?.employeeCode})</option>
                     {employees.map((emp) => (
@@ -361,11 +474,11 @@ export const TaskManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Priority</label>
+                  <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Priority</label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 font-medium"
+                    className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 text-sm font-semibold text-slate-700"
                   >
                     <option value="LOW">LOW</option>
                     <option value="MEDIUM">MEDIUM</option>
@@ -376,24 +489,33 @@ export const TaskManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Deadline Date/Time *</label>
+                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Deadline Date/Time *</label>
                 <input
                   type="datetime-local"
                   required
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-navy-600"
+                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-navy-600 text-sm"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3 bg-navy-700 hover:bg-navy-800 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                <span>Create & Assign Task</span>
-              </button>
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCreating(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-navy-900 hover:bg-navy-800 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{isSubmitting ? 'Creating...' : 'Create & Assign Task'}</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

@@ -110,7 +110,7 @@ export const AppLayout: React.FC<{
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Sidebar */}
         <aside
-          className="sidebar-left bg-white border-r border-neutral-200 p-4 shrink-0 h-full overflow-y-auto"
+          className="sidebar-left bg-navy-950 border-r border-navy-900 p-4 shrink-0 h-full overflow-y-auto"
           style={{ width: '260px' }}
         >
           <SidebarNav />
@@ -169,7 +169,6 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // BOOKINGS
   { id: 'group-transactions', label: 'BOOKINGS', group: true, icon: FileCheck },
   { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings', requiredPermission: Permissions.BOOKINGS_READ },
-  { id: 'documents', label: 'Documents', icon: undefined, path: '/documents', requiredPermission: Permissions.DOCUMENTS_READ },
 
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
@@ -273,7 +272,7 @@ const SidebarNav: React.FC = () => {
               onClick={() => toggleGroup(group.groupItem.id)}
               aria-expanded={isExpanded}
               aria-controls={`group-${group.groupItem.id}`}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700 transition-colors rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-navy focus:bg-slate-50"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors rounded-md hover:bg-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-navy-900"
             >
               <span>{group.groupItem.label}</span>
               {isExpanded ? (
@@ -291,12 +290,12 @@ const SidebarNav: React.FC = () => {
                     data-tour={`sidebar-${item.id}`}
                     className={({ isActive }) =>
                       `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                        isActive ? 'bg-navy-50 text-navy-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                        isActive ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-800 hover:text-white'
                       }`
                     }
                   >
                     {item.icon ? (
-                      <item.icon className="w-4 h-4 shrink-0 text-gold" />
+                      <item.icon className="w-4 h-4 shrink-0 opacity-80" />
                     ) : null}
                     <span className="truncate">{item.label}</span>
                   </NavLink>

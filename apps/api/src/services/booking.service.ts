@@ -253,12 +253,15 @@ export class BookingService {
         });
       }
 
-      // Transition the associated Opportunity to BOOKED (transactionally atomic with confirmation).
+      // Update the associated Opportunity values (transactionally atomic with confirmation).
       const opp = await tx.opportunity.findFirst({ where: { booking_id: id } });
       if (opp) {
         await tx.opportunity.update({
           where: { id: opp.id },
-          data: { stage: 'BOOKED' },
+          data: { 
+            expected_value: booking.agreed_price,
+            probability: 100 
+          },
         });
       }
 
@@ -291,10 +294,11 @@ export class BookingService {
         data: { status: 'LIVE', locked_until: null, locked_by_booking_id: null },
       });
     }
-    // Drop the associated Opportunity when the booking is cancelled.
-    const opp = await p.opportunity.findFirst({ where: { booking_id: id } });
-    if (opp) {
-      await p.opportunity.update({ where: { id: opp.id }, data: { stage: 'DROPPED' } });
+    // Cancelled bookings don't directly manipulate Opportunity.stage since it no longer exists.
+    // Instead we transition the lead status.
+    const opp = await p.opportunity.findFirst({ where: { booking_id: id }, include: { lead: true } });
+    if (opp && opp.lead && opp.lead.status !== 'DROPPED') {
+      await p.lead.update({ where: { id: opp.lead_id }, data: { status: 'DROPPED' } });
     }
     return updated;
   }

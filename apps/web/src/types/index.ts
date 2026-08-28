@@ -360,7 +360,7 @@ export interface SalesOpportunity {
   project_id?: number | null;
   property_id?: number | null;
   booking_id?: number | null;
-  stage: string;
+
   expected_value?: number | null;
   probability?: number | null;
   budget_min?: number | null;

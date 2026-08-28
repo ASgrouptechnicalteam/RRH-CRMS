@@ -61,7 +61,6 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
     await prisma.payment.deleteMany({});
     await prisma.installment.deleteMany({});
     await prisma.booking.deleteMany({});
-    await prisma.document.deleteMany({});
     await prisma.complaint.deleteMany({});
     await prisma.customer.deleteMany({});
     await prisma.property.deleteMany({});

@@ -33,10 +33,10 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
 
   // 1. Employees
   const employeeData = [
-    { code: 'DEV-SM-001', name: 'Alice Salesmgr', email: 'alice@example.com', role: Roles.SALES_MANAGER, phone: '9876543210' },
-    { code: 'DEV-SE-001', name: 'Bob Salesexec', email: 'bob@example.com', role: Roles.AGENT, phone: '9876543211' },
-    { code: 'DEV-TC-001', name: 'Carol Telecaller', email: 'carol@example.com', role: Roles.TELECALLER, phone: '9876543212' },
-    { code: 'DEV-PM-001', name: 'Dave Projmgr', email: 'dave@example.com', role: Roles.PROJECT_MANAGER, phone: '9876543213' },
+    { code: 'RRH-EMP-001', name: 'Alice Salesmgr', email: 'alice@example.com', role: Roles.SALES_MANAGER, phone: '9876543210' },
+    { code: 'RRH-EMP-002', name: 'Bob Salesexec', email: 'bob@example.com', role: Roles.AGENT, phone: '9876543211' },
+    { code: 'RRH-EMP-003', name: 'Carol Telecaller', email: 'carol@example.com', role: Roles.TELECALLER, phone: '9876543212' },
+    { code: 'RRH-EMP-004', name: 'Dave Projmgr', email: 'dave@example.com', role: Roles.PROJECT_MANAGER, phone: '9876543213' },
   ];
 
   const createdEmployees: Record<string, any> = {};
@@ -96,7 +96,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
         location: proj.location,
         status: proj.status,
         slug: proj.code.toLowerCase(),
-        assigned_pm_id: createdEmployees['DEV-PM-001']?.id,
+        assigned_pm_id: createdEmployees['RRH-EMP-004']?.id,
       },
     });
     createdProjects.push(p);
@@ -136,7 +136,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
         area_sqft: prop.area,
         category: prop.type,
         location: createdProjects[prop.projIndex]?.location || 'Hyderabad',
-        created_by_id: createdEmployees['DEV-SM-001']?.id || 1,
+        created_by_id: createdEmployees['RRH-EMP-001']?.id || 1,
         status: 'LIVE',
       },
     });
@@ -201,7 +201,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
         phone: ld.phone,
         status: ld.status,
         project_id: createdProjects[ld.projIndex]?.id,
-        assigned_to_id: createdEmployees['DEV-TC-001']?.id,
+        assigned_to_id: createdEmployees['RRH-EMP-003']?.id,
       },
       select: { id: true, lead_code: true }
     });
@@ -226,7 +226,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
       create: {
         booking_code: sv.code,
         lead_id: createdLeads[sv.leadIdx].id,
-        telecaller_id: createdEmployees['DEV-TC-001']?.id || 1,
+        telecaller_id: createdEmployees['RRH-EMP-003']?.id || 1,
         scheduled_date: new Date(Date.now() + 86400000), // Tomorrow
         status: sv.status,
       },
@@ -265,7 +265,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
   // 8. Complaints
   const cmpData = [
     { code: 'CMP-DEV-01', custIdx: 0, bkgIdx: 0, status: 'OPEN', title: 'Payment Issue' },
-    { code: 'CMP-DEV-02', custIdx: 1, bkgIdx: 1, status: 'IN_PROGRESS', title: 'Document Delay' },
+    { code: 'CMP-DEV-02', custIdx: 1, bkgIdx: 1, status: 'IN_PROGRESS', title: 'Process Delay' },
     { code: 'CMP-DEV-03', custIdx: 2, bkgIdx: 2, status: 'RESOLVED', title: 'Address Correction' },
     { code: 'CMP-DEV-04', custIdx: 1, bkgIdx: 1, status: 'CLOSED', title: 'General Inquiry' },
     { code: 'CMP-DEV-05', custIdx: 3, bkgIdx: 3, status: 'OPEN', title: 'Refund Status' },
@@ -297,7 +297,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
     { custIdx: 3, title: 'Booking Cancelled', message: 'Your booking was cancelled', is_read: true },
     { custIdx: 4, title: 'Site Visit Reminder', message: 'Site visit tomorrow', is_read: false },
     { custIdx: 5, title: 'New Project Launch', message: 'Check out our new project', is_read: false },
-    { custIdx: 6, title: 'Document Required', message: 'Please upload KYC', is_read: false },
+    { custIdx: 6, title: 'KYC Verification Required', message: 'Please upload KYC documents', is_read: false },
   ];
 
   // We can't upsert without a unique field on notifications. We will just delete development notifications and recreate them to stay idempotent.
@@ -318,8 +318,6 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
     });
   }
   console.log(`✅ ${notifData.length} Notifications recreated.`);
-
-  // 10. Documents - Skipping since physical files are not mocked in schemas here typically, and it explicitly said to skip if fake files might break application logic. The schema has `storage_path` which expects real S3/Local paths. We will not create them to avoid broken image links in the UI.
 
   console.log('✅ Development dataset seeded successfully.');
 }

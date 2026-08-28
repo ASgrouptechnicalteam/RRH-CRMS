@@ -4,7 +4,7 @@ import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
-import { Roles, PAYMENT_EVENT_TYPE } , Roles } from '@rrh-ems/shared';
+import { Roles, PAYMENT_EVENT_TYPE } from '@rrh-ems/shared';
 import { getISTComponents } from '../../apps/api/src/utils/time';
 
 jest.setTimeout(45000);

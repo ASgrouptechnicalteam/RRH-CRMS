@@ -159,8 +159,8 @@ export const SalesPipelineManagement: React.FC = () => {
                       {opp.lead?.customer_name || 'Unknown Prospect'}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${SALES_STAGE_COLORS[opp.stage] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                        {SALES_STAGE_LABELS[opp.stage] || opp.stage}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${SALES_STAGE_COLORS[opp.lead?.status || 'UNKNOWN'] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                        {SALES_STAGE_LABELS[opp.lead?.status || 'UNKNOWN'] || opp.lead?.status || 'UNKNOWN'}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-slate-600">{opp.project?.name || '—'}</td>

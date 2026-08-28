@@ -104,8 +104,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
       create: {
         opportunity_code: 'OPP-B-999',
         lead: { connect: { id: compBLeadId } },
-        stage: 'PROSPECT_QUALIFIED',
-        expected_value: 5000000,
+                expected_value: 5000000,
         expected_close_date: new Date(),
         company: { connect: { id: 2 } },
         owner: { connect: { id: compBUser.id } }
@@ -217,7 +216,6 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
     if (compACustomerId) {
       await prisma.customerNotification.deleteMany({ where: { customer_id: compACustomerId } });
       await prisma.integrationEvent.deleteMany({ where: { crms_customer_id: compACustomerId } });
-      await prisma.document.deleteMany({ where: { customer_id: compACustomerId } });
       await prisma.customer.deleteMany({ where: { id: compACustomerId } });
     }
     if (compBBookingId) {

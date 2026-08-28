@@ -86,10 +86,8 @@ export class KycService {
   }
 
   /**
-   * §7: KYC document handling has moved to the customer portal. The CRM no
-   * longer stores KYC documents (Document model removed), so derived kyc_status
-   * recomputation from documents is retired. This now returns the customer
-   * unchanged — KYC verification/status is owned by the portal and surfaces back
+   * KYC verification/status is owned by the customer portal and surfaces back
+   * via IntegrationService.processKycCallback. The CRM no longer stores KYC
    * via the portal KYC callback (IntegrationService.processKycCallback).
    */
   static async recomputeAndNotifyTx(

@@ -44,7 +44,8 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
 
   const expectedValue = Number(opportunity.expected_value || 0);
   const probability = Number(opportunity.probability || 0);
-  const stageColorClass = SALES_STAGE_COLORS[opportunity.stage] || 'bg-slate-100 text-slate-700 border-slate-200';
+  const currentStage = opportunity.lead?.status || 'UNKNOWN';
+  const stageColorClass = SALES_STAGE_COLORS[currentStage] || 'bg-slate-100 text-slate-700 border-slate-200';
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm">
@@ -60,7 +61,7 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
               </span>
             </div>
             <div className={`text-xs font-bold px-2 py-0.5 rounded border inline-flex ${stageColorClass}`}>
-              {SALES_STAGE_LABELS[opportunity.stage] || opportunity.stage}
+              {SALES_STAGE_LABELS[currentStage] || currentStage}
             </div>
           </div>
           <button onClick={onClose} aria-label="Close sales details" className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">

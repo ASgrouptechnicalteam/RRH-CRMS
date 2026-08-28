@@ -144,7 +144,6 @@ model Employee {
   refunded_by_me              ExpenseRefund[]              @relation("RefundedBy")
   created_property_interests  LeadPropertyInterest[]
   owned_opportunities         Opportunity[]                @relation("OwnedOpportunities")
-  opportunity_history_entries OpportunityHistory[]         @relation("OpportunityHistoryAuthor")
   assigned_bookings           Booking[]                    @relation("AssignedBookings")
   recorded_payments           Payment[]                    @relation("RecordedPayments")
   recorded_installments       Installment[]                @relation("RecordedInstallments")
@@ -1045,7 +1044,6 @@ model Opportunity {
   property_id Int?
   booking_id  Int? @unique
 
-  stage               String    @default("PROSPECT_QUALIFIED") // PROSPECT_QUALIFIED, REQUIREMENT_CAPTURED, PROPERTY_SHORTLISTED, SITE_VISIT_PLANNED, SITE_VISIT_COMPLETED, PROPERTY_INTEREST_CONFIRMED, NEGOTIATION, BOOKING_INITIATED, BOOKED, DROPPED
   expected_value      Float?
   probability         Float?    @default(10.0)
   budget_min          Float?
@@ -1074,33 +1072,17 @@ model Opportunity {
 
   site_visits SiteVisitBooking[]
   tasks       Task[]
-  history     OpportunityHistory[]
 
   @@index([company_id])
   @@index([branch_id])
   @@index([owner_id])
   @@index([lead_id])
-  @@index([stage])
   @@index([project_id])
   @@index([property_id])
   @@index([created_at])
 }
 
-model OpportunityHistory {
-  id             Int       @id @default(autoincrement())
-  opportunity_id Int
-  from_stage     String?
-  to_stage       String
-  changed_by_id  Int
-  created_at     DateTime  @default(now())
-  exited_at      DateTime?
 
-  opportunity Opportunity @relation(fields: [opportunity_id], references: [id], onDelete: Cascade)
-  changed_by  Employee    @relation("OpportunityHistoryAuthor", fields: [changed_by_id], references: [id])
-
-  @@index([opportunity_id])
-  @@index([changed_by_id])
-}
 
 // ─────────────────────────────────────────────────────────────
 // CUSTOMER PORTAL INTEGRATION — Phase 11 Packet 3A

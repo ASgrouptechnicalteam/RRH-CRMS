@@ -88,30 +88,11 @@ describe('Phase 11 Packet 3C - KYC Data Bridge', () => {
   afterAll(async () => {
     await p.integrationEvent.deleteMany({ where: { crms_customer_id: customerId } });
     await p.customerNotification.deleteMany({ where: { customer_id: { in: [customerId, crossOrgCustomerId] } } });
-    await p.document.deleteMany({ where: { customer_id: customerId } });
+
     await p.customer.deleteMany({ where: { id: customerId } });
     await p.customer.deleteMany({ where: { id: crossOrgCustomerId } });
     PortalWorker.stop();
   });
-
-  const createKycDocument = async (documentType: string, customer_id: number) => {
-    return p.document.create({
-      data: {
-        document_code: `TEST-DOC-${documentType}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        company_id: companyId,
-        customer_id,
-        document_type: documentType,
-        title: `Test ${documentType}`,
-        original_name: 'test.pdf',
-        storage_path: 'uploads/test.pdf',
-        mime_type: 'application/pdf',
-        file_size: 100,
-        status: 'ACTIVE',
-        verification_status: 'PENDING',
-        uploaded_by_id: mdUserId,
-      },
-    });
-  };
 
   test('1. MD can write customer KYC; PAN/Aadhaar encrypted at rest', async () => {
     const res = await request(app)
@@ -303,48 +284,6 @@ describe('Phase 11 Packet 3C - KYC Data Bridge', () => {
     await p.integrationEvent.deleteMany({ where: { id: freshEvent.id } });
   });
 
-  test('11. Verifying both KYC documents derives kyc_status = VERIFIED and re-emits', async () => {
-    // Reset status to a clean state
-    await p.customer.update({ where: { id: customerId }, data: { kyc_status: 'PARTIAL', kyc_verified_at: null, kyc_rejected_reason: null } });
-
-    const panDoc = await createKycDocument('KYC_PAN', customerId);
-    const aadhaarDoc = await createKycDocument('KYC_AADHAAR', customerId);
-
-    await request(app)
-      .patch(`/api/v1/documents/${panDoc.id}/verify`)
-      .set('Authorization', `Bearer ${mdToken}`)
-      .send({ status: 'VERIFIED', notes: 'PAN matches' });
-    await request(app)
-      .patch(`/api/v1/documents/${aadhaarDoc.id}/verify`)
-      .set('Authorization', `Bearer ${mdToken}`)
-      .send({ status: 'VERIFIED', notes: 'Aadhaar matches' });
-
-    const customer = await p.customer.findUnique({ where: { id: customerId } });
-    expect(customer.kyc_status).toBe('VERIFIED');
-    expect(customer.kyc_verified_at).toBeTruthy();
-
-    const event = await p.integrationEvent.findFirst({
-      where: { event_type: 'CUSTOMER_KYC_STATUS_CHANGED', crms_customer_id: customerId },
-      orderBy: { created_at: 'desc' },
-    });
-    const payload = JSON.parse(event.payload);
-    expect(payload.kyc_status).toBe('VERIFIED');
-    expect(payload.verified_at).toBeTruthy();
-    expect(JSON.stringify(payload)).not.toContain('ABCDE1234F');
-  });
-
-  test('12. Rejecting a KYC document derives kyc_status = REJECTED with reason', async () => {
-    const aadhaarDoc = await createKycDocument('KYC_AADHAAR', customerId);
-    await request(app)
-      .patch(`/api/v1/documents/${aadhaarDoc.id}/verify`)
-      .set('Authorization', `Bearer ${mdToken}`)
-      .send({ status: 'REJECTED', notes: 'Document blurry' });
-
-    const customer = await p.customer.findUnique({ where: { id: customerId } });
-    expect(customer.kyc_status).toBe('REJECTED');
-    expect(customer.kyc_rejected_reason).toBe('Document blurry');
-    expect(customer.kyc_verified_at).toBeNull();
-  });
 
   test('13. maskPan never exposes the raw value', () => {
     expect(KycService.maskPan('ABCDE1234F')).toBe('ABCDE****F');

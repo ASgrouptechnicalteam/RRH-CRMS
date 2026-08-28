@@ -80,7 +80,7 @@ export interface AnalyticsKpisResponse {
   generatedAt: string;
   crm: CrmKpis;
   property: PropertyKpis;
-  opportunity: { pipelineMetrics: any; conversionMetrics: any };
+  opportunity: { pipelineMetrics: any };
   booking: BookingKpis;
   hr: HrKpis;
   performance: { teamPerformance: TeamPerformanceKpis };
@@ -320,9 +320,8 @@ export class AnalyticsService {
     // For management roles (MD/Admin) OpportunityPolicy.canList scopes to the
     // user's whole company; the authenticated user is already ADMIN_SYSTEM_METRICS
     // gated, so this never crosses tenant boundaries.
-    const [pipelineMetrics, conversionMetrics] = await Promise.all([
+    const [pipelineMetrics] = await Promise.all([
       OpportunityService.getPipelineMetrics(user),
-      OpportunityService.getConversionMetrics(user),
     ]);
 
     return {
@@ -330,7 +329,7 @@ export class AnalyticsService {
       generatedAt: new Date().toISOString(),
       crm: { totalLeads, wonLeads, siteVisitsScheduled },
       property,
-      opportunity: { pipelineMetrics, conversionMetrics },
+      opportunity: { pipelineMetrics },
       booking: { totalBookings },
       hr: { activeEmployees: attendance.active, attendanceExceptionsToday: attendance.exceptions },
       performance: { teamPerformance: teamPerf },

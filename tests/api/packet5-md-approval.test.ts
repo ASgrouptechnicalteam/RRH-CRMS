@@ -53,7 +53,6 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     // Document is cleared first because it also FK-references booking/opportunity/lead/property.
     await p.integrationEvent.deleteMany({});
     await p.auditEvent.deleteMany({});
-    await p.document.deleteMany({});
     await p.customerNotification.deleteMany({});
     await p.booking.deleteMany({});
     await p.opportunity.deleteMany({});

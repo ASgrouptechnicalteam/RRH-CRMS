@@ -3,7 +3,7 @@ import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
-import { Roles, PAYMENT_EVENT_TYPE } , Roles } from '@rrh-ems/shared';
+import { Roles, PAYMENT_EVENT_TYPE } from '@rrh-ems/shared';
 import { PortalWorker } from '../../apps/api/src/services/portalWorker';
 
 jest.setTimeout(45000);
@@ -63,7 +63,6 @@ describe('Phase 11 Packet 3F - Payment Synchronization', () => {
     await p.payment.deleteMany({});
     await p.installment.deleteMany({});
     await p.booking.deleteMany({});
-    await p.document.deleteMany({});
     await p.complaint.deleteMany({});
     await p.customer.deleteMany({});
     await p.property.deleteMany({});
@@ -118,7 +117,6 @@ describe('Phase 11 Packet 3F - Payment Synchronization', () => {
     await p.payment.deleteMany({ where: { booking_id: bookingId } });
     await p.installment.deleteMany({ where: { booking_id: bookingId } });
     await p.booking.deleteMany({ where: { id: bookingId } });
-    await p.document.deleteMany({ where: { customer_id: customerId } });
     await p.complaint.deleteMany({ where: { customer_id: customerId } });
     await p.customer.deleteMany({ where: { id: customerId } });
     await p.property.deleteMany({ where: { id: propertyId } });

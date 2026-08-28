@@ -74,43 +74,6 @@ router.get(
   }
 );
 
-// GET /api/v1/opportunities/conversion-metrics
-router.get(
-  '/conversion-metrics',
-  authenticateToken,
-  requirePermission([Permissions.LEADS_READ]),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const metrics = await OpportunityService.getConversionMetrics(req.user!);
-      return res.status(200).json({ metrics });
-    } catch (error: any) {
-      console.error('Fetch conversion metrics error:', error);
-      next(error);
-    }
-  }
-);
-
-// GET /api/v1/opportunities/:id/history
-router.get(
-  '/:id/history',
-  authenticateToken,
-  requirePermission([Permissions.LEADS_READ]),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      const history = await OpportunityService.getOpportunityHistory(req.user!, id);
-      return res.status(200).json({ history });
-    } catch (error: any) {
-      console.error('Fetch opportunity history error:', error);
-      next(error);
-    }
-  }
-);
-
 // GET /api/v1/opportunities/:id
 router.get(
   '/:id',
@@ -156,30 +119,6 @@ router.patch(
   }
 );
 
-// PATCH /api/v1/opportunities/:id/stage
-router.patch(
-  '/:id/stage',
-  authenticateToken,
-  requirePermission([Permissions.LEADS_UPDATE]),
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      const { stage, drop_reason } = req.body;
-      const opportunity = await OpportunityService.updateStage(req.user!, id, stage, drop_reason);
-      return res.status(200).json({
-        message: `Opportunity transitioned to ${stage}`,
-        opportunity,
-      });
-    } catch (error: any) {
-      console.error('Update opportunity stage error:', error);
-      next(error);
-    }
-  }
-);
 
 // POST /api/v1/opportunities/:id/convert-to-booking
 router.post(

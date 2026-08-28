@@ -18,7 +18,7 @@ export const SalesOpportunityCard: React.FC<SalesOpportunityCardProps> = ({ oppo
       className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm hover:border-navy-300 hover:shadow-md cursor-pointer transition-all flex flex-col gap-2 group relative"
       draggable
       onDragStart={(e) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({ id: opportunity.id, stage: opportunity.stage }));
+        e.dataTransfer.setData('application/json', JSON.stringify({ id: opportunity.id, stage: opportunity.lead?.status || 'UNKNOWN' }));
         e.currentTarget.classList.add('opacity-50');
       }}
       onDragEnd={(e) => {

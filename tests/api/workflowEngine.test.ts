@@ -14,7 +14,7 @@ describe('WorkflowEngine (Phase 5 Centralized Engine)', () => {
     permissions: []
   };
 
-  const dummyEntity = { id: 1, company_id: 1 };
+  const dummyEntity = { id: 1, company_id: 1, activities: [{ activity_type: 'CALL_LOGGED' }] };
 
   const buildReq = (domain: WorkflowDomain, currentState: string, action: string): WorkflowTransitionRequest => ({
     domain,

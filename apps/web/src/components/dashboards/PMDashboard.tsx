@@ -12,6 +12,8 @@ import { PropertyListItem } from '../../types';
 import { PropertyManagement } from '../properties/PropertyManagement';
 import { StatCard, ListWidget, ListItem } from '../ui';
 
+import { ActiveSiteVisitsBanner } from '../siteVisits/ActiveSiteVisitsBanner';
+
 export const PMDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
@@ -55,6 +57,8 @@ export const PMDashboard: React.FC = () => {
           <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.employeeCode}. Here are your pending actions and audits.</p>
         </div>
       </div>
+
+      <ActiveSiteVisitsBanner />
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

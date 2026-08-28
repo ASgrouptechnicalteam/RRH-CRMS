@@ -25,6 +25,7 @@ import {
   LeadSalesOppItem
 } from '../../types';
 import { StatusPill } from '../ui/StatusPill';
+import { QualifyLeadModal } from './QualifyLeadModal';
 
 interface Lead {
   id: number;
@@ -65,6 +66,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   const navigate = useNavigate();
 
   const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS' | 'FOLLOW_UPS' | 'SALES_OPPS'>('DETAILS');
+  const [activeTab, setActiveTab] = useState('DETAILS');
+  const [showQualifyModal, setShowQualifyModal] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
 
   const [matches, setMatches] = useState<MatchItem[]>([]);
@@ -308,11 +311,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
     }
   };
 
-  // Determine available statuses based on LEAD-WORKFLOW-SPEC.md
-  // For UI simplicity right now, we allow the main macro transitions from the current state
   const availableNextTransitions = () => {
     const current = lead.status;
-    let valid = ['DROPPED']; // Always can be dropped
+    let valid = ['DROPPED'];
     
     if (current === 'NEW') valid.push('ASSIGNED');
     if (current === 'ASSIGNED') valid.push('CONTACTED');
@@ -327,8 +328,6 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
     if (current === 'BOOKING_INITIATED') valid.push('BOOKED');
     if (current === 'DROPPED') valid.push('RECOVERED_TO_POOL');
 
-    // Make sure we include current in the list so it can be selected as the current state, 
-    // but the dropdown/buttons shouldn't show current as a transition
     return valid.filter(v => v !== current);
   };
 
@@ -366,7 +365,6 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
           </div>
 
           <div className="grid grid-cols-2 gap-4 p-5 bg-surface rounded-2xl mb-6 text-sm">
-            {/* Attribution block */}
             <div className="col-span-2 grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
                 <span className="text-slate-400 text-[10px] uppercase font-bold tracking-widest flex items-center gap-1.5">
@@ -411,11 +409,17 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
             
             <div>
               <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Preference & Budget</span>
-              <div className="font-semibold text-navy-900 mt-0.5">
-                {lead.property_type_preference || 'N/A'} 
-                <span className="text-slate-500 ml-1">
+              <div className="font-semibold text-navy-900 mt-0.5 flex items-center gap-2">
+                {lead.property_type_preference || 'Unspecified'} 
+                <span className="text-slate-500">
                   (₹{lead.budget_max ? (lead.budget_max / 100000).toFixed(1) + 'L' : 'Flexible'})
                 </span>
+                <button
+                  onClick={() => setShowQualifyModal(true)}
+                  className="px-2 py-0.5 text-[10px] font-bold bg-navy-50 text-navy-600 hover:bg-navy-100 rounded-md transition-colors"
+                >
+                  Edit
+                </button>
               </div>
             </div>
             
@@ -879,6 +883,19 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
             </div>
           </div>
         </div>
+      )}
+
+      {showQualifyModal && (
+        <QualifyLeadModal
+          leadId={lead.id}
+          currentData={lead}
+          onClose={() => setShowQualifyModal(false)}
+          onSuccess={() => {
+            setShowQualifyModal(false);
+            onRefreshLeads();
+            onClose();
+          }}
+        />
       )}
     </>
   );

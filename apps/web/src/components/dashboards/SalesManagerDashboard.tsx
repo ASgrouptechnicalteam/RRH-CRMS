@@ -7,6 +7,8 @@ import {
 import { SalesManagerDashboardData, PipelineStageCount, TeamPerformanceRow, LeadAttributionRow, StalledLeadRow, OverdueTaskRow } from '../../types';
 import { StatCard, ListWidget, ListItem, DataTable } from '../ui';
 
+import { ActiveSiteVisitsBanner } from '../siteVisits/ActiveSiteVisitsBanner';
+
 export const SalesManagerDashboard: React.FC = () => {
   const { fetchWithAuth } = useAuth();
   const [data, setData] = useState<SalesManagerDashboardData | null>(null);
@@ -67,6 +69,8 @@ export const SalesManagerDashboard: React.FC = () => {
           <p className="text-slate-500 text-sm mt-1">Monitor team pipeline execution and performance.</p>
         </div>
       </div>
+
+      <ActiveSiteVisitsBanner />
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

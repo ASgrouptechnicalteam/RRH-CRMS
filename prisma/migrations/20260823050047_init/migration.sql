@@ -61,7 +61,7 @@ CREATE TABLE `Employee` (
     `employment_type` VARCHAR(191) NULL DEFAULT 'FULL_TIME',
     `reporting_manager_id` INTEGER NULL,
     `date_of_joining` DATETIME(3) NULL,
-    `salary_ctc` DOUBLE NULL,
+    `salary_ctc` FLOAT NULL,
     `background_education` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -70,65 +70,80 @@ CREATE TABLE `Employee` (
     UNIQUE INDEX `Employee_employee_code_key`(`employee_code`),
     INDEX `Employee_company_id_idx`(`company_id`),
     INDEX `Employee_branch_id_idx`(`branch_id`),
+    INDEX `Employee_reporting_manager_id_idx`(`reporting_manager_id`),
     PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Role` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `is_system` BOOLEAN NOT NULL DEFAULT false,
-    `is_invisible` BOOLEAN NOT NULL DEFAULT false,
-
-    UNIQUE INDEX `Role_name_key`(`name`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Permission` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-
-    UNIQUE INDEX `Permission_name_key`(`name`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `RolePermission` (
-    `role_id` INTEGER NOT NULL,
-    `permission_id` INTEGER NOT NULL,
-
-    PRIMARY KEY (`role_id`, `permission_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `EmployeeRole` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `employee_id` INTEGER NOT NULL,
-    `role_id` INTEGER NOT NULL,
+    `role` VARCHAR(191) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    PRIMARY KEY (`employee_id`, `role_id`)
+    INDEX `EmployeeRole_employee_id_idx`(`employee_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `EmployeeBranch` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `employee_id` INTEGER NOT NULL,
+    `branch_id` INTEGER NOT NULL,
+    `is_primary` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    INDEX `EmployeeBranch_employee_id_idx`(`employee_id`),
+    INDEX `EmployeeBranch_branch_id_idx`(`branch_id`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `EmployeePermissionOverride` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `employee_id` INTEGER NOT NULL,
-    `permission_id` INTEGER NOT NULL,
-    `is_granted` BOOLEAN NOT NULL,
+    `permission` VARCHAR(191) NOT NULL,
+    `value` BOOLEAN NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    PRIMARY KEY (`employee_id`, `permission_id`)
+    INDEX `EmployeePermissionOverride_employee_id_idx`(`employee_id`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `EmployeeQrCode` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `employee_id` INTEGER NOT NULL,
-    `qr_token` VARCHAR(191) NOT NULL,
-    `generated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `expires_at` DATETIME(3) NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    UNIQUE INDEX `EmployeeQrCode_qr_token_key`(`qr_token`),
+    UNIQUE INDEX `EmployeeQrCode_slug_key`(`slug`),
     INDEX `EmployeeQrCode_employee_id_idx`(`employee_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `DailyTarget` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `employee_id` INTEGER NOT NULL,
+    `date` DATE NOT NULL,
+    `target_value` FLOAT NOT NULL,
+    `actual_value` FLOAT NULL,
+    `target_type` VARCHAR(191) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    INDEX `DailyTarget_employee_id_date_idx`(`employee_id`, `date`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -136,53 +151,18 @@ CREATE TABLE `EmployeeQrCode` (
 CREATE TABLE `AttendanceLog` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `employee_id` INTEGER NOT NULL,
-    `check_in_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `check_out_at` DATETIME(3) NULL,
-    `working_duration_minutes` INTEGER NULL,
+    `date` DATE NOT NULL,
     `status` VARCHAR(191) NOT NULL,
-    `source` VARCHAR(191) NOT NULL DEFAULT 'QR_SCAN',
-    `notes` VARCHAR(191) NULL,
-
-    INDEX `AttendanceLog_employee_id_idx`(`employee_id`),
-    INDEX `AttendanceLog_employee_id_check_in_at_idx`(`employee_id`, `check_in_at`),
-    INDEX `AttendanceLog_employee_id_check_out_at_idx`(`employee_id`, `check_out_at`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `AttendanceProposal` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `employee_id` INTEGER NOT NULL,
-    `type` VARCHAR(191) NOT NULL,
-    `target_date` DATETIME(3) NOT NULL,
-    `reason` VARCHAR(191) NOT NULL,
-    `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
-    `reviewed_by` INTEGER NULL,
-    `reviewed_at` DATETIME(3) NULL,
+    `check_in` DATETIME(3) NULL,
+    `check_out` DATETIME(3) NULL,
+    `late_minutes` INTEGER NULL,
+    `half_day` BOOLEAN NOT NULL DEFAULT false,
+    `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Task` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `assignee_id` INTEGER NOT NULL,
-    `target_date` DATETIME(3) NOT NULL,
-    `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
-    `created_by` INTEGER NOT NULL,
-    `completed_at` DATETIME(3) NULL,
-    `lead_id` INTEGER NULL,
-    `opportunity_id` INTEGER NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
-
-    INDEX `Task_assignee_id_idx`(`assignee_id`),
-    INDEX `Task_lead_id_idx`(`lead_id`),
-    INDEX `Task_opportunity_id_idx`(`opportunity_id`),
+    INDEX `AttendanceLog_employee_id_date_idx`(`employee_id`, `date`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -190,116 +170,73 @@ CREATE TABLE `Task` (
 CREATE TABLE `DailyReport` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `employee_id` INTEGER NOT NULL,
-    `submitted_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `summary` VARCHAR(191) NOT NULL,
-    `call_count` INTEGER NOT NULL DEFAULT 0,
-    `site_visit_count` INTEGER NOT NULL DEFAULT 0,
-    `closed_deal_count` INTEGER NOT NULL DEFAULT 0,
-    `target_met` BOOLEAN NOT NULL DEFAULT true,
-    `below_target_reason` VARCHAR(191) NULL,
-    `metrics_json` JSON NULL,
-
-    INDEX `DailyReport_employee_id_idx`(`employee_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `AuditEvent` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `actor_id` INTEGER NOT NULL,
-    `action` VARCHAR(191) NOT NULL,
-    `entity_type` VARCHAR(191) NOT NULL,
-    `entity_id` INTEGER NOT NULL,
-    `old_value` VARCHAR(191) NULL,
-    `new_value` VARCHAR(191) NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `AuditEvent_actor_id_idx`(`actor_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Notification` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `employee_id` INTEGER NOT NULL,
-    `type` VARCHAR(191) NOT NULL,
-    `title` VARCHAR(191) NOT NULL,
-    `message` VARCHAR(191) NOT NULL,
-    `is_read` BOOLEAN NOT NULL DEFAULT false,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `Notification_employee_id_idx`(`employee_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `DailyTarget` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `company_id` INTEGER NOT NULL,
-    `role_name` VARCHAR(191) NOT NULL,
-    `employee_id` INTEGER NULL,
-    `target_date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `calls_target` INTEGER NOT NULL DEFAULT 0,
-    `site_visits_target` INTEGER NOT NULL DEFAULT 0,
-    `closed_deals_target` INTEGER NOT NULL DEFAULT 0,
-    `form_schema_json` JSON NULL,
+    `date` DATE NOT NULL,
+    `report_type` VARCHAR(191) NOT NULL,
+    `content` TEXT NULL,
+    `attachments` JSON NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `DailyTarget_role_name_idx`(`role_name`),
-    INDEX `DailyTarget_employee_id_idx`(`employee_id`),
+    INDEX `DailyReport_employee_id_date_idx`(`employee_id`, `date`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `PerformanceSnapshot` (
+CREATE TABLE `Task` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `employee_id` INTEGER NOT NULL,
-    `snapshot_date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `score` DOUBLE NOT NULL DEFAULT 50.0,
-    `tasks_completed` INTEGER NOT NULL DEFAULT 0,
-    `on_time_logins` INTEGER NOT NULL DEFAULT 0,
-    `late_logins` INTEGER NOT NULL DEFAULT 0,
-    `sub_target_reports` INTEGER NOT NULL DEFAULT 0,
-    `uninformed_absences` INTEGER NOT NULL DEFAULT 0,
+    `company_id` INTEGER NOT NULL,
+    `branch_id` INTEGER NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
+    `status` VARCHAR(191) NOT NULL DEFAULT 'OPEN',
+    `priority` VARCHAR(191) NOT NULL DEFAULT 'MEDIUM',
+    `due_date` DATETIME(3) NULL,
+    `created_by` INTEGER NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `PerformanceSnapshot_employee_id_idx`(`employee_id`),
+    INDEX `Task_company_id_idx`(`company_id`),
+    INDEX `Task_branch_id_idx`(`branch_id`),
+    INDEX `Task_created_by_idx`(`created_by`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Lead` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `lead_code` VARCHAR(191) NOT NULL,
     `company_id` INTEGER NOT NULL,
     `branch_id` INTEGER NULL,
-    `customer_name` VARCHAR(191) NOT NULL,
-    `phone` VARCHAR(191) NOT NULL,
-    `email` VARCHAR(191) NULL,
-    `source` VARCHAR(191) NOT NULL DEFAULT 'MANUAL_ENTRY',
-    `status` VARCHAR(191) NOT NULL DEFAULT 'NEW',
     `assigned_to_id` INTEGER NULL,
-    `assigned_at` DATETIME(3) NULL,
-    `assignment_type` VARCHAR(191) NULL,
-    `property_type_preference` VARCHAR(191) NULL,
-    `budget_min` DOUBLE NULL,
-    `budget_max` DOUBLE NULL,
-    `preferred_location` VARCHAR(191) NULL,
-    `notes` TEXT NULL,
-    `created_by_id` INTEGER NULL,
-    `last_contacted_at` DATETIME(3) NULL,
+    `lead_code` VARCHAR(191) NOT NULL,
+    `first_name` VARCHAR(191) NOT NULL,
+    `last_name` VARCHAR(191) NULL,
+    `phone` VARCHAR(191) NULL,
+    `secondary_phone` VARCHAR(191) NULL,
+    `email` VARCHAR(191) NULL,
+    `whatsapp_number` VARCHAR(191) NULL,
+    `source` VARCHAR(191) NOT NULL DEFAULT 'MANUAL_ENTRY',
     `campaign` VARCHAR(191) NULL,
     `utm_source` VARCHAR(191) NULL,
     `utm_medium` VARCHAR(191) NULL,
     `utm_campaign` VARCHAR(191) NULL,
-    `lead_score` INTEGER NOT NULL DEFAULT 0,
-    `sla_breach_at` DATETIME(3) NULL,
-    `project_id` INTEGER NULL,
-    `enquiry_type` VARCHAR(191) NULL,
-    `preferred_contact_time` VARCHAR(191) NULL,
-    `property_ids` JSON NULL,
+    `status` VARCHAR(191) NOT NULL DEFAULT 'NEW',
+    `notes` TEXT NULL,
+    `priority` VARCHAR(191) NULL,
+    `expected_property_type` VARCHAR(191) NULL,
+    `expected_budget_min` FLOAT NULL,
+    `expected_budget_max` FLOAT NULL,
+    `expected_location` VARCHAR(191) NULL,
+    `expected_bedrooms` INTEGER NULL,
+    `lead_assign_reason` TEXT NULL,
+    `exit_reason` TEXT NULL,
+    `exited_from_status` VARCHAR(191) NULL,
+    `demo_scheduled_at` DATETIME(3) NULL,
+    `demo_handler_id` INTEGER NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Lead_lead_code_key`(`lead_code`),
     INDEX `Lead_company_id_idx`(`company_id`),
@@ -309,6 +246,18 @@ CREATE TABLE `Lead` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- AddForeignKey
+ALTER TABLE `Branch` ADD CONSTRAINT `Branch_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Employee` ADD CONSTRAINT `Employee_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Employee` ADD CONSTRAINT `Employee_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Employee` ADD CONSTRAINT `Employee_reporting_manager_id_fkey` FOREIGN KEY (`reporting_manager_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- CreateTable
 CREATE TABLE `LeadActivity` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
@@ -317,6 +266,8 @@ CREATE TABLE `LeadActivity` (
     `activity_type` VARCHAR(191) NOT NULL,
     `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `LeadActivity_lead_id_idx`(`lead_id`),
     INDEX `LeadActivity_actor_id_idx`(`actor_id`),
@@ -329,12 +280,13 @@ CREATE TABLE `LeadMatchingRequirement` (
     `lead_id` INTEGER NOT NULL,
     `property_type` VARCHAR(191) NOT NULL,
     `location` VARCHAR(191) NOT NULL,
-    `max_budget` DOUBLE NOT NULL,
+    `max_budget` FLOAT NOT NULL,
     `min_bedrooms` INTEGER NULL,
     `is_active` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `LeadMatchingRequirement_lead_id_key`(`lead_id`),
+    INDEX `LeadMatchingRequirement_lead_id_idx`(`lead_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -346,10 +298,12 @@ CREATE TABLE `LeadPropertyInterest` (
     `is_active` BOOLEAN NOT NULL DEFAULT true,
     `created_by` INTEGER NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
+    UNIQUE INDEX `LeadPropertyInterest_lead_id_property_id_key`(`lead_id`, `property_id`),
     INDEX `LeadPropertyInterest_property_id_idx`(`property_id`),
     INDEX `LeadPropertyInterest_created_by_idx`(`created_by`),
-    UNIQUE INDEX `LeadPropertyInterest_lead_id_property_id_key`(`lead_id`, `property_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -367,15 +321,15 @@ CREATE TABLE `Project` (
     `status` VARCHAR(191) NOT NULL DEFAULT 'PLANNING',
     `amenities` JSON NULL,
     `assigned_pm_id` INTEGER NULL,
-    `slug` VARCHAR(191) NOT NULL,
+    `slug` VARCHAR(191) NOT NULL DEFAULT(uuid()),
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Project_project_code_key`(`project_code`),
     INDEX `Project_company_id_idx`(`company_id`),
     INDEX `Project_branch_id_idx`(`branch_id`),
     INDEX `Project_assigned_pm_id_idx`(`assigned_pm_id`),
-    UNIQUE INDEX `Project_company_id_slug_key`(`company_id`, `slug`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -390,8 +344,8 @@ CREATE TABLE `Property` (
     `description` TEXT NULL,
     `brand_type` VARCHAR(191) NOT NULL DEFAULT 'SONTHILLU',
     `category` VARCHAR(191) NOT NULL DEFAULT 'VILLA',
-    `price` DOUBLE NOT NULL,
-    `area_sqft` DOUBLE NOT NULL,
+    `price` FLOAT NOT NULL,
+    `area_sqft` FLOAT NOT NULL,
     `location` VARCHAR(191) NOT NULL,
     `address` TEXT NULL,
     `bedrooms` INTEGER NULL,
@@ -412,8 +366,8 @@ CREATE TABLE `Property` (
     `city` VARCHAR(191) NULL,
     `locality` VARCHAR(191) NULL,
     `pincode` VARCHAR(191) NULL,
-    `latitude` DOUBLE NULL,
-    `longitude` DOUBLE NULL,
+    `latitude` FLOAT NULL,
+    `longitude` FLOAT NULL,
     `listing_type` VARCHAR(191) NULL DEFAULT 'NEW',
     `possession_status` VARCHAR(191) NULL,
     `slug` VARCHAR(191) NULL,
@@ -421,17 +375,15 @@ CREATE TABLE `Property` (
     `locked_by_booking_id` INTEGER NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Property_property_code_key`(`property_code`),
-    UNIQUE INDEX `Property_locked_by_booking_id_key`(`locked_by_booking_id`),
-    INDEX `Property_company_id_idx`(`company_id`),
     INDEX `Property_project_id_idx`(`project_id`),
-    INDEX `Property_brand_type_idx`(`brand_type`),
-    INDEX `Property_status_idx`(`status`),
+    INDEX `Property_company_id_idx`(`company_id`),
+    INDEX `Property_branch_id_idx`(`branch_id`),
     INDEX `Property_assigned_pm_id_idx`(`assigned_pm_id`),
-    INDEX `Property_city_idx`(`city`),
-    INDEX `Property_listing_type_idx`(`listing_type`),
-    UNIQUE INDEX `Property_company_id_slug_key`(`company_id`, `slug`),
+    INDEX `Property_status_idx`(`status`),
+    UNIQUE INDEX `Property_slug_key`(`slug`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -446,6 +398,8 @@ CREATE TABLE `PropertyImage` (
     `alt_text` VARCHAR(191) NULL,
     `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `PropertyImage_property_id_idx`(`property_id`),
     INDEX `PropertyImage_status_idx`(`status`),
@@ -461,10 +415,11 @@ CREATE TABLE `PropertyPublication` (
     `published_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
+    UNIQUE INDEX `PropertyPublication_property_id_company_id_key`(`property_id`, `company_id`),
     INDEX `PropertyPublication_company_id_idx`(`company_id`),
     INDEX `PropertyPublication_property_id_idx`(`property_id`),
-    UNIQUE INDEX `PropertyPublication_property_id_company_id_key`(`property_id`, `company_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -477,6 +432,8 @@ CREATE TABLE `PropertyVerificationLog` (
     `to_status` VARCHAR(191) NOT NULL,
     `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `PropertyVerificationLog_property_id_idx`(`property_id`),
     INDEX `PropertyVerificationLog_actor_id_idx`(`actor_id`),
@@ -488,131 +445,102 @@ CREATE TABLE `SiteVisitBooking` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `booking_code` VARCHAR(191) NOT NULL,
     `lead_id` INTEGER NOT NULL,
-    `property_id` INTEGER NULL,
-    `telecaller_id` INTEGER NOT NULL,
-    `project_manager_id` INTEGER NULL,
-    `assigned_agent_id` INTEGER NULL,
-    `scheduled_date` DATETIME(3) NOT NULL,
-    `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING_VERIFICATION',
-    `verification_call_notes` TEXT NULL,
-    `feedback_notes` TEXT NULL,
-    `rating` VARCHAR(191) NULL,
-    `proof_photo_url` VARCHAR(191) NULL,
-    `completed_at` DATETIME(3) NULL,
-    `opportunity_id` INTEGER NULL,
+    `property_id` INTEGER NOT NULL,
+    `assigned_to` INTEGER NULL,
+    `customer_id` INTEGER NULL,
+    `status` VARCHAR(191) NOT NULL DEFAULT 'REQUESTED',
+    `visit_date` DATETIME(3) NULL,
+    `visit_time` VARCHAR(191) NULL,
+    `duration_minutes` INTEGER NULL,
+    `purpose` TEXT NULL,
+    `current_location` VARCHAR(191) NULL,
+    `parking_info` VARCHAR(191) NULL,
+    `special_instructions` TEXT NULL,
+    `repeat_visits_count` INTEGER NOT NULL DEFAULT 0,
+    `last_visit_date` DATETIME(3) NULL,
+    `next_visit_date` DATETIME(3) NULL,
+    `visit_status_details` JSON NULL,
+    `cancellation_reason` TEXT NULL,
+    `rejection_reason` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+    `rescheduled_at` DATETIME(3) NULL,
+    `accepted_at` DATETIME(3) NULL,
+    `cancelled_at` DATETIME(3) NULL,
+    `rejected_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `SiteVisitBooking_booking_code_key`(`booking_code`),
     INDEX `SiteVisitBooking_lead_id_idx`(`lead_id`),
-    INDEX `SiteVisitBooking_opportunity_id_idx`(`opportunity_id`),
-    INDEX `SiteVisitBooking_telecaller_id_idx`(`telecaller_id`),
-    INDEX `SiteVisitBooking_project_manager_id_idx`(`project_manager_id`),
-    INDEX `SiteVisitBooking_assigned_agent_id_idx`(`assigned_agent_id`),
+    INDEX `SiteVisitBooking_property_id_idx`(`property_id`),
+    INDEX `SiteVisitBooking_assigned_to_idx`(`assigned_to`),
+    INDEX `SiteVisitBooking_customer_id_idx`(`customer_id`),
     INDEX `SiteVisitBooking_status_idx`(`status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ExpenseRefund` (
+CREATE TABLE `SiteVisitProperty` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `employee_id` INTEGER NOT NULL,
-    `company_id` INTEGER NOT NULL,
-    `purpose` TEXT NOT NULL,
-    `amount` DOUBLE NOT NULL,
-    `proof_image_url` VARCHAR(191) NULL,
+    `visit_id` INTEGER NOT NULL,
+    `property_id` INTEGER NOT NULL,
+    `visit_order` INTEGER NOT NULL,
+    `visit_duration_minutes` INTEGER NULL,
     `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
-    `accountant_id` INTEGER NULL,
-    `accountant_note` VARCHAR(191) NULL,
-    `accountant_reviewed_at` DATETIME(3) NULL,
-    `md_id` INTEGER NULL,
-    `md_note` VARCHAR(191) NULL,
-    `md_reviewed_at` DATETIME(3) NULL,
-    `refunded_at` DATETIME(3) NULL,
-    `refunded_by` INTEGER NULL,
+    `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `ExpenseRefund_employee_id_idx`(`employee_id`),
-    INDEX `ExpenseRefund_status_idx`(`status`),
-    INDEX `ExpenseRefund_company_id_idx`(`company_id`),
+    UNIQUE INDEX `SiteVisitProperty_visit_id_property_id_key`(`visit_id`, `property_id`),
+    INDEX `SiteVisitProperty_visit_id_idx`(`visit_id`),
+    INDEX `SiteVisitProperty_property_id_idx`(`property_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `PushSubscription` (
+CREATE TABLE `SiteVisitReassignment` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `employee_id` INTEGER NOT NULL,
-    `endpoint` TEXT NOT NULL,
-    `p256dh` TEXT NOT NULL,
-    `auth` VARCHAR(191) NOT NULL,
-    `user_agent` VARCHAR(191) NULL,
+    `visit_id` INTEGER NOT NULL,
+    `from_employee_id` INTEGER NULL,
+    `to_employee_id` INTEGER NULL,
+    `reason` TEXT NULL,
+    `outcome` VARCHAR(191) NULL,
+    `issue_date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `outcome_reason` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `PushSubscription_employee_id_idx`(`employee_id`),
-    UNIQUE INDEX `PushSubscription_employee_id_endpoint_key`(`employee_id`, `endpoint`(200)),
+    INDEX `SiteVisitReassignment_visit_id_idx`(`visit_id`),
+    INDEX `SiteVisitReassignment_from_employee_id_idx`(`from_employee_id`),
+    INDEX `SiteVisitReassignment_to_employee_id_idx`(`to_employee_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `AuthSession` (
+CREATE TABLE `MessageTemplate` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `employee_id` INTEGER NOT NULL,
-    `family_token` VARCHAR(191) NOT NULL,
-    `refresh_token_hash` VARCHAR(191) NOT NULL,
-    `consumed` BOOLEAN NOT NULL DEFAULT false,
-    `revoked` BOOLEAN NOT NULL DEFAULT false,
-    `revocation_reason` VARCHAR(191) NULL,
-    `expires_at` DATETIME(3) NOT NULL,
+    `template_key` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `body_text` TEXT NOT NULL,
+    `is_active` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `AuthSession_employee_id_idx`(`employee_id`),
-    INDEX `AuthSession_family_token_idx`(`family_token`),
-    INDEX `AuthSession_refresh_token_hash_idx`(`refresh_token_hash`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Complaint` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `complaint_code` VARCHAR(191) NOT NULL,
-    `company_id` INTEGER NOT NULL,
-    `customer_id` INTEGER NOT NULL,
-    `booking_id` INTEGER NULL,
-    `property_id` INTEGER NULL,
-    `title` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `category` VARCHAR(191) NULL,
-    `priority` VARCHAR(191) NOT NULL DEFAULT 'MEDIUM',
-    `status` VARCHAR(191) NOT NULL DEFAULT 'OPEN',
-    `assigned_employee_id` INTEGER NULL,
-    `resolution_description` VARCHAR(191) NULL,
-    `resolved_by` INTEGER NULL,
-    `resolved_at` DATETIME(3) NULL,
-    `closed_at` DATETIME(3) NULL,
-    `closure_reason` VARCHAR(191) NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
-
-    UNIQUE INDEX `Complaint_complaint_code_key`(`complaint_code`),
-    INDEX `Complaint_company_id_idx`(`company_id`),
-    INDEX `Complaint_customer_id_idx`(`customer_id`),
-    INDEX `Complaint_booking_id_idx`(`booking_id`),
-    INDEX `Complaint_property_id_idx`(`property_id`),
-    INDEX `Complaint_status_idx`(`status`),
-    INDEX `Complaint_priority_idx`(`priority`),
-    INDEX `Complaint_assigned_employee_id_idx`(`assigned_employee_id`),
-    INDEX `Complaint_created_at_idx`(`created_at`),
+    UNIQUE INDEX `MessageTemplate_template_key_key`(`template_key`),
+    INDEX `MessageTemplate_template_key_idx`(`template_key`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Customer` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `customer_code` VARCHAR(191) NOT NULL,
     `company_id` INTEGER NOT NULL,
     `branch_id` INTEGER NULL,
+    `assigned_to_id` INTEGER NULL,
+    `customer_code` VARCHAR(191) NOT NULL,
     `first_name` VARCHAR(191) NOT NULL,
     `last_name` VARCHAR(191) NULL,
     `phone` VARCHAR(191) NOT NULL,
@@ -623,7 +551,6 @@ CREATE TABLE `Customer` (
     `utm_source` VARCHAR(191) NULL,
     `utm_medium` VARCHAR(191) NULL,
     `utm_campaign` VARCHAR(191) NULL,
-    `assigned_to_id` INTEGER NULL,
     `origin_lead_id` INTEGER NULL,
     `pan_number` VARCHAR(191) NULL,
     `aadhaar_number` VARCHAR(191) NULL,
@@ -634,29 +561,28 @@ CREATE TABLE `Customer` (
     `kyc_submitted_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Customer_customer_code_key`(`customer_code`),
-    UNIQUE INDEX `Customer_origin_lead_id_key`(`origin_lead_id`),
     INDEX `Customer_company_id_idx`(`company_id`),
     INDEX `Customer_branch_id_idx`(`branch_id`),
     INDEX `Customer_assigned_to_id_idx`(`assigned_to_id`),
-    INDEX `Customer_kyc_status_idx`(`kyc_status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Booking` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `booking_code` VARCHAR(191) NOT NULL,
+    `booking_code` VARCHAR(191) NOT NULL UNIQUE,
     `company_id` INTEGER NOT NULL,
     `branch_id` INTEGER NULL,
     `customer_id` INTEGER NOT NULL,
     `property_id` INTEGER NOT NULL,
     `assigned_employee_id` INTEGER NULL,
     `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
-    `agreed_price` DOUBLE NOT NULL,
-    `booking_amount` DOUBLE NOT NULL,
-    `balance_amount` DOUBLE NOT NULL,
+    `agreed_price` FLOAT NOT NULL,
+    `booking_amount` FLOAT NOT NULL,
+    `balance_amount` FLOAT NOT NULL,
     `booking_date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `source` VARCHAR(191) NULL,
     `campaign` VARCHAR(191) NULL,
@@ -666,9 +592,10 @@ CREATE TABLE `Booking` (
     `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    UNIQUE INDEX `Booking_booking_code_key`(`booking_code`),
     INDEX `Booking_company_id_idx`(`company_id`),
+    INDEX `Booking_branch_id_idx`(`branch_id`),
     INDEX `Booking_customer_id_idx`(`customer_id`),
     INDEX `Booking_property_id_idx`(`property_id`),
     INDEX `Booking_status_idx`(`status`),
@@ -682,25 +609,20 @@ CREATE TABLE `Payment` (
     `company_id` INTEGER NOT NULL,
     `booking_id` INTEGER NOT NULL,
     `installment_id` INTEGER NULL,
-    `amount` DOUBLE NOT NULL,
-    `payment_method` VARCHAR(191) NOT NULL,
-    `reference_number` VARCHAR(191) NULL,
+    `amount` FLOAT NOT NULL,
+    `payment_method` VARCHAR(191) NOT NULL DEFAULT 'CASH',
     `payment_date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
+    `transaction_id` VARCHAR(191) NULL,
     `notes` TEXT NULL,
-    `portal_payment_id` VARCHAR(191) NULL,
-    `external_transaction_id` VARCHAR(191) NULL,
-    `source` VARCHAR(191) NOT NULL DEFAULT 'CRM',
-    `sync_status` VARCHAR(191) NOT NULL DEFAULT 'LOCAL',
-    `recorded_by_id` INTEGER NOT NULL,
+    `receipt_text` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Payment_payment_code_key`(`payment_code`),
     INDEX `Payment_company_id_idx`(`company_id`),
     INDEX `Payment_booking_id_idx`(`booking_id`),
-    INDEX `Payment_status_idx`(`status`),
-    INDEX `Payment_portal_payment_id_idx`(`portal_payment_id`),
+    INDEX `Payment_installment_id_idx`(`installment_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -708,20 +630,19 @@ CREATE TABLE `Payment` (
 CREATE TABLE `Installment` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `booking_id` INTEGER NOT NULL,
-    `installment_number` INTEGER NOT NULL,
-    `expected_amount` DOUBLE NOT NULL,
-    `received_amount` DOUBLE NOT NULL DEFAULT 0,
-    `due_date` DATETIME(3) NOT NULL,
-    `received_date` DATETIME(3) NULL,
+    `customer_id` INTEGER NOT NULL,
+    `due_date` DATE NOT NULL,
+    `amount_due` FLOAT NOT NULL,
+    `amount_paid` FLOAT NOT NULL DEFAULT 0,
     `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING',
-    `recorded_by_id` INTEGER NULL,
-    `remarks` TEXT NULL,
+    `verified_at` DATETIME(3) NULL,
+    `verified_by` INTEGER NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     INDEX `Installment_booking_id_idx`(`booking_id`),
-    INDEX `Installment_status_idx`(`status`),
-    UNIQUE INDEX `Installment_booking_id_installment_number_key`(`booking_id`, `installment_number`),
+    INDEX `Installment_customer_id_idx`(`customer_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -729,17 +650,17 @@ CREATE TABLE `Installment` (
 CREATE TABLE `Opportunity` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `opportunity_code` VARCHAR(191) NOT NULL,
-    `company_id` INTEGER NOT NULL,
-    `branch_id` INTEGER NULL,
     `lead_id` INTEGER NOT NULL,
-    `project_id` INTEGER NULL,
+    `company_id` INTEGER NOT NULL,
+    `customer_id` INTEGER NULL,
     `property_id` INTEGER NULL,
+    `project_id` INTEGER NULL,
     `booking_id` INTEGER NULL,
-    `stage` VARCHAR(191) NOT NULL DEFAULT 'PROSPECT_QUALIFIED',
-    `expected_value` DOUBLE NULL,
-    `probability` DOUBLE NULL DEFAULT 10.0,
-    `budget_min` DOUBLE NULL,
-    `budget_max` DOUBLE NULL,
+    `stage` VARCHAR(191) NOT NULL DEFAULT 'QUALIFIED',
+    `probability` FLOAT NULL DEFAULT 10.0,
+    `expected_value` FLOAT NULL,
+    `budget_min` FLOAT NULL,
+    `budget_max` FLOAT NULL,
     `expected_close_date` DATETIME(3) NULL,
     `drop_reason` TEXT NULL,
     `owner_id` INTEGER NOT NULL,
@@ -750,17 +671,12 @@ CREATE TABLE `Opportunity` (
     `utm_campaign` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `Opportunity_opportunity_code_key`(`opportunity_code`),
-    UNIQUE INDEX `Opportunity_booking_id_key`(`booking_id`),
     INDEX `Opportunity_company_id_idx`(`company_id`),
-    INDEX `Opportunity_branch_id_idx`(`branch_id`),
-    INDEX `Opportunity_owner_id_idx`(`owner_id`),
     INDEX `Opportunity_lead_id_idx`(`lead_id`),
     INDEX `Opportunity_stage_idx`(`stage`),
-    INDEX `Opportunity_project_id_idx`(`project_id`),
-    INDEX `Opportunity_property_id_idx`(`property_id`),
-    INDEX `Opportunity_created_at_idx`(`created_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -768,184 +684,124 @@ CREATE TABLE `Opportunity` (
 CREATE TABLE `OpportunityHistory` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `opportunity_id` INTEGER NOT NULL,
-    `from_stage` VARCHAR(191) NULL,
-    `to_stage` VARCHAR(191) NOT NULL,
-    `changed_by_id` INTEGER NOT NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `exited_at` DATETIME(3) NULL,
-
-    INDEX `OpportunityHistory_opportunity_id_idx`(`opportunity_id`),
-    INDEX `OpportunityHistory_changed_by_id_idx`(`changed_by_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `BookingPortalMapping` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `company_id` INTEGER NOT NULL,
-    `crms_booking_id` INTEGER NOT NULL,
-    `crms_customer_id` INTEGER NOT NULL,
-    `portal_customer_id` VARCHAR(191) NULL,
-    `portal_booking_id` VARCHAR(191) NULL,
-    `handoff_status` VARCHAR(191) NOT NULL DEFAULT 'CREATED',
-    `last_sync_at` DATETIME(3) NULL,
-    `error_message` TEXT NULL,
+    `previous_stage` VARCHAR(191) NULL,
+    `new_stage` VARCHAR(191) NOT NULL,
+    `actor_id` INTEGER NOT NULL,
+    `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    UNIQUE INDEX `BookingPortalMapping_crms_booking_id_key`(`crms_booking_id`),
-    INDEX `BookingPortalMapping_company_id_idx`(`company_id`),
-    INDEX `BookingPortalMapping_crms_booking_id_idx`(`crms_booking_id`),
-    INDEX `BookingPortalMapping_crms_customer_id_idx`(`crms_customer_id`),
-    INDEX `BookingPortalMapping_handoff_status_idx`(`handoff_status`),
+    INDEX `OpportunityHistory_opportunity_id_idx`(`opportunity_id`),
+    INDEX `OpportunityHistory_actor_id_idx`(`actor_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `IntegrationEvent` (
+CREATE TABLE `AuditEvent` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `event_type` VARCHAR(191) NOT NULL,
-    `payload` TEXT NOT NULL,
-    `status` VARCHAR(191) NOT NULL DEFAULT 'CREATED',
-    `company_id` INTEGER NOT NULL,
-    `crms_booking_id` INTEGER NULL,
-    `crms_customer_id` INTEGER NULL,
-    `retry_count` INTEGER NOT NULL DEFAULT 0,
-    `max_retries` INTEGER NOT NULL DEFAULT 3,
-    `error_message` TEXT NULL,
+    `actor_id` INTEGER NOT NULL,
+    `action` VARCHAR(191) NOT NULL,
+    `entity_type` VARCHAR(191) NOT NULL,
+    `entity_id` INTEGER NOT NULL,
+    `old_value` VARCHAR(191) NULL,
+    `new_value` VARCHAR(191) NULL,
+    `reason` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `processed_at` DATETIME(3) NULL,
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `IntegrationEvent_company_id_idx`(`company_id`),
-    INDEX `IntegrationEvent_status_idx`(`status`),
-    INDEX `IntegrationEvent_crms_booking_id_idx`(`crms_booking_id`),
-    INDEX `IntegrationEvent_crms_customer_id_idx`(`crms_customer_id`),
-    INDEX `IntegrationEvent_created_at_idx`(`created_at`),
+    INDEX `AuditEvent_actor_id_idx`(`actor_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CompanyNotification` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `company_id` INTEGER NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    INDEX `CompanyNotification_company_id_idx`(`company_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `CustomerNotification` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `company_id` INTEGER NOT NULL,
     `customer_id` INTEGER NOT NULL,
-    `booking_id` INTEGER NULL,
-    `type` VARCHAR(191) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
-    `message` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
     `is_read` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `CustomerNotification_company_id_idx`(`company_id`),
     INDEX `CustomerNotification_customer_id_idx`(`customer_id`),
-    INDEX `CustomerNotification_is_read_idx`(`is_read`),
-    INDEX `CustomerNotification_created_at_idx`(`created_at`),
-    INDEX `CustomerNotification_company_id_customer_id_created_at_idx`(`company_id`, `customer_id`, `created_at`),
-    INDEX `CustomerNotification_customer_id_is_read_idx`(`customer_id`, `is_read`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `PublicApiKey` (
+CREATE TABLE `Complaint` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `api_key` VARCHAR(191) NOT NULL,
-    `company_id` INTEGER NOT NULL,
-    `is_active` BOOLEAN NOT NULL DEFAULT true,
+    `title` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
+    `status` VARCHAR(191) NOT NULL DEFAULT 'OPEN',
+    `complaint_type` VARCHAR(191) NOT NULL DEFAULT 'GENERAL',
+    `company_id` INTEGER NULL,
+    `branch_id` INTEGER NULL,
+    `customer_id` INTEGER NULL,
+    `property_id` INTEGER NULL,
+    `booking_id` INTEGER NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
-    UNIQUE INDEX `PublicApiKey_api_key_key`(`api_key`),
-    INDEX `PublicApiKey_company_id_idx`(`company_id`),
-    INDEX `PublicApiKey_api_key_idx`(`api_key`),
+    INDEX `Complaint_company_id_idx`(`company_id`),
+    INDEX `Complaint_branch_id_idx`(`branch_id`),
+    INDEX `Complaint_customer_id_idx`(`customer_id`),
+    INDEX `Complaint_property_id_idx`(`property_id`),
+    INDEX `Complaint_booking_id_idx`(`booking_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AddForeignKey
-ALTER TABLE `Branch` ADD CONSTRAINT `Branch_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+-- CreateTable
+CREATE TABLE `EmployeeNotification` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `employee_id` INTEGER NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
--- AddForeignKey
-ALTER TABLE `Employee` ADD CONSTRAINT `Employee_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+    INDEX `EmployeeNotification_employee_id_idx`(`employee_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AddForeignKey
-ALTER TABLE `Employee` ADD CONSTRAINT `Employee_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+-- CreateTable
+CREATE TABLE `CustomerSourceReferral` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `customer_id` INTEGER NOT NULL,
+    `company_id` INTEGER NOT NULL,
+    `source_name` VARCHAR(191) NOT NULL,
+    `source_type` VARCHAR(191) NOT NULL DEFAULT 'REFERRAL',
+    `description` TEXT NULL,
+    `commission_eligible` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
 
--- AddForeignKey
-ALTER TABLE `Employee` ADD CONSTRAINT `Employee_reporting_manager_id_fkey` FOREIGN KEY (`reporting_manager_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `RolePermission` ADD CONSTRAINT `RolePermission_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `Role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `RolePermission` ADD CONSTRAINT `RolePermission_permission_id_fkey` FOREIGN KEY (`permission_id`) REFERENCES `Permission`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `EmployeeRole` ADD CONSTRAINT `EmployeeRole_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `EmployeeRole` ADD CONSTRAINT `EmployeeRole_role_id_fkey` FOREIGN KEY (`role_id`) REFERENCES `Role`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `EmployeePermissionOverride` ADD CONSTRAINT `EmployeePermissionOverride_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `EmployeePermissionOverride` ADD CONSTRAINT `EmployeePermissionOverride_permission_id_fkey` FOREIGN KEY (`permission_id`) REFERENCES `Permission`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `EmployeeQrCode` ADD CONSTRAINT `EmployeeQrCode_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `AttendanceLog` ADD CONSTRAINT `AttendanceLog_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Task` ADD CONSTRAINT `Task_assignee_id_fkey` FOREIGN KEY (`assignee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Task` ADD CONSTRAINT `Task_lead_id_fkey` FOREIGN KEY (`lead_id`) REFERENCES `Lead`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Task` ADD CONSTRAINT `Task_opportunity_id_fkey` FOREIGN KEY (`opportunity_id`) REFERENCES `Opportunity`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `DailyReport` ADD CONSTRAINT `DailyReport_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Notification` ADD CONSTRAINT `Notification_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `DailyTarget` ADD CONSTRAINT `DailyTarget_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `DailyTarget` ADD CONSTRAINT `DailyTarget_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `PerformanceSnapshot` ADD CONSTRAINT `PerformanceSnapshot_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Lead` ADD CONSTRAINT `Lead_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Lead` ADD CONSTRAINT `Lead_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Lead` ADD CONSTRAINT `Lead_assigned_to_id_fkey` FOREIGN KEY (`assigned_to_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Lead` ADD CONSTRAINT `Lead_created_by_id_fkey` FOREIGN KEY (`created_by_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Lead` ADD CONSTRAINT `Lead_project_id_fkey` FOREIGN KEY (`project_id`) REFERENCES `Project`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `LeadActivity` ADD CONSTRAINT `LeadActivity_lead_id_fkey` FOREIGN KEY (`lead_id`) REFERENCES `Lead`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `LeadActivity` ADD CONSTRAINT `LeadActivity_actor_id_fkey` FOREIGN KEY (`actor_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `LeadMatchingRequirement` ADD CONSTRAINT `LeadMatchingRequirement_lead_id_fkey` FOREIGN KEY (`lead_id`) REFERENCES `Lead`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+    INDEX `CustomerSourceReferral_customer_id_idx`(`customer_id`),
+    INDEX `CustomerSourceReferral_company_id_idx`(`company_id`),
+    INDEX `CustomerSourceReferral_source_name_idx`(`source_name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
 ALTER TABLE `LeadPropertyInterest` ADD CONSTRAINT `LeadPropertyInterest_lead_id_fkey` FOREIGN KEY (`lead_id`) REFERENCES `Lead`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -954,10 +810,10 @@ ALTER TABLE `LeadPropertyInterest` ADD CONSTRAINT `LeadPropertyInterest_lead_id_
 ALTER TABLE `LeadPropertyInterest` ADD CONSTRAINT `LeadPropertyInterest_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `LeadPropertyInterest` ADD CONSTRAINT `LeadPropertyInterest_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `LeadPropertyInterest` ADD CONSTRAINT `LeadPropertyInterest_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Project` ADD CONSTRAINT `Project_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Project` ADD CONSTRAINT `Project_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Project` ADD CONSTRAINT `Project_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -969,7 +825,7 @@ ALTER TABLE `Project` ADD CONSTRAINT `Project_assigned_pm_id_fkey` FOREIGN KEY (
 ALTER TABLE `Property` ADD CONSTRAINT `Property_project_id_fkey` FOREIGN KEY (`project_id`) REFERENCES `Project`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Property` ADD CONSTRAINT `Property_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Property` ADD CONSTRAINT `Property_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Property` ADD CONSTRAINT `Property_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -978,7 +834,7 @@ ALTER TABLE `Property` ADD CONSTRAINT `Property_branch_id_fkey` FOREIGN KEY (`br
 ALTER TABLE `Property` ADD CONSTRAINT `Property_assigned_pm_id_fkey` FOREIGN KEY (`assigned_pm_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Property` ADD CONSTRAINT `Property_created_by_id_fkey` FOREIGN KEY (`created_by_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Property` ADD CONSTRAINT `Property_created_by_id_fkey` FOREIGN KEY (`created_by_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Property` ADD CONSTRAINT `Property_locked_by_booking_id_fkey` FOREIGN KEY (`locked_by_booking_id`) REFERENCES `Booking`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -987,7 +843,7 @@ ALTER TABLE `Property` ADD CONSTRAINT `Property_locked_by_booking_id_fkey` FOREI
 ALTER TABLE `PropertyImage` ADD CONSTRAINT `PropertyImage_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PropertyImage` ADD CONSTRAINT `PropertyImage_uploaded_by_id_fkey` FOREIGN KEY (`uploaded_by_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `PropertyImage` ADD CONSTRAINT `PropertyImage_uploaded_by_id_fkey` FOREIGN KEY (`uploaded_by_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `PropertyPublication` ADD CONSTRAINT `PropertyPublication_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -999,61 +855,37 @@ ALTER TABLE `PropertyPublication` ADD CONSTRAINT `PropertyPublication_company_id
 ALTER TABLE `PropertyVerificationLog` ADD CONSTRAINT `PropertyVerificationLog_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PropertyVerificationLog` ADD CONSTRAINT `PropertyVerificationLog_actor_id_fkey` FOREIGN KEY (`actor_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `PropertyVerificationLog` ADD CONSTRAINT `PropertyVerificationLog_actor_id_fkey` FOREIGN KEY (`actor_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_lead_id_fkey` FOREIGN KEY (`lead_id`) REFERENCES `Lead`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_opportunity_id_fkey` FOREIGN KEY (`opportunity_id`) REFERENCES `Opportunity`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_assigned_to_fkey` FOREIGN KEY (`assigned_to`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_telecaller_id_fkey` FOREIGN KEY (`telecaller_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `Customer`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_project_manager_id_fkey` FOREIGN KEY (`project_manager_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitProperty` ADD CONSTRAINT `SiteVisitProperty_visit_id_fkey` FOREIGN KEY (`visit_id`) REFERENCES `SiteVisitBooking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `SiteVisitBooking` ADD CONSTRAINT `SiteVisitBooking_assigned_agent_id_fkey` FOREIGN KEY (`assigned_agent_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitProperty` ADD CONSTRAINT `SiteVisitProperty_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ExpenseRefund` ADD CONSTRAINT `ExpenseRefund_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitReassignment` ADD CONSTRAINT `SiteVisitReassignment_visit_id_fkey` FOREIGN KEY (`visit_id`) REFERENCES `SiteVisitBooking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ExpenseRefund` ADD CONSTRAINT `ExpenseRefund_accountant_id_fkey` FOREIGN KEY (`accountant_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitReassignment` ADD CONSTRAINT `SiteVisitReassignment_from_employee_id_fkey` FOREIGN KEY (`from_employee_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ExpenseRefund` ADD CONSTRAINT `ExpenseRefund_md_id_fkey` FOREIGN KEY (`md_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `SiteVisitReassignment` ADD CONSTRAINT `SiteVisitReassignment_to_employee_id_fkey` FOREIGN KEY (`to_employee_id`) REFERENCES `Employee`(`id`) ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ExpenseRefund` ADD CONSTRAINT `ExpenseRefund_refunded_by_fkey` FOREIGN KEY (`refunded_by`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `PushSubscription` ADD CONSTRAINT `PushSubscription_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `AuthSession` ADD CONSTRAINT `AuthSession_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `Employee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Complaint` ADD CONSTRAINT `Complaint_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Complaint` ADD CONSTRAINT `Complaint_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `Customer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Complaint` ADD CONSTRAINT `Complaint_booking_id_fkey` FOREIGN KEY (`booking_id`) REFERENCES `Booking`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Complaint` ADD CONSTRAINT `Complaint_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Complaint` ADD CONSTRAINT `Complaint_assigned_employee_id_fkey` FOREIGN KEY (`assigned_employee_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Customer` ADD CONSTRAINT `Customer_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Customer` ADD CONSTRAINT `Customer_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Customer` ADD CONSTRAINT `Customer_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1065,28 +897,25 @@ ALTER TABLE `Customer` ADD CONSTRAINT `Customer_assigned_to_id_fkey` FOREIGN KEY
 ALTER TABLE `Customer` ADD CONSTRAINT `Customer_origin_lead_id_fkey` FOREIGN KEY (`origin_lead_id`) REFERENCES `Lead`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Booking` ADD CONSTRAINT `Booking_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Booking` ADD CONSTRAINT `Booking_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Booking` ADD CONSTRAINT `Booking_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Booking` ADD CONSTRAINT `Booking_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `Customer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Booking` ADD CONSTRAINT `Booking_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `Customer`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Booking` ADD CONSTRAINT `Booking_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Booking` ADD CONSTRAINT `Booking_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Booking` ADD CONSTRAINT `Booking_assigned_employee_id_fkey` FOREIGN KEY (`assigned_employee_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_booking_id_fkey` FOREIGN KEY (`booking_id`) REFERENCES `Booking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_recorded_by_id_fkey` FOREIGN KEY (`recorded_by_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_installment_id_fkey` FOREIGN KEY (`installment_id`) REFERENCES `Installment`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1095,46 +924,10 @@ ALTER TABLE `Payment` ADD CONSTRAINT `Payment_installment_id_fkey` FOREIGN KEY (
 ALTER TABLE `Installment` ADD CONSTRAINT `Installment_booking_id_fkey` FOREIGN KEY (`booking_id`) REFERENCES `Booking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Installment` ADD CONSTRAINT `Installment_recorded_by_id_fkey` FOREIGN KEY (`recorded_by_id`) REFERENCES `Employee`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_branch_id_fkey` FOREIGN KEY (`branch_id`) REFERENCES `Branch`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Installment` ADD CONSTRAINT `Installment_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `Customer`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_lead_id_fkey` FOREIGN KEY (`lead_id`) REFERENCES `Lead`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_project_id_fkey` FOREIGN KEY (`project_id`) REFERENCES `Project`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_property_id_fkey` FOREIGN KEY (`property_id`) REFERENCES `Property`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_booking_id_fkey` FOREIGN KEY (`booking_id`) REFERENCES `Booking`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_owner_id_fkey` FOREIGN KEY (`owner_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `OpportunityHistory` ADD CONSTRAINT `OpportunityHistory_opportunity_id_fkey` FOREIGN KEY (`opportunity_id`) REFERENCES `Opportunity`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `OpportunityHistory` ADD CONSTRAINT `OpportunityHistory_changed_by_id_fkey` FOREIGN KEY (`changed_by_id`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `BookingPortalMapping` ADD CONSTRAINT `BookingPortalMapping_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `IntegrationEvent` ADD CONSTRAINT `IntegrationEvent_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `CustomerNotification` ADD CONSTRAINT `CustomerNotification_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `CustomerNotification` ADD CONSTRAINT `CustomerNotification_customer_id_fkey` FOREIGN KEY (`customer_id`) REFERENCES `Customer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `PublicApiKey` ADD CONSTRAINT `PublicApiKey_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Opportunity` ADD CONSTRAINT `Opportunity_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `Company`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

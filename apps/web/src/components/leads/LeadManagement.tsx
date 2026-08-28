@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Roles, Permissions } from '@rrh-ems/shared';
-import { AddLeadWizard } from './AddLeadWizard';
+import { QuickAddLeadModal } from './QuickAddLeadModal';
 import { LeadDetailModal } from './LeadDetailModal';
 import {
   MonitorData,
@@ -493,15 +493,14 @@ export const LeadManagement: React.FC = () => {
         )}
       </div>
 
-      {/* Add Lead Modal */}
+      {/* Quick Add Lead Modal */}
       {showAddModal && (
-        <AddLeadWizard 
+        <QuickAddLeadModal 
           onClose={() => setShowAddModal(false)}
-          onSuccess={() => {
+          onSuccess={(leadId) => {
             setShowAddModal(false);
             fetchLeads();
           }}
-          users={[]} 
         />
       )}
 

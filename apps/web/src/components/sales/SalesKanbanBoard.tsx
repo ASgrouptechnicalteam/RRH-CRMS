@@ -35,7 +35,7 @@ export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({ opportunitie
 
   // Group by stage
   const grouped = SALES_STAGES_ORDER.reduce((acc, stage) => {
-    acc[stage] = opportunities.filter(o => o.stage === stage);
+    acc[stage] = opportunities.filter(o => (o.lead?.status || 'UNKNOWN') === stage);
     return acc;
   }, {} as Record<string, any[]>);
 

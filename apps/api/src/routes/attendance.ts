@@ -288,7 +288,7 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
           data: {
             check_out_at: now,
             working_duration_minutes: durationMinutes,
-            ...(branchId != null ? { branch_id: branchId } : {}), // populate only for kiosk scans
+            ...(branchId != null ? { checkout_branch_id: branchId } : {}), // populate only for kiosk scans
           },
         });
 
@@ -415,11 +415,13 @@ router.get(
         },
       });
 
-      // Filter for today in IST
       const todayLogs = allLogs.filter((l: any) => {
         if (!l.check_in_at) return false;
         return getISTComponents(new Date(l.check_in_at)).dateString === dateString;
-      });
+      }).map((log: any) => ({
+        ...log,
+        isCrossBranch: log.branch_id !== null && log.checkout_branch_id !== null && log.branch_id !== log.checkout_branch_id,
+      }));
 
       return res.status(200).json({ logs: todayLogs });
     } catch (error) {
@@ -465,7 +467,7 @@ router.get(
         }
       }
 
-      const [logs, total] = await Promise.all([
+      const [rawLogs, total] = await Promise.all([
         p.attendanceLog.findMany({
           where: whereClause,
           orderBy: { check_in_at: 'desc' },
@@ -482,6 +484,11 @@ router.get(
         }),
         p.attendanceLog.count({ where: whereClause }),
       ]);
+
+      const logs = rawLogs.map((log: any) => ({
+        ...log,
+        isCrossBranch: log.branch_id !== null && log.checkout_branch_id !== null && log.branch_id !== log.checkout_branch_id,
+      }));
 
       return res.status(200).json({
         logs,

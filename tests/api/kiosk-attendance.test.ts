@@ -473,6 +473,19 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
       expect(res.status).toBe(200);
       expect(res.body.working_duration_minutes).toBeGreaterThanOrEqual(479);
       expect(res.body.working_duration_minutes).toBeLessThanOrEqual(481); // approx 8 hours (480 mins)
+
+      // Confirm business date attribution matches check_in_at
+      const updatedLog = await p.attendanceLog.findFirst({ where: { employee_id: employee1Id } });
+      const checkInDate = new Date(updatedLog.check_in_at).toISOString().split('T')[0];
+      const checkOutDate = new Date(updatedLog.check_out_at).toISOString().split('T')[0];
+      expect(checkInDate).not.toBe(checkOutDate);
+      
+      const adminRes = await request(app)
+        .get(`/api/v1/attendance/history?startDate=${checkInDate}&endDate=${checkInDate}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(adminRes.status).toBe(200);
+      expect(adminRes.body.logs.length).toBeGreaterThan(0);
+      expect(adminRes.body.logs[0].id).toBe(updatedLog.id);
     });
 
     it('should successfully checkout and calculate duration, populating branch_id', async () => {
@@ -510,6 +523,56 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
       expect(log.check_out_at).not.toBeNull();
       expect(log.working_duration_minutes).toBe(res.body.working_duration_minutes);
       expect(log.branch_id).toBe(kioskBranchId);
+    });
+
+    it('should correctly flag a cross-branch checkout and preserve the original branch_id', async () => {
+      // First, create a new kiosk at Branch B
+      const branchBRes = await request(app)
+        .post('/api/v1/branches')
+        .set('Authorization', `Bearer ${await getAdminToken()}`)
+        .send({ company_id: 1, name: 'Branch B' });
+      const branchBId = branchBRes.body.branch.id;
+
+      const kioskBRes = await request(app)
+        .post('/api/v1/kiosk-credentials')
+        .set('Authorization', `Bearer ${await getAdminToken()}`)
+        .send({ branch_id: branchBId, label: 'Kiosk B', username: 'KIOSK-B', password: 'Password@123' });
+      
+      const loginBRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: 'KIOSK-B', password: 'Password@123' });
+      const kioskBToken = loginBRes.body.accessToken;
+
+      const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
+
+      // Check in at Kiosk A
+      await request(app)
+        .post('/api/v1/attendance/scan')
+        .set('Authorization', `Bearer ${kioskToken}`)
+        .send({ qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: qrToken } });
+
+      // Check out at Kiosk B
+      const checkoutRes = await request(app)
+        .post('/api/v1/attendance/checkout')
+        .set('Authorization', `Bearer ${kioskBToken}`)
+        .send({ qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: qrToken } });
+      
+      expect(checkoutRes.status).toBe(200);
+
+      // Verify log has preserved original branch_id and populated checkout_branch_id
+      const log = await p.attendanceLog.findFirst({ where: { employee_id: employee1Id }, orderBy: { id: 'desc' } });
+      expect(log.branch_id).toBe(kioskBranchId); // Original check-in branch
+      expect(log.checkout_branch_id).toBe(branchBId); // Checkout branch
+
+      // Verify history API exposes isCrossBranch
+      const checkInDate = new Date(log.check_in_at).toISOString().split('T')[0];
+      const adminRes = await request(app)
+        .get(`/api/v1/attendance/history?startDate=${checkInDate}&endDate=${checkInDate}`)
+        .set('Authorization', `Bearer ${await getAdminToken()}`);
+      
+      const historyLog = adminRes.body.logs.find((l: any) => l.id === log.id);
+      expect(historyLog).toBeDefined();
+      expect(historyLog.isCrossBranch).toBe(true);
     });
   });
 

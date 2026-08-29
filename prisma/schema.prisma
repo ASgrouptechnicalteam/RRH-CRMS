@@ -60,6 +60,7 @@ model Branch {
   bookings          Booking[]
 
   kiosk_credentials KioskCredential[]
+  checkout_attendances AttendanceLog[] @relation("AttendanceCheckoutBranch")
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -253,6 +254,7 @@ model AttendanceLog {
   status                   String // PRESENT, LATE, HALF_DAY, ABSENT, APPROVED_LATE
   source                   String    @default("QR_SCAN") // QR_SCAN, SYSTEM_AUTO, HR_MANUAL, KIOSK
   branch_id                Int?     // which branch kiosk performed this scan (kiosk flow only; personal QR has none)
+  checkout_branch_id       Int?
   notes                    String?
 
   // Audit fields for manual corrections
@@ -262,6 +264,7 @@ model AttendanceLog {
 
   employee   Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   created_by Employee? @relation("AttendanceCreatedBy", fields: [created_by_id], references: [id])
+  checkout_branch Branch? @relation("AttendanceCheckoutBranch", fields: [checkout_branch_id], references: [id])
 
   @@index([employee_id])
   @@index([employee_id, check_in_at])

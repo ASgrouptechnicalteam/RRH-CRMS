@@ -150,7 +150,49 @@ describe('Attendance Manual Correction', () => {
     expect(log.created_by_id).toBe(adminEmployeeId);
     
     // Convert UTC check_in_at to IST to check if it matches 09:00:00 IST
-    // 09:00 IST = 03:30 UTC. So it should contain T03:30:00.000Z
     expect(log.check_in_at.toISOString()).toContain('T03:30:00.000Z');
+  });
+
+  it('should be append-only: multiple corrections produce distinct rows', async () => {
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const dateStr = twoDaysAgo.toISOString().split('T')[0];
+
+    // First correction
+    const res1 = await request(app)
+      .post('/api/v1/attendance/manual-correction')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        employeeId: targetEmployeeId,
+        date: dateStr,
+        status: 'ABSENT',
+        reason: 'Missing in action initially',
+      });
+    expect(res1.status).toBe(201);
+
+    // Second correction
+    const res2 = await request(app)
+      .post('/api/v1/attendance/manual-correction')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        employeeId: targetEmployeeId,
+        date: dateStr,
+        status: 'LATE',
+        reason: 'Actually turned up later, correcting to LATE',
+      });
+    expect(res2.status).toBe(201);
+
+    // Verify DB has both rows
+    const logs = await p.attendanceLog.findMany({ 
+      where: { 
+        employee_id: targetEmployeeId,
+        check_in_at: new Date(`${dateStr}T09:00:00.000+05:30`),
+      },
+      orderBy: { created_at: 'asc' }
+    });
+
+    expect(logs.length).toBe(2);
+    expect(logs[0].status).toBe('ABSENT');
+    expect(logs[1].status).toBe('LATE');
   });
 });

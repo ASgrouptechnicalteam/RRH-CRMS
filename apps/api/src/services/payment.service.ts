@@ -95,7 +95,7 @@ export class PaymentService {
           reference_number: dto.reference_number,
           notes: dto.notes,
           status: 'PENDING', // All new payments require Finance verification
-          recorded_by_id: user.employeeId,
+          recorded_by_id: user.employeeId || 1,
           installment_id: dto.installment_id || null,
         }
       });
@@ -199,7 +199,7 @@ export class PaymentService {
                   changed_at: new Date().toISOString(),
                 }),
                 status: 'CREATED',
-                company_id: user.companyId,
+                company_id: user.companyId || 1,
                 crms_booking_id: payment.booking.id,
                 crms_customer_id: payment.booking.customer_id,
               },

@@ -62,6 +62,7 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 })));
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
+const PMTerritories = lazy(() => import('./components/md/PMTerritories').then(m => ({ default: m.PMTerritories })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
 const UserSettings = lazy(() => import('./components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
 // Legacy for standard users
@@ -234,6 +235,7 @@ const AppShell: React.FC = () => {
       } />
 
       <Route path="/system-control" element={(isMD || isTechAdmin) ? <SystemControlHub /> : <Navigate to="/" replace />} />
+      <Route path="/pm-territories" element={(isMD || isTechAdmin) ? <PMTerritories /> : <Navigate to="/" replace />} />
 
       <Route path="/finance" element={
         (isMD || isTechAdmin || user?.roles?.includes(Roles.FINANCE))

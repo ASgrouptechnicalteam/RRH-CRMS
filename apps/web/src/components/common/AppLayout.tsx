@@ -1,6 +1,6 @@
 import React, { type ComponentType, useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight } from 'lucide-react';
+import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map } from 'lucide-react';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
@@ -189,6 +189,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // ADMINISTRATION
   { id: 'group-administration', label: 'ADMINISTRATION', group: true, icon: undefined },
   { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
+  { id: 'pm-territories', label: 'PM Territories', icon: Map, path: '/pm-territories', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
   { id: 'settings', label: 'Settings', icon: Settings2, path: '/settings' },
   { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
 ];

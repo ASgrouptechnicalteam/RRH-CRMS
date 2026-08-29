@@ -38,6 +38,7 @@ import complaintRoutes from './routes/complaint.routes';
 import analyticsRoutes from './routes/analytics';
 import aiSearchRoutes from './routes/aiSearch';
 import messageTemplateRoutes from './routes/messageTemplates';
+import pmRoutingRoutes from './routes/pm-routing';
 
 import { PortalWorker } from './services/portalWorker';
 
@@ -96,6 +97,7 @@ app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiSearchRoutes);
 app.use('/api/v1/message-templates', messageTemplateRoutes);
+app.use('/api/v1/pm-routing', pmRoutingRoutes);
 
 // Fallback for unknown API routes
 app.all('/api/*', (req, res) => {

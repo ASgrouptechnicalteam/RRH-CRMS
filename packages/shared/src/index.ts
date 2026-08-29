@@ -761,6 +761,11 @@ export const PropertyDMUpdateSchema = z.object({
 
 export type PropertyDMUpdateInput = z.infer<typeof PropertyDMUpdateSchema>;
 
+export const PropertyDMVerifyAsIsSchema = z.object({
+  notes: z.string().optional(),
+});
+export type PropertyDMVerifyAsIsInput = z.infer<typeof PropertyDMVerifyAsIsSchema>;
+
 export const PropertyMDApprovalSchema = z.object({
   approved: z.boolean(),
   comments: z.string().optional(),

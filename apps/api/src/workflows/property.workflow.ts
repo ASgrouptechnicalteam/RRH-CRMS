@@ -1,12 +1,13 @@
 import { PropertyStatus } from '@rrh-ems/shared';
 import { DomainWorkflow, WorkflowTransitionRequest, WorkflowTransitionResult } from './types';
 
-export type PropertyAction = 'VERIFY' | 'DM_POLISH' | 'MD_APPROVE';
+export type PropertyAction = 'VERIFY' | 'DM_POLISH' | 'DM_VERIFY_AS_IS' | 'MD_APPROVE';
 
 export class PropertyWorkflow implements DomainWorkflow {
   private static validTransitions: Record<string, PropertyAction[]> = {
     [PropertyStatus.PENDING_VERIFICATION]: ['VERIFY'],
-    [PropertyStatus.PENDING_DM_POLISH]: ['DM_POLISH'],
+    // DMH can either send to a DM Executive for polish, or verify as-is and skip straight to MD approval
+    [PropertyStatus.PENDING_DM_POLISH]: ['DM_POLISH', 'DM_VERIFY_AS_IS'],
     [PropertyStatus.PENDING_MD_APPROVAL]: ['MD_APPROVE'],
   };
 
@@ -25,7 +26,8 @@ export class PropertyWorkflow implements DomainWorkflow {
     let nextState;
     if (action === 'VERIFY') nextState = PropertyStatus.PENDING_DM_POLISH;
     else if (action === 'DM_POLISH') nextState = PropertyStatus.PENDING_MD_APPROVAL;
-    else if (action === 'MD_APPROVE') nextState = PropertyStatus.LIVE; // Or REJECTED, but that's handled dynamically by the service based on 'approved' flag. We just validate the action.
+    else if (action === 'DM_VERIFY_AS_IS') nextState = PropertyStatus.PENDING_MD_APPROVAL;
+    else if (action === 'MD_APPROVE') nextState = PropertyStatus.LIVE; // Or REJECTED, handled dynamically by service based on 'approved' flag
 
     return { allowed: true, nextState };
   }

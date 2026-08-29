@@ -139,6 +139,7 @@ model Employee {
   property_images             PropertyImage[]
   property_verification_logs  PropertyVerificationLog[]
   telecaller_bookings         SiteVisitBooking[]           @relation("TelecallerBookings")
+  created_attendance_logs     AttendanceLog[]              @relation("AttendanceCreatedBy")
   pm_bookings                 SiteVisitBooking[]           @relation("PMBookings")
   agent_bookings              SiteVisitBooking[]           @relation("AgentBookings")
 
@@ -250,11 +251,17 @@ model AttendanceLog {
   check_out_at             DateTime?
   working_duration_minutes Int?
   status                   String // PRESENT, LATE, HALF_DAY, ABSENT, APPROVED_LATE
-  source                   String    @default("QR_SCAN") // QR_SCAN, SYSTEM_AUTO, MANUAL
+  source                   String    @default("QR_SCAN") // QR_SCAN, SYSTEM_AUTO, HR_MANUAL, KIOSK
   branch_id                Int?     // which branch kiosk performed this scan (kiosk flow only; personal QR has none)
   notes                    String?
 
-  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  // Audit fields for manual corrections
+  created_by_id            Int?
+  reason                   String?   @db.Text
+  created_at               DateTime  @default(now())
+
+  employee   Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  created_by Employee? @relation("AttendanceCreatedBy", fields: [created_by_id], references: [id])
 
   @@index([employee_id])
   @@index([employee_id, check_in_at])

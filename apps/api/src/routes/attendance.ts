@@ -499,4 +499,79 @@ router.get(
   },
 );
 
+// POST /api/v1/attendance/manual-correction
+router.post(
+  '/manual-correction',
+  authenticateToken,
+  requireRole([Roles.HR_MANAGER, Roles.MD, Roles.ADMIN]),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { employeeId, date, status, reason } = req.body;
+
+      if (!employeeId || !date || !status || !reason) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      if (reason.length < 10) {
+        return res.status(400).json({ error: 'Reason must be at least 10 characters long' });
+      }
+
+      if (status !== 'ABSENT' && status !== 'LATE') {
+        return res.status(400).json({ error: 'Status must be ABSENT or LATE' });
+      }
+
+      const correctionDate = new Date(date);
+      const now = new Date();
+      if (correctionDate > now) {
+        return res.status(400).json({ error: 'Cannot correct attendance for future dates' });
+      }
+
+      // Ensure the target employee exists
+      const targetEmployee = await p.employee.findUnique({
+        where: { id: Number(employeeId) },
+      });
+
+      if (!targetEmployee) {
+        return res.status(404).json({ error: 'Employee not found' });
+      }
+
+      const { dateString: correctionDateString } = getISTComponents(correctionDate);
+
+      // Check if there is already a KIOSK scan for this date
+      const existingLogs = await p.attendanceLog.findMany({
+        where: { employee_id: Number(employeeId) },
+      });
+
+      const hasKioskScan = existingLogs.some((l: any) => {
+        if (l.source !== 'KIOSK') return false;
+        return getISTComponents(new Date(l.check_in_at)).dateString === correctionDateString;
+      });
+
+      if (hasKioskScan) {
+        return res.status(409).json({ error: 'Cannot overwrite a real KIOSK scan' });
+      }
+
+      // Create new manual log
+      // We set check_in_at to 09:00 IST of that date
+      const checkInAt = new Date(`${date}T09:00:00.000+05:30`);
+
+      const newLog = await p.attendanceLog.create({
+        data: {
+          employee_id: Number(employeeId),
+          check_in_at: checkInAt,
+          status,
+          source: 'HR_MANUAL',
+          reason,
+          created_by_id: req.user!.employeeId,
+        }
+      });
+
+      return res.status(201).json({ success: true, log: newLog });
+    } catch (error) {
+      console.error('Manual correction error:', error);
+      return res.status(500).json({ error: 'Failed to process manual correction' });
+    }
+  }
+);
+
 export default router;

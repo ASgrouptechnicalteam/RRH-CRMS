@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { generateAccessToken } from '../utils/jwt';
 import { authenticateToken, AuthenticatedRequest, requireRole, isKioskAuthLockedOut, recordKioskAuthFailure, resetKioskAuthState } from '../middleware/auth';
@@ -90,6 +90,10 @@ loginRouter.post('/login', validateRequestBody(KioskLoginSchema), async (req: Re
       kioskCredentialId: matchedCred.id,
       credentialVersion: matchedCred.credential_version,
       createdAt: Date.now(),
+      employeeId: -1,
+      employeeCode: 'KIOSK',
+      roles: [],
+      permissions: [],
     };
 
     const accessToken = generateAccessToken(tokenPayload);
@@ -323,6 +327,18 @@ credentialRouter.get(
 
       const credentials = await p.kioskCredential.findMany({
         where: { company_id: companyId },
+        select: {
+          id: true,
+          branch_id: true,
+          label: true,
+          username: true,
+          is_active: true,
+          credential_version: true,
+          created_by_id: true,
+          created_at: true,
+          updated_at: true,
+          company_id: true,
+        },
         orderBy: { created_at: 'desc' },
       });
 

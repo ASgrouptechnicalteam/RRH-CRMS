@@ -708,6 +708,74 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
   describe('POST /kiosk-credentials — CRUD', () => {
     let newCredId: number;
 
+    it('should reject access to CRUD endpoints for non-MD/ADMIN roles (HR_MANAGER & Employee)', async () => {
+      const telecallerTokenRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ employee_code: employee1Code, password: 'Password@123' });
+      const telecallerToken = telecallerTokenRes.body.accessToken;
+      expect(telecallerToken).toBeDefined();
+
+      const hrManagerCode = `RRH-HR-${Math.floor(Math.random() * 900) + 100}`;
+      const bcrypt = await import('bcryptjs');
+      const hrEmployee = await p.employee.create({
+        data: {
+          company_id: kioskCompanyId,
+          branch_id: kioskBranchId,
+          full_name: 'HR Manager',
+          email: `hr.${Date.now()}@test.com`,
+          phone: `555${Date.now().toString().slice(-7)}`,
+          employee_code: hrManagerCode,
+          employment_type: 'FULL_TIME',
+          status: 'ACTIVE',
+          password_hash: await bcrypt.hash('Password@123', 10),
+          token_version: 1,
+        }
+      });
+
+      const hrRole = await p.role.findFirst({ where: { name: 'HR_MANAGER' } });
+      if (hrRole) {
+        await p.employeeRole.create({
+          data: { employee_id: hrEmployee.id, role_id: hrRole.id }
+        });
+      }
+
+      const hrTokenRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ employee_code: hrManagerCode, password: 'Password@123' });
+      if (!hrTokenRes.body.accessToken) {
+        console.error('HR Login failed:', hrTokenRes.body);
+      }
+      const hrToken = hrTokenRes.body.accessToken;
+      expect(hrToken).toBeDefined();
+
+      const rolesToTest = [telecallerToken, hrToken];
+
+      for (const token of rolesToTest) {
+        // Test GET
+        const getRes = await request(app).get('/api/v1/kiosk-credentials').set('Authorization', `Bearer ${token}`);
+        expect(getRes.status).toBe(403);
+
+        // Test POST
+        const postRes = await request(app)
+          .post('/api/v1/kiosk-credentials')
+          .set('Authorization', `Bearer ${token}`)
+          .send({
+            branch_id: kioskBranchId,
+            label: 'Test',
+            username: `KIOSK-DENY-${Date.now()}`,
+            password: 'Kiosk@789',
+          });
+        expect(postRes.status).toBe(403);
+
+        // Test PATCH
+        const patchRes = await request(app)
+          .patch(`/api/v1/kiosk-credentials/${kioskCredentialId}`)
+          .set('Authorization', `Bearer ${token}`)
+          .send({ label: 'Test' });
+        expect(patchRes.status).toBe(403);
+      }
+    });
+
     it('should create a new kiosk credential', async () => {
       const res = await request(app)
         .post('/api/v1/kiosk-credentials')

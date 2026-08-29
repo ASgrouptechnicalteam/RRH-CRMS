@@ -243,7 +243,7 @@ export const authenticateKioskToken = async (req: KioskAuthenticatedRequest, res
     // Only applied when we can identify the branch from the token payload.
     // Failed attempts (wrong password, expired token, stale version) all count.
     const branchId = payload.branchId;
-    if (branchId !== undefined && isKioskAuthLockedOut(branchId)) {
+    if (branchId != null && isKioskAuthLockedOut(branchId)) {
       return res.status(403).json({
         error: 'Too many failed kiosk auth attempts for this branch. Try again later.',
         code: 'LOCKED_OUT',
@@ -259,28 +259,28 @@ export const authenticateKioskToken = async (req: KioskAuthenticatedRequest, res
       // Unknown credential — record the failure against the branch_id embedded
       // in the token (if present) so the attacker can't switch to a different
       // credential at the same branch to evade the lockout.
-      if (branchId !== undefined) {
+      if (branchId != null) {
         recordKioskAuthFailure(branchId);
       }
       return res.status(401).json({ error: 'Kiosk credential not found', code: 'UNAUTHORIZED' });
     }
 
     if (!kioskCred.is_active) {
-      if (branchId !== undefined) {
+      if (branchId != null) {
         recordKioskAuthFailure(branchId);
       }
       return res.status(401).json({ error: 'Kiosk credential is deactivated', code: 'UNAUTHORIZED' });
     }
 
     if (payload.credentialVersion !== kioskCred.credential_version) {
-      if (branchId !== undefined) {
+      if (branchId != null) {
         recordKioskAuthFailure(branchId);
       }
       return res.status(401).json({ error: 'Kiosk token version stale — please log in again', code: 'TOKEN_EXPIRED' });
     }
 
     // Success — reset the failure counter for this branch.
-    if (branchId !== undefined) {
+    if (branchId != null) {
       resetKioskAuthState(branchId);
     }
 

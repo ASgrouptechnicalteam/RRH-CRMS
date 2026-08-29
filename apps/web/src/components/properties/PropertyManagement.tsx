@@ -11,8 +11,7 @@ import {
   Search,
   Filter,
   Eye,
-   ImageIcon,
-
+  ImageIcon,
   ShieldCheck,
   Sparkles,
   FileCheck,
@@ -22,6 +21,9 @@ import {
   Maximize2,
   DollarSign,
   UserCheck,
+  Camera,
+  CheckCheck,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -569,32 +571,56 @@ export const PropertyManagement: React.FC = () => {
                 Pipeline Stage Action Bar
               </h4>
 
-              {/* Stage 1 Action for PM */}
-              {selectedProperty.status === 'PENDING_VERIFICATION' && user?.permissions?.includes(Permissions.PROPERTIES_VERIFY) && (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-600">
-                    Project Manager (<strong className="text-slate-800">{selectedProperty.assigned_pm?.full_name || 'PM'}</strong>) must verify site boundaries, location, and photos.
-                  </p>
+              {/* Stage 1 — Guided PM Verification Wizard */}
+              {selectedProperty.status === 'PENDING_VERIFICATION' && user?.permissions?.includes(Permissions.PROPERTIES_VERIFY) && (() => {
+                const locConfirmed = !!selectedProperty.location_confirmed_by_pm;
+                const hasPhotos = (selectedProperty.images?.length ?? 0) > 0;
+                const allReady = locConfirmed && hasPhotos;
 
-                  {/* Pre-condition checklist */}
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Pre-conditions for Approval</p>
-                    <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${
-                      (selectedProperty.images?.length ?? 0) > 0
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                        : 'bg-amber-50 border-amber-200 text-amber-800'
-                    }`}>
-                      {(selectedProperty.images?.length ?? 0) > 0 ? '✅' : '⚠️'}
-                      <span>Photos uploaded: {selectedProperty.images?.length ?? 0}</span>
+                const stepState = (done: boolean, locked: boolean) => {
+                  if (done) return 'done';
+                  if (locked) return 'locked';
+                  return 'active';
+                };
+
+                const stepClasses = {
+                  done: 'border-emerald-300 bg-emerald-50',
+                  active: 'border-navy-300 bg-navy-50/60',
+                  locked: 'border-slate-200 bg-slate-50 opacity-50',
+                };
+
+                const StepBadge: React.FC<{ num: number; state: 'done' | 'active' | 'locked' }> = ({ num, state }) => (
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-extrabold ${
+                    state === 'done' ? 'bg-emerald-600 text-white' :
+                    state === 'active' ? 'bg-navy-700 text-white' :
+                    'bg-slate-300 text-slate-500'
+                  }`}>
+                    {state === 'done' ? <CheckCheck className="w-3.5 h-3.5" /> : num}
+                  </div>
+                );
+
+                const step1State = stepState(locConfirmed, false);
+                const step2State = stepState(hasPhotos, !locConfirmed);
+                const step3State = stepState(false, !allReady);
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-navy-700" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-navy-800">PM On-Site Verification — Complete all 3 steps</span>
                     </div>
-                    <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${
-                      selectedProperty.location_confirmed_by_pm
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                        : 'bg-amber-50 border-amber-200 text-amber-800'
-                    }`}>
-                      {selectedProperty.location_confirmed_by_pm ? '✅' : '⚠️'}
-                      <span>Location confirmed on-site</span>
-                      {!selectedProperty.location_confirmed_by_pm && (
+
+                    {/* STEP 1 — Confirm Location */}
+                    <div className={`rounded-xl border p-3 space-y-2 ${stepClasses[step1State]}`}>
+                      <div className="flex items-center gap-2">
+                        <StepBadge num={1} state={step1State} />
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-slate-800">Confirm Location On-Site</p>
+                          <p className="text-[10px] text-slate-500">Physically verify that city, locality, and coordinates match the property record.</p>
+                        </div>
+                        {locConfirmed && <span className="text-[10px] text-emerald-700 font-bold">Confirmed ✓</span>}
+                      </div>
+                      {!locConfirmed && (
                         <button
                           onClick={async () => {
                             try {
@@ -604,43 +630,107 @@ export const PropertyManagement: React.FC = () => {
                                 showToast('Location confirmed on-site', 'success');
                                 fetchProperties();
                                 setSelectedProperty(prev => prev ? { ...prev, location_confirmed_by_pm: true } : prev);
-                              } else {
-                                showToast(d.error || 'Failed to confirm location', 'error');
-                              }
+                              } else { showToast(d.error || 'Failed', 'error'); }
                             } catch { showToast('Network error', 'error'); }
                           }}
-                          className="ml-auto px-2 py-0.5 bg-amber-700 hover:bg-amber-800 text-white text-[10px] font-bold rounded-md"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-navy-700 hover:bg-navy-800 text-white text-xs font-bold rounded-lg"
                         >
-                          Confirm Now
+                          <MapPin className="w-3.5 h-3.5" />
+                          I Have Verified the Location On-Site
                         </button>
                       )}
                     </div>
-                  </div>
 
-                  <textarea
-                    rows={2}
-                    placeholder="Enter PM on-site inspection notes..."
-                    value={actionNotes}
-                    onChange={(e) => setActionNotes(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handlePMVerify(selectedProperty.id, true)}
-                      disabled={!selectedProperty.location_confirmed_by_pm || (selectedProperty.images?.length ?? 0) === 0}
-                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow"
-                    >
-                      ✅ Pass PM On-Site Verification
-                    </button>
-                    <button
-                      onClick={() => handlePMVerify(selectedProperty.id, false)}
-                      className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-xl border border-rose-300"
-                    >
-                      ❌ Reject Property
-                    </button>
+                    {/* STEP 2 — Upload Site Photos */}
+                    <div className={`rounded-xl border p-3 space-y-2 ${stepClasses[step2State]}`}>
+                      <div className="flex items-center gap-2">
+                        <StepBadge num={2} state={step2State} />
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-slate-800">Upload Site Photos</p>
+                          <p className="text-[10px] text-slate-500">
+                            {hasPhotos ? `${selectedProperty.images!.length} photo${selectedProperty.images!.length > 1 ? 's' : ''} uploaded.` : 'At least 1 site photo required before approval.'}
+                          </p>
+                        </div>
+                        {hasPhotos && <span className="text-[10px] text-emerald-700 font-bold">{selectedProperty.images!.length} ✓</span>}
+                      </div>
+                      {step2State !== 'locked' && (
+                        <div className="relative">
+                          <input
+                            type="file"
+                            id={`pm-verify-img-${selectedProperty.id}`}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const formData = new FormData();
+                              formData.append('image', file);
+                              try {
+                                const res = await fetchWithAuth(`${API_BASE_URL}/properties/${selectedProperty.id}/images`, {
+                                  method: 'POST',
+                                  body: formData,
+                                });
+                                if (res.ok) {
+                                  showToast('Photo uploaded', 'success');
+                                  fetchProperties();
+                                  setSelectedProperty(null);
+                                } else { showToast('Upload failed', 'error'); }
+                              } catch { showToast('Network error', 'error'); }
+                            }}
+                          />
+                          <label
+                            htmlFor={`pm-verify-img-${selectedProperty.id}`}
+                            className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer text-xs font-bold transition-colors ${
+                              hasPhotos
+                                ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                                : 'border-navy-300 text-navy-700 hover:bg-navy-50'
+                            }`}
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            {hasPhotos ? 'Upload Another Photo' : 'Upload Site Photo'}
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* STEP 3 — Verify or Reject */}
+                    <div className={`rounded-xl border p-3 space-y-2 ${stepClasses[step3State]}`}>
+                      <div className="flex items-center gap-2">
+                        <StepBadge num={3} state={step3State} />
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-slate-800">Submit Verification Decision</p>
+                          <p className="text-[10px] text-slate-500">{allReady ? 'All pre-conditions met. Ready to verify.' : 'Complete steps 1 and 2 first.'}</p>
+                        </div>
+                        {!allReady && <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                      </div>
+                      <textarea
+                        rows={2}
+                        placeholder="PM on-site inspection notes (optional for approval, required for rejection)..."
+                        value={actionNotes}
+                        onChange={(e) => setActionNotes(e.target.value)}
+                        disabled={!allReady}
+                        className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePMVerify(selectedProperty.id, true)}
+                          disabled={!allReady}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow"
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          Approve — Pass Verification
+                        </button>
+                        <button
+                          onClick={() => handlePMVerify(selectedProperty.id, false)}
+                          className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-xl border border-rose-300"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Stage 2 Action for DM Head — assign executive + provide SEO hints */}
               {selectedProperty.status === 'PENDING_DM_POLISH' && (

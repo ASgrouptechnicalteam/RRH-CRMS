@@ -306,7 +306,10 @@ export class PropertyService {
   }
 
   static async verifyProperty(user: TokenPayload, propertyId: number, data: { approved: boolean; notes: string }) {
-    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
+    const property = await p.property.findFirst({
+      where: { id: propertyId, company_id: user.companyId },
+      include: { images: { select: { id: true } } },
+    });
     if (!property) throw { status: 404, message: 'Property not found' };
 
     if (!can(user, Permissions.PROPERTIES_VERIFY, property)) {
@@ -323,6 +326,23 @@ export class PropertyService {
 
     if (!transition.allowed) {
       throw { status: 409, message: transition.reason || 'Invalid state transition' };
+    }
+
+    // Pre-conditions apply only on the APPROVE path — rejection has no requirements
+    if (data.approved) {
+      if ((property as any).images.length === 0) {
+        throw {
+          status: 400,
+          message: 'Cannot approve: at least one site photo must be uploaded before PM verification.',
+        };
+      }
+
+      if (!(property as any).location_confirmed_by_pm) {
+        throw {
+          status: 400,
+          message: 'Cannot approve: PM must confirm location details on-site before verification (use the Confirm Location action).',
+        };
+      }
     }
 
     const nextStatus = data.approved ? 'PENDING_DM_POLISH' : 'REJECTED';
@@ -348,6 +368,30 @@ export class PropertyService {
       });
 
       return updated;
+    });
+  }
+
+  /**
+   * PM explicitly confirms that location details (city, locality, lat/lng) match
+   * what was observed on-site. This is a prerequisite for verifyProperty to succeed.
+   * Requires PROPERTIES_VERIFY permission — same gate as the verify action itself.
+   */
+  static async confirmLocationByPM(user: TokenPayload, propertyId: number) {
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
+    if (!property) throw { status: 404, message: 'Property not found' };
+
+    if (!can(user, Permissions.PROPERTIES_VERIFY, property)) {
+      throw { status: 403, message: 'Forbidden: Only the assigned PM can confirm location' };
+    }
+
+    if (property.status !== 'PENDING_VERIFICATION') {
+      throw { status: 409, message: 'Location confirmation is only applicable while the property is in PENDING_VERIFICATION status' };
+    }
+
+    return await p.property.update({
+      where: { id: propertyId },
+      data: { location_confirmed_by_pm: true },
+      select: { id: true, property_code: true, location_confirmed_by_pm: true },
     });
   }
 

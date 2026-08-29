@@ -112,6 +112,29 @@ router.put(
   }
 );
 
+// POST /api/v1/properties/:id/confirm-location - PM confirms on-site location details are accurate
+// This is a prerequisite for the verify action — setting this flag is a distinct, explicit PM decision.
+router.post(
+  '/:id/confirm-location',
+  authenticateToken,
+  requireAuthz(Permissions.PROPERTIES_VERIFY),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const propertyId = parseInt(req.params.id, 10);
+      if (isNaN(propertyId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      const result = await PropertyService.confirmLocationByPM(req.user!, propertyId);
+      return res.status(200).json({
+        message: `Location confirmed for property ${result.property_code}`,
+        property: result,
+      });
+    } catch (error: any) {
+      console.error('Confirm location error:', error);
+      if (error.status) return next(error);
+      return res.status(500).json({ error: 'Failed to confirm location' });
+    }
+  }
+);
+
 // POST /api/v1/properties/:id/verify - PM On-Site Verification Step
 router.post(
   '/:id/verify',

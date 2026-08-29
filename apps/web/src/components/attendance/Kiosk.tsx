@@ -24,6 +24,17 @@ export const Kiosk: React.FC = () => {
 
   // On mount, try to restore a previously stored kiosk token
   useEffect(() => {
+    const employeeUser = localStorage.getItem('rrh_user');
+    const employeeToken = localStorage.getItem('rrh_token');
+    
+    // If we detect an active employee session on this device, refuse auto-login
+    if (employeeUser || employeeToken) {
+      localStorage.removeItem('rrh_kiosk_token');
+      setMode('KIOSK_LOGIN');
+      setLoginError('Security Policy: Employee session detected on this device. Kiosk auto-login is disabled. Please log in manually.');
+      return;
+    }
+
     const stored = localStorage.getItem('rrh_kiosk_token');
     if (stored) {
       kioskToken.current = stored;

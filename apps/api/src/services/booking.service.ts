@@ -5,7 +5,7 @@ import { AppError } from './lead.service';
 import { BookingPolicy } from '../policies/booking.policy';
 import { Roles } from '@rrh-ems/shared';
 import { randomBytes } from 'crypto';
-
+import { WorkflowEngine } from '../workflows/workflowEngine';
 
 const p = prisma;
 
@@ -284,7 +284,7 @@ export class BookingService {
     return result;
   }
 
-  static async cancelBooking(user: TokenPayload, id: number) {
+  static async cancelBooking(user: TokenPayload, id: number, reason: string = 'Booking cancelled') {
     const booking = await BookingService.getBookingById(user, id);
     const updated = await prisma.booking.update({ where: { id }, data: { status: 'CANCELLED' } });
     const prop = await p.property.findUnique({ where: { id: booking.property_id } });
@@ -298,7 +298,13 @@ export class BookingService {
     // Instead we transition the lead status.
     const opp = await p.opportunity.findFirst({ where: { booking_id: id }, include: { lead: true } });
     if (opp && opp.lead && opp.lead.status !== 'DROPPED') {
-      await p.lead.update({ where: { id: opp.lead_id }, data: { status: 'DROPPED' } });
+      await WorkflowEngine.transition(
+        p,
+        opp.lead_id,
+        'DROPPED',
+        { actor: user, entity: { ...opp.lead, exit_reason: reason } },
+        { exit_reason: reason }
+      );
     }
     return updated;
   }

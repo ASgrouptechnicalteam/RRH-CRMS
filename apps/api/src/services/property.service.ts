@@ -388,7 +388,7 @@ export class PropertyService {
     if (!property) throw { status: 404, message: 'Property not found' };
 
     if (!can(user, Permissions.PROPERTIES_VERIFY, property)) {
-      throw { status: 403, message: 'Forbidden: Only the assigned PM, MD, or Admin can confirm location' };
+      throw { status: 403, message: 'Forbidden: Only the assigned PM (or MD/Admin) can confirm location for this property' };
     }
 
     if (property.status !== 'PENDING_VERIFICATION') {

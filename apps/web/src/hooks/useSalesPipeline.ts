@@ -66,10 +66,15 @@ export function useSalesPipeline() {
   }, [fetchWithAuth]);
 
   const updateSalesStage = async (id: number, newStage: string, dropReason?: string) => {
-    const payload: { stage: string; drop_reason?: string } = { stage: newStage };
-    if (dropReason) payload.drop_reason = dropReason;
+    const opp = opportunities.find(o => o.id === id);
+    if (!opp || !opp.lead_id) {
+      throw new Error('Associated lead not found for this opportunity');
+    }
 
-    const res = await fetchWithAuth(`${API_BASE_URL}/opportunities/${id}/stage`, {
+    const payload: { status: string; exit_reason?: string } = { status: newStage };
+    if (dropReason) payload.exit_reason = dropReason;
+
+    const res = await fetchWithAuth(`${API_BASE_URL}/leads/${opp.lead_id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -80,7 +85,7 @@ export function useSalesPipeline() {
       throw new Error(data.error || 'Failed to update sales stage');
     }
     
-    return data.opportunity;
+    return data.lead;
   };
 
   const getSalesOpportunityDetails = async (id: number) => {

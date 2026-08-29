@@ -322,7 +322,7 @@ export interface LeadSalesOppItem {
   project?: { id?: number; name?: string } | null;
   property_id?: number | null;
   booking_id?: number | null;
-  stage: string;
+
   expected_value?: number | null;
   probability?: number | null;
   owner_id?: number;

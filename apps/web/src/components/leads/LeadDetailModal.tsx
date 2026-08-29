@@ -767,7 +767,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                               {opp.project?.name ? `${opp.project.name} Sales` : 'Open Opportunity'}
                             </h5>
                           </div>
-                          <StatusPill status={opp.stage} type="pending" />
+                          <StatusPill status={lead.status || 'UNKNOWN'} type="pending" />
                         </div>
                         <div className="flex items-center justify-between text-sm mt-4 pt-3 border-t border-slate-100">
                           <div>

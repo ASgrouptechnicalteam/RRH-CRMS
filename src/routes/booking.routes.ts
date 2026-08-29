@@ -95,7 +95,8 @@ router.post(
   requireAuthz(Permissions.BOOKINGS_CANCEL as any),
   async (req: any, res, next) => {
     try {
-      const booking = await BookingService.cancelBooking(req.user, parseInt(req.params.id, 10));
+      const reason = req.body.reason || 'Booking cancelled';
+      const booking = await BookingService.cancelBooking(req.user, parseInt(req.params.id, 10), reason);
       res.json(booking);
     } catch (error) {
       next(error);

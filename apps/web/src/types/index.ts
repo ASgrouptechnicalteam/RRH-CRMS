@@ -114,6 +114,7 @@ export interface PropertyImage {
   alt_text?: string | null;
   sort_order?: number;
   status?: string;
+  uploaded_by_id?: number;
   created_at?: ISODateTime;
 }
 

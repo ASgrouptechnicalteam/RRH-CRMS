@@ -308,7 +308,12 @@ export class PropertyService {
   static async verifyProperty(user: TokenPayload, propertyId: number, data: { approved: boolean; notes: string }) {
     const property = await p.property.findFirst({
       where: { id: propertyId, company_id: user.companyId },
-      include: { images: { select: { id: true } } },
+      include: {
+        images: {
+          where: { uploaded_by_id: user.employeeId },
+          select: { id: true },
+        },
+      },
     });
     if (!property) throw { status: 404, message: 'Property not found' };
 

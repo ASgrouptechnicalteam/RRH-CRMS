@@ -574,7 +574,8 @@ export const PropertyManagement: React.FC = () => {
               {/* Stage 1 — Guided PM Verification Wizard */}
               {selectedProperty.status === 'PENDING_VERIFICATION' && user?.permissions?.includes(Permissions.PROPERTIES_VERIFY) && (() => {
                 const locConfirmed = !!selectedProperty.location_confirmed_by_pm;
-                const hasPhotos = (selectedProperty.images?.length ?? 0) > 0;
+                const pmUploadedImages = selectedProperty.images?.filter((img) => img.uploaded_by_id === user?.id) ?? [];
+                const hasPhotos = pmUploadedImages.length > 0;
                 const allReady = locConfirmed && hasPhotos;
 
                 const stepState = (done: boolean, locked: boolean) => {
@@ -648,10 +649,10 @@ export const PropertyManagement: React.FC = () => {
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-slate-800">Upload Site Photos</p>
                           <p className="text-[10px] text-slate-500">
-                            {hasPhotos ? `${selectedProperty.images!.length} photo${selectedProperty.images!.length > 1 ? 's' : ''} uploaded.` : 'At least 1 site photo required before approval.'}
+                            {hasPhotos ? `${pmUploadedImages.length} photo${pmUploadedImages.length > 1 ? 's' : ''} uploaded.` : 'At least 1 site photo required before approval.'}
                           </p>
                         </div>
-                        {hasPhotos && <span className="text-[10px] text-emerald-700 font-bold">{selectedProperty.images!.length} ✓</span>}
+                        {hasPhotos && <span className="text-[10px] text-emerald-700 font-bold">{pmUploadedImages.length} ✓</span>}
                       </div>
                       {step2State !== 'locked' && (
                         <div className="relative">

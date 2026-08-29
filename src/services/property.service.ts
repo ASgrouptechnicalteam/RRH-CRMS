@@ -309,6 +309,8 @@ export class PropertyService {
     const property = await p.property.findFirst({
       where: { id: propertyId, company_id: user.companyId },
       include: {
+        // Only count photos uploaded by THIS PM — seller-submitted or third-party photos
+        // do not satisfy the "PM took on-site pictures" requirement.
         images: {
           where: { uploaded_by_id: user.employeeId },
           select: { id: true },
@@ -338,7 +340,7 @@ export class PropertyService {
       if ((property as any).images.length === 0) {
         throw {
           status: 400,
-          message: 'Cannot approve: at least one site photo must be uploaded before PM verification.',
+          message: 'Cannot approve: at least one photo uploaded by you (the assigned PM) is required before verification.',
         };
       }
 

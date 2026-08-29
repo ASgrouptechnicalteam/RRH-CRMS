@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
-import { Search, Calendar, ChevronLeft, ChevronRight, Clock, AlertCircle } from 'lucide-react';
+import { Search, Calendar, ChevronLeft, ChevronRight, Clock, AlertCircle, Edit } from 'lucide-react';
+import { ManualCorrectionModal } from './ManualCorrectionModal';
 
 interface AttendanceLog {
   id: number;
@@ -17,10 +18,12 @@ interface AttendanceLog {
 }
 
 export const AttendanceHistory: React.FC = () => {
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Filters
   const [search, setSearch] = useState('');
@@ -82,7 +85,19 @@ export const AttendanceHistory: React.FC = () => {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
       {/* Header & Filters */}
       <div className="p-4 sm:p-6 border-b border-slate-200 bg-slate-50 space-y-4">
-        <h3 className="font-bold text-slate-800 text-lg">Attendance History</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-slate-800 text-lg">Attendance History</h3>
+          
+          {user && (user.roles.includes('HR_MANAGER') || user.roles.includes('MD') || user.roles.includes('ADMIN')) && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-navy-200"
+            >
+              <Edit className="w-4 h-4" />
+              Mark Absent/Late
+            </button>
+          )}
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -184,8 +199,15 @@ export const AttendanceHistory: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-3">
-                      <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusColor(log.status)}`}>
-                        {log.status.replace('_', ' ')}
+                      <div className="flex flex-col items-start gap-1">
+                        <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusColor(log.status)}`}>
+                          {log.status.replace('_', ' ')}
+                        </div>
+                        {log.source === 'HR_MANUAL' && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 rounded">
+                            HR Manual
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -217,6 +239,16 @@ export const AttendanceHistory: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {isModalOpen && (
+        <ManualCorrectionModal
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={() => {
+            setIsModalOpen(false);
+            fetchHistory();
+          }}
+        />
       )}
     </div>
   );

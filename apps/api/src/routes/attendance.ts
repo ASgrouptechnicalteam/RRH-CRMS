@@ -140,14 +140,25 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
         });
 
         const activeCheckIn = existingLogs.find((l: any) => l.check_out_at === null);
-        if (activeCheckIn) return { alreadyStamped: true, log: activeCheckIn };
+        if (activeCheckIn) {
+          const checkInTime = new Date(activeCheckIn.check_in_at).getTime();
+          const diffHours = (now.getTime() - checkInTime) / (1000 * 60 * 60);
 
-        const alreadyCheckedInToday = existingLogs.find((l: any) => {
-          if (!l.check_in_at) return false;
-          return getISTComponents(new Date(l.check_in_at)).dateString === dateString;
-        });
+          if (diffHours < 16) {
+            return { error: 'You are already checked in. Did you mean to check out?' };
+          } else {
+            await tx.attendanceLog.update({
+              where: { id: activeCheckIn.id },
+              data: {
+                check_out_at: new Date(checkInTime + 9 * 60 * 60 * 1000), // Default 9 hours shift
+                working_duration_minutes: 9 * 60,
+                notes: 'SYSTEM_AUTO_CLOSE',
+              },
+            });
+            // Continue to create new log
+          }
+        }
 
-        if (alreadyCheckedInToday) return { alreadyStamped: true, log: alreadyCheckedInToday };
 
         // Check for an approved late-checkin proposal covering today (IST)
         const istTodayStart = new Date(`${dateString}T00:00:00+05:30`);
@@ -177,6 +188,10 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
       { isolationLevel: 'Serializable' },
     );
 
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+
     if (result.alreadyStamped) {
       return res.status(200).json({
         message: 'Already checked in for today',
@@ -198,11 +213,8 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
     if (error.code === 'P2034') {
       // Transaction conflict / deadlock. Another request won the race.
       // We can safely assume they are already checked in.
-      return res.status(200).json({
-        message: 'Already checked in (handled concurrent request)',
-        alreadyStamped: true,
-        status: 'PRESENT',
-        timeIST: getISTComponents(new Date()).timeString,
+      return res.status(400).json({
+        error: 'You are already checked in. Did you mean to check out?'
       });
     }
     console.error('Scan attendance error:', error);
@@ -259,9 +271,15 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
           orderBy: { check_in_at: 'desc' },
         });
 
-        if (!activeLog) return { error: 'No active check-in found for today' };
+        if (!activeLog) return { error: 'No active check-in found to check out from. Please check in first.' };
 
         const checkInTime = new Date(activeLog.check_in_at).getTime();
+        const diffHours = (now.getTime() - checkInTime) / (1000 * 60 * 60);
+
+        if (diffHours >= 16) {
+          return { error: 'No active check-in found to check out from. Please check in first.' };
+        }
+
         const diffMs = now.getTime() - checkInTime;
         const durationMinutes = Math.max(0, Math.round(diffMs / 60000));
 

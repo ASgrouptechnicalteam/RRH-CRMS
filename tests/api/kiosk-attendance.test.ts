@@ -246,10 +246,90 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
       const [res1, res2] = await Promise.all([req1, req2]);
 
       const successCount = [res1.status, res2.status].filter(s => s === 200).length;
-      expect(successCount).toBe(2); // One is check-in, one is "Already checked in"
+      const errorCount = [res1.status, res2.status].filter(s => s === 400).length;
+      expect(successCount).toBe(1); // One is successful check-in
+      expect(errorCount).toBe(1); // The other gets the 16-hour active check-in error
 
       const logs = await p.attendanceLog.findMany({ where: { employee_id: employee1Id } });
       expect(logs.length).toBe(1); // Only 1 physical record inserted!
+    });
+
+    it('should reject duplicate scan-in within 16 hours', async () => {
+      const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
+      const payload = { qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: qrToken } };
+      
+      // First scan
+      await request(app).post('/api/v1/attendance/scan').set('Authorization', `Bearer ${kioskToken}`).send(payload);
+      
+      // Second scan immediately
+      const res2 = await request(app).post('/api/v1/attendance/scan').set('Authorization', `Bearer ${kioskToken}`).send(payload);
+      expect(res2.status).toBe(400);
+      expect(res2.body.error).toBe('You are already checked in. Did you mean to check out?');
+    });
+
+    it('should auto-close check-in older than 16 hours and allow new scan', async () => {
+      const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
+      const payload = { qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: qrToken } };
+      
+      const seventeenHoursAgo = new Date(Date.now() - 17 * 60 * 60 * 1000);
+      await p.attendanceLog.create({
+        data: {
+          employee_id: employee1Id,
+          check_in_at: seventeenHoursAgo,
+          status: 'PRESENT',
+          source: 'QR_SCAN',
+          branch_id: kioskBranchId,
+        },
+      });
+
+      // New scan should succeed
+      const res = await request(app).post('/api/v1/attendance/scan').set('Authorization', `Bearer ${kioskToken}`).send(payload);
+      expect(res.status).toBe(200);
+
+      const logs = await p.attendanceLog.findMany({ where: { employee_id: employee1Id }, orderBy: { check_in_at: 'asc' } });
+      expect(logs.length).toBe(2);
+      expect(logs[0].check_out_at).not.toBeNull();
+      expect(logs[0].notes).toBe('SYSTEM_AUTO_CLOSE');
+      expect(logs[1].check_out_at).toBeNull();
+    });
+
+    it('should allow multi-branch scanning on the same day', async () => {
+      const company2Branch = await p.branch.findFirst({ where: { company_id: kioskCompanyId, id: { not: kioskBranchId } } });
+      if (!company2Branch) return; // Skip if no second branch
+
+      // Create a kiosk credential for branch 2
+      const branch2Cred = await p.kioskCredential.create({
+        data: {
+          company_id: kioskCompanyId,
+          branch_id: company2Branch.id,
+          label: 'Branch 2 Kiosk',
+          username: `KIOSK-B2-${Date.now()}`,
+          password_hash: '$2a$10$xyz', // doesn't matter, we mock token
+          is_active: true,
+          credential_version: 1,
+          created_by_id: employee1Id,
+        }
+      });
+
+      const jwt = await import('jsonwebtoken');
+      const b2Token = jwt.sign({
+        type: 'KIOSK', companyId: kioskCompanyId, branchId: company2Branch.id, kioskCredentialId: branch2Cred.id, credentialVersion: 1, createdAt: Date.now()
+      }, process.env.JWT_ACCESS_SECRET);
+
+      const payload = { qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: generateQrHmac(employee1Id, employee1Code, 1) } };
+
+      // Scan in Branch 1
+      await request(app).post('/api/v1/attendance/scan').set('Authorization', `Bearer ${kioskToken}`).send(payload);
+      // Scan out Branch 1
+      await request(app).post('/api/v1/attendance/checkout').set('Authorization', `Bearer ${kioskToken}`).send(payload);
+      
+      // Scan in Branch 2
+      const res = await request(app).post('/api/v1/attendance/scan').set('Authorization', `Bearer ${b2Token}`).send(payload);
+      expect(res.status).toBe(200);
+
+      const logs = await p.attendanceLog.findMany({ where: { employee_id: employee1Id }, orderBy: { check_in_at: 'asc' } });
+      expect(logs[0].branch_id).toBe(kioskBranchId);
+      expect(logs[1].branch_id).toBe(company2Branch.id);
     });
 
     it('should attach the kiosk branch_id to the attendance log', async () => {
@@ -345,7 +425,54 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
           },
         });
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('No active check-in found for today');
+      expect(res.body.error).toBe('No active check-in found to check out from. Please check in first.');
+    });
+
+    it('should reject checkout if the active check-in is > 16 hours old', async () => {
+      const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
+      const seventeenHoursAgo = new Date(Date.now() - 17 * 60 * 60 * 1000);
+      await p.attendanceLog.create({
+        data: {
+          employee_id: employee1Id,
+          check_in_at: seventeenHoursAgo,
+          status: 'PRESENT',
+          source: 'QR_SCAN',
+          branch_id: kioskBranchId,
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/v1/attendance/checkout')
+        .set('Authorization', `Bearer ${kioskToken}`)
+        .send({ qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: qrToken } });
+      
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('No active check-in found to check out from. Please check in first.');
+    });
+
+    it('should correctly handle date-boundary overnight shift and calculate duration', async () => {
+      const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
+      
+      // Shift started yesterday at 11:30 PM (8 hours ago)
+      const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
+      await p.attendanceLog.create({
+        data: {
+          employee_id: employee1Id,
+          check_in_at: eightHoursAgo,
+          status: 'PRESENT',
+          source: 'QR_SCAN',
+          branch_id: kioskBranchId,
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/v1/attendance/checkout')
+        .set('Authorization', `Bearer ${kioskToken}`)
+        .send({ qrPayload: { employeeId: employee1Id, employeeCode: employee1Code, version: 1, signedToken: qrToken } });
+      
+      expect(res.status).toBe(200);
+      expect(res.body.working_duration_minutes).toBeGreaterThanOrEqual(479);
+      expect(res.body.working_duration_minutes).toBeLessThanOrEqual(481); // approx 8 hours (480 mins)
     });
 
     it('should successfully checkout and calculate duration, populating branch_id', async () => {

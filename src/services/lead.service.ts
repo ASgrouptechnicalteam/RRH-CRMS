@@ -520,6 +520,14 @@ export class LeadService {
         if (q.property_type_preference !== undefined) updateData.property_type_preference = q.property_type_preference;
         if (q.preferred_location !== undefined) updateData.preferred_location = q.preferred_location;
       }
+      // Persist qualification fields when demo handler revises them on DEMO_COMPLETED (§1 row 4)
+      if (newStatus === 'DEMO_COMPLETED' && guardFields?.qualification) {
+        const q = guardFields.qualification;
+        if (q.budget_min !== undefined) updateData.budget_min = q.budget_min;
+        if (q.budget_max !== undefined) updateData.budget_max = q.budget_max;
+        if (q.property_type_preference !== undefined) updateData.property_type_preference = q.property_type_preference;
+        if (q.preferred_location !== undefined) updateData.preferred_location = q.preferred_location;
+      }
 
       const updated = await WorkflowEngine.transition(
         tx,

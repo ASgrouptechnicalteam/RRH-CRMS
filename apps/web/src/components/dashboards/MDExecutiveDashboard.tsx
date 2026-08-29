@@ -14,6 +14,7 @@ import {
   ArrowRightLeft
 } from 'lucide-react';
 import { StatCard, ListWidget, ListItem } from '../ui';
+import { UnassignedPropertiesWidget } from '../md/UnassignedPropertiesWidget';
 
 export const MDExecutiveDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -129,6 +130,8 @@ export const MDExecutiveDashboard: React.FC = () => {
             items={reassignmentEscalations}
             emptyStateMessage="No escalations pending your review."
           />
+          {/* Distinctive Widget: Unassigned Properties Routing */}
+          <UnassignedPropertiesWidget />
         </div>
 
         <div className="space-y-6">

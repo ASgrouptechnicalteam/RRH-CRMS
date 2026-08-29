@@ -30,11 +30,12 @@ router.get(
   requireAuthz(Permissions.PROPERTIES_READ),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { brand, status, project_id } = req.query;
+    const { brand, status, project_id, unassigned } = req.query;
     const filters = {
       brand: typeof brand === 'string' ? brand : undefined,
       status: typeof status === 'string' ? status : undefined,
       project_id: typeof project_id === 'string' ? parseInt(project_id, 10) : undefined,
+      unassigned: unassigned === 'true',
     };
 
     const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);

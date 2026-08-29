@@ -30,6 +30,62 @@ const timingSafeEqual = (a: string, b: string): boolean => {
 };
 
 /**
+ * Kiosk auth rate-limit / lockout state.
+ * Tracks consecutive failed KIOSK auth attempts per branch_id.
+ * Sliding window: 5 failures within 15 minutes → 403 LOCKED_OUT until the
+ * oldest failure falls outside the window, at which point the counter resets.
+ *
+ * Chosen defaults (documented here for the audit trail):
+ *   - MAX_FAILURES_PER_WINDOW  = 5
+ *   - LOCKOUT_WINDOW_MS        = 15 * 60 * 1000  (15 minutes)
+ *
+ * The counter is keyed on branch_id (not credential_id) because the kiosk
+ * terminal's physical location is the attack surface an admin cares about —
+ * a guessed password on "Main Branch" shouldn't let an attacker burn through
+ * every credential at that branch in quick succession.
+ *
+ * IMPORTANT: this rate limit does NOT apply to employee (EMPLOYEE) auth
+ * anywhere else in the app — it is scoped entirely to KIOSK auth attempts.
+ */
+const KIOSK_RATE_LIMIT = {
+  maxFailures: 5,
+  windowMs: 15 * 60 * 1000,
+};
+
+// In-memory store: branchId → { failures: number[], resetAt?: number }
+// Not persisted across server restarts — acceptable for a kiosk-terminal
+// lockout where a restart would also kill any active kiosk session anyway.
+const kioskFailuresByBranch = new Map<number, { failures: number[] }>();
+
+const pruneOldFailures = (failures: number[], now: number, windowMs: number): number[] => {
+  return failures.filter((t) => now - t < windowMs);
+};
+
+export const recordKioskAuthFailure = (branchId: number): boolean => {
+  const now = Date.now();
+  let state = kioskFailuresByBranch.get(branchId);
+  if (!state) {
+    state = { failures: [] };
+    kioskFailuresByBranch.set(branchId, state);
+  }
+  state.failures.push(now);
+  state.failures = pruneOldFailures(state.failures, now, KIOSK_RATE_LIMIT.windowMs);
+  return state.failures.length >= KIOSK_RATE_LIMIT.maxFailures;
+};
+
+export const isKioskAuthLockedOut = (branchId: number): boolean => {
+  const now = Date.now();
+  const state = kioskFailuresByBranch.get(branchId);
+  if (!state) return false;
+  state.failures = pruneOldFailures(state.failures, now, KIOSK_RATE_LIMIT.windowMs);
+  return state.failures.length >= KIOSK_RATE_LIMIT.maxFailures;
+};
+
+export const resetKioskAuthState = (branchId: number): void => {
+  kioskFailuresByBranch.delete(branchId);
+};
+
+/**
  * Service-to-service authentication for Portal callbacks.
  * Validates a Service Bearer Secret against PORTAL_CRM_SECRET (constant-time comparison).
  * Does NOT require a user JWT — service tokens do not carry user identity.
@@ -183,21 +239,49 @@ export const authenticateKioskToken = async (req: KioskAuthenticatedRequest, res
       });
     }
 
+    // ── Rate-limit / lockout check (per branch_id) ─────────────────────────
+    // Only applied when we can identify the branch from the token payload.
+    // Failed attempts (wrong password, expired token, stale version) all count.
+    const branchId = payload.branchId;
+    if (branchId !== undefined && isKioskAuthLockedOut(branchId)) {
+      return res.status(403).json({
+        error: 'Too many failed kiosk auth attempts for this branch. Try again later.',
+        code: 'LOCKED_OUT',
+      });
+    }
+
     const kioskCred = await prisma.kioskCredential.findUnique({
       where: { id: payload.kioskCredentialId },
       include: { branch: true },
     });
 
     if (!kioskCred) {
+      // Unknown credential — record the failure against the branch_id embedded
+      // in the token (if present) so the attacker can't switch to a different
+      // credential at the same branch to evade the lockout.
+      if (branchId !== undefined) {
+        recordKioskAuthFailure(branchId);
+      }
       return res.status(401).json({ error: 'Kiosk credential not found', code: 'UNAUTHORIZED' });
     }
 
     if (!kioskCred.is_active) {
+      if (branchId !== undefined) {
+        recordKioskAuthFailure(branchId);
+      }
       return res.status(401).json({ error: 'Kiosk credential is deactivated', code: 'UNAUTHORIZED' });
     }
 
     if (payload.credentialVersion !== kioskCred.credential_version) {
+      if (branchId !== undefined) {
+        recordKioskAuthFailure(branchId);
+      }
       return res.status(401).json({ error: 'Kiosk token version stale — please log in again', code: 'TOKEN_EXPIRED' });
+    }
+
+    // Success — reset the failure counter for this branch.
+    if (branchId !== undefined) {
+      resetKioskAuthState(branchId);
     }
 
     req.kiosk = {

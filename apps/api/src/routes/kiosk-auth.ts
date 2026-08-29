@@ -1,14 +1,18 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { generateAccessToken } from '../utils/jwt';
-import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest, requireRole, isKioskAuthLockedOut, recordKioskAuthFailure, resetKioskAuthState } from '../middleware/auth';
 import { Roles } from '@rrh-ems/shared';
 import bcrypt from 'bcryptjs';
 import { validateRequestBody } from '../middleware/validate';
 import { z } from 'zod';
 
-const router = Router();
+// ── Login router (mounted at /api/v1/kiosk-auth) ────────────────────────────
+const loginRouter = Router();
 const p = prisma;
+
+// ── Credential CRUD router (mounted at /api/v1/kiosk-credentials) ───────────
+const credentialRouter = Router();
 
 // ── Kiosk schemas ──────────────────────────────────────────────────────────
 
@@ -34,7 +38,7 @@ export const KioskCredentialUpdateSchema = z.object({
 // ── POST /api/v1/kiosk-auth/login ──────────────────────────────────────────
 // No auth middleware — this IS the login endpoint.
 
-router.post('/login', validateRequestBody(KioskLoginSchema), async (req: Request, res: Response) => {
+loginRouter.post('/login', validateRequestBody(KioskLoginSchema), async (req: Request, res: Response) => {
   try {
     const body = req.body as { username: string; password: string };
     const { username, password } = body;
@@ -48,19 +52,34 @@ router.post('/login', validateRequestBody(KioskLoginSchema), async (req: Request
       return res.status(401).json({ error: 'Invalid kiosk credentials', code: 'UNAUTHORIZED' });
     }
 
+    const firstBranchId = creds[0].branch_id;
+    if (isKioskAuthLockedOut(firstBranchId)) {
+      return res.status(403).json({
+        error: 'Too many failed kiosk auth attempts for this branch. Try again later.',
+        code: 'LOCKED_OUT',
+      });
+    }
+
     let matchedCred: any = null;
     for (const c of creds) {
-      if (!c.is_active) continue;
+      if (!c.is_active) {
+        recordKioskAuthFailure(c.branch_id);
+        continue;
+      }
       const match = await bcrypt.compare(password, c.password_hash);
       if (match) {
         matchedCred = c;
         break;
+      } else {
+        recordKioskAuthFailure(c.branch_id);
       }
     }
 
     if (!matchedCred) {
       return res.status(401).json({ error: 'Invalid kiosk credentials', code: 'UNAUTHORIZED' });
     }
+
+    resetKioskAuthState(matchedCred.branch_id);
 
     const companyId = matchedCred.company_id;
 
@@ -100,7 +119,7 @@ router.post('/login', validateRequestBody(KioskLoginSchema), async (req: Request
 
 // ── POST /api/v1/kiosk-credentials ──────────────────────────────────────────
 
-router.post(
+credentialRouter.post(
   '/',
   authenticateToken,
   requireRole([Roles.MD, Roles.ADMIN]),
@@ -162,7 +181,7 @@ router.post(
           is_active: cred.is_active,
           credential_version: cred.credential_version,
           created_by_id: cred.created_by_id,
-          created_at: cred.createdAt,
+          created_at: cred.created_at,
         },
       });
     } catch (error: any) {
@@ -177,7 +196,7 @@ router.post(
 
 // ── PATCH /api/v1/kiosk-credentials/:id ────────────────────────────────────
 
-router.patch(
+credentialRouter.patch(
   '/:id',
   authenticateToken,
   requireRole([Roles.MD, Roles.ADMIN]),
@@ -285,14 +304,16 @@ router.patch(
       });
     } catch (error: any) {
       console.error('Kiosk credential update error:', error);
-      return res.status(500).json({ error: 'Failed to update kiosk credential' });
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+      return res.status(500).json({ error: 'Failed to update kiosk credential', detail: error?.message });
     }
   },
 );
 
 // ── GET /api/v1/kiosk-credentials ───────────────────────────────────────────
 
-router.get(
+credentialRouter.get(
   '/',
   authenticateToken,
   requireRole([Roles.MD, Roles.ADMIN]),
@@ -302,7 +323,7 @@ router.get(
 
       const credentials = await p.kioskCredential.findMany({
         where: { company_id: companyId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       });
 
       // Fetch branch names for all credentials in one query
@@ -324,7 +345,7 @@ router.get(
           credential_version: c.credential_version,
           created_by_id: c.created_by_id,
           created_at: c.created_at,
-          updated_at: c.updatedAt,
+          updated_at: c.updated_at,
           company_id: c.company_id,
         })),
       });
@@ -335,4 +356,4 @@ router.get(
   },
 );
 
-export default router;
+export default { loginRouter, credentialRouter };

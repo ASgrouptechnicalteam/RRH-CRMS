@@ -574,7 +574,7 @@ export class LeadService {
 
       // Auto-assign recovered leads
       if (newStatus === 'RECOVERED_TO_POOL') {
-        const bestAssignee = await findBestAssigneeForLead(user.companyId);
+        const bestAssignee = await findBestAssigneeForLead(user.companyId!);
         if (bestAssignee) {
           finalUpdated = await WorkflowEngine.transition(
             tx,

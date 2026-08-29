@@ -4,6 +4,7 @@ import { prisma } from '../../apps/api/src/lib/prisma';
 import { generateQrHmac } from '../../apps/api/src/utils/qr';
 import { getISTComponents } from '../../apps/api/src/utils/time';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
+import { resetKioskAuthState } from '../../apps/api/src/middleware/auth';
 
 const p = prisma as any;
 
@@ -17,6 +18,7 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
   let kioskCompanyId: number;
 
   let employee2Id: number; // Company 2
+  const uniqueSuffix = `RUN-${process.pid}`;
 
   beforeAll(async () => {
     await setupDeterministicTestUsers();
@@ -75,6 +77,15 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
     if (kioskCredentialId) {
       await p.kioskCredential.delete({ where: { id: kioskCredentialId } }).catch(() => {});
     }
+    // The CRUD section creates additional credentials — clean them up too.
+    // We cannot reference newCredId directly (it lives in a nested describe scope),
+    // so we delete by the run-unique username pattern instead.
+    const runCreds = await p.kioskCredential.findMany({
+      where: { username: { startsWith: `KIOSK-NEW-${uniqueSuffix}` } },
+    });
+    for (const c of runCreds) {
+      await p.kioskCredential.delete({ where: { id: c.id } }).catch(() => {});
+    }
     await p.attendanceLog.deleteMany({
       where: { employee_id: { in: [employee1Id, employee2Id] } },
     }).catch(() => {});
@@ -102,17 +113,44 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
         .send({ username: 'KIOSK-TEST-001', password: 'Kiosk@123' });
       expect(res.status).toBe(401);
 
-      // Re-activate for remaining tests
+      // Re-activate for remaining tests AND re-login to get a fresh token
+      // (the deactivate/reactivate cycle bumps credential_version twice).
       await request(app)
         .patch(`/api/v1/kiosk-credentials/${kioskCredentialId}`)
         .set('Authorization', `Bearer ${await getAdminToken()}`)
         .send({ is_active: true });
+
+      const reLoginRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: 'KIOSK-TEST-001', password: 'Kiosk@123' });
+      expect(reLoginRes.status).toBe(200);
+      kioskToken = reLoginRes.body.accessToken;
     });
   });
 
   describe('Check-in via POST /scan (kiosk token)', () => {
     beforeEach(async () => {
       await p.attendanceLog.deleteMany({ where: { employee_id: employee1Id } });
+      await p.dailyReport.deleteMany({ where: { employee_id: employee1Id } });
+
+      // Submit a daily report for employee 1 so the report_required gate
+      // (Phase 5 logout gate) does not block any checkout that follows a scan.
+      const emp1Token = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ employee_code: employee1Code, password: 'Password@123' })
+        .then((r) => r.body.accessToken);
+
+      if (emp1Token) {
+        await request(app)
+          .post('/api/v1/reports/daily')
+          .set('Authorization', `Bearer ${emp1Token}`)
+          .send({
+            role_name: 'Telecaller',
+            metrics: { callsMade: 5, siteVisits: 2, leadsQualified: 1 },
+            summary_notes: 'Scan test daily report',
+            target_met: true,
+          });
+      }
     });
 
     it('should reject scan with no Authorization header (401)', async () => {
@@ -165,6 +203,10 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
     });
 
     it('should successfully check in an employee and populate branch_id', async () => {
+      // Debug: confirm kioskToken version matches DB
+      const cred = await p.kioskCredential.findUnique({ where: { id: kioskCredentialId } });
+      console.log('[DEBUG scan] kioskCredential version:', cred?.credential_version);
+
       const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
       const res = await request(app)
         .post('/api/v1/attendance/scan')
@@ -232,6 +274,29 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
   describe('Check-out via POST /checkout (kiosk token)', () => {
     beforeEach(async () => {
       await p.attendanceLog.deleteMany({ where: { employee_id: employee1Id } });
+      await p.dailyReport.deleteMany({ where: { employee_id: employee1Id } });
+
+      // Submit a daily report for employee 1 so the Phase 5 report_required
+      // logout gate does not block the checkout tests.
+      const emp1Token = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ employee_code: employee1Code, password: 'Password@123' })
+        .then((r) => r.body.accessToken);
+
+      if (emp1Token) {
+        const submitRes = await request(app)
+          .post('/api/v1/reports/daily')
+          .set('Authorization', `Bearer ${emp1Token}`)
+          .send({
+            role_name: 'Telecaller',
+            metrics: { callsMade: 10, siteVisits: 5, leadsQualified: 2 },
+            summary_notes: 'Checkout test daily report',
+            target_met: true,
+          });
+        console.log('[DEBUG beforeEach] submitRes:', submitRes.status, submitRes.body.error || submitRes.body.message);
+      } else {
+        console.log('[DEBUG beforeEach] emp1Token is null/undefined');
+      }
     });
 
     it('should reject checkout with no token (401)', async () => {
@@ -329,7 +394,10 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
         .set('Authorization', `Bearer ${await getAdminToken()}`)
         .send({ password: 'Kiosk@456' });
       expect(rotateRes.status).toBe(200);
-      expect(rotateRes.body.credential.credential_version).toBe(2);
+      // Version was already bumped to 3 by the deactivate/reactivate test
+      // (1 -> 2 on deactivate, 2 -> 3 on reactivate), so this rotation
+      // should bring it to 4.
+      expect(rotateRes.body.credential.credential_version).toBe(4);
 
       // Old token should now be rejected
       const res = await request(app)
@@ -368,6 +436,148 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
     });
   });
 
+  describe('Token rejection edge cases', () => {
+    it('should reject an expired kiosk token (401)', async () => {
+      // Generate an expired token directly with jsonwebtoken (24h in the past)
+      const jwt = await import('jsonwebtoken');
+      const expiredPayload = {
+        type: 'KIOSK',
+        companyId: kioskCompanyId,
+        branchId: kioskBranchId,
+        kioskCredentialId: kioskCredentialId,
+        credentialVersion: 1,
+        createdAt: Date.now() - 24 * 60 * 60 * 1000, // 24h ago
+      };
+      const expiredToken = jwt.sign(expiredPayload, process.env.JWT_ACCESS_SECRET);
+
+      const res = await request(app)
+        .post('/api/v1/attendance/scan')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .send({
+          qrPayload: {
+            employeeId: employee1Id,
+            employeeCode: employee1Code,
+            version: 1,
+            signedToken: generateQrHmac(employee1Id, employee1Code, 1),
+          },
+        });
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe('TOKEN_EXPIRED');
+    });
+  });
+
+  describe('Kiosk auth rate-limit / lockout', () => {
+    let lockoutCredId: number;
+    let lockoutToken: string;
+
+    beforeAll(async () => {
+      // Create a separate credential for the lockout tests so we don't
+      // pollute the main credential's failure counter.
+      const adminToken = await getAdminToken();
+      const lockoutRes = await request(app)
+        .post('/api/v1/kiosk-credentials')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          branch_id: kioskBranchId,
+          label: 'Lockout Test Credential',
+          username: `KIOSK-LOCKOUT-${uniqueSuffix}`,
+          password: 'Lockout@123',
+        });
+      expect(lockoutRes.status).toBe(201);
+      lockoutCredId = lockoutRes.body.credential.id;
+
+      const loginRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: `KIOSK-LOCKOUT-${uniqueSuffix}`, password: 'Lockout@123' });
+      expect(loginRes.status).toBe(200);
+      lockoutToken = loginRes.body.accessToken;
+    });
+
+    it('should allow login after fewer than 5 failures (no lockout yet)', async () => {
+      // 4 wrong-password attempts on the lockout credential
+      for (let i = 0; i < 4; i++) {
+        const failRes = await request(app)
+          .post('/api/v1/kiosk-auth/login')
+          .send({ username: `KIOSK-LOCKOUT-${uniqueSuffix}`, password: 'WrongPassword' });
+        expect(failRes.status).toBe(401);
+      }
+      // The 5th attempt with the correct password should still succeed
+      const okRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: `KIOSK-LOCKOUT-${uniqueSuffix}`, password: 'Lockout@123' });
+      expect(okRes.status).toBe(200);
+    });
+
+    it('should lock out after 5 consecutive failures on the same branch', async () => {
+      // 5 wrong-password attempts
+      for (let i = 0; i < 5; i++) {
+        const failRes = await request(app)
+          .post('/api/v1/kiosk-auth/login')
+          .send({ username: `KIOSK-LOCKOUT-${uniqueSuffix}`, password: `WrongPass${i}` });
+        expect(failRes.status).toBe(401);
+      }
+      // 6th attempt (even with correct password) should be locked out (403)
+      const lockedRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: `KIOSK-LOCKOUT-${uniqueSuffix}`, password: 'Lockout@123' });
+      expect(lockedRes.status).toBe(403);
+      expect(lockedRes.body.code).toBe('LOCKED_OUT');
+    });
+
+    it('should also lock out scan when the branch is rate-limited', async () => {
+      // One more failure to be safe, then try a scan — should get 403 LOCKED_OUT
+      await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: `KIOSK-LOCKOUT-${uniqueSuffix}`, password: 'AnotherWrong' });
+
+      const scanRes = await request(app)
+        .post('/api/v1/attendance/scan')
+        .set('Authorization', `Bearer ${lockoutToken}`)
+        .send({
+          qrPayload: {
+            employeeId: employee1Id,
+            employeeCode: employee1Code,
+            version: 1,
+            signedToken: generateQrHmac(employee1Id, employee1Code, 1),
+          },
+        });
+      expect(scanRes.status).toBe(403);
+      expect(scanRes.body.code).toBe('LOCKED_OUT');
+    });
+
+    it('should isolate lockout per branch — failures on one branch do not lock out another', async () => {
+      // The lockout credential is on kioskBranchId and is already locked out.
+      // Create a second credential on a DIFFERENT branch (Tarnaka) and confirm
+      // it still works — proving the failure counter is per-branch, not global.
+      const tarnakaBranch = await p.branch.findFirst({
+        where: { company_id: kioskCompanyId, name: 'Tarnaka Branch' },
+      });
+      if (!tarnakaBranch) {
+        console.warn('Tarnaka Branch not found — skipping per-branch isolation test');
+        return;
+      }
+      const isoRes = await request(app)
+        .post('/api/v1/kiosk-credentials')
+        .set('Authorization', `Bearer ${await getAdminToken()}`)
+        .send({
+          branch_id: tarnakaBranch.id,
+          label: 'Isolation Test Credential',
+          username: `KIOSK-ISO-${uniqueSuffix}`,
+          password: 'Iso@123',
+        });
+      expect(isoRes.status).toBe(201);
+
+      const isoLoginRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: `KIOSK-ISO-${uniqueSuffix}`, password: 'Iso@123' });
+      expect(isoLoginRes.status).toBe(200);
+    });
+
+    afterAll(() => {
+      resetKioskAuthState(kioskBranchId);
+    });
+  });
+
   describe('POST /kiosk-credentials — CRUD', () => {
     let newCredId: number;
 
@@ -378,12 +588,12 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
         .send({
           branch_id: kioskBranchId,
           label: 'Front Desk — Test Branch',
-          username: 'KIOSK-NEW-001',
+          username: `KIOSK-NEW-${uniqueSuffix}`,
           password: 'Kiosk@789',
         });
       expect(res.status).toBe(201);
       expect(res.body.credential.label).toBe('Front Desk — Test Branch');
-      expect(res.body.credential.username).toBe('KIOSK-NEW-001');
+      expect(res.body.credential.username).toBe(`KIOSK-NEW-${uniqueSuffix}`);
       expect(res.body.credential.branch_name).toBe(kioskBranchName);
       expect(res.body.credential.is_active).toBe(true);
       expect(res.body.credential.credential_version).toBe(1);
@@ -438,32 +648,63 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
       expect(updateRes.status).toBe(200);
       expect(updateRes.body.credential.credential_version).toBe(2);
 
-      // Old token should be rejected
+      // Old password should be rejected
       const oldLoginRes = await request(app)
         .post('/api/v1/kiosk-auth/login')
-        .send({ username: 'KIOSK-NEW-001', password: 'Kiosk@789' });
+        .send({ username: `KIOSK-NEW-${uniqueSuffix}`, password: 'Kiosk@789' });
       expect(oldLoginRes.status).toBe(401);
 
       // New password works
       const newLoginRes = await request(app)
         .post('/api/v1/kiosk-auth/login')
-        .send({ username: 'KIOSK-NEW-001', password: 'NewKiosk@123' });
+        .send({ username: `KIOSK-NEW-${uniqueSuffix}`, password: 'NewKiosk@123' });
       expect(newLoginRes.status).toBe(200);
     });
 
+    it('should handle concurrent password changes safely (race condition)', async () => {
+      // Get the current version before the race
+      const beforeCred = await p.kioskCredential.findUnique({ where: { id: newCredId } });
+      const initialVersion = beforeCred.credential_version;
+
+      const adminToken = await getAdminToken();
+
+      // Fire two password change requests concurrently
+      const req1 = request(app)
+        .patch(`/api/v1/kiosk-credentials/${newCredId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ password: 'Concurrent@1' });
+
+      const req2 = request(app)
+        .patch(`/api/v1/kiosk-credentials/${newCredId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ password: 'Concurrent@2' });
+
+      const [res1, res2] = await Promise.all([req1, req2]);
+
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+
+      // Verify the version bumped by exactly 2 (atomic increment prevents lost updates)
+      const afterCred = await p.kioskCredential.findUnique({ where: { id: newCredId } });
+      expect(afterCred.credential_version).toBe(initialVersion + 2);
+    });
+
     it('should deactivate and reactivate', async () => {
+      const beforeDeact = await p.kioskCredential.findUnique({ where: { id: newCredId } });
+      const currentVersion = beforeDeact.credential_version;
+
       const deactRes = await request(app)
         .patch(`/api/v1/kiosk-credentials/${newCredId}`)
         .set('Authorization', `Bearer ${await getAdminToken()}`)
         .send({ is_active: false });
       expect(deactRes.status).toBe(200);
       expect(deactRes.body.credential.is_active).toBe(false);
-      expect(deactRes.body.credential.credential_version).toBe(3); // active toggle bumps version
+      expect(deactRes.body.credential.credential_version).toBe(currentVersion + 1); // active toggle bumps version
 
       // Login should fail
       const loginRes = await request(app)
         .post('/api/v1/kiosk-auth/login')
-        .send({ username: 'KIOSK-NEW-001', password: 'NewKiosk@123' });
+        .send({ username: `KIOSK-NEW-${uniqueSuffix}`, password: 'Concurrent@2' }); // the password is Concurrent@2 due to race test
       expect(loginRes.status).toBe(401);
 
       // Re-activate
@@ -473,7 +714,7 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
         .send({ is_active: true });
       expect(reactRes.status).toBe(200);
       expect(reactRes.body.credential.is_active).toBe(true);
-      expect(reactRes.body.credential.credential_version).toBe(4);
+      expect(reactRes.body.credential.credential_version).toBe(currentVersion + 2);
     });
 
     it('should reject creating credential for a branch in a different company', async () => {
@@ -490,7 +731,7 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
         .send({
           branch_id: company2Branch.id,
           label: 'Cross-company attempt',
-          username: 'KIOSK-XCOMP-001',
+          username: `KIOSK-XCOMP-${uniqueSuffix}`,
           password: 'Kiosk@000',
         });
       expect(res.status).toBe(400);

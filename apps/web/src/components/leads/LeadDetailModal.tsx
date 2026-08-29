@@ -11,7 +11,9 @@ import {
   Plus,
   UserCheck,
   CheckCircle2,
-  Send
+  Send,
+  IndianRupee,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -61,9 +63,10 @@ interface LeadDetailModalProps {
   onClose: () => void;
   onUpdateStatus: (leadId: number, newStatus: string) => Promise<void>;
   onRefreshLeads: () => void;
+  onDemoComplete?: (leadId: number, qualification: any, notes: string) => Promise<void>;
 }
 
-export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdateStatus, onRefreshLeads }) => {
+export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdateStatus, onRefreshLeads, onDemoComplete }) => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -97,6 +100,28 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
   const [scheduleNotes, setScheduleNotes] = useState('Telecaller booked site visit for client discussion.');
   const [schedulePropertyId, setSchedulePropertyId] = useState<string>('');
+
+  // Demo completion modal (§1 row 4: demo handler may revise qualification fields)
+  const [showDemoCompleteModal, setShowDemoCompleteModal] = useState(false);
+  const [demoCompleteLoading, setDemoCompleteLoading] = useState(false);
+  const [demoPropertyType, setDemoPropertyType] = useState('');
+  const [demoPreferredLocation, setDemoPreferredLocation] = useState('');
+  const [demominBudget, setDemominBudget] = useState('');
+  const [demomaxBudget, setDemomaxBudget] = useState('');
+  const [demoNotes, setDemoNotes] = useState('');
+  const [demoSiteVisitCompleted, setDemoSiteVisitCompleted] = useState(false);
+
+  // Pre-fill demo completion form when modal opens
+  useEffect(() => {
+    if (showDemoCompleteModal) {
+      setDemoPropertyType(lead.property_type_preference || '');
+      setDemoPreferredLocation(lead.preferred_location || '');
+      setDemominBudget(lead.budget_min ? String(lead.budget_min) : '');
+      setDemomaxBudget(lead.budget_max ? String(lead.budget_max) : '');
+      setDemoNotes('');
+      setDemoSiteVisitCompleted(false);
+    }
+  }, [showDemoCompleteModal, lead]);
 
   const fetchMatchesForLead = async (leadId: number) => {
     setIsLoadingMatches(true);
@@ -272,7 +297,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
         method: 'POST',
       });
       const data = await res.json();
-      
+
       if (res.status === 409) {
         showToast('Lead has already been converted to a customer.', 'error');
       } else if (res.ok) {
@@ -286,6 +311,80 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
       showToast('Network error converting to customer', 'error');
     } finally {
       setIsConverting(false);
+    }
+  };
+
+  /**
+   * Demo completion handler (§1 row 4).
+   * Submits revised qualification fields + DEMO_COMPLETED transition in one flow:
+   *  1. PATCH lead with optional qualification fields (idempotent — null leaves current value).
+   *  2. PATCH lead status to DEMO_COMPLETED with qualification guard fields.
+   */
+  const handleDemoCompleteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDemoCompleteLoading(true);
+    try {
+      // Build qualification object from form values (omit empty strings → null)
+      const qualification: any = {};
+      if (demoPropertyType && demoPropertyType !== lead.property_type_preference) {
+        qualification.property_type_preference = demoPropertyType;
+      }
+      if (demoPreferredLocation && demoPreferredLocation !== lead.preferred_location) {
+        qualification.preferred_location = demoPreferredLocation;
+      }
+      if (demominBudget) {
+        const val = parseInt(demominBudget, 10);
+        if (!isNaN(val)) qualification.budget_min = val;
+      }
+      if (demomaxBudget) {
+        const val = parseInt(demomaxBudget, 10);
+        if (!isNaN(val)) qualification.budget_max = val;
+      }
+
+      // If nothing changed and no notes, skip — but still transition
+      const hasQualification = Object.keys(qualification).length > 0;
+
+      // Step 1: PATCH qualification fields if any were provided
+      if (hasQualification) {
+        const patchRes = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_type_preference: qualification.property_type_preference,
+            preferred_location: qualification.preferred_location,
+            budget_min: qualification.budget_min,
+            budget_max: qualification.budget_max,
+          }),
+        });
+        if (!patchRes.ok) {
+          const data = await patchRes.json();
+          throw new Error(data.message || 'Failed to save demo qualification revisions');
+        }
+      }
+
+      // Step 2: Transition to DEMO_COMPLETED with qualification guard fields
+      const statusRes = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'DEMO_COMPLETED',
+          notes: demoNotes || undefined,
+          qualification: hasQualification ? qualification : undefined,
+        }),
+      });
+      const data = await statusRes.json();
+
+      if (statusRes.ok) {
+        showToast('Demo completed — lead moved to next stage', 'success');
+        setShowDemoCompleteModal(false);
+        onRefreshLeads();
+      } else {
+        throw new Error(data.message || 'Failed to complete demo');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error completing demo', 'error');
+    } finally {
+      setDemoCompleteLoading(false);
     }
   };
 
@@ -507,8 +606,20 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                       <MapPin className="w-4 h-4" />
                       Book Site Visit / Demo
                     </button>
-                    
-                    {availableNextTransitions().map(st => (
+
+                    {lead.status === 'DEMO_SCHEDULED' && (
+                      <button
+                        onClick={() => setShowDemoCompleteModal(true)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Complete Demo
+                      </button>
+                    )}
+
+                    {availableNextTransitions()
+                      .filter(st => !(lead.status === 'DEMO_SCHEDULED' && st === 'DEMO_COMPLETED'))
+                      .map(st => (
                       <button
                         key={st}
                         onClick={() => onUpdateStatus(lead.id, st)}
@@ -923,6 +1034,135 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
               </div>
             </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showDemoCompleteModal && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col relative animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Complete Demo</h2>
+                <p className="text-sm text-slate-500 mt-1">Record demo outcome and any revised requirements.</p>
+              </div>
+              <button
+                onClick={() => setShowDemoCompleteModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-white border border-transparent hover:border-slate-200 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleDemoCompleteSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1 space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-navy-500" />
+                    Property Type
+                  </label>
+                  <select
+                    value={demoPropertyType}
+                    onChange={(e) => setDemoPropertyType(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none"
+                  >
+                    <option value={lead.property_type_preference || ''}>{lead.property_type_preference || '— unchanged —'}</option>
+                    <option value="RESIDENTIAL_APARTMENT">Apartment</option>
+                    <option value="RESIDENTIAL_VILLA">Villa</option>
+                    <option value="RESIDENTIAL_PLOT">Plot</option>
+                    <option value="COMMERCIAL_OFFICE">Commercial Office</option>
+                    <option value="COMMERCIAL_SHOP">Commercial Shop</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1 space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-navy-500" />
+                    Preferred Location
+                  </label>
+                  <input
+                    type="text"
+                    value={demoPreferredLocation}
+                    onChange={(e) => setDemoPreferredLocation(e.target.value)}
+                    placeholder={lead.preferred_location || 'e.g. Kondapur'}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1 space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <IndianRupee className="w-4 h-4 text-navy-500" />
+                    Min Budget (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={demominBudget}
+                    onChange={(e) => setDemominBudget(e.target.value)}
+                    placeholder={lead.budget_min ? String(lead.budget_min) : 'e.g. 5000000'}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1 space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <IndianRupee className="w-4 h-4 text-navy-500" />
+                    Max Budget (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={demomaxBudget}
+                    onChange={(e) => setDemomaxBudget(e.target.value)}
+                    placeholder={lead.budget_max ? String(lead.budget_max) : 'e.g. 15000000'}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all"
+                  />
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={demoSiteVisitCompleted}
+                      onChange={(e) => setDemoSiteVisitCompleted(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
+                    />
+                    <span className="text-sm font-semibold text-slate-700">Site visit completed</span>
+                  </label>
+                  <p className="text-xs text-slate-400 ml-7">Check if the customer toured the site during this demo.</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-navy-500" />
+                  Demo Notes
+                </label>
+                <textarea
+                  rows={3}
+                  value={demoNotes}
+                  onChange={(e) => setDemoNotes(e.target.value)}
+                  placeholder="What was shown, customer feedback, any concerns..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all resize-none"
+                />
+              </div>
+            </form>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDemoCompleteModal(false)}
+                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all shadow-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                onClick={handleDemoCompleteSubmit}
+                disabled={demoCompleteLoading}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-navy-900 hover:bg-navy-800 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {demoCompleteLoading ? 'Completing...' : 'Confirm Demo Completion'}
+              </button>
+            </div>
           </div>
         </div>
       )}

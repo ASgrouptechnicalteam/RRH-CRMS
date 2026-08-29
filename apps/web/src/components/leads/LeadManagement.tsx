@@ -244,6 +244,41 @@ export const LeadManagement: React.FC = () => {
     }
   };
 
+  /**
+   * Demo completion handler — called from LeadDetailModal when user
+   * completes a DEMO_SCHEDULED → DEMO_COMPLETED transition with optional
+   * qualification revisions (§1 row 4).
+   */
+  const handleDemoCompletion = async (leadId: number, qualification: any, notes: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'DEMO_COMPLETED',
+          notes: notes || undefined,
+          qualification: Object.keys(qualification).length > 0 ? qualification : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Demo completed — lead moved forward', 'success');
+        fetchLeads();
+        if (selectedLead && selectedLead.id === leadId) {
+          setSelectedLead({ ...selectedLead, status: 'DEMO_COMPLETED' });
+        }
+      } else {
+        showToast(data.error || 'Failed to complete demo', 'error');
+      }
+    } catch (err) {
+      showToast('Error completing demo', 'error');
+    }
+  };
+
   const getStatusMap = (status: string) => {
     switch (status) {
       case 'NEW':
@@ -511,6 +546,7 @@ export const LeadManagement: React.FC = () => {
           onClose={() => setSelectedLead(null)}
           onUpdateStatus={handleUpdateStatus}
           onRefreshLeads={fetchLeads}
+          onDemoComplete={handleDemoCompletion}
         />
       )}
 

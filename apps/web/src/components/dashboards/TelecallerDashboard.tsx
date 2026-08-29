@@ -14,6 +14,7 @@ import { LeadListItem } from '../../types';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { TaskManager } from '../tasks/TaskManager';
 import { StatCard, ListWidget, StatusPill, ListItem } from '../ui';
+import { Button } from '../common/ui/Button';
 
 export const TelecallerDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -175,20 +176,27 @@ export const TelecallerDashboard: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <select
-                        value={lead.status}
-                        onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className="text-xs font-medium border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-navy-700 hover:border-navy-300 focus:outline-none focus:ring-2 focus:ring-navy-500 transition-colors cursor-pointer shadow-sm"
-                        title="Update Prospect Status"
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => updateLeadStatus(lead.id, 'CONTACTED')}
                       >
-                        <option value="NEW">New</option>
-                        <option value="CONTACTED">Contacted</option>
-                        <option value="QUALIFIED">Qualified</option>
-                        <option value="SITE_VISIT_SCHEDULED">Site Visit Scheduled</option>
-                        <option value="NEGOTIATION">In Negotiation</option>
-                        <option value="WON">Closed (Won)</option>
-                        <option value="LOST">Lost</option>
-                      </select>
+                        Mark Contacted
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => updateLeadStatus(lead.id, 'QUALIFIED')}
+                      >
+                        Mark Qualified
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => updateLeadStatus(lead.id, 'SITE_VISIT_SCHEDULED')}
+                      >
+                        Schedule Visit
+                      </Button>
 
                       <a
                         href={`tel:${lead.phone}`}

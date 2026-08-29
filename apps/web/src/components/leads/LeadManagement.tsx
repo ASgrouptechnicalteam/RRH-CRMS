@@ -216,7 +216,7 @@ export const LeadManagement: React.FC = () => {
     if (!lead || lead.status === newStatus) return;
 
     let notes = '';
-    if (newStatus === 'LOST' || newStatus === 'DROPPED') {
+    if (newStatus === 'DROPPED') {
       const reason = window.prompt(`Please provide a reason for dropping this lead:`);
       if (!reason) return;
       notes = reason;

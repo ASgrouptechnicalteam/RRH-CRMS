@@ -244,25 +244,6 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
     const now = new Date();
     const { dateString, timeString } = getISTComponents(now);
 
-    // Kiosk logout gate: employees with report_required=true must submit today's
-    // daily report before checking out. Reuses the same lookup logic as GET /reports/today-status.
-    if (scannedEmployee.report_required) {
-      const todayReport = await p.dailyReport.findFirst({
-        where: {
-          employee_id: targetEmployeeId,
-          submitted_at: {
-            gte: new Date(`${dateString}T00:00:00.000Z`),
-            lte: new Date(`${dateString}T23:59:59.999Z`),
-          },
-        },
-      });
-      if (!todayReport) {
-        return res.status(400).json({
-          error: "Please submit today's daily report before logging out. Go to your account, submit the report, then come back and scan out.",
-        });
-      }
-    }
-
     const result = await p.$transaction(
       async (tx: import('@prisma/client').Prisma.TransactionClient) => {
         // Find active check-in
@@ -272,6 +253,23 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
         });
 
         if (!activeLog) return { error: 'No active check-in found to check out from. Please check in first.' };
+
+        // Kiosk logout gate: employees with report_required=true must submit today's
+        // daily report before checking out. Reuses the same lookup logic as GET /reports/today-status.
+        if (scannedEmployee.report_required) {
+          const todayReport = await tx.dailyReport.findFirst({
+            where: {
+              employee_id: targetEmployeeId,
+              submitted_at: {
+                gte: new Date(`${dateString}T00:00:00.000Z`),
+                lte: new Date(`${dateString}T23:59:59.999Z`),
+              },
+            },
+          });
+          if (!todayReport) {
+            return { error: "Please submit today's daily report before logging out. Go to your account, submit the report, then come back and scan out." };
+          }
+        }
 
         const checkInTime = new Date(activeLog.check_in_at).getTime();
         const diffHours = (now.getTime() - checkInTime) / (1000 * 60 * 60);

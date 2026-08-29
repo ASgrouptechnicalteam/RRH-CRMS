@@ -527,11 +527,13 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
 
     it('should correctly flag a cross-branch checkout and preserve the original branch_id', async () => {
       // First, create a new kiosk at Branch B
-      const branchBRes = await request(app)
-        .post('/api/v1/branches')
-        .set('Authorization', `Bearer ${await getAdminToken()}`)
-        .send({ company_id: 1, name: 'Branch B' });
-      const branchBId = branchBRes.body.branch.id;
+      const branchB = await p.branch.create({
+        data: {
+          company_id: 1,
+          name: 'Branch B',
+        }
+      });
+      const branchBId = branchB.id;
 
       const kioskBRes = await request(app)
         .post('/api/v1/kiosk-credentials')

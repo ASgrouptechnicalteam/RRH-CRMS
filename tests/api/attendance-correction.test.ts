@@ -100,10 +100,13 @@ describe('Attendance Manual Correction', () => {
     yesterday.setDate(yesterday.getDate() - 1);
     const dateStr = yesterday.toISOString().split('T')[0];
     
+    // Use midday to avoid UTC/IST boundary mismatches
+    const checkInDate = new Date(`${dateStr}T12:00:00Z`);
+
     await p.attendanceLog.create({
       data: {
         employee_id: targetEmployeeId,
-        check_in_at: yesterday,
+        check_in_at: checkInDate,
         status: 'PRESENT',
         source: 'KIOSK',
       }

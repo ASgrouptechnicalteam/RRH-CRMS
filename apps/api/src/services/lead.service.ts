@@ -175,6 +175,10 @@ export class LeadService {
     });
 
     if (existingLead) {
+      if (existingLead.status === 'DROPPED') {
+        // Recover it instead of throwing an error
+        return await LeadService.updateLeadStatus(user, existingLead.id, 'RECOVERED_TO_POOL');
+      }
       throw new AppError(409, `Duplicate lead detected. Lead ${existingLead.lead_code} already exists with this phone or email.`);
     }
 
@@ -276,9 +280,9 @@ export class LeadService {
     const phones = rawLeads.map(l => l.phone).filter(Boolean);
     const existingPhones = await p.lead.findMany({
       where: { company_id: user.companyId, phone: { in: phones } },
-      select: { phone: true }
+      select: { id: true, phone: true, status: true }
     });
-    const phoneSet = new Set(existingPhones.map((e: { phone: string }) => e.phone));
+    const existingPhonesMap = new Map(existingPhones.map((e: any) => [e.phone, e]));
 
     // Chunking to prevent holding transaction too long
     const CHUNK_SIZE = 50;
@@ -296,9 +300,15 @@ export class LeadService {
             continue;
           }
 
-          if (phoneSet.has(item.phone)) {
-            results.duplicates++;
-            results.errors.push({ row: currentRow, reason: `Duplicate phone number: ${item.phone}` });
+          const existingLead = existingPhonesMap.get(item.phone);
+          if (existingLead) {
+            if (existingLead.status === 'DROPPED') {
+              await LeadService.updateLeadStatus(user, existingLead.id, 'RECOVERED_TO_POOL');
+              results.successful_imports++;
+            } else {
+              results.duplicates++;
+              results.errors.push({ row: currentRow, reason: `Duplicate phone number: ${item.phone}` });
+            }
             continue;
           }
 
@@ -350,8 +360,8 @@ export class LeadService {
             }
           });
 
-          // Only add to Set if successfully inserted
-          phoneSet.add(item.phone);
+          // Only add to Map if successfully inserted
+          existingPhonesMap.set(item.phone, { id: 0, phone: item.phone, status: 'NEW' });
           results.successful_imports++;
 
         } catch (error: any) {
@@ -534,7 +544,36 @@ export class LeadService {
         await CustomerPortalService.provisionStub(tx, lead, user);
       }
 
-      return updated;
+      let finalUpdated = updated;
+
+      // Auto-assign recovered leads
+      if (newStatus === 'RECOVERED_TO_POOL') {
+        const bestAssignee = await findBestAssigneeForLead(user.companyId);
+        if (bestAssignee) {
+          finalUpdated = await WorkflowEngine.transition(
+            tx,
+            leadId,
+            'ASSIGNED',
+            { actor: user, entity: { ...entityContext, status: 'RECOVERED_TO_POOL' } },
+            { 
+              assigned_to_id: bestAssignee.employeeId, 
+              assigned_at: new Date(), 
+              assignment_type: 'PERFORMANCE_WEIGHTED' 
+            }
+          );
+          
+          await tx.leadActivity.create({
+            data: {
+              lead_id: leadId,
+              actor_id: user.employeeId,
+              activity_type: 'ASSIGNED_TO_AGENT',
+              notes: `Auto-distributed to ${bestAssignee.name} (${bestAssignee.employeeCode}) [Weight Score: ${bestAssignee.weight.toFixed(1)}] upon recovery`,
+            },
+          });
+        }
+      }
+
+      return finalUpdated;
     });
   }
 

@@ -394,6 +394,55 @@ export class PropertyService {
     });
   }
 
+  /**
+   * DM Head "Verified As-Is" bypass — skips the polish step and advances the property
+   * directly to PENDING_MD_APPROVAL without assigning a DM Executive.
+   * Requires PROPERTIES_DM_POLISH permission (same gate as the standard polish path).
+   */
+  static async dmVerifyAsIsProperty(user: TokenPayload, propertyId: number, data: { notes?: string }) {
+    const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
+    if (!property) throw { status: 404, message: 'Property not found' };
+
+    if (!can(user, Permissions.PROPERTIES_DM_POLISH, property)) {
+      throw { status: 403, message: 'Forbidden: Insufficient permissions or out of scope' };
+    }
+
+    const transition = WorkflowEngine.canTransition({
+      domain: WorkflowDomain.PROPERTY,
+      currentState: property.status,
+      action: 'DM_VERIFY_AS_IS',
+      actor: user,
+      entity: property,
+    });
+
+    if (!transition.allowed) {
+      throw { status: 409, message: transition.reason || 'Invalid state transition' };
+    }
+
+    return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
+      const updated = await tx.property.update({
+        where: { id: propertyId },
+        data: {
+          status: 'PENDING_MD_APPROVAL',
+          // Mark dm_polished_at so the audit trail shows a DM Head reviewed it
+          dm_polished_at: new Date(),
+        },
+      });
+
+      await tx.propertyVerificationLog.create({
+        data: {
+          property_id: propertyId,
+          actor_id: user.employeeId || 1,
+          from_status: property.status,
+          to_status: 'PENDING_MD_APPROVAL',
+          notes: `Digital Marketing Head verified property as-is (no polish required). Submitted directly for MD Final Approval.${data.notes ? ` Notes: ${data.notes}` : ''}`,
+        },
+      });
+
+      return updated;
+    });
+  }
+
   static async mdApproveProperty(user: TokenPayload, propertyId: number, data: { approved: boolean; comments?: string }) {
     const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw { status: 404, message: 'Property not found' };

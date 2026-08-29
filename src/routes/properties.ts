@@ -6,6 +6,7 @@ import {
   PropertyCreateSchema,
   PropertyVerificationSchema,
   PropertyDMUpdateSchema,
+  PropertyDMVerifyAsIsSchema,
   PropertyMDApprovalSchema,
   PropertyUpdateSchema,
   Permissions,
@@ -156,6 +157,34 @@ router.post(
         return next(error);
       }
       return res.status(500).json({ error: 'Failed to execute DM polish step' });
+    }
+  }
+);
+
+// POST /api/v1/properties/:id/dm-verify-as-is - Digital Marketing Head "Verified As-Is" bypass
+// Skips polish assignment and advances directly to PENDING_MD_APPROVAL.
+// Uses same PROPERTIES_DM_POLISH permission gate as the standard polish path.
+router.post(
+  '/:id/dm-verify-as-is',
+  authenticateToken,
+  requireAuthz(Permissions.PROPERTIES_DM_POLISH),
+  validateRequestBody(PropertyDMVerifyAsIsSchema),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const propertyId = parseInt(req.params.id, 10);
+      if (isNaN(propertyId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      const updated = await PropertyService.dmVerifyAsIsProperty(req.user!, propertyId, req.body);
+
+      return res.status(200).json({
+        message: `Property ${updated.property_code} verified as-is by DM Head and submitted for MD Approval`,
+        property: updated,
+      });
+    } catch (error: any) {
+      console.error('DM Verify As-Is error:', error);
+      if (error.status) {
+        return next(error);
+      }
+      return res.status(500).json({ error: 'Failed to execute DM verify-as-is step' });
     }
   }
 );

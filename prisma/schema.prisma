@@ -573,8 +573,9 @@ model Property {
   assigned_pm_id                    Int?
   digital_marketing_executive_id    Int?      // Set by DMH when choosing "Needs Polish"
   created_by_id                     Int?
-  verified_by_pm_at DateTime?
-  dm_polished_at    DateTime?
+  verified_by_pm_at                 DateTime?
+  location_confirmed_by_pm          Boolean   @default(false) // PM must explicitly confirm on-site location before verification is allowed
+  dm_polished_at                    DateTime?
   md_approved_at    DateTime?
   rejection_reason  String?   @db.Text
   seo_title         String?

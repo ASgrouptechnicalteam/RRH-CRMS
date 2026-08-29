@@ -54,6 +54,7 @@ interface Property {
   rejection_reason?: string;
   seo_title?: string;
   seo_keywords?: string;
+  location_confirmed_by_pm?: boolean;
   assigned_pm?: { id: number; employee_code: string; full_name: string; phone: string };
   project?: { id: number; name: string };
   created_by?: { id: number; employee_code: string; full_name: string };
@@ -570,10 +571,52 @@ export const PropertyManagement: React.FC = () => {
 
               {/* Stage 1 Action for PM */}
               {selectedProperty.status === 'PENDING_VERIFICATION' && user?.permissions?.includes(Permissions.PROPERTIES_VERIFY) && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-xs text-slate-600">
                     Project Manager (<strong className="text-slate-800">{selectedProperty.assigned_pm?.full_name || 'PM'}</strong>) must verify site boundaries, location, and photos.
                   </p>
+
+                  {/* Pre-condition checklist */}
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Pre-conditions for Approval</p>
+                    <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${
+                      (selectedProperty.images?.length ?? 0) > 0
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}>
+                      {(selectedProperty.images?.length ?? 0) > 0 ? '✅' : '⚠️'}
+                      <span>Photos uploaded: {selectedProperty.images?.length ?? 0}</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${
+                      selectedProperty.location_confirmed_by_pm
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}>
+                      {selectedProperty.location_confirmed_by_pm ? '✅' : '⚠️'}
+                      <span>Location confirmed on-site</span>
+                      {!selectedProperty.location_confirmed_by_pm && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetchWithAuth(`${API_BASE_URL}/properties/${selectedProperty.id}/confirm-location`, { method: 'POST' });
+                              const d = await res.json();
+                              if (res.ok) {
+                                showToast('Location confirmed on-site', 'success');
+                                fetchProperties();
+                                setSelectedProperty(prev => prev ? { ...prev, location_confirmed_by_pm: true } : prev);
+                              } else {
+                                showToast(d.error || 'Failed to confirm location', 'error');
+                              }
+                            } catch { showToast('Network error', 'error'); }
+                          }}
+                          className="ml-auto px-2 py-0.5 bg-amber-700 hover:bg-amber-800 text-white text-[10px] font-bold rounded-md"
+                        >
+                          Confirm Now
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   <textarea
                     rows={2}
                     placeholder="Enter PM on-site inspection notes..."
@@ -584,7 +627,8 @@ export const PropertyManagement: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handlePMVerify(selectedProperty.id, true)}
-                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow"
+                      disabled={!selectedProperty.location_confirmed_by_pm || (selectedProperty.images?.length ?? 0) === 0}
+                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow"
                     >
                       ✅ Pass PM On-Site Verification
                     </button>

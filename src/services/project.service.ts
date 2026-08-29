@@ -61,7 +61,7 @@ export class ProjectService {
   }
 
   static async createProject(user: TokenPayload, data: ProjectCreateInput) {
-    const companyId = user.companyId;
+    const companyId = user.companyId || 1;
     const branchId = user.branchId || null;
 
     if (data.assigned_pm_id) {

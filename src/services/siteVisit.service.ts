@@ -142,7 +142,7 @@ export class SiteVisitService {
       }
     }
 
-    const { projectId, pmId } = await SiteVisitService.resolveVisitProject(data, user.companyId);
+    const { projectId, pmId } = await SiteVisitService.resolveVisitProject(data, user.companyId || 1);
 
     return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const bookingCode = await this.generateNextBookingCode();

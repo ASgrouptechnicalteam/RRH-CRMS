@@ -703,14 +703,14 @@ Reply to this message or call us to schedule a site visit.`;
         create: {
           lead_id: leadId,
           property_id: propertyId,
-          created_by: user.employeeId,
+          created_by: user.employeeId || 1,
         }
       });
 
       await tx.leadActivity.create({
         data: {
           lead_id: leadId,
-          actor_id: user.employeeId,
+          actor_id: user.employeeId || 1,
           activity_type: 'PROPERTY_INTEREST_ADDED',
           notes: `Added interest in Property ${property.property_code} (${property.title})`,
         }
@@ -746,7 +746,7 @@ Reply to this message or call us to schedule a site visit.`;
       await tx.leadActivity.create({
         data: {
           lead_id: leadId,
-          actor_id: user.employeeId,
+          actor_id: user.employeeId || 1,
           activity_type: 'PROPERTY_INTEREST_REMOVED',
           notes: `Removed interest in Property ${interest.property.property_code} (${interest.property.title})`,
         }

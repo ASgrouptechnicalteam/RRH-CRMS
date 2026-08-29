@@ -106,6 +106,47 @@ export class PropertyService {
       finalPmId = project.assigned_pm_id;
     }
 
+    if (!finalPmId && data.city) {
+      // Find PMs assigned to this city
+      const assignments = await p.pMLocationAssignment.findMany({
+        where: { location: data.city, company_id: companyId },
+        select: { pm_id: true }
+      });
+
+      if (assignments.length === 1) {
+        finalPmId = assignments[0].pm_id;
+      } else if (assignments.length > 1) {
+        // Tiebreaker: lowest PENDING_VERIFICATION load
+        const pmIds = assignments.map((a: any) => a.pm_id);
+        const loads = await p.property.groupBy({
+          by: ['assigned_pm_id'],
+          where: { assigned_pm_id: { in: pmIds }, status: 'PENDING_VERIFICATION' },
+          _count: { assigned_pm_id: true }
+        });
+
+        // Initialize all PMs with 0 load
+        const loadMap = new Map<number, number>();
+        pmIds.forEach((id: number) => loadMap.set(id, 0));
+        
+        loads.forEach((l: any) => {
+          if (l.assigned_pm_id !== null) {
+            loadMap.set(l.assigned_pm_id, l._count.assigned_pm_id);
+          }
+        });
+
+        let minLoad = Infinity;
+        let selectedPmId = pmIds[0];
+
+        for (const [id, count] of loadMap.entries()) {
+          if (count < minLoad) {
+            minLoad = count;
+            selectedPmId = id;
+          }
+        }
+        finalPmId = selectedPmId;
+      }
+    }
+
     return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
       const baseSlug = slugify(`${data.title} ${data.location} ${data.category}`);
       const slug = await generateUniqueSlug(baseSlug, companyId, async (s: string, cId: number) => {

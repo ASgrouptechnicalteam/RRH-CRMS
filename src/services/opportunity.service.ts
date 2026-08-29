@@ -75,7 +75,7 @@ export class OpportunityService {
           utm_source: lead.utm_source,
           utm_medium: lead.utm_medium,
           utm_campaign: lead.utm_campaign,
-          owner_id: owner_id,
+          owner_id: owner_id || 1,
           project_id: project_id,
           property_id: property_id,
           budget_min: opportunityData.budget_min,

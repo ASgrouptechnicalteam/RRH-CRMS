@@ -551,9 +551,9 @@ export class LeadService {
         });
         const interestedLeadId = interested?.visit?.lead_id;
         if (interestedLeadId && interestedLeadId === leadId) {
-          await OpportunityService.createFromLeadTx(tx, lead, user.employeeId, interested.property_id);
+          await OpportunityService.createFromLeadTx(tx, lead, user.employeeId || 1, interested.property_id);
         } else {
-          await OpportunityService.createFromLeadTx(tx, lead, user.employeeId);
+          await OpportunityService.createFromLeadTx(tx, lead, user.employeeId || 1);
         }
       }
 
@@ -583,7 +583,7 @@ export class LeadService {
           await tx.leadActivity.create({
             data: {
               lead_id: leadId,
-              actor_id: user.employeeId,
+              actor_id: user.employeeId || 1,
               activity_type: 'ASSIGNED_TO_AGENT',
               notes: `Auto-distributed to ${bestAssignee.name} (${bestAssignee.employeeCode}) [Weight Score: ${bestAssignee.weight.toFixed(1)}] upon recovery`,
             },
@@ -667,7 +667,7 @@ Reply to this message or call us to schedule a site visit.`;
     await p.leadActivity.create({
       data: {
         lead_id: leadId,
-        actor_id: user.employeeId,
+        actor_id: user.employeeId || 1,
         activity_type: 'WHATSAPP_SENT',
         notes: activityNotes,
       },

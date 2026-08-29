@@ -139,7 +139,20 @@ router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: R
 
         if (alreadyCheckedInToday) return { alreadyStamped: true, log: alreadyCheckedInToday };
 
-        const calculatedStatus = calculateAttendanceStatus(now, false);
+        // Check for an approved late-checkin proposal covering today (IST)
+        const istTodayStart = new Date(`${dateString}T00:00:00+05:30`);
+        const istTodayEnd   = new Date(`${dateString}T23:59:59+05:30`);
+        const approvedProposal = await tx.attendanceProposal.findFirst({
+          where: {
+            employee_id: targetEmployeeId,
+            type: 'LATE_CHECKIN',
+            status: 'APPROVED',
+            target_date: { gte: istTodayStart, lte: istTodayEnd },
+          },
+        });
+        const hasApprovedProposal = !!approvedProposal;
+
+        const calculatedStatus = calculateAttendanceStatus(now, hasApprovedProposal, scannedEmployee.employment_type || 'FULL_TIME');
         const newLog = await tx.attendanceLog.create({
           data: {
             employee_id: targetEmployeeId,
@@ -200,7 +213,26 @@ router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, re
     }
 
     const now = new Date();
-    const { timeString } = getISTComponents(now);
+    const { dateString, timeString } = getISTComponents(now);
+
+    // Kiosk logout gate: employees with report_required=true must submit today's
+    // daily report before checking out. Reuses the same lookup logic as GET /reports/today-status.
+    if (scannedEmployee.report_required) {
+      const todayReport = await p.dailyReport.findFirst({
+        where: {
+          employee_id: targetEmployeeId,
+          submitted_at: {
+            gte: new Date(`${dateString}T00:00:00.000Z`),
+            lte: new Date(`${dateString}T23:59:59.999Z`),
+          },
+        },
+      });
+      if (!todayReport) {
+        return res.status(400).json({
+          error: "Please submit today's daily report before logging out. Go to your account, submit the report, then come back and scan out.",
+        });
+      }
+    }
 
     const result = await p.$transaction(
       async (tx: import('@prisma/client').Prisma.TransactionClient) => {
@@ -268,6 +300,18 @@ router.post(
           target_date: new Date(`${req.body.date}T${req.body.expected_time}:00+05:30`),
           reason: req.body.reason,
           status: 'PENDING',
+        },
+      });
+
+      // Write AuditEvent so the HR approval queue (GET /attendance/proposals/queue)
+      // can surface this submission — queue filters on action: 'SUBMIT_LATE_PROPOSAL'
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'SUBMIT_LATE_PROPOSAL',
+          entity_type: 'ATTENDANCE_PROPOSAL',
+          entity_id: proposal.id,
+          new_value: JSON.stringify({ type: 'LATE_CHECKIN', target_date: proposal.target_date, reason: req.body.reason }),
         },
       });
 

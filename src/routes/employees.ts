@@ -60,6 +60,7 @@ router.get('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), asy
       jobTitle: emp.job_title || '',
       department: emp.department || '',
       employmentType: emp.employment_type || 'FULL_TIME',
+      reportRequired: emp.report_required !== false,
       reportingManagerId: emp.reporting_manager_id,
       dateOfJoining: emp.date_of_joining ? emp.date_of_joining.toISOString().split('T')[0] : '',
       backgroundEducation: emp.background_education || '',
@@ -255,6 +256,7 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
         job_title: job_title || role_name,
         department: department || 'Operations',
         employment_type: employment_type || 'FULL_TIME',
+        report_required: employment_type === 'FULL_TIME',
         reporting_manager_id: reporting_manager_id ? parseInt(reporting_manager_id, 10) : null,
         date_of_joining: date_of_joining ? new Date(date_of_joining) : new Date(),
         salary_ctc: salary_ctc ? parseFloat(salary_ctc) : 35000,
@@ -373,6 +375,7 @@ router.patch('/:id', authenticateToken, requireAuthz(Permissions.EMPLOYEES_UPDAT
     if (body.job_title !== undefined) updateData.job_title = body.job_title;
     if (body.department !== undefined) updateData.department = body.department;
     if (body.employment_type !== undefined) updateData.employment_type = body.employment_type;
+    if (body.report_required !== undefined) updateData.report_required = Boolean(body.report_required);
     if (body.reporting_manager_id !== undefined) updateData.reporting_manager_id = body.reporting_manager_id ? parseInt(body.reporting_manager_id, 10) : null;
     if (body.date_of_joining !== undefined) updateData.date_of_joining = new Date(body.date_of_joining);
     if (body.background_education !== undefined) updateData.background_education = body.background_education;

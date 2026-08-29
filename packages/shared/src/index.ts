@@ -739,6 +739,7 @@ export const PropertyCreateSchema = z.object({
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
   listing_type: z.enum(['NEW', 'RESALE']).optional(),
+  source: z.enum(['INTERNAL', 'WEBSITE_SELLER']).optional(),
 });
 
 export type PropertyCreateInput = z.infer<typeof PropertyCreateSchema>;

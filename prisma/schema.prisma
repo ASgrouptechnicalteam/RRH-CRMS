@@ -28,6 +28,8 @@ model Company {
   payments      Payment[]
   complaints    Complaint[]
 
+  kiosk_credentials KioskCredential[]
+
   booking_portal_mappings BookingPortalMapping[]
   integration_events      IntegrationEvent[]
   customer_notifications  CustomerNotification[]
@@ -55,6 +57,8 @@ model Branch {
   properties        Property[]
   projects          Project[]
   bookings          Booking[]
+
+  kiosk_credentials KioskCredential[]
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -117,6 +121,7 @@ model Employee {
   qr_codes                    EmployeeQrCode[]
   attendance_logs             AttendanceLog[]
   daily_reports               DailyReport[]
+  kiosk_credentials_created   KioskCredential[]            @relation("KioskCredentialsCreated")
   assigned_tasks              Task[]                       @relation("AssignedTasks")
   notifications               Notification[]
   performance_snapshots       PerformanceSnapshot[]
@@ -244,6 +249,7 @@ model AttendanceLog {
   working_duration_minutes Int?
   status                   String // PRESENT, LATE, HALF_DAY, ABSENT, APPROVED_LATE
   source                   String    @default("QR_SCAN") // QR_SCAN, SYSTEM_AUTO, MANUAL
+  branch_id                Int?     // which branch kiosk performed this scan (kiosk flow only; personal QR has none)
   notes                    String?
 
   employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
@@ -251,6 +257,29 @@ model AttendanceLog {
   @@index([employee_id])
   @@index([employee_id, check_in_at])
   @@index([employee_id, check_out_at])
+}
+
+model KioskCredential {
+  id                Int       @id @default(autoincrement())
+  company_id        Int
+  branch_id         Int
+  label             String
+  username          String    // unique per company (enforced by composite unique below)
+  password_hash     String
+  is_active         Boolean   @default(true)
+  credential_version Int      @default(1)
+  created_by_id     Int      // MD or ADMIN employee who created this credential
+  updated_at        DateTime  @default(now())
+  created_at        DateTime  @default(now())
+
+  company   Company   @relation(fields: [company_id], references: [id])
+  branch    Branch    @relation(fields: [branch_id], references: [id])
+  created_by Employee @relation("KioskCredentialsCreated", fields: [created_by_id], references: [id])
+
+  @@unique([company_id, username]) // username must be unique within a company
+  @@index([company_id])
+  @@index([branch_id])
+  @@index([created_by_id])
 }
 
 model AttendanceProposal {
@@ -557,6 +586,7 @@ model Property {
   listing_type      String?   @default("NEW") // NEW, RESALE
   possession_status String? // READY_TO_MOVE, UNDER_CONSTRUCTION
   slug              String?
+  source            String    @default("INTERNAL") // INTERNAL, WEBSITE_SELLER
 
   project           Project?                  @relation(fields: [project_id], references: [id])
   company           Company                   @relation(fields: [company_id], references: [id])

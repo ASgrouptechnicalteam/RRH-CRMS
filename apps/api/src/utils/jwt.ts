@@ -9,13 +9,18 @@ if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
 }
 
 export interface TokenPayload {
-  employeeId: number;
-  employeeCode: string;
-  companyId: number;
-  branchId: number | null;
-  roles: string[];
+  employeeId?: number;
+  employeeCode?: string;
+  companyId?: number;
+  branchId?: number | null;
+  roles?: string[];
   permissions?: string[];
   tokenVersion?: number;
+  /** Kiosk-only fields — only present when type === 'KIOSK' */
+  type?: 'KIOSK' | 'EMPLOYEE';
+  kioskCredentialId?: number;
+  credentialVersion?: number;
+  createdAt?: number;
 }
 
 export const generateAccessToken = (payload: TokenPayload): string => {

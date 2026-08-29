@@ -67,7 +67,7 @@ export class OpportunityService {
     const result = await prisma.$transaction(async (tx) => {
       const opportunity = await tx.opportunity.create({
         data: {
-          company_id: user.companyId,
+          company_id: user.companyId || 1,
           opportunity_code: `OPP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           lead_id: lead_id,
           source: lead.source,

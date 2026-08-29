@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest, requireRole, authenticateKioskToken, KioskAuthenticatedRequest } from '../middleware/auth';
 import { generateQrHmac, verifyQrHmac } from '../utils/qr';
 import { calculateAttendanceStatus, getISTComponents } from '../utils/time';
 import { Roles, LateProposalSchema } from '@rrh-ems/shared';
@@ -9,6 +9,9 @@ import { validateRequestBody } from '../middleware/validate';
 const router = Router();
 
 const p = prisma;
+
+// Kiosk scanner type — not yet in @rrh-ems/shared; defined locally to avoid a circular dep.
+export type ScannerType = 'KIOSK' | 'EMPLOYEE_DEVICE';
 
 // GET /api/v1/attendance/my-qr - Generate personal HMAC QR payload
 router.get('/my-qr', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -97,7 +100,14 @@ const parseAndVerifyQR = (req: AuthenticatedRequest, qrPayload: any) => {
 };
 
 // POST /api/v1/attendance/scan - Verify QR and Stamp Attendance (IST rules)
-router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+// Kiosk-only: must be authenticated with a type:'KIOSK' token.
+// The token's embedded branchId is written to AttendanceLog.branch_id so the
+// attendance record carries the physical scan location, not the employee's
+// assigned branch.
+router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedRequest, res: Response) => {
+  const targetCompanyId = req.kiosk!.companyId;
+  const branchId = req.kiosk!.branchId; // physical scan location
+
   try {
     const payload = parseAndVerifyQR(req, req.body.qrPayload);
     if (!payload) return res.status(400).json({ error: 'Invalid or forged QR Code token' });
@@ -110,7 +120,7 @@ router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: R
     });
 
     if (!scannedEmployee) return res.status(404).json({ error: 'Employee not found' });
-    if (scannedEmployee.company_id !== req.user!.companyId) {
+    if (scannedEmployee.company_id !== targetCompanyId) {
       return res.status(403).json({ error: 'Employee does not belong to your company' });
     }
     if (scannedEmployee.status !== 'ACTIVE' || !scannedEmployee.attendance_required) {
@@ -159,6 +169,7 @@ router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: R
             check_in_at: now,
             status: calculatedStatus,
             source: 'QR_SCAN',
+            ...(branchId != null ? { branch_id: branchId } : {}), // populate only for kiosk scans
           },
         });
         return { alreadyStamped: false, log: newLog };
@@ -200,7 +211,13 @@ router.post('/scan', authenticateToken, async (req: AuthenticatedRequest, res: R
 });
 
 // POST /api/v1/attendance/checkout - Verify QR and Stamp Checkout
-router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+// Kiosk-only: must be authenticated with a type:'KIOSK' token.
+// branch_id from the kiosk token is written to AttendanceLog so the checkout
+// record carries the physical scan location.
+router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedRequest, res: Response) => {
+  const targetCompanyId = req.kiosk!.companyId;
+  const branchId = req.kiosk!.branchId;
+
   try {
     const payload = parseAndVerifyQR(req, req.body.qrPayload);
     if (!payload) return res.status(400).json({ error: 'Invalid or forged QR Code token' });
@@ -208,7 +225,7 @@ router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, re
     const targetEmployeeId = payload.employeeId;
 
     const scannedEmployee = await p.employee.findUnique({ where: { id: targetEmployeeId } });
-    if (!scannedEmployee || scannedEmployee.company_id !== req.user!.companyId) {
+    if (!scannedEmployee || scannedEmployee.company_id !== targetCompanyId) {
       return res.status(403).json({ error: 'Employee does not belong to your company' });
     }
 
@@ -253,6 +270,7 @@ router.post('/checkout', authenticateToken, async (req: AuthenticatedRequest, re
           data: {
             check_out_at: now,
             working_duration_minutes: durationMinutes,
+            ...(branchId != null ? { branch_id: branchId } : {}), // populate only for kiosk scans
           },
         });
 

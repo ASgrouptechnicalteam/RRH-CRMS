@@ -1,9 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { verifyAccessToken, TokenPayload } from '../utils/jwt';
+import { prisma } from '../lib/prisma';
 
 export interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
+}
+
+export interface KioskAuthenticatedRequest extends Request {
+  kiosk?: {
+    companyId: number;
+    branchId: number;
+    kioskCredentialId: number;
+    credentialVersion: number;
+    label: string;
+    branchName: string;
+  };
 }
 
 export interface ServiceRequest extends Request {
@@ -51,9 +63,6 @@ export const authenticateServiceToken = (req: ServiceRequest, res: Response, nex
   req.service = { service: 'portal' };
   next();
 };
-
-import { prisma } from '../lib/prisma';
-
 
 export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
@@ -138,4 +147,73 @@ export const requirePermission = (requiredPermissions: string[]) => {
 
     next();
   };
+};
+
+/**
+ * authenticateKioskToken — accepts ONLY type:'KIOSK' tokens.
+ * Verifies credential_version matches the current DB value so rotations
+ * kill active sessions immediately.
+ * Attaches kiosk info to req.kiosk.
+ */
+export const authenticateKioskToken = async (req: KioskAuthenticatedRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({
+      error: 'Kiosk token required',
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  try {
+    const payload = verifyAccessToken(token);
+
+    if (payload.type !== 'KIOSK') {
+      return res.status(401).json({
+        error: 'Token is not a kiosk token',
+        code: 'UNAUTHORIZED',
+      });
+    }
+
+    if (payload.kioskCredentialId === undefined) {
+      return res.status(401).json({
+        error: 'Kiosk token missing credential ID',
+        code: 'UNAUTHORIZED',
+      });
+    }
+
+    const kioskCred = await prisma.kioskCredential.findUnique({
+      where: { id: payload.kioskCredentialId },
+      include: { branch: true },
+    });
+
+    if (!kioskCred) {
+      return res.status(401).json({ error: 'Kiosk credential not found', code: 'UNAUTHORIZED' });
+    }
+
+    if (!kioskCred.is_active) {
+      return res.status(401).json({ error: 'Kiosk credential is deactivated', code: 'UNAUTHORIZED' });
+    }
+
+    if (payload.credentialVersion !== kioskCred.credential_version) {
+      return res.status(401).json({ error: 'Kiosk token version stale — please log in again', code: 'TOKEN_EXPIRED' });
+    }
+
+    req.kiosk = {
+      companyId: kioskCred.company_id,
+      branchId: kioskCred.branch_id,
+      kioskCredentialId: kioskCred.id,
+      credentialVersion: kioskCred.credential_version,
+      label: kioskCred.label,
+      branchName: kioskCred.branch.name,
+    };
+    next();
+  } catch (err: any) {
+    console.error('KIOSK JWT VERIFICATION ERROR:', err);
+    return res.status(401).json({
+      error: 'Kiosk token expired or invalid',
+      code: 'TOKEN_EXPIRED',
+    });
+  }
 };

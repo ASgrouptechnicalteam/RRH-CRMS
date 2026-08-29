@@ -31,7 +31,7 @@ export class PaymentService {
     }
 
     // Similar scope restrictions could be applied here if an agent queries all payments
-    const isManagement = user.roles.some((r: any) =>
+    const isManagement = (user.roles || []).some((r: any) =>
       ['Managing director', 'Admin (Technical)', 'HR', 'accountant', 'marketing director', 'Digital lead operator', 'project managers'].includes(r)
     );
 
@@ -88,7 +88,7 @@ export class PaymentService {
       const payment = await tx.payment.create({
         data: {
           payment_code: paymentCode,
-          company_id: user.companyId,
+          company_id: user.companyId || 1,
           booking_id: booking.id,
           amount: dto.amount,
           payment_method: dto.payment_method,
@@ -123,7 +123,7 @@ export class PaymentService {
     }
 
     // Packet 4: Admin MUST NOT gain financial approval authority merely because PaymentPolicy currently considers ADMIN a management role.
-    if (user.roles.includes('Admin (Technical)') && !user.roles.some((r: string) => ['Managing director', 'FINANCE', 'accountant'].includes(r))) {
+    if ((user.roles || []).includes('Admin (Technical)') && !(user.roles || []).some((r: string) => ['Managing director', 'FINANCE', 'accountant'].includes(r))) {
       throw new AppError(403, 'Admin role does not have financial verification authority');
     }
 
@@ -163,7 +163,7 @@ export class PaymentService {
           // Create audit event
           await tx.auditEvent.create({
             data: {
-              actor_id: user.employeeId,
+              actor_id: user.employeeId || 1,
               action: 'INSTALLMENT_COLLECTED',
               entity_type: 'Installment',
               entity_id: installment.id,
@@ -187,7 +187,7 @@ export class PaymentService {
                 event_type: INSTALLMENT_EVENT_TYPE,
                 payload: JSON.stringify({
                   event_type: INSTALLMENT_EVENT_TYPE,
-                  company_id: user.companyId,
+                  company_id: user.companyId || 1,
                   crms_customer_id: payment.booking.customer_id,
                   crms_booking_id: payment.booking.id,
                   installment_id: installment.id,
@@ -245,7 +245,7 @@ export class PaymentService {
               reference_number: payment.reference_number ?? null,
             }),
             status: 'CREATED',
-            company_id: user.companyId,
+            company_id: user.companyId || 1,
             crms_booking_id: payment.booking.id,
             crms_customer_id: payment.booking.customer_id,
           },
@@ -253,7 +253,7 @@ export class PaymentService {
 
         await tx.auditEvent.create({
           data: {
-            actor_id: user.employeeId,
+            actor_id: user.employeeId || 1,
             action: 'PAYMENT_SYNC_INITIATED',
             entity_type: 'Payment',
             entity_id: payment.id,
@@ -266,7 +266,7 @@ export class PaymentService {
         // Same transaction; content is LOW sensitivity only.
         if (status === 'SUCCESS') {
           await NotificationService.createCustomerNotificationTx(tx, {
-            company_id: user.companyId,
+            company_id: user.companyId || 1,
             customer_id: payment.booking.customer_id,
             booking_id: payment.booking.id,
             type: 'PAYMENT_STATUS_UPDATED',

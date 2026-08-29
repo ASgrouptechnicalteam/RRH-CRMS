@@ -144,6 +144,7 @@ export class PropertyService {
           latitude: data.latitude != null ? Number(data.latitude) : null,
           longitude: data.longitude != null ? Number(data.longitude) : null,
           listing_type: data.listing_type || 'NEW',
+          source: data.source || 'INTERNAL',
           // WR-6: SEO slug
           slug,
         },
@@ -264,7 +265,7 @@ export class PropertyService {
       await tx.propertyVerificationLog.create({
         data: {
           property_id: propertyId,
-          actor_id: user.employeeId,
+          actor_id: user.employeeId || 1,
           from_status: property.status,
           to_status: nextStatus,
           notes: `PM On-Site Verification: ${data.approved ? 'PASSED' : 'REJECTED'}. Notes: ${data.notes}`,
@@ -310,7 +311,7 @@ export class PropertyService {
       await tx.propertyVerificationLog.create({
         data: {
           property_id: propertyId,
-          actor_id: user.employeeId,
+          actor_id: user.employeeId || 1,
           from_status: property.status,
           to_status: 'PENDING_MD_APPROVAL',
           notes: `Digital Marketing Polish Completed. Submitted for MD Final Approval.${data.notes ? ` Notes: ${data.notes}` : ''}`,
@@ -356,7 +357,7 @@ export class PropertyService {
       await tx.propertyVerificationLog.create({
         data: {
           property_id: propertyId,
-          actor_id: user.employeeId,
+          actor_id: user.employeeId || 1,
           from_status: property.status,
           to_status: nextStatus,
           notes: `MD Decision: ${data.approved ? 'APPROVED & LIVE' : 'REJECTED'}.${data.comments ? ` Comments: ${data.comments}` : ''}`,
@@ -365,7 +366,7 @@ export class PropertyService {
 
       await tx.auditEvent.create({
         data: {
-          actor_id: user.employeeId,
+          actor_id: user.employeeId || 1,
           action: data.approved ? 'PROPERTY_MD_APPROVED_LIVE' : 'PROPERTY_MD_REJECTED',
           entity_type: 'PROPERTY',
           entity_id: propertyId,

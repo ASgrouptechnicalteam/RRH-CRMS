@@ -206,6 +206,34 @@ export class PropertyService {
         },
       });
 
+      if (!finalPmId) {
+        const mdEmployees = await tx.employee.findMany({
+          where: {
+            company_id: companyId,
+            status: 'ACTIVE',
+            roles: {
+              some: {
+                role: {
+                  name: Roles.MD
+                }
+              }
+            }
+          },
+          select: { id: true }
+        });
+
+        if (mdEmployees.length > 0) {
+          await tx.notification.createMany({
+            data: mdEmployees.map((md: any) => ({
+              employee_id: md.id,
+              type: 'SYSTEM_ALERT',
+              title: 'Property Requires PM Assignment',
+              message: `Property ${propertyCode} (${data.title}) was created without an assigned PM. Location: ${data.city || 'Unknown'}`
+            }))
+          });
+        }
+      }
+
       return property;
     });
   }

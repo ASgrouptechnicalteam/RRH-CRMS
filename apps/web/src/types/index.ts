@@ -113,8 +113,9 @@ export interface PropertyImage {
   is_primary?: boolean;
   alt_text?: string | null;
   sort_order?: number;
-  status?: string;
+  /** ID of the employee who uploaded this image — used to distinguish PM on-site photos from seller-submitted photos. */
   uploaded_by_id?: number;
+  status?: string;
   created_at?: ISODateTime;
 }
 

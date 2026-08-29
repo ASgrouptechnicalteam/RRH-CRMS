@@ -649,7 +649,9 @@ export const PropertyManagement: React.FC = () => {
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-slate-800">Upload Site Photos</p>
                           <p className="text-[10px] text-slate-500">
-                            {hasPhotos ? `${pmUploadedImages.length} photo${pmUploadedImages.length > 1 ? 's' : ''} uploaded.` : 'At least 1 site photo required before approval.'}
+                            {hasPhotos
+                              ? `${pmUploadedImages.length} photo${pmUploadedImages.length > 1 ? 's' : ''} uploaded by you.`
+                              : 'At least 1 photo uploaded by you is required — seller photos don\'t count.'}
                           </p>
                         </div>
                         {hasPhotos && <span className="text-[10px] text-emerald-700 font-bold">{pmUploadedImages.length} ✓</span>}

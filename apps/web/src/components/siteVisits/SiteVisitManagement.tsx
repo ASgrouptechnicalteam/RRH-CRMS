@@ -14,9 +14,11 @@ import {
   ShieldCheck,
   Star,
   FileText,
+  Send,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useWhatsApp } from '../../hooks/useWhatsApp';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
 import { EmployeeListItem } from '../../types';
@@ -100,6 +102,7 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
 export const SiteVisitManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
+  const { sendWhatsAppMessage } = useWhatsApp();
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,11 +112,14 @@ export const SiteVisitManagement: React.FC = () => {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleSuccess, setRescheduleSuccess] = useState(false);
 
   // Form states
   const [verificationNotes, setVerificationNotes] = useState('');
   const [assignedAgentId, setAssignedAgentId] = useState('');
   const [dispatchNotes, setDispatchNotes] = useState('');
+  const [rescheduleDate, setRescheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [rating, setRating] = useState('HOT_INTERESTED');
   const [proofPhotoUrl, setProofPhotoUrl] = useState('');
@@ -230,6 +236,35 @@ export const SiteVisitManagement: React.FC = () => {
       }
     } catch (err) {
       showToast('Error completing site visit', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVisit) return;
+    
+    setIsSubmitting(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${selectedVisit.id}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scheduled_date: new Date(rescheduleDate).toISOString(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'Visit rescheduled successfully', 'success');
+        setRescheduleSuccess(true);
+        fetchVisitsData();
+      } else {
+        showToast(data.error || 'Failed to reschedule visit', 'error');
+      }
+    } catch (err) {
+      showToast('Error rescheduling site visit', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -365,6 +400,21 @@ export const SiteVisitManagement: React.FC = () => {
                   </button>
                 )}
 
+                {/* Reschedule Button */}
+                {(visit.status === 'PENDING_VERIFICATION' || visit.status === 'CONFIRMED' || visit.status === 'ASSIGNED_TO_AGENT') && (
+                  <button
+                    onClick={() => {
+                      setSelectedVisit(visit);
+                      setRescheduleSuccess(false);
+                      setShowRescheduleModal(true);
+                    }}
+                    className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Reschedule Visit</span>
+                  </button>
+                )}
+
                 {(visit.status === 'ASSIGNED_TO_AGENT' || visit.status === 'CONFIRMED') && (
                   <button
                     onClick={() => {
@@ -377,6 +427,51 @@ export const SiteVisitManagement: React.FC = () => {
                     <span>Record Visit Feedback & Photo</span>
                   </button>
                 )}
+
+                {/* WhatsApp Action Buttons */}
+                <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                  {visit.status === 'CONFIRMED' && (
+                    <button
+                      onClick={() => sendWhatsAppMessage('site_visit_accepted', visit.lead.phone, {
+                        customer_name: visit.lead.customer_name,
+                        visit_date: new Date(visit.scheduled_date).toLocaleString(),
+                      })}
+                      className="w-full py-2 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Send Accepted WA</span>
+                    </button>
+                  )}
+
+                  {(visit.status === 'CONFIRMED' || visit.status === 'ASSIGNED_TO_AGENT') && (
+                    <button
+                      onClick={() => sendWhatsAppMessage('day_before_reconfirmation', visit.lead.phone, {
+                        customer_name: visit.lead.customer_name,
+                        visit_date: new Date(visit.scheduled_date).toLocaleString(),
+                        pm_name: visit.project_manager?.full_name || 'Your Project Manager',
+                      })}
+                      className="w-full py-2 bg-white border border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Day-Before WA</span>
+                    </button>
+                  )}
+
+                  {visit.status === 'COMPLETED' && (
+                    <button
+                      onClick={() => sendWhatsAppMessage('post_visit_follow_up', visit.lead.phone, {
+                        customer_name: visit.lead.customer_name,
+                        visit_date: new Date(visit.scheduled_date).toLocaleString(),
+                        pm_name: visit.project_manager?.full_name || 'Your Project Manager',
+                        property_name: visit.property?.title || 'the property',
+                      })}
+                      className="w-full py-2 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Post-Visit Follow-Up WA</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -570,6 +665,91 @@ export const SiteVisitManagement: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Reschedule Visit */}
+      {showRescheduleModal && selectedVisit && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative">
+            <button
+              onClick={() => {
+                setShowRescheduleModal(false);
+                setRescheduleSuccess(false);
+              }}
+              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {rescheduleSuccess ? (
+              <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-2">
+                  <CheckCircle2 className="w-8 h-8 text-amber-600" />
+                </div>
+                <h4 className="text-xl font-bold text-navy-900">Visit Rescheduled!</h4>
+                <p className="text-sm text-slate-500">The site visit has been updated and a reconfirmation is pending.</p>
+                <button
+                  onClick={() => {
+                    sendWhatsAppMessage('reschedule_confirmed', selectedVisit.lead.phone, {
+                      customer_name: selectedVisit.lead.customer_name,
+                      visit_date: new Date(rescheduleDate).toLocaleString(),
+                    });
+                  }}
+                  className="mt-4 px-6 py-3 w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Reschedule WA
+                </button>
+                <button
+                  onClick={() => {
+                    setShowRescheduleModal(false);
+                    setRescheduleSuccess(false);
+                  }}
+                  className="mt-2 px-6 py-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="font-bold text-slate-800 text-lg mb-1">Reschedule Site Visit</h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  Select a new date and time for <strong className="text-slate-800">{selectedVisit.lead?.customer_name}</strong>
+                </p>
+
+                <form onSubmit={handleReschedule} className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">New Date & Time *</label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRescheduleModal(false)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md"
+                    >
+                      {isSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

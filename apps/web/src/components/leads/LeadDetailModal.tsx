@@ -9,11 +9,14 @@ import {
   Briefcase,
   X,
   Plus,
-  UserCheck
+  UserCheck,
+  CheckCircle2,
+  Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useWhatsApp } from '../../hooks/useWhatsApp';
 import { API_BASE_URL } from '../../config';
 import { Permissions } from '@rrh-ems/shared';
 import {
@@ -64,6 +67,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { sendWhatsAppMessage } = useWhatsApp();
 
   const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS' | 'FOLLOW_UPS' | 'SALES_OPPS'>('DETAILS');
   const [activeTab, setActiveTab] = useState('DETAILS');
@@ -89,6 +93,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
 
   // Site Visit Schedule Form
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
   const [scheduleNotes, setScheduleNotes] = useState('Telecaller booked site visit for client discussion.');
   const [schedulePropertyId, setSchedulePropertyId] = useState<string>('');
@@ -799,12 +804,48 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 <MapPin className="w-5 h-5" />
                 <h3 className="font-bold text-sm tracking-wide">Book Site Visit</h3>
               </div>
-              <button onClick={() => setShowScheduleModal(false)} className="hover:bg-black/10 p-1.5 rounded-full transition-colors">
+              <button 
+                onClick={() => {
+                  setShowScheduleModal(false);
+                  setScheduleSuccess(false);
+                }} 
+                className="hover:bg-black/10 p-1.5 rounded-full transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
             
-            <div className="p-5 space-y-4">
+            {scheduleSuccess ? (
+              <div className="p-8 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                </div>
+                <h4 className="text-xl font-bold text-navy-900">Demo Scheduled!</h4>
+                <p className="text-sm text-slate-500">The site visit has been successfully booked and routed.</p>
+                <button
+                  onClick={() => {
+                    sendWhatsAppMessage('demo_scheduled', lead.phone, {
+                      customer_name: lead.customer_name,
+                      visit_date: new Date(scheduleDate).toLocaleString()
+                    });
+                  }}
+                  className="mt-4 px-6 py-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Demo Scheduled WhatsApp
+                </button>
+                <button
+                  onClick={() => {
+                    setShowScheduleModal(false);
+                    setScheduleSuccess(false);
+                  }}
+                  className="mt-2 px-6 py-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <div className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Scheduled Date & Time</label>
                 <input
@@ -866,7 +907,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                       const data = await res.json();
                       if (res.ok) {
                         showToast('Site visit booked successfully', 'success');
-                        setShowScheduleModal(false);
+                        setScheduleSuccess(true);
                         onRefreshLeads();
                       } else {
                         showToast(data.error || 'Failed to book site visit', 'error');
@@ -881,6 +922,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 </button>
               </div>
             </div>
+            )}
           </div>
         </div>
       )}

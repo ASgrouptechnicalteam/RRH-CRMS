@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { FileText, CheckCircle2, IndianRupee, Users, Building, AlertTriangle } from 'lucide-react';
+import { FileText, CheckCircle2, IndianRupee, Users, Building, AlertTriangle, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BookingItem } from '../../types';
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatCard } from '../ui/StatCard';
 import { StatusPill } from '../ui/StatusPill';
+import { useWhatsApp } from '../../hooks/useWhatsApp';
 
 export const BookingManagement: React.FC = () => {
   const { fetchWithAuth, user } = useAuth();
   const navigate = useNavigate();
+  const { sendWhatsAppMessage } = useWhatsApp();
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
@@ -111,7 +113,28 @@ export const BookingManagement: React.FC = () => {
         let type: 'pending' | 'success' | 'danger' = 'pending';
         if (b.status === 'CONFIRMED' || b.status === 'COMPLETED') type = 'success';
         if (b.status === 'CANCELLED') type = 'danger';
-        return <StatusPill status={b.status} type={type} />;
+        return (
+          <div className="flex flex-col gap-2 items-start">
+            <StatusPill status={b.status} type={type} />
+            {b.status === 'CONFIRMED' && b.customer?.phone && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const phone = b.customer?.phone;
+                  if (phone) {
+                    sendWhatsAppMessage('booking_confirmed', phone, {
+                      customer_name: b.customer?.first_name,
+                      property_name: b.property?.title,
+                    });
+                  }
+                }}
+                className="px-2 py-1 bg-[#25D366] hover:bg-[#1DA851] text-white text-[10px] font-bold rounded flex items-center gap-1 shadow-sm transition-colors uppercase tracking-wide"
+              >
+                <Send className="w-3 h-3" /> WA Confirm
+              </button>
+            )}
+          </div>
+        );
       }
     }
   ];

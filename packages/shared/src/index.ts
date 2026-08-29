@@ -753,6 +753,7 @@ export const PropertyVerificationSchema = z.object({
 export type PropertyVerificationInput = z.infer<typeof PropertyVerificationSchema>;
 
 export const PropertyDMUpdateSchema = z.object({
+  digital_marketing_executive_id: z.number().int().positive('Must select a Digital Marketing Executive'),
   seo_title: z.string().optional(),
   seo_keywords: z.string().optional(),
   description: z.string().optional(),

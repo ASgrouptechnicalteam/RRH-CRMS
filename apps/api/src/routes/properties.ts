@@ -31,13 +31,22 @@ router.get(
   requireAuthz(Permissions.PROPERTIES_READ),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { brand, status, project_id, unassigned } = req.query;
-    const filters = {
+    const { brand, status, project_id, unassigned, dm_executive_id } = req.query;
+    const filters: { brand?: string; status?: string; project_id?: number; unassigned?: boolean; dm_executive_id?: number } = {
       brand: typeof brand === 'string' ? brand : undefined,
       status: typeof status === 'string' ? status : undefined,
       project_id: typeof project_id === 'string' ? parseInt(project_id, 10) : undefined,
       unassigned: unassigned === 'true',
+      dm_executive_id: typeof dm_executive_id === 'string' ? parseInt(dm_executive_id, 10) : undefined,
     };
+
+    // DM Executives automatically see only their own assigned-to-polish properties
+    const userRoles: string[] = (req.user as any)?.roles || [];
+    const isDMExecutiveOnly = userRoles.includes('digital marketing executive') &&
+      !userRoles.some((r: string) => ['Digital Marketing head(manager)', 'Marketing Director', 'md', 'admin'].includes(r));
+    if (isDMExecutiveOnly && !filters.dm_executive_id) {
+      filters.dm_executive_id = req.user!.employeeId;
+    }
 
     const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
     const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);

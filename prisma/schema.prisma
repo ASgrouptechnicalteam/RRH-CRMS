@@ -134,6 +134,7 @@ model Employee {
   lead_activities             LeadActivity[]
   assigned_projects           Project[]                    @relation("AssignedPMProjects")
   assigned_properties         Property[]                   @relation("AssignedPMProperties")
+  dm_executive_properties     Property[]                   @relation("DMExecutiveProperties")
   created_properties          Property[]                   @relation("CreatedProperties")
   property_images             PropertyImage[]
   property_verification_logs  PropertyVerificationLog[]
@@ -569,8 +570,9 @@ model Property {
   facing            String? // EAST, WEST, NORTH, SOUTH, NORTH_EAST, SOUTH_EAST
   details           Json? // Stores granular, property-type specific details (e.g., BHK config, plot dimensions, soil type)
   status            String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, PENDING_DM_POLISH, PENDING_MD_APPROVAL, LIVE, REJECTED, LOCKED, BOOKED, SOLD
-  assigned_pm_id    Int?
-  created_by_id     Int
+  assigned_pm_id                    Int?
+  digital_marketing_executive_id    Int?      // Set by DMH when choosing "Needs Polish"
+  created_by_id                     Int?
   verified_by_pm_at DateTime?
   dm_polished_at    DateTime?
   md_approved_at    DateTime?
@@ -593,7 +595,8 @@ model Property {
   company           Company                   @relation(fields: [company_id], references: [id])
   branch            Branch?                   @relation(fields: [branch_id], references: [id])
   assigned_pm       Employee?                 @relation("AssignedPMProperties", fields: [assigned_pm_id], references: [id])
-  created_by        Employee                  @relation("CreatedProperties", fields: [created_by_id], references: [id])
+  digital_marketing_executive Employee?         @relation("DMExecutiveProperties", fields: [digital_marketing_executive_id], references: [id])
+  created_by        Employee?                 @relation("CreatedProperties", fields: [created_by_id], references: [id])
   images            PropertyImage[]
   publications      PropertyPublication[]
   verification_logs PropertyVerificationLog[]
@@ -619,6 +622,7 @@ model Property {
   @@index([assigned_pm_id])
   @@index([city])
   @@index([listing_type])
+  @@index([digital_marketing_executive_id])
 }
 
 model PropertyImage {

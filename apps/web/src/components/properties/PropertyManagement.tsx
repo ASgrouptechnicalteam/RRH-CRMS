@@ -150,6 +150,8 @@ export const PropertyManagement: React.FC = () => {
   const [actionNotes, setActionNotes] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
+  const [dmExecutiveId, setDmExecutiveId] = useState('');
+  const [dmExecutives, setDmExecutives] = useState<PmListItem[]>([]);
 
   const isPM = user?.roles?.some((r) => ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
   const isDM = user?.roles?.some((r) => ([Roles.DIGITAL_LEAD_OPERATOR, Roles.DIGITAL_MARKETING_HEAD, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
@@ -177,13 +179,14 @@ export const PropertyManagement: React.FC = () => {
       const data = await res.json();
       if (res.ok && data.employees) {
         setPms(data.employees.filter((e: PmListItem) => e.roles?.some((r: string) => r.includes(Roles.PROJECT_MANAGER))));
+        setDmExecutives(data.employees.filter((e: PmListItem) => e.roles?.some((r: string) => r.toLowerCase().includes('digital marketing executive'))));
       }
     } catch (e) {}
   };
 
   useEffect(() => {
     fetchProperties();
-    if (isMD || isPM) fetchPMs();
+    if (isMD || isPM || isDM) fetchPMs();
   }, []);
 
   const handleCreateProperty = async (e: React.FormEvent) => {
@@ -256,14 +259,19 @@ export const PropertyManagement: React.FC = () => {
   };
 
   const handleDMPolish = async (propertyId: number) => {
+    if (!dmExecutiveId) {
+      showToast('Please select a Digital Marketing Executive to assign', 'error');
+      return;
+    }
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/properties/${propertyId}/dm-polish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          digital_marketing_executive_id: parseInt(dmExecutiveId, 10),
           seo_title: seoTitle || selectedProperty?.title,
           seo_keywords: seoKeywords || 'luxury villa, miyapur real estate, hyderabad homes',
-          notes: actionNotes || 'DM SEO Polish Completed',
+          notes: actionNotes || 'DM SEO Polish Assigned',
         }),
       });
       const data = await res.json();
@@ -272,6 +280,7 @@ export const PropertyManagement: React.FC = () => {
         setActionNotes('');
         setSeoTitle('');
         setSeoKeywords('');
+        setDmExecutiveId('');
         setSelectedProperty(null);
         fetchProperties();
       } else {
@@ -589,10 +598,28 @@ export const PropertyManagement: React.FC = () => {
                 </div>
               )}
 
-              {/* Stage 2 Action for DM */}
+              {/* Stage 2 Action for DM Head — assign executive + provide SEO hints */}
               {selectedProperty.status === 'PENDING_DM_POLISH' && (
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-600">Digital Marketing Team SEO & Listing Content Polish.</p>
+                  <p className="text-xs text-slate-600">Digital Marketing Team SEO &amp; Listing Content Polish.</p>
+
+                  {/* DMH must pick the executive who will do the work */}
+                  {user?.permissions?.includes(Permissions.PROPERTIES_DM_POLISH) && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Assign to Digital Marketing Executive *</label>
+                      <select
+                        value={dmExecutiveId}
+                        onChange={(e) => setDmExecutiveId(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:ring-1 focus:ring-navy-500"
+                      >
+                        <option value="" disabled>Select DM Executive...</option>
+                        {dmExecutives.map(dm => (
+                          <option key={dm.id} value={dm.id}>{dm.full_name || dm.employee_code}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <input
                     type="text"
                     placeholder="SEO Title Tag (e.g. Luxury 3BHK Villa Miyapur)"
@@ -610,10 +637,11 @@ export const PropertyManagement: React.FC = () => {
                   {user?.permissions?.includes(Permissions.PROPERTIES_DM_POLISH) && (
                     <button
                       onClick={() => handleDMPolish(selectedProperty.id)}
-                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
+                      disabled={!dmExecutiveId}
+                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Complete DM Polish $\rightarrow$ Submit to MD</span>
+                      <span>Assign &amp; Send to DM Polish</span>
                     </button>
                   )}
                 </div>

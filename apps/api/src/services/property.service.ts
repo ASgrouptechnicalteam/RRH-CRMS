@@ -40,7 +40,7 @@ export class PropertyService {
     return `RRH-PR-${currentYear}-${seq}`;
   }
 
-  static async listProperties(user: TokenPayload, filters: { brand?: string; status?: string; project_id?: number; unassigned?: boolean }, take: number = 50, skip: number = 0) {
+  static async listProperties(user: TokenPayload, filters: { brand?: string; status?: string; project_id?: number; unassigned?: boolean; dm_executive_id?: number }, take: number = 50, skip: number = 0) {
     const whereCondition = await buildPropertyScope(user);
     
     if (filters.brand) {
@@ -54,6 +54,9 @@ export class PropertyService {
     }
     if (filters.unassigned) {
       whereCondition.assigned_pm_id = null;
+    }
+    if (filters.dm_executive_id) {
+      whereCondition.digital_marketing_executive_id = filters.dm_executive_id;
     }
 
     return await p.property.findMany({
@@ -376,6 +379,7 @@ export class PropertyService {
           seo_title: data.seo_title || property.seo_title,
           seo_keywords: data.seo_keywords || property.seo_keywords,
           description: data.description || property.description,
+          digital_marketing_executive_id: data.digital_marketing_executive_id,
           dm_polished_at: new Date(),
         },
       });

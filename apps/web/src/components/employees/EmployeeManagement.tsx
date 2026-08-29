@@ -71,6 +71,7 @@ interface Employee {
   jobTitle: string;
   department: string;
   employmentType: string;
+  reportRequired: boolean;
   reportingManagerId: number | null;
   dateOfJoining: string;
   salaryCtc: number;
@@ -131,6 +132,7 @@ export const EmployeeManagement: React.FC = () => {
   const [jobTitle, setJobTitle] = useState('');
   const [department, setDepartment] = useState('Sales & Leads');
   const [employmentType, setEmploymentType] = useState('FULL_TIME');
+  const [reportRequired, setReportRequired] = useState(true);
   const [addRole, setAddRole] = useState('Telecaller');
   const [addBranchId, setAddBranchId] = useState<string>('');
   const [reportingManagerId, setReportingManagerId] = useState<string>('');
@@ -201,6 +203,7 @@ export const EmployeeManagement: React.FC = () => {
     setJobTitle('');
     setDepartment('Sales & Leads');
     setEmploymentType('FULL_TIME');
+    setReportRequired(true);
     setAddRole('Telecaller');
     setReportingManagerId('');
     setDateOfJoining(new Date().toISOString().split('T')[0]);
@@ -247,6 +250,7 @@ export const EmployeeManagement: React.FC = () => {
           job_title: jobTitle || addRole,
           department,
           employment_type: employmentType,
+          report_required: reportRequired,
           role_name: addRole,
           branch_id: addBranchId,
           reporting_manager_id: reportingManagerId,

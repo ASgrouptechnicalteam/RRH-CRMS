@@ -44,14 +44,22 @@ export const getISTComponents = (date: Date = new Date()): ISTTimeComponents => 
 
 /**
  * Calculates Attendance Status according to RRH Business Rules (IST):
- * 1. <= 10:30 AM IST -> PRESENT
- * 2. 10:31 AM - 11:30 AM IST -> APPROVED_LATE (if approved proposal) else LATE
- * 3. > 11:30 AM IST -> APPROVED_HALF_DAY (if approved proposal) else HALF_DAY
+ * 1. FULL_TIME: <= 10:30 AM IST -> PRESENT; 10:31-11:30 -> LATE or APPROVED_LATE;
+ *    > 11:30 -> HALF_DAY or APPROVED_HALF_DAY.
+ * 2. PART_TIME / CONTRACT / INTERN: no late/early/half-day penalties — status is
+ *    always PRESENT and attendance is tracked via working_duration_minutes (check-in/out).
  */
 export const calculateAttendanceStatus = (
   checkInDate: Date = new Date(),
-  hasApprovedProposal: boolean = false
+  hasApprovedProposal: boolean = false,
+  employmentType: string = 'FULL_TIME'
 ): AttendanceStatusType => {
+  // PART_TIME / CONTRACT / INTERN — no penalty marks, duration tracked via check-in/out
+  if (employmentType === 'PART_TIME' || employmentType === 'CONTRACT' || employmentType === 'INTERN') {
+    return AttendanceStatus.PRESENT;
+  }
+
+  // FULL_TIME — existing cutoff-based marks
   const { hours, minutes } = getISTComponents(checkInDate);
   const totalMinutes = hours * 60 + minutes;
 

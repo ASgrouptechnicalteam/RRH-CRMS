@@ -63,7 +63,6 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
-const DocumentManagement = lazy(() => import('./components/documents/DocumentManagement').then(m => ({ default: m.DocumentManagement })));
 const UserSettings = lazy(() => import('./components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
 // Legacy for standard users
 const LateLeaveProposals = lazy(() => import('./components/attendance/LateLeaveProposals').then(m => ({ default: m.LateLeaveProposals })));
@@ -224,7 +223,6 @@ const AppShell: React.FC = () => {
       <Route path="/tasks" element={<TaskManager />} />
       <Route path="/bookings" element={<BookingManagement />} />
       <Route path="/bookings/:id" element={<BookingDossier />} />
-      <Route path="/documents" element={<DocumentManagement />} />
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/settings" element={<UserSettings />} />
       
@@ -259,7 +257,6 @@ const AppShell: React.FC = () => {
     '/site-visits': 'Site Visits',
     '/tasks': 'Tasks',
     '/bookings': 'Bookings',
-    '/documents': 'Documents',
     '/profile': 'Profile',
     '/settings': 'Personal Settings',
     '/hr-hub': 'Employees & Attendance',

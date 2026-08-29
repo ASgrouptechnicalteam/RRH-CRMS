@@ -45,6 +45,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
   const [jobTitle, setJobTitle] = useState('');
   const [department, setDepartment] = useState('Sales & Leads');
   const [employmentType, setEmploymentType] = useState('FULL_TIME');
+  const [reportRequired, setReportRequired] = useState(true);
   const [reportingManagerId, setReportingManagerId] = useState<string>('');
   const [dateOfJoining, setDateOfJoining] = useState(new Date().toISOString().split('T')[0]);
   const [salaryCtc, setSalaryCtc] = useState('35000');
@@ -88,6 +89,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         job_title: jobTitle,
         department,
         employment_type: employmentType,
+        report_required: reportRequired,
         reporting_manager_id: reportingManagerId,
         date_of_joining: dateOfJoining,
         salary_ctc: salaryCtc,
@@ -343,6 +345,19 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                   <option value="CONTRACT">Contract</option>
                   <option value="INTERN">Intern</option>
                 </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={reportRequired}
+                    onChange={e => setReportRequired(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-navy-700 focus:ring-navy-500"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">Daily Report Required</span>
+                </label>
+                <span className="text-[10px] text-slate-400">Unchecked = reports optional</span>
               </div>
 
               <div>

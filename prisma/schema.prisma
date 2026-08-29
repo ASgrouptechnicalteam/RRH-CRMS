@@ -73,6 +73,7 @@ model Employee {
   token_version       Int     @default(1)
   attendance_required Boolean @default(true)
   first_login_done    Boolean @default(false)
+  report_required     Boolean @default(true) // derived from employment_type at create; overridable per employee
 
   // 1. Personal Details
   full_name       String?

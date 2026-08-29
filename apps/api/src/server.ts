@@ -230,6 +230,7 @@ const bootstrapHostingerDatabase = async () => {
           job_title: empDef.title,
           department: empDef.dept,
           employment_type: 'FULL_TIME',
+          report_required: true,
           salary_ctc: empDef.salary,
           current_address: 'Flat 402, Royal Residency, Miyapur, Hyderabad, TS - 500049',
           permanent_address: 'Plot 88, Green Meadows, Hyderabad, TS - 500081',

@@ -521,32 +521,7 @@ export interface SiteVisitListItem {
   project_manager?: { id: number; full_name?: string | null; employee_code?: string } | null;
 }
 
-/** Document list item (GET /documents). */
-export interface DocumentListItem {
-  id: number;
-  document_code?: string;
-  company_id?: number;
-  branch_id?: number | null;
-  customer_id?: number | null;
-  lead_id?: number | null;
-  opportunity_id?: number | null;
-  booking_id?: number | null;
-  property_id?: number | null;
-  project_id?: number | null;
-  payment_id?: number | null;
-  document_type?: string;
-  title: string;
-  original_name?: string;
-  storage_path?: string;
-  mime_type?: string;
-  file_size?: number;
-  status?: string;
-  verification_status?: string;
-  verified_by_id?: number | null;
-  verified_at?: ISODateTime | null;
-  created_at?: ISODateTime;
-  updated_at?: ISODateTime;
-}
+
 
 /** Target list item (GET /targets). */
 export interface TargetListItem {

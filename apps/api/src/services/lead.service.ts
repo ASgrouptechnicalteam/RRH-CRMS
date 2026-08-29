@@ -276,13 +276,27 @@ export class LeadService {
       errors: [] as any[],
     };
 
-    // Pre-fetch existing phones to detect duplicates efficiently
+    // Pre-fetch existing phones and emails to detect duplicates efficiently
     const phones = rawLeads.map(l => l.phone).filter(Boolean);
-    const existingPhones = await p.lead.findMany({
-      where: { company_id: user.companyId, phone: { in: phones } },
-      select: { id: true, phone: true, status: true }
+    const emails = rawLeads.map(l => l.email).filter(Boolean);
+
+    const existingLeads = await p.lead.findMany({
+      where: { 
+        company_id: user.companyId, 
+        OR: [
+          ...(phones.length > 0 ? [{ phone: { in: phones } }] : []),
+          ...(emails.length > 0 ? [{ email: { in: emails } }] : []),
+        ]
+      },
+      select: { id: true, phone: true, email: true, status: true }
     });
-    const existingPhonesMap = new Map(existingPhones.map((e: any) => [e.phone, e]));
+    
+    const existingPhonesMap = new Map();
+    const existingEmailsMap = new Map();
+    for (const e of existingLeads) {
+      if (e.phone) existingPhonesMap.set(e.phone, e);
+      if (e.email) existingEmailsMap.set(e.email, e);
+    }
 
     // Chunking to prevent holding transaction too long
     const CHUNK_SIZE = 50;
@@ -300,14 +314,15 @@ export class LeadService {
             continue;
           }
 
-          const existingLead = existingPhonesMap.get(item.phone);
+          const existingLead = existingPhonesMap.get(item.phone) || (item.email ? existingEmailsMap.get(item.email) : undefined);
           if (existingLead) {
             if (existingLead.status === 'DROPPED') {
               await LeadService.updateLeadStatus(user, existingLead.id, 'RECOVERED_TO_POOL');
               results.successful_imports++;
             } else {
               results.duplicates++;
-              results.errors.push({ row: currentRow, reason: `Duplicate phone number: ${item.phone}` });
+              const duplicateReason = existingPhonesMap.has(item.phone) ? `Duplicate phone number: ${item.phone}` : `Duplicate email: ${item.email}`;
+              results.errors.push({ row: currentRow, reason: duplicateReason });
             }
             continue;
           }
@@ -362,6 +377,9 @@ export class LeadService {
 
           // Only add to Map if successfully inserted
           existingPhonesMap.set(item.phone, { id: 0, phone: item.phone, status: 'NEW' });
+          if (item.email) {
+            existingEmailsMap.set(item.email, { id: 0, email: item.email, status: 'NEW' });
+          }
           results.successful_imports++;
 
         } catch (error: any) {

@@ -392,6 +392,19 @@ export class AnalyticsService {
       take: 20
     });
 
+    const recoveredUnassignedLeadsQuery = await p.lead.findMany({
+      where: {
+        company_id: companyId,
+        status: 'RECOVERED_TO_POOL',
+        assigned_to_id: null
+      },
+      include: {
+        assigned_to: { select: { id: true, full_name: true, employee_code: true } }
+      },
+      orderBy: { created_at: 'desc' },
+      take: 20
+    });
+
     const overdueTasksQuery = await p.task.findMany({
       where: {
         status: 'PENDING',
@@ -470,6 +483,7 @@ export class AnalyticsService {
       teamPerformance,
       leadAttribution,
       stalledLeads: stalledLeadsQuery,
+      recoveredUnassignedLeads: recoveredUnassignedLeadsQuery,
       overdueTasks: overdueTasksQuery,
       siteVisits,
       targets

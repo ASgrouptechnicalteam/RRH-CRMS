@@ -434,6 +434,7 @@ export interface SalesManagerDashboardData {
   teamPerformance: TeamPerformanceRow[];
   leadAttribution: LeadAttributionRow[];
   stalledLeads: StalledLeadRow[];
+  recoveredUnassignedLeads: StalledLeadRow[];
   overdueTasks: OverdueTaskRow[];
   siteVisits?: Record<string, number>;
   targets: { targetAttainmentPercentage: number };
@@ -463,6 +464,7 @@ export interface LeadAttributionRow {
 
 export interface StalledLeadRow {
   id: number;
+  customer_name?: string | null;
   assigned_to?: { full_name?: string | null } | null;
   last_contacted_at?: string | null;
   created_at?: string;

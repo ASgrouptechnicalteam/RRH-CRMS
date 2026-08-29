@@ -41,7 +41,17 @@ export const SalesManagerDashboard: React.FC = () => {
 
   if (!data) return <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load dashboard data.</div>;
 
-  const { kpis, pipeline, teamPerformance, leadAttribution, stalledLeads, overdueTasks, siteVisits, targets } = data;
+  const { kpis, pipeline, teamPerformance, leadAttribution, stalledLeads, recoveredUnassignedLeads, overdueTasks, siteVisits, targets } = data;
+
+  // Prepare ListWidget data for Recovered Leads
+  const recoveredItems: ListItem[] = recoveredUnassignedLeads?.map((l) => ({
+    id: String(l.id),
+    title: `Lead #${l.id} - ${l.customer_name || 'No Name'}`,
+    subtitle: 'Waiting for Assignment',
+    value: new Date(l.created_at || '').toLocaleDateString(),
+    icon: AlertCircle,
+    color: 'text-amber-500'
+  })) || [];
 
   // Prepare ListWidget data for Stalled Leads
   const stalledItems: ListItem[] = stalledLeads.map((l) => ({
@@ -176,6 +186,14 @@ export const SalesManagerDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {recoveredItems.length > 0 && (
+            <ListWidget 
+              title="Recovered but Unassigned"
+              items={recoveredItems}
+              emptyStateMessage="No stuck recovered leads."
+            />
+          )}
 
           <ListWidget 
             title="Stalled Leads (>7 Days)"

@@ -102,7 +102,36 @@ export const SalesManagerDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+          {/* Lead Attribution */}
+          <div className="bg-surface p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-navy-900 flex items-center gap-2">
+                <Award className="w-4 h-4 text-gold-600" />
+                Top Lead Introducers
+              </h3>
+              <span className="px-2.5 py-1 bg-navy-100 text-navy-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Attribution Credit</span>
+            </div>
+            
+            <DataTable 
+              columns={[
+                { key: 'employee', header: 'Introduced By' },
+                { key: 'introduced', header: 'Introduced' },
+                { key: 'qualified', header: 'Qualified' },
+                { key: 'won', header: 'Won' },
+                { key: 'conv', header: 'Conv. %' },
+              ]}
+              data={leadAttribution.map(la => ({
+                id: la.employee.id,
+                employee: <div className="font-semibold text-navy-900">{la.employee.full_name}</div>,
+                introduced: <span className="font-bold text-navy-700">{la.leadsIntroduced}</span>,
+                qualified: <span className="font-medium text-navy-800">{la.qualified}</span>,
+                won: <span className="font-bold text-success">{la.won}</span>,
+                conv: `${la.conversionRate.toFixed(1)}%`
+              }))}
+              emptyMessage="No attribution data available."
+            />
+          </div>
+
           {/* Distinctive Widget: Team distribution view */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between mb-4">
@@ -134,59 +163,9 @@ export const SalesManagerDashboard: React.FC = () => {
               emptyMessage="No team performance data available."
             />
           </div>
-
-          {/* Lead Attribution */}
-          <div className="bg-surface p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-navy-900 flex items-center gap-2">
-                <Award className="w-4 h-4 text-gold-600" />
-                Top Lead Introducers
-              </h3>
-              <span className="px-2.5 py-1 bg-navy-100 text-navy-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Attribution Credit</span>
-            </div>
-            
-            <DataTable 
-              columns={[
-                { key: 'employee', header: 'Introduced By' },
-                { key: 'introduced', header: 'Introduced' },
-                { key: 'qualified', header: 'Qualified' },
-                { key: 'won', header: 'Won' },
-                { key: 'conv', header: 'Conv. %' },
-              ]}
-              data={leadAttribution.map(la => ({
-                id: la.employee.id,
-                employee: <div className="font-semibold text-navy-900">{la.employee.full_name}</div>,
-                introduced: <span className="font-bold text-navy-700">{la.leadsIntroduced}</span>,
-                qualified: <span className="font-medium text-navy-800">{la.qualified}</span>,
-                won: <span className="font-bold text-success">{la.won}</span>,
-                conv: `${la.conversionRate.toFixed(1)}%`
-              }))}
-              emptyMessage="No attribution data available."
-            />
-          </div>
         </div>
 
         <div className="space-y-6">
-          {/* Target Progress (Repurposed as simple custom widget to retain logic) */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="font-bold text-navy-900 mb-4 flex items-center gap-2">
-              <Target className="w-4 h-4 text-danger" />
-              Target vs Actual
-            </h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm font-semibold text-slate-700">
-                <span>Revenue Target</span>
-                <span>{targets.targetAttainmentPercentage?.toFixed(1) || 0}%</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all ${targets.targetAttainmentPercentage >= 100 ? 'bg-success' : 'bg-danger'}`} 
-                  style={{ width: `${Math.min(targets.targetAttainmentPercentage || 0, 100)}%` }} 
-                />
-              </div>
-            </div>
-          </div>
-
           {recoveredItems.length > 0 && (
             <ListWidget 
               title="Recovered but Unassigned"
@@ -206,6 +185,26 @@ export const SalesManagerDashboard: React.FC = () => {
             items={taskItems}
             emptyStateMessage="No overdue tasks. All caught up!"
           />
+
+          {/* Target Progress (Repurposed as simple custom widget to retain logic) */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-navy-900 mb-4 flex items-center gap-2">
+              <Target className="w-4 h-4 text-danger" />
+              Target vs Actual
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm font-semibold text-slate-700">
+                <span>Revenue Target</span>
+                <span>{targets.targetAttainmentPercentage?.toFixed(1) || 0}%</span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all ${targets.targetAttainmentPercentage >= 100 ? 'bg-success' : 'bg-danger'}`} 
+                  style={{ width: `${Math.min(targets.targetAttainmentPercentage || 0, 100)}%` }} 
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

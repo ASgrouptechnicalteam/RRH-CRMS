@@ -33,7 +33,7 @@ export const TelecallerDashboard: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('Prospect status updated successfully!', 'success');
+        showToast('Lead status updated successfully!', 'success');
         setAssignedLeads((prev) => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
       } else {
         showToast(data.error || 'Failed to update status', 'error');
@@ -80,7 +80,7 @@ export const TelecallerDashboard: React.FC = () => {
 
   // Transform active leads for the Distinctive Widget
   // (Since we don't fetch Site Visits yet, we use a placeholder ListWidget for it, 
-  // and show the active prospects below it)
+  // and show the active leads below it)
   const tomorrowVisits: ListItem[] = [];
 
   return (
@@ -145,16 +145,16 @@ export const TelecallerDashboard: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h3 className="font-bold text-navy-900 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-action" />
-                <span>Today's High-Priority Prospects</span>
+                <span>Today's High-Priority Leads</span>
               </h3>
               <StatusPill status={`${assignedLeads.length} Active`} type="default" />
             </div>
 
             {isLoading ? (
-              <div className="py-8 text-center text-sm text-slate-400">Loading priority prospects...</div>
+              <div className="py-8 text-center text-sm text-slate-400">Loading priority leads...</div>
             ) : assignedLeads.length === 0 ? (
               <div className="py-8 text-center text-sm text-slate-400">
-                No prospects currently assigned. Keep your performance score high for priority assignments!
+                No leads currently assigned. Keep your performance score high for priority assignments!
               </div>
             ) : (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
@@ -215,8 +215,10 @@ export const TelecallerDashboard: React.FC = () => {
 
         {/* Right Column: Tasks & Score */}
         <div className="space-y-6">
-          <PerformanceScoreWidget />
           <TaskManager />
+          <div className="pt-4 border-t border-slate-100">
+            <PerformanceScoreWidget />
+          </div>
         </div>
       </div>
     </div>

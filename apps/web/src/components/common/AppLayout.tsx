@@ -63,7 +63,7 @@ export const AppLayout: React.FC<{
             </>
           )}
           <div className="hidden lg:block ml-4">
-            <GlobalSearchInput placeholder="Search properties, leads, clients..." />
+            <GlobalSearchInput placeholder="Search leads, customers, properties..." />
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -173,24 +173,20 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
   { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks' },
-  { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/daily-report' },
 
   // FINANCE
   { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },
   { id: 'finance', label: 'Payments & Refunds', icon: IndianRupee, path: '/finance', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.FINANCE] },
 
-  // HR
-  { id: 'group-hr', label: 'HR', group: true, icon: undefined },
+  // OPERATIONS
+  { id: 'group-operations', label: 'OPERATIONS', group: true, icon: undefined },
   { id: 'hr-hub', label: 'Employees & Attendance', icon: Briefcase, path: '/hr-hub', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-
-  // INSIGHTS
-  { id: 'group-intelligence', label: 'INSIGHTS', group: true, icon: undefined },
   { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
+  { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
+  { id: 'pm-territories', label: 'PM Territories', icon: Map, path: '/pm-territories', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
 
   // ADMINISTRATION
   { id: 'group-administration', label: 'ADMINISTRATION', group: true, icon: undefined },
-  { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
-  { id: 'pm-territories', label: 'PM Territories', icon: Map, path: '/pm-territories', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
   { id: 'settings', label: 'Settings', icon: Settings2, path: '/settings' },
   { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
 ];

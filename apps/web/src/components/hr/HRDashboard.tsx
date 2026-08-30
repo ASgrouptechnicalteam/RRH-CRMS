@@ -7,7 +7,7 @@ import { LateLeaveProposals } from '../attendance/LateLeaveProposals';
 import { LiveAttendanceMonitor } from './LiveAttendanceMonitor';
 import { AttendanceHistory } from './AttendanceHistory';
 import { useAuth } from '../../context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { Roles } from '@rrh-ems/shared';
 import { API_BASE_URL } from '../../config';
 import { DataTable, ColumnDef } from '../ui/DataTable';
@@ -106,19 +106,22 @@ const TeamPerformanceTab: React.FC = () => {
           </p>
         </div>
       </div>
-      <DataTable 
-        columns={columns}
-        data={performanceData}
-        searchable={true}
-        emptyMessage="No performance data found."
-      />
+      <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1">
+        <DataTable 
+          columns={columns}
+          data={performanceData}
+          searchable={true}
+          emptyMessage="No performance data found."
+        />
+      </div>
     </div>
   );
 };
 
 export const HRDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'ATTENDANCE' | 'LEAVES' | 'PERFORMANCE' | 'DOCUMENTS'>('OVERVIEW');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'ATTENDANCE' | 'LEAVES' | 'PERFORMANCE' | 'DOCUMENTS'>((searchParams.get('tab') as any) || 'OVERVIEW');
 
   const canManageEmployees = user?.roles?.some(
     (r) => [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(r as never)
@@ -134,6 +137,13 @@ export const HRDashboard: React.FC = () => {
     avgConversion: 0
   });
   const [metricsLoading, setMetricsLoading] = useState(true);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab as any);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (activeTab !== 'OVERVIEW') return;
@@ -207,7 +217,10 @@ export const HRDashboard: React.FC = () => {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => {
+              setActiveTab(tab.id as any);
+              setSearchParams({ tab: tab.id });
+            }}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 transition-all ${
               activeTab === tab.id
                 ? 'bg-navy-900 text-white shadow-md'

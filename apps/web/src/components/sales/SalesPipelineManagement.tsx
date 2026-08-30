@@ -136,7 +136,7 @@ export const SalesPipelineManagement: React.FC = () => {
             No sales opportunities found.
           </div>
         ) : (
-          <div className="p-4 overflow-x-auto">
+          <div className="p-4 max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">

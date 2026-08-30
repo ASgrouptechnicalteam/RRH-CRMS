@@ -180,9 +180,85 @@ router.post(
         });
       });
 
+      // Fetch updated employee for new token version
+      const updatedEmployee = await p.employee.findUnique({
+        where: { id: employeeId },
+        include: {
+          roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+          permission_overrides: { include: { permission: true } },
+          company: true,
+          branch: true,
+        },
+      });
+
+      if (!updatedEmployee) {
+        return res.status(404).json({ error: 'Employee not found' });
+      }
+
+      const roleNames = updatedEmployee.roles.map((r: any) => r.role.name);
+      const permissionsSet = new Set<string>();
+      updatedEmployee.roles.forEach((r: any) => {
+        if (r.role.permissions) {
+          r.role.permissions.forEach((rp: any) => permissionsSet.add(rp.permission.name));
+        }
+      });
+      if (updatedEmployee.permission_overrides) {
+        updatedEmployee.permission_overrides.forEach((po: any) => {
+          if (po.is_granted) permissionsSet.add(po.permission.name);
+          else permissionsSet.delete(po.permission.name);
+        });
+      }
+      const permissions = Array.from(permissionsSet);
+
+      const tokenPayload = {
+        employeeId: updatedEmployee.id,
+        employeeCode: updatedEmployee.employee_code,
+        companyId: updatedEmployee.company_id,
+        branchId: updatedEmployee.branch_id,
+        roles: roleNames,
+        permissions,
+        tokenVersion: updatedEmployee.token_version,
+      };
+
+      const accessToken = generateAccessToken(tokenPayload);
+      const refreshToken = generateRefreshToken(tokenPayload);
+      const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      const familyToken = crypto.randomUUID();
+
+      await p.authSession.create({
+        data: {
+          employee_id: updatedEmployee.id,
+          family_token: familyToken,
+          refresh_token_hash: refreshTokenHash,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      });
+
+      // Set httpOnly refresh cookie
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       return res.status(200).json({
         message: 'Password updated successfully',
+        accessToken,
         firstLoginDone: true,
+        user: {
+          id: updatedEmployee.id,
+          employeeCode: updatedEmployee.employee_code,
+          fullName: updatedEmployee.full_name,
+          department: updatedEmployee.department,
+          company: updatedEmployee.company?.name || 'RRH EMS',
+          branch: updatedEmployee.branch?.name || 'All Branches',
+          roles: roleNames,
+          permissions,
+          attendanceRequired: updatedEmployee.attendance_required,
+          firstLoginDone: updatedEmployee.first_login_done,
+        },
       });
     } catch (error) {
       console.error('Change password error:', error);

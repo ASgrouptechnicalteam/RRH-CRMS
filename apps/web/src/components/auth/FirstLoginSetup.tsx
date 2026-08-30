@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 
 export const FirstLoginSetup: React.FC = () => {
-  const { user, fetchWithAuth, setFirstLoginDone } = useAuth();
+  const { user, fetchWithAuth, setFirstLoginDone, login } = useAuth();
   const { showToast } = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -34,7 +34,11 @@ export const FirstLoginSetup: React.FC = () => {
       const data = await res.json();
       if (res.ok) {
         showToast('Security setup complete! Password updated.', 'success');
-        setFirstLoginDone(true);
+        if (data.accessToken && data.user) {
+          login(data.user, data.accessToken);
+        } else {
+          setFirstLoginDone(true);
+        }
       } else {
         showToast(data.error || 'Failed to update password', 'error');
       }

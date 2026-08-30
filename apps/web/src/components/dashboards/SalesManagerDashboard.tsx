@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import {
-  Users, TrendingUp, Calendar, AlertCircle, Clock, ShieldAlert, Award, Activity, PhoneCall, CheckCircle, Target
+  Users, Medal, TrendingUp, Calendar, AlertCircle, Clock, ShieldAlert, Award, Activity, PhoneCall, CheckCircle, Target
 } from 'lucide-react';
 import { SalesManagerDashboardData, PipelineStageCount, TeamPerformanceRow, LeadAttributionRow, StalledLeadRow, OverdueTaskRow } from '../../types';
 import { StatCard, ListWidget, ListItem, DataTable } from '../ui';
@@ -104,37 +104,38 @@ export const SalesManagerDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Lead Attribution */}
-          <div className="bg-surface p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy-900 flex items-center gap-2">
-                <Award className="w-4 h-4 text-gold-600" />
+                <Medal className="w-4 h-4 text-gold-500" />
                 Top Lead Introducers
               </h3>
-              <span className="px-2.5 py-1 bg-navy-100 text-navy-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Attribution Credit</span>
             </div>
             
-            <DataTable 
-              columns={[
-                { key: 'employee', header: 'Introduced By' },
-                { key: 'introduced', header: 'Introduced' },
-                { key: 'qualified', header: 'Qualified' },
-                { key: 'won', header: 'Won' },
-                { key: 'conv', header: 'Conv. %' },
-              ]}
-              data={leadAttribution.map(la => ({
-                id: la.employee.id,
-                employee: <div className="font-semibold text-navy-900">{la.employee.full_name}</div>,
-                introduced: <span className="font-bold text-navy-700">{la.leadsIntroduced}</span>,
-                qualified: <span className="font-medium text-navy-800">{la.qualified}</span>,
-                won: <span className="font-bold text-success">{la.won}</span>,
-                conv: `${la.conversionRate.toFixed(1)}%`
-              }))}
-              emptyMessage="No attribution data available."
-            />
+            <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 flex-1">
+              <DataTable 
+                columns={[
+                  { key: 'employee', header: 'Introduced By' },
+                  { key: 'introduced', header: 'Introduced' },
+                  { key: 'qualified', header: 'Qualified' },
+                  { key: 'won', header: 'Won' },
+                  { key: 'conv', header: 'Conv. %' },
+                ]}
+                data={leadAttribution.map(la => ({
+                  id: la.employee.id,
+                  employee: <div className="font-semibold text-navy-900">{la.employee.full_name}</div>,
+                  introduced: <span className="font-bold text-navy-700">{la.leadsIntroduced}</span>,
+                  qualified: <span className="font-medium text-navy-800">{la.qualified}</span>,
+                  won: <span className="font-bold text-success">{la.won}</span>,
+                  conv: `${la.conversionRate.toFixed(1)}%`
+                }))}
+                emptyMessage="No attribution data available."
+              />
+            </div>
           </div>
 
           {/* Distinctive Widget: Team distribution view */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy-900 flex items-center gap-2">
                 <Users className="w-4 h-4 text-action" />
@@ -143,26 +144,28 @@ export const SalesManagerDashboard: React.FC = () => {
               <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Operational - Active Load</span>
             </div>
             
-            <DataTable 
-              columns={[
-                { key: 'employee', header: 'Employee' },
-                { key: 'assigned', header: 'Assigned' },
-                { key: 'contacted', header: 'Contacted' },
-                { key: 'qualified', header: 'Qualified' },
-                { key: 'won', header: 'Won' },
-                { key: 'conv', header: 'Conv. %' },
-              ]}
-              data={teamPerformance.map(tp => ({
-                id: tp.employee.id,
-                employee: <div className="font-semibold text-navy-800">{tp.employee.full_name}</div>,
-                assigned: tp.assignedLeads,
-                contacted: tp.contacted,
-                qualified: tp.qualified,
-                won: <span className="font-bold text-navy-600">{tp.won}</span>,
-                conv: `${tp.conversionRate.toFixed(1)}%`
-              }))}
-              emptyMessage="No team performance data available."
-            />
+            <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 flex-1">
+              <DataTable 
+                columns={[
+                  { key: 'employee', header: 'Employee' },
+                  { key: 'assigned', header: 'Assigned' },
+                  { key: 'contacted', header: 'Contacted' },
+                  { key: 'qualified', header: 'Qualified' },
+                  { key: 'won', header: 'Won' },
+                  { key: 'conv', header: 'Conv. %' },
+                ]}
+                data={teamPerformance.map(tp => ({
+                  id: tp.employee.id,
+                  employee: <div className="font-semibold text-navy-800">{tp.employee.full_name}</div>,
+                  assigned: tp.assignedLeads,
+                  contacted: tp.contacted,
+                  qualified: tp.qualified,
+                  won: <span className="font-bold text-navy-600">{tp.won}</span>,
+                  conv: `${tp.conversionRate.toFixed(1)}%`
+                }))}
+                emptyMessage="No team performance data available."
+              />
+            </div>
           </div>
         </div>
 

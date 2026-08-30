@@ -470,20 +470,27 @@ export const LeadManagement: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {monitorData.telecallers.map((tc: EmployeeListItem) => (
-              <StatCard
-                key={tc.id}
-                label={tc.fullName || 'Unknown'}
-                value={tc.activeLeadCount || 0}
-                icon={ShieldCheck}
-                trend={{
-                  direction: 'up', // always green for positive metric presentation here or can omit if not purely direction
-                  value: String(tc.closureRate || 0) + '%',
-                  label: 'Closure Rate'
-                }}
-              />
-            ))}
+          <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {monitorData.telecallers.map((tc: any) => {
+                const displayName = tc.fullName || tc.full_name || 'Unknown';
+                const displayCode = tc.employeeCode || tc.employee_code || tc.id;
+                
+                return (
+                  <StatCard
+                    key={tc.id}
+                    label={`${displayName} · ${displayCode}`}
+                    value={tc.activeLeadCount || 0}
+                    icon={ShieldCheck}
+                    trend={{
+                      direction: 'up',
+                      value: String(tc.closureRate || 0), // Removed extra '%' since string likely already has it
+                      label: 'Closure Rate'
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

@@ -149,7 +149,7 @@ export const MDControlDashboard: React.FC = () => {
       ) : filteredEmployees.length === 0 ? (
         <div className="py-8 text-center text-xs text-slate-400">No employees found.</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 text-slate-400 uppercase font-semibold text-[10px]">

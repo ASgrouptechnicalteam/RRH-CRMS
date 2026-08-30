@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../../config';
 
 
 export const ChangePasswordModal: React.FC = () => {
-  const { fetchWithAuth, setFirstLoginDone } = useAuth();
+  const { fetchWithAuth, setFirstLoginDone, login } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,7 +45,11 @@ export const ChangePasswordModal: React.FC = () => {
         throw new Error(data.error || 'Failed to update password');
       }
 
-      setFirstLoginDone(true);
+      if (data.accessToken && data.user) {
+        login(data.user, data.accessToken);
+      } else {
+        setFirstLoginDone(true);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMessage(message);

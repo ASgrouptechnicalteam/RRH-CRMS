@@ -201,7 +201,7 @@ export const TelecallerDashboard: React.FC = () => {
                 No leads currently assigned. Keep your performance score high for priority assignments!
               </div>
             ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-3 max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1">
                 {assignedLeads.map((lead: LeadListItem) => (
                   <div
                     key={lead.id}

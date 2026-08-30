@@ -18,18 +18,8 @@ export const ProductTour: React.FC = () => {
   const [targetRect, setTargetRect] = useState<TourRect | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Initialize tour state
-  useEffect(() => {
-    if (!user) return;
-    
-    // Check if user has completed or skipped the tour
-    const storageKey = `rrh_crms_product_tour_${TOUR_VERSION}:${user.id}`;
-    const state = localStorage.getItem(storageKey);
-    
-    if (state !== 'completed' && state !== 'skipped') {
-      setIsVisible(true);
-    }
-  }, [user]);
+  // The auto-start useEffect has been removed as per Task 3. 
+  // The tour will only start when explicitly triggered via the 'restart-product-tour' event.
 
   // Handle global event to restart tour
   useEffect(() => {

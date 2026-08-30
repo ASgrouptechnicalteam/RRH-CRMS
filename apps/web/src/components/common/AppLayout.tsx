@@ -1,6 +1,6 @@
 import React, { type ComponentType, useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map, FileText } from 'lucide-react';
+import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map, FileText, Menu, Clock, Calendar, TrendingUp } from 'lucide-react';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
@@ -103,6 +103,13 @@ export const AppLayout: React.FC<{
               </div>
             )}
           </div>
+          <button
+            onClick={() => window.dispatchEvent(new Event('open-mobile-drawer'))}
+            aria-label="Open mobile navigation"
+            className="md:hidden p-1 rounded-full hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2 focus:ring-navy ml-1"
+          >
+            <Menu className="w-6 h-6 text-slate-700" />
+          </button>
         </div>
       </header>
 
@@ -110,7 +117,7 @@ export const AppLayout: React.FC<{
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Sidebar */}
         <aside
-          className="sidebar-left bg-navy-950 border-r border-navy-900 p-4 shrink-0 h-full overflow-y-auto"
+          className="hidden md:block sidebar-left bg-navy-950 border-r border-navy-900 p-4 shrink-0 h-full overflow-y-auto"
           style={{ width: '260px' }}
         >
           <SidebarNav />
@@ -180,7 +187,10 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
 
   // OPERATIONS
   { id: 'group-operations', label: 'OPERATIONS', group: true, icon: undefined },
-  { id: 'hr-hub', label: 'Employees & Attendance', icon: Briefcase, path: '/hr-hub', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-employees', label: 'Employees', icon: Users, path: '/hr-hub?tab=DIRECTORY', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-attendance', label: 'Attendance', icon: Clock, path: '/hr-hub?tab=ATTENDANCE', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-leaves', label: 'Leave Approvals', icon: Calendar, path: '/hr-hub?tab=LEAVES', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-performance', label: 'CRM Performance', icon: TrendingUp, path: '/hr-hub?tab=PERFORMANCE', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
   { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
   { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
   { id: 'pm-territories', label: 'PM Territories', icon: Map, path: '/pm-territories', requiredAnyRole: [Roles.MD, Roles.ADMIN] },

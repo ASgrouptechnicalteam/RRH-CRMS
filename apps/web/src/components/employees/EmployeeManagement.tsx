@@ -437,7 +437,7 @@ export const EmployeeManagement: React.FC = () => {
             <p>No employees match your search filter criteria.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                 <tr>

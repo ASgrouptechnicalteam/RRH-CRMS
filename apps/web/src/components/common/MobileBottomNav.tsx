@@ -87,13 +87,20 @@ export const MobileBottomNav: React.FC = () => {
     if (quickLinks.length >= 3) break;
   }
 
-  // Handle escape key
+  // Handle escape key and custom open event
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsDrawerOpen(false);
     };
+    const handleOpenDrawer = () => setIsDrawerOpen(true);
+    
     window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener('open-mobile-drawer', handleOpenDrawer);
+    
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+      window.removeEventListener('open-mobile-drawer', handleOpenDrawer);
+    };
   }, []);
 
   // Handle body scroll
@@ -208,16 +215,6 @@ export const MobileBottomNav: React.FC = () => {
           );
         })}
 
-        <button
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Open navigation"
-          className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-            isDrawerOpen ? 'text-white font-extrabold bg-slate-800' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Menu className="w-5 h-5" />
-          <span className="text-[9px]">More</span>
-        </button>
       </div>
     </>
   );

@@ -28,7 +28,7 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
     kioskCompanyId = adminUser.company_id;
 
     const mainBranch = await p.branch.findFirst({
-      where: { company_id: kioskCompanyId, name: 'Miyapur (Main Branch)' },
+      where: { company_id: kioskCompanyId, name: 'Test Branch' },
     });
     if (!mainBranch) {
       throw new Error('Main branch not found for deterministic test users');
@@ -409,6 +409,38 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
           },
         });
       expect(res.status).toBe(401);
+    });
+
+    it('should reject checkout if daily report is not submitted (report-required)', async () => {
+      // Create an active check-in
+      await p.attendanceLog.create({
+        data: {
+          employee_id: employee1Id,
+          check_in_at: new Date(),
+          status: 'PRESENT',
+          source: 'KIOSK',
+          branch_id: kioskBranchId,
+        },
+      });
+      // Ensure NO daily report exists for today
+      await p.dailyReport.deleteMany({ where: { employee_id: employee1Id } });
+
+      // Attempt checkout
+      const qrToken = generateQrHmac(employee1Id, employee1Code, 1);
+      const res = await request(app)
+        .post('/api/v1/attendance/checkout')
+        .set('Authorization', `Bearer ${kioskToken}`)
+        .send({
+          qrPayload: {
+            employeeId: employee1Id,
+            employeeCode: employee1Code,
+            version: 1,
+            signedToken: qrToken,
+          },
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("Please submit today's daily report before logging out. Go to your account, submit the report, then come back and scan out.");
     });
 
     it('should reject checkout if no active check-in exists', async () => {

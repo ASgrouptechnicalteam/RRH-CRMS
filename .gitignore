@@ -20,6 +20,12 @@ apps/web/vite.config.d.ts
 # Private AI development / phase planning
 docs/roadmap/
 docs/transformation/
+_hygiene_archive/
+.agent/
+.claude/
+.agents/
+.vscode/
+tests/
 
 # Test artifacts (logs, snapshots, cache)
 test-output.txt

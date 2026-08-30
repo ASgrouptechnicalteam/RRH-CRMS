@@ -35,7 +35,9 @@ export class SiteVisitService {
   private static async resolveVisitProject(data: any, companyId: number): Promise<{ projectId: number; pmId: number | null }> {
     // Determine project from an explicit project_id or from the properties.
     let projectId: number | null = data.project_id ?? null;
-    const propertyIds: number[] = data.property_ids && Array.isArray(data.property_ids) ? data.property_ids : [];
+    const propertyIds: number[] = data.property_ids && Array.isArray(data.property_ids) 
+      ? data.property_ids 
+      : (data.property_id ? [data.property_id] : []);
 
     if (propertyIds.length > 0) {
       const properties = await p.property.findMany({
@@ -129,7 +131,9 @@ export class SiteVisitService {
       }
     }
 
-    const propertyIds: number[] = Array.isArray(data.property_ids) ? data.property_ids : [];
+    const propertyIds: number[] = Array.isArray(data.property_ids) 
+      ? data.property_ids 
+      : (data.property_id ? [data.property_id] : []);
     if (propertyIds.length > 0) {
       const props = await p.property.findMany({ where: { id: { in: propertyIds }, company_id: user.companyId } });
       if (props.length !== propertyIds.length) {

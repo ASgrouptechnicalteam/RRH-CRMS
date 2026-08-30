@@ -73,7 +73,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
         lead_code: `TEST-LEAD-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         customer_name: `Test Lead ${Math.floor(Math.random() * 1000)}`,
         phone: `99${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`,
-        status: 'NEW',
+        status: 'BOOKING_INITIATED',
         company: { connect: { id: company_id } },
         assigned_to: { connect: { id: agentId } },
         created_by: { connect: { id: agentId } },
@@ -81,11 +81,10 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     });
   };
 
-  const createTestOpportunity = async (leadId: number, propertyId: number, stage: string = 'BOOKING_INITIATED', company_id: number = companyId) => {
+  const createTestOpportunity = async (leadId: number, propertyId: number, company_id: number = companyId) => {
     return await p.opportunity.create({
       data: {
         opportunity_code: `TEST-OPP-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        stage,
         company: { connect: { id: company_id } },
         lead: { connect: { id: leadId } },
         property: { connect: { id: propertyId } },
@@ -109,7 +108,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
   test('A. Successful BOOKING_INITIATED -> Customer -> Booking conversion', async () => {
     const prop = await createTestProperty('LIVE');
     const lead = await createTestLead();
-    const opp = await createTestOpportunity(lead.id, prop.id, 'BOOKING_INITIATED');
+    const opp = await createTestOpportunity(lead.id, prop.id);
 
     const res = await attemptConversion(opp.id);
     expect(res.status).toBe(201);
@@ -144,7 +143,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     }
     const prop = await createTestProperty('LIVE');
     const lead = await createTestLead();
-    const opp = await createTestOpportunity(lead.id, prop.id, 'BOOKING_INITIATED');
+    const opp = await createTestOpportunity(lead.id, prop.id);
 
     const res = await attemptConversion(opp.id, otherCompanyToken);
     expect(res.status).toBe(404); // Or 403, usually 404 for tenant isolation
@@ -153,7 +152,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
   test('D. Opportunity in invalid stage', async () => {
     const prop = await createTestProperty('LIVE');
     const lead = await createTestLead();
-    const opp = await createTestOpportunity(lead.id, prop.id, 'PROSPECT_QUALIFIED');
+    const opp = await createTestOpportunity(lead.id, prop.id);
 
     const res = await attemptConversion(opp.id);
     expect(res.status).toBe(400);
@@ -163,7 +162,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
   test('E. Opportunity already has Booking / Idempotency (N)', async () => {
     const prop = await createTestProperty('LIVE');
     const lead = await createTestLead();
-    const opp = await createTestOpportunity(lead.id, prop.id, 'BOOKING_INITIATED');
+    const opp = await createTestOpportunity(lead.id, prop.id);
 
     const firstRes = await attemptConversion(opp.id);
     expect(firstRes.status).toBe(201);
@@ -179,14 +178,14 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     const lead = await createTestLead();
     
     // Convert first opp to create the customer
-    const opp1 = await createTestOpportunity(lead.id, prop1.id, 'BOOKING_INITIATED');
+    const opp1 = await createTestOpportunity(lead.id, prop1.id);
     const res1 = await attemptConversion(opp1.id);
     expect(res1.status).toBe(201);
     const customerId = res1.body.booking.customer_id;
 
     // Convert second opp for the SAME lead (different property)
     const prop2 = await createTestProperty('LIVE');
-    const opp2 = await createTestOpportunity(lead.id, prop2.id, 'BOOKING_INITIATED');
+    const opp2 = await createTestOpportunity(lead.id, prop2.id);
     const res2 = await attemptConversion(opp2.id);
     expect(res2.status).toBe(201);
 
@@ -197,7 +196,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
   test('G. Two simultaneous conversions of the SAME Opportunity', async () => {
     const prop = await createTestProperty('LIVE');
     const lead = await createTestLead();
-    const opp = await createTestOpportunity(lead.id, prop.id, 'BOOKING_INITIATED');
+    const opp = await createTestOpportunity(lead.id, prop.id);
 
     const [res1, res2] = await Promise.all([
       attemptConversion(opp.id),
@@ -226,8 +225,8 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     const lead1 = await createTestLead();
     const lead2 = await createTestLead();
 
-    const opp1 = await createTestOpportunity(lead1.id, prop.id, 'BOOKING_INITIATED');
-    const opp2 = await createTestOpportunity(lead2.id, prop.id, 'BOOKING_INITIATED');
+    const opp1 = await createTestOpportunity(lead1.id, prop.id);
+    const opp2 = await createTestOpportunity(lead2.id, prop.id);
 
     const [res1, res2] = await Promise.all([
       attemptConversion(opp1.id),
@@ -252,8 +251,8 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     const lead1 = await createTestLead();
     const lead2 = await createTestLead();
 
-    const opp1 = await createTestOpportunity(lead1.id, prop1.id, 'BOOKING_INITIATED');
-    const opp2 = await createTestOpportunity(lead2.id, prop2.id, 'BOOKING_INITIATED');
+    const opp1 = await createTestOpportunity(lead1.id, prop1.id);
+    const opp2 = await createTestOpportunity(lead2.id, prop2.id);
 
     const [res1, res2] = await Promise.all([
       attemptConversion(opp1.id),

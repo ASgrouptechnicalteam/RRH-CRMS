@@ -56,6 +56,16 @@ beforeAll(async () => {
   // Set fallback env variables for testing to satisfy Phase 0 requirements
   process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'test-secret-access';
   process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-secret-refresh';
+
+  // Fix token version leakage between test suites
+  try {
+    await prisma.employee.updateMany({
+      where: { employee_code: { startsWith: 'RRH-TST-' } },
+      data: { token_version: 1, status: 'ACTIVE' }
+    });
+  } catch (e) {
+    console.warn("Failed to reset token_version on test users", e);
+  }
 });
 
 afterAll(async () => {

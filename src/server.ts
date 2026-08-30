@@ -23,6 +23,7 @@ import propertyRoutes from './routes/properties';
 import opportunityRoutes from './routes/opportunities';
 import installmentRoutes from './routes/installment.routes';
 import projectRoutes from './routes/projects';
+import kioskAuthRoutes from './routes/kiosk-auth';
 
 import siteVisitRoutes from './routes/siteVisits';
 import customerRoutes from './routes/customers';
@@ -61,7 +62,8 @@ app.use(express.json());
 import { apiRateLimiter } from './middleware/rateLimiter';
 
 // Serve ONLY property images publicly.
-app.use('/uploads/properties', express.static(path.join(process.cwd(), 'uploads', 'properties')));
+const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+app.use('/uploads/properties', express.static(path.join(uploadDir, 'properties')));
 
 // Global API Rate Limiter
 app.use('/api/', apiRateLimiter);
@@ -69,6 +71,8 @@ app.use('/api/', apiRateLimiter);
 // Routes
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/kiosk-auth', kioskAuthRoutes);
+app.use('/api/v1/kiosk-credentials', kioskAuthRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/md', mdRoutes);
 app.use('/api/v1/reports', reportRoutes);
@@ -274,6 +278,10 @@ if (process.env.NODE_ENV === 'production') {
   }
   if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length < 32) {
     console.error('FATAL: ENCRYPTION_KEY is missing or too short for production. KYC data cannot be encrypted safely.');
+    process.exit(1);
+  }
+  if (!process.env.QR_HMAC_SECRET || process.env.QR_HMAC_SECRET.length < 32) {
+    console.error('FATAL: QR_HMAC_SECRET is missing or too short for production. Kiosk QR codes cannot be securely signed.');
     process.exit(1);
   }
 }

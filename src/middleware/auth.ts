@@ -79,6 +79,7 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
     const payload = verifyAccessToken(token);
 
     if (payload.tokenVersion === undefined) {
+      console.error('AUTH_FAIL: Token version missing (legacy token)');
       return res.status(401).json({
         error: 'Token version missing (legacy token)',
         code: 'TOKEN_EXPIRED',
@@ -91,21 +92,24 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
     });
 
     if (!employee) {
+      console.error('AUTH_FAIL: User not found in DB');
       return res.status(401).json({ error: 'User not found', code: 'UNAUTHORIZED' });
     }
 
     if (employee.status !== 'ACTIVE') {
+      console.error('AUTH_FAIL: User status is not ACTIVE');
       return res.status(401).json({ error: 'User is inactive or suspended', code: 'UNAUTHORIZED' });
     }
 
     if (payload.tokenVersion !== employee.token_version) {
+      console.error('AUTH_FAIL: Token version stale');
       return res.status(401).json({ error: 'Token version stale', code: 'TOKEN_EXPIRED' });
     }
 
     req.user = payload;
     next();
   } catch (err: any) {
-    console.error('JWT VERIFICATION ERROR:', err);
+    console.error('JWT VERIFICATION ERROR:', err.name, err.message, err);
     // If token expired, return clear code so frontend automatically throws user to login page
     return res.status(401).json({
       error: 'Token expired or invalid',
@@ -120,7 +124,7 @@ export const requireRole = (allowedRoles: string[]) => {
       return res.status(401).json({ error: 'Unauthenticated', code: 'UNAUTHORIZED' });
     }
 
-    const hasRole = req.user.roles.some((r) => allowedRoles.includes(r));
+    const hasRole = (req.user.roles || []).some((r) => allowedRoles.includes(r));
     if (!hasRole) {
       return res.status(403).json({ error: 'Forbidden: Insufficient privileges', code: 'FORBIDDEN' });
     }

@@ -1,6 +1,6 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import { prisma } from '../lib/prisma';
-import { generateAccessToken } from '../utils/jwt';
+import { generateAccessToken, TokenPayload } from '../utils/jwt';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { Roles } from '@rrh-ems/shared';
 import bcrypt from 'bcryptjs';
@@ -73,7 +73,7 @@ router.post('/login', validateRequestBody(KioskLoginSchema), async (req: Request
       createdAt: Date.now(),
     };
 
-    const accessToken = generateAccessToken(tokenPayload);
+    const accessToken = generateAccessToken(tokenPayload as unknown as TokenPayload);
 
     await p.auditEvent.create({
       data: {
@@ -162,7 +162,7 @@ router.post(
           is_active: cred.is_active,
           credential_version: cred.credential_version,
           created_by_id: cred.created_by_id,
-          created_at: cred.createdAt,
+          created_at: cred.created_at,
         },
       });
     } catch (error: any) {
@@ -302,7 +302,7 @@ router.get(
 
       const credentials = await p.kioskCredential.findMany({
         where: { company_id: companyId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       });
 
       // Fetch branch names for all credentials in one query
@@ -324,7 +324,7 @@ router.get(
           credential_version: c.credential_version,
           created_by_id: c.created_by_id,
           created_at: c.created_at,
-          updated_at: c.updatedAt,
+          updated_at: c.updated_at,
           company_id: c.company_id,
         })),
       });

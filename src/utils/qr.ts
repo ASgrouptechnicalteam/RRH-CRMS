@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 
-const QR_HMAC_SECRET = process.env.QR_HMAC_SECRET || 'dev-secret-qr-token';
+const QR_HMAC_SECRET = process.env.QR_HMAC_SECRET;
+if (!QR_HMAC_SECRET) {
+  throw new Error('QR_HMAC_SECRET is not configured');
+}
 
 export interface QrTokenPayload {
   employeeId: number;

@@ -319,9 +319,9 @@ export const PropertyManagement: React.FC = () => {
     const matchesBrand = brandTab === 'ALL' || prop.brand_type === brandTab;
     const matchesStatus = statusFilter === 'ALL' || prop.status === statusFilter;
     const matchesSearch =
-      prop.property_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prop.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (prop.property_code?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (prop.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (prop.location?.toLowerCase() || '').includes(searchQuery.toLowerCase());
       
     const matchesViewMode = viewMode === 'ALL' || (viewMode === 'MY_PROPERTIES' && prop.assigned_pm?.id === user?.id);
 
@@ -460,11 +460,11 @@ export const PropertyManagement: React.FC = () => {
                 key={prop.id}
                 property={{
                   id: prop.id,
-                  name: prop.title,
-                  location: prop.location,
+                  name: prop.title || 'Untitled Property',
+                  location: prop.location || 'Unknown Location',
                   bhk: prop.bedrooms || 0,
-                  sqft: prop.area_sqft,
-                  price: `₹${(prop.price / 100000).toFixed(1)} L`,
+                  sqft: prop.area_sqft || 0,
+                  price: `₹${((prop.price || 0) / 100000).toFixed(1)} L`,
                   imageUrl: displayImage,
                   interestedLeads: mockInterestedLeads,
                 }}

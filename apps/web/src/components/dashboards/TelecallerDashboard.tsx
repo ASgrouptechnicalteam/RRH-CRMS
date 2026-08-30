@@ -22,6 +22,8 @@ export const TelecallerDashboard: React.FC = () => {
   const { showToast } = useToast();
   const [assignedLeads, setAssignedLeads] = useState<LeadListItem[]>([]);
   const [targetMetrics, setTargetMetrics] = useState<{ achieved: number; target: number }>({ achieved: 0, target: 25 });
+  const [tomorrowVisits, setTomorrowVisits] = useState<ListItem[]>([]);
+  const [whatsappFollowUps, setWhatsappFollowUps] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const updateLeadStatus = async (leadId: number, newStatus: string) => {
@@ -61,6 +63,43 @@ export const TelecallerDashboard: React.FC = () => {
           target: tgtData.target.target_value || 25,
         });
       }
+
+      // Fetch site visits for tomorrow
+      const svRes = await fetchWithAuth(`${API_BASE_URL}/site-visits`);
+      const svData = await svRes.json();
+      if (svRes.ok && svData.visits) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        const upcomingVisits = svData.visits.filter((v: any) => {
+          if (!v.scheduled_date) return false;
+          if (v.telecaller_id && v.telecaller_id !== user?.id) return false;
+          const visitDate = new Date(v.scheduled_date).toISOString().split('T')[0];
+          return visitDate === tomorrowStr && v.status === 'SCHEDULED';
+        });
+
+        const listItems: ListItem[] = upcomingVisits.map((v: any) => ({
+          id: v.id.toString(),
+          title: v.lead?.customer_name || 'Unknown Customer',
+          subtitle: `Scheduled for ${new Date(v.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+          icon: Calendar,
+          meta: 'Reconfirm',
+        }));
+        
+        setTomorrowVisits(listItems);
+      }
+
+      // Fetch tasks to determine WhatsApp Follow-ups
+      const taskRes = await fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`);
+      const taskData = await taskRes.json();
+      if (taskRes.ok && taskData.tasks) {
+        const waTasks = taskData.tasks.filter((t: any) => 
+          t.title?.toLowerCase().includes('whatsapp') || 
+          t.description?.toLowerCase().includes('whatsapp')
+        );
+        setWhatsappFollowUps(waTasks.length);
+      }
     } catch (e) {
       console.error('Fetch telecaller dashboard error:', e);
     } finally {
@@ -76,12 +115,9 @@ export const TelecallerDashboard: React.FC = () => {
   const leadsAssigned = assignedLeads.length;
   const contactedToday = assignedLeads.filter(l => l.status === 'CONTACTED').length;
   const qualificationPending = assignedLeads.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
-  const whatsappFollowUps = 0; // Requires task data not currently fetched
 
   // Transform active leads for the Distinctive Widget
-  // (Since we don't fetch Site Visits yet, we use a placeholder ListWidget for it, 
-  // and show the active prospects below it)
-  const tomorrowVisits: ListItem[] = [];
+  // (Site Visits are now fetched above)
 
   return (
     <div className="space-y-6">
@@ -128,20 +164,22 @@ export const TelecallerDashboard: React.FC = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* Left Column: Priority Call Queue & Lists */}
         <div className="lg:col-span-2 space-y-6">
           {/* Distinctive Widget: Reconfirm Tomorrow's Visits */}
-          <ListWidget 
-            title="Reconfirm Tomorrow's Visits"
-            items={tomorrowVisits}
-            emptyStateMessage="No visits pending reconfirmation tomorrow."
-            viewAllLink="/site-visits"
-          />
+          {tomorrowVisits.length > 0 && (
+            <ListWidget 
+              title="Reconfirm Tomorrow's Visits"
+              items={tomorrowVisits}
+              emptyStateMessage="No visits pending reconfirmation tomorrow."
+              viewAllLink="/site-visits"
+            />
+          )}
 
           {/* Today's Priority Call Queue */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h3 className="font-bold text-navy-900 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-action" />
@@ -157,11 +195,11 @@ export const TelecallerDashboard: React.FC = () => {
                 No prospects currently assigned. Keep your performance score high for priority assignments!
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {assignedLeads.map((lead: LeadListItem) => (
                   <div
                     key={lead.id}
-                    className="p-4 bg-surface rounded-xl border border-slate-200 flex items-center justify-between gap-4 hover:shadow-sm transition-shadow group"
+                    className="p-4 bg-surface rounded-xl border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:shadow-sm transition-shadow group"
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -175,28 +213,22 @@ export const TelecallerDashboard: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => updateLeadStatus(lead.id, 'CONTACTED')}
+                    <div className="flex items-center flex-wrap gap-2 shrink-0 w-full lg:w-auto">
+                      <select
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-navy-700 font-semibold text-xs rounded-lg shadow-sm focus:outline-none focus:border-navy-500 transition-colors cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            updateLeadStatus(lead.id, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        defaultValue=""
                       >
-                        Mark Contacted
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => updateLeadStatus(lead.id, 'QUALIFIED')}
-                      >
-                        Mark Qualified
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => updateLeadStatus(lead.id, 'SITE_VISIT_SCHEDULED')}
-                      >
-                        Schedule Visit
-                      </Button>
+                        <option value="" disabled>Update Status...</option>
+                        <option value="CONTACTED">Mark Contacted</option>
+                        <option value="QUALIFIED">Mark Qualified</option>
+                        <option value="SITE_VISIT_SCHEDULED">Schedule Visit</option>
+                      </select>
 
                       <a
                         href={`tel:${lead.phone}`}
@@ -216,8 +248,12 @@ export const TelecallerDashboard: React.FC = () => {
         {/* Right Column: Tasks & Score */}
         <div className="space-y-6">
           <PerformanceScoreWidget />
-          <TaskManager />
         </div>
+      </div>
+
+      {/* Task Manager (Full Width Below) */}
+      <div className="mt-6">
+        <TaskManager />
       </div>
     </div>
   );

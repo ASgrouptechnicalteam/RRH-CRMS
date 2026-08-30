@@ -101,7 +101,7 @@ export const SalesManagerDashboard: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
           {/* Distinctive Widget: Team distribution view */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

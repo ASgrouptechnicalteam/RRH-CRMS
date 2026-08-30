@@ -140,7 +140,7 @@ export const AttendanceHistory: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-x-auto min-h-[300px]">
+      <div className="flex-1 overflow-x-auto">
         {isLoading && logs.length === 0 ? (
           <div className="flex justify-center items-center h-48 text-slate-500 animate-pulse">
             Loading records...

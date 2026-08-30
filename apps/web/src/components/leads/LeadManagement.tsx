@@ -311,8 +311,9 @@ export const LeadManagement: React.FC = () => {
   const columns: ColumnDef<Lead>[] = [
     {
       key: 'lead_code',
-      header: 'Code',
+      header: 'Lead ID',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (l) => <span className="font-mono font-bold text-navy-900">{l.lead_code}</span>
     },
     {
@@ -322,9 +323,14 @@ export const LeadManagement: React.FC = () => {
       render: (l) => (
         <div>
           <div className="font-bold text-slate-800">{l.customer_name}</div>
-          <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
-            <PhoneCall className="w-3 h-3 text-slate-400" />
-            {l.phone}
+          <div className="flex items-center gap-2 mt-0.5">
+            <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1">
+              <PhoneCall className="w-3 h-3 text-slate-400" />
+              {l.phone}
+            </div>
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-bold uppercase whitespace-nowrap">
+              {l.source}
+            </span>
           </div>
         </div>
       )
@@ -340,16 +346,7 @@ export const LeadManagement: React.FC = () => {
         </div>
       )
     },
-    {
-      key: 'source',
-      header: 'Source',
-      sortable: true,
-      render: (l) => (
-        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold uppercase">
-          {l.source}
-        </span>
-      )
-    },
+
     {
       key: 'assigned_to',
       header: 'Assigned To',
@@ -374,13 +371,12 @@ export const LeadManagement: React.FC = () => {
           );
         }
         return l.assigned_to ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" title={`Assignment: ${l.assignment_type || 'AUTO'}`}>
             <div className="w-6 h-6 rounded-full bg-navy-100 text-navy-800 flex items-center justify-center font-bold text-[10px] shrink-0">
               {l.assigned_to.employee_code.slice(-3)}
             </div>
             <div className="min-w-0">
               <div className="font-bold text-slate-800 text-[11px] truncate">{l.assigned_to.full_name || l.assigned_to.employee_code}</div>
-              <div className="text-[9px] text-slate-400 font-mono truncate">{l.assignment_type || 'AUTO'}</div>
             </div>
           </div>
         ) : (
@@ -392,11 +388,13 @@ export const LeadManagement: React.FC = () => {
       key: 'status',
       header: 'Status',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (l) => <StatusPill status={l.status} type={getStatusMap(l.status) as any} />
     },
     {
       key: 'actions',
-      header: '',
+      header: 'Actions',
+      className: 'whitespace-nowrap',
       render: (l) => (
         <div className="text-right">
           <button

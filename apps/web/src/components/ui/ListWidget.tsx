@@ -8,6 +8,8 @@ export interface ListItem {
   title: string;
   subtitle?: string;
   meta?: React.ReactNode;
+  value?: string;
+  color?: string;
 }
 
 interface ListWidgetProps {
@@ -31,7 +33,7 @@ export function ListWidget({ title, items, viewAllLink, emptyStateMessage = 'No 
       
       <div className="flex-1 overflow-y-auto p-2">
         {items.length === 0 ? (
-          <div className="p-6 text-center text-slate-500 text-sm">
+          <div className="p-4 text-center text-slate-500 text-sm">
             {emptyStateMessage}
           </div>
         ) : (
@@ -41,7 +43,7 @@ export function ListWidget({ title, items, viewAllLink, emptyStateMessage = 'No 
                 <div className="flex items-center min-w-0">
                   {item.icon && (
                     <div className="w-10 h-10 rounded-full bg-navy-50 flex items-center justify-center shrink-0 mr-4 group-hover:bg-white transition-colors">
-                      <item.icon className="w-5 h-5 text-navy-600" />
+                      <item.icon className={`w-5 h-5 ${item.color || 'text-navy-600'}`} />
                     </div>
                   )}
                   <div className="min-w-0">
@@ -51,11 +53,15 @@ export function ListWidget({ title, items, viewAllLink, emptyStateMessage = 'No 
                     )}
                   </div>
                 </div>
-                {item.meta && (
+                {item.meta ? (
                   <div className="ml-4 shrink-0 text-right">
                     {item.meta}
                   </div>
-                )}
+                ) : item.value ? (
+                  <div className="ml-4 shrink-0 text-right text-sm font-semibold text-slate-700">
+                    {item.value}
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

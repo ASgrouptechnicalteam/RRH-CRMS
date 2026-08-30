@@ -6,6 +6,7 @@ export interface ColumnDef<T> {
   header: string;
   sortable?: boolean;
   render?: (row: T) => React.ReactNode;
+  className?: string;
 }
 
 interface DataTableProps<T> {
@@ -14,6 +15,7 @@ interface DataTableProps<T> {
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
   searchable?: boolean;
+  compact?: boolean;
 }
 
 export function DataTable<T extends Record<string, any>>({ 
@@ -21,7 +23,8 @@ export function DataTable<T extends Record<string, any>>({
   data, 
   onRowClick, 
   emptyMessage = 'No records found',
-  searchable = true
+  searchable = true,
+  compact = false
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDesc, setSortDesc] = useState(false);
@@ -79,56 +82,87 @@ export function DataTable<T extends Record<string, any>>({
       )}
       
       <div className="overflow-x-auto flex-1">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {columns.map((col) => (
-                <th 
-                  key={col.key} 
-                  className={`px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${col.sortable ? 'cursor-pointer hover:bg-slate-100 select-none transition-colors' : ''}`}
-                  onClick={() => col.sortable && handleSort(col.key)}
-                >
-                  <div className="flex items-center">
-                    {col.header}
-                    {col.sortable && sortKey === col.key && (
-                      <span className="ml-1 text-navy-500">
-                        {sortDesc ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-                      </span>
-                    )}
-                    {col.sortable && sortKey !== col.key && (
-                      <span className="ml-1 text-slate-300">
-                        <ChevronUp className="w-3 h-3 opacity-0 group-hover:opacity-100" />
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {sortedData.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-500 text-sm">
-                  {emptyMessage}
-                </td>
+        <div className={compact ? 'hidden' : 'hidden md:block'}>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                {columns.map((col) => (
+                  <th 
+                    key={col.key} 
+                    className={`px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider ${col.className || ''} ${col.sortable ? 'cursor-pointer hover:bg-slate-100 select-none transition-colors' : ''}`}
+                    onClick={() => col.sortable && handleSort(col.key)}
+                  >
+                    <div className="flex items-center">
+                      {col.header}
+                      {col.sortable && sortKey === col.key && (
+                        <span className="ml-1 text-navy-500">
+                          {sortDesc ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                        </span>
+                      )}
+                      {col.sortable && sortKey !== col.key && (
+                        <span className="ml-1 text-slate-300">
+                          <ChevronUp className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
               </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sortedData.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} className="px-4 py-6 text-center text-slate-500 text-sm">
+                    {emptyMessage}
+                  </td>
+                </tr>
+              ) : (
+                sortedData.map((row, i) => (
+                  <tr 
+                    key={i} 
+                    className={`group ${onRowClick ? 'cursor-pointer hover:bg-surface/50 transition-colors' : ''}`}
+                    onClick={() => onRowClick && onRowClick(row)}
+                  >
+                    {columns.map((col) => (
+                      <td key={col.key} className={`px-4 py-3 text-sm text-slate-700 ${col.className || ''}`}>
+                        {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className={compact ? 'block' : 'block md:hidden'}>
+          <div className="flex flex-col divide-y divide-slate-100">
+            {sortedData.length === 0 ? (
+              <div className="px-4 py-12 text-center text-slate-500 text-sm">
+                {emptyMessage}
+              </div>
             ) : (
               sortedData.map((row, i) => (
-                <tr 
-                  key={i} 
-                  className={`group ${onRowClick ? 'cursor-pointer hover:bg-surface/50 transition-colors' : ''}`}
+                <div
+                  key={i}
+                  className={`p-4 space-y-3 ${onRowClick ? 'cursor-pointer hover:bg-surface/50 transition-colors active:bg-slate-100' : ''}`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
-                      {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
-                    </td>
+                    <div key={col.key} className="flex flex-col gap-0.5">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        {col.header}
+                      </span>
+                      <div className={`text-sm text-slate-800 ${col.className || ''}`}>
+                        {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
+                      </div>
+                    </div>
                   ))}
-                </tr>
+                </div>
               ))
             )}
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
     </div>
   );

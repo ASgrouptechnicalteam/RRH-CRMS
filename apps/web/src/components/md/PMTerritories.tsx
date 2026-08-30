@@ -124,7 +124,7 @@ export const PMTerritories: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">

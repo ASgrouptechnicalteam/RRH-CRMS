@@ -20,6 +20,12 @@ export const MDExecutiveDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const [execMetrics, setExecMetrics] = useState<ExecMetricsData | null>(null);
+  
+  // Real-time states for formerly hardcoded placeholders
+  const [salesValue, setSalesValue] = useState<number | string>('...');
+  const [duePayments, setDuePayments] = useState<number | string>('...');
+  const [reassignmentEscalations, setReassignmentEscalations] = useState<ListItem[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -34,9 +40,46 @@ export const MDExecutiveDashboard: React.FC = () => {
       } else {
         setHasError(true);
       }
+
+      // Fetch bookings for financial metrics
+      const bookingRes = await fetchWithAuth(`${API_BASE_URL}/bookings`);
+      if (bookingRes.ok) {
+        const bookingsData = await bookingRes.json();
+        const bookingsList = Array.isArray(bookingsData) ? bookingsData : (bookingsData.bookings || []);
+        
+        const totalSales = bookingsList
+          .filter((b: any) => b.status === 'CONFIRMED' || b.status === 'COMPLETED')
+          .reduce((sum: number, b: any) => sum + (b.agreed_price || 0), 0);
+          
+        const totalDue = bookingsList
+          .filter((b: any) => b.status !== 'CANCELLED')
+          .reduce((sum: number, b: any) => sum + (b.balance_amount || 0), 0);
+
+        setSalesValue(`₹${totalSales.toLocaleString()}`);
+        setDuePayments(`₹${totalDue.toLocaleString()}`);
+      }
+
+      // Fetch leads for Escalations
+      const leadsRes = await fetchWithAuth(`${API_BASE_URL}/leads`);
+      if (leadsRes.ok) {
+        const leadsData = await leadsRes.json();
+        const escalated = (leadsData.leads || []).filter((l: any) => l.status === 'ESCALATED' || l.status === 'UNASSIGNED');
+        
+        setReassignmentEscalations(escalated.map((l: any) => ({
+          id: String(l.id),
+          title: l.customer_name || 'Unknown Lead',
+          subtitle: l.status === 'ESCALATED' ? 'Escalated by Staff' : 'Unassigned Route',
+          icon: ArrowRightLeft,
+          meta: l.status,
+          color: 'text-amber-500'
+        })));
+      }
+
     } catch (e) {
       console.error('Fetch MD executive metrics error:', e);
       setHasError(true);
+      setSalesValue('—');
+      setDuePayments('—');
     } finally {
       setIsLoading(false);
     }
@@ -49,8 +92,6 @@ export const MDExecutiveDashboard: React.FC = () => {
   // Compute KPIs
   const totalLeads = execMetrics?.totalLeadsCount || 0;
   const bookings = execMetrics?.totalClosedDeals || 0;
-  const salesValue = "₹0"; // Placeholder: Not currently fetched in ExecMetricsData
-  const duePayments = "₹0"; // Placeholder: Not currently fetched in ExecMetricsData
 
   // Prepare Priority Alerts list items
   const priorityAlerts: ListItem[] = [];
@@ -59,7 +100,8 @@ export const MDExecutiveDashboard: React.FC = () => {
       id: 'att-ex',
       title: `${execMetrics.attendanceExceptionsCount} Attendance Exception${execMetrics.attendanceExceptionsCount === 1 ? '' : 's'}`,
       subtitle: 'Requires HR/Manager review',
-      icon: Clock
+      icon: Clock,
+      color: 'text-danger-600'
     });
   }
   if (execMetrics?.pendingVerificationPropertiesCount) {
@@ -67,7 +109,8 @@ export const MDExecutiveDashboard: React.FC = () => {
       id: 'prop-ver',
       title: `${execMetrics.pendingVerificationPropertiesCount} Properties Pending Verification`,
       subtitle: 'Awaiting PM verification',
-      icon: Building
+      icon: Building,
+      color: 'text-amber-600'
     });
   }
   if (execMetrics?.pendingApprovalPropertiesCount) {
@@ -75,12 +118,10 @@ export const MDExecutiveDashboard: React.FC = () => {
       id: 'prop-app',
       title: `${execMetrics.pendingApprovalPropertiesCount} Properties Awaiting Approval`,
       subtitle: 'Requires Executive approval',
-      icon: ShieldCheck
+      icon: ShieldCheck,
+      color: 'text-emerald-600'
     });
   }
-
-  // Placeholder for Distinctive Widget
-  const reassignmentEscalations: ListItem[] = [];
 
   return (
     <div className="space-y-6">
@@ -112,17 +153,17 @@ export const MDExecutiveDashboard: React.FC = () => {
         />
         <StatCard 
           label="Sales Value" 
-          value={isLoading ? '...' : salesValue} 
+          value={salesValue} 
           icon={IndianRupee} 
         />
         <StatCard 
           label="Due Payments" 
-          value={isLoading ? '...' : duePayments} 
+          value={duePayments} 
           icon={Clock} 
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
           {/* Distinctive Widget: Reassignment Escalations */}
           <ListWidget 

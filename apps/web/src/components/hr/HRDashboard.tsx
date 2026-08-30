@@ -57,30 +57,35 @@ const TeamPerformanceTab: React.FC = () => {
       key: 'assignedLeads',
       header: 'Total Assigned',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (r) => <span className="font-bold text-slate-700">{r.assignedLeads}</span>
     },
     {
       key: 'contacted',
       header: 'Contacted',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (r) => <span className="font-bold text-navy-600">{r.contacted}</span>
     },
     {
       key: 'qualified',
       header: 'Qualified',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (r) => <span className="font-bold text-gold-600">{r.qualified}</span>
     },
     {
       key: 'won',
       header: 'Booked (Won)',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (r) => <span className="font-bold text-success-600">{r.won}</span>
     },
     {
       key: 'conversionRate',
       header: 'Conversion %',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (r) => (
         <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${r.conversionRate >= 10 ? 'bg-success-100 text-success-800' : 'bg-slate-100 text-slate-700'}`}>
           {r.conversionRate.toFixed(1)}%

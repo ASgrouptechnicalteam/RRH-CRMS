@@ -47,6 +47,7 @@ export const BookingManagement: React.FC = () => {
       key: 'booking_code',
       header: 'Booking',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (b) => (
         <div>
           <div className="font-mono font-bold text-navy-800 text-[11px] mb-0.5">{b.booking_code}</div>
@@ -86,6 +87,7 @@ export const BookingManagement: React.FC = () => {
     {
       key: 'financials',
       header: 'Financials',
+      className: 'whitespace-nowrap',
       render: (b) => (
         <div className="flex flex-col gap-1">
           <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
@@ -109,6 +111,7 @@ export const BookingManagement: React.FC = () => {
       key: 'status',
       header: 'Status',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (b) => {
         let type: 'pending' | 'success' | 'danger' = 'pending';
         if (b.status === 'CONFIRMED' || b.status === 'COMPLETED') type = 'success';

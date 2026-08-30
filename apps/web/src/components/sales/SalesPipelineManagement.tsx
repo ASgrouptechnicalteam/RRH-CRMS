@@ -117,9 +117,9 @@ export const SalesPipelineManagement: React.FC = () => {
       <SalesPipelineMetrics metrics={pipelineMetrics ?? {}} isLoading={isLoading && !pipelineMetrics} />
 
       {/* Pipeline Content Area */}
-      <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
+      <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {isLoading && opportunities.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center min-h-[300px]">
             <div className="flex flex-col items-center gap-3 text-slate-400">
               <div className="w-8 h-8 border-4 border-navy-500 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-sm font-semibold">Loading sales pipeline...</span>
@@ -132,7 +132,7 @@ export const SalesPipelineManagement: React.FC = () => {
             onStageChange={handleStageChange}
           />
         ) : opportunities.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+          <div className="flex items-center justify-center py-12 text-slate-400 text-sm">
             No sales opportunities found.
           </div>
         ) : (

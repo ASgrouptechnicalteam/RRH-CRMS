@@ -146,7 +146,7 @@ export const AdminAnalyticsPortal: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Column: Analytics & Stats */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">

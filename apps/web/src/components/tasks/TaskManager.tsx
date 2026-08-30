@@ -10,7 +10,11 @@ import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatusPill } from '../ui/StatusPill';
 import { StatCard } from '../ui/StatCard';
 
-export const TaskManager: React.FC = () => {
+interface TaskManagerProps {
+  compact?: boolean;
+}
+
+export const TaskManager: React.FC<TaskManagerProps> = ({ compact = false }) => {
   const { user, fetchWithAuth } = useAuth();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [teamTasks, setTeamTasks] = useState<TaskItem[]>([]);
@@ -235,6 +239,7 @@ export const TaskManager: React.FC = () => {
       key: 'deadline',
       header: 'Timeline',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (t) => (
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono">
@@ -248,6 +253,7 @@ export const TaskManager: React.FC = () => {
     {
       key: 'assignee',
       header: 'Assignee',
+      className: 'whitespace-nowrap',
       render: (t) => (
         t.assignee ? (
           <div className="flex items-center gap-2">
@@ -263,6 +269,7 @@ export const TaskManager: React.FC = () => {
       key: 'status',
       header: 'Status',
       sortable: true,
+      className: 'whitespace-nowrap',
       render: (t) => (
         <StatusPill 
           status={t.status || 'PENDING'} 
@@ -273,6 +280,7 @@ export const TaskManager: React.FC = () => {
     {
       key: 'actions',
       header: 'Action',
+      className: 'whitespace-nowrap',
       render: (t) => (
         <div className="flex items-center justify-end gap-2">
           {t.status === 'COMPLETED' ? (
@@ -317,15 +325,17 @@ export const TaskManager: React.FC = () => {
       )}
 
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30">
+      <div className={`bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 rounded-3xl ${compact ? 'p-4' : 'p-6'} text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-navy-700/30`}>
         <div>
           <div className="flex items-center gap-2 mb-1">
             <ListTodo className="w-5 h-5 text-gold-500" />
             <h2 className="text-xl font-extrabold tracking-tight">Task Management</h2>
           </div>
-          <p className="text-xs text-navy-200/80">
-            Log calls, accept visits, and manage follow-ups. Every task drives the CRM funnel forward.
-          </p>
+          {!compact && (
+            <p className="text-xs text-navy-200/80">
+              Log calls, accept visits, and manage follow-ups. Every task drives the CRM funnel forward.
+            </p>
+          )}
         </div>
 
         {canCreateTask && (
@@ -409,6 +419,7 @@ export const TaskManager: React.FC = () => {
             columns={columns}
             data={filteredTasks}
             searchable={true}
+            compact={compact}
             emptyMessage="No tasks found matching your criteria."
           />
         )}

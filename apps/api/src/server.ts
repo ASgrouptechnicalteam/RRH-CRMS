@@ -62,8 +62,11 @@ app.use(express.json());
 
 import { apiRateLimiter } from './middleware/rateLimiter';
 
-// Serve ONLY property images publicly.
-app.use('/uploads/properties', express.static(path.join(process.cwd(), 'uploads', 'properties')));
+// Serve ONLY property images publicly if using local storage.
+if (process.env.STORAGE_DRIVER !== 'sftp') {
+  const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+  app.use('/uploads/properties', express.static(path.join(uploadDir, 'properties')));
+}
 
 // Global API Rate Limiter
 app.use('/api/', apiRateLimiter);
@@ -279,6 +282,16 @@ if (process.env.NODE_ENV === 'production') {
   if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length < 32) {
     console.error('FATAL: ENCRYPTION_KEY is missing or too short for production. KYC data cannot be encrypted safely.');
     process.exit(1);
+  }
+}
+
+if (process.env.STORAGE_DRIVER === 'sftp') {
+  const requiredSftpVars = ['SFTP_HOST', 'SFTP_USERNAME', 'SFTP_PASSWORD', 'SFTP_REMOTE_BASE_PATH', 'SFTP_PUBLIC_BASE_URL'];
+  for (const v of requiredSftpVars) {
+    if (!process.env[v]) {
+      console.error(`FATAL: ${v} must be provided when STORAGE_DRIVER is set to sftp.`);
+      process.exit(1);
+    }
   }
 }
 

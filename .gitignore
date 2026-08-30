@@ -25,7 +25,6 @@ _hygiene_archive/
 .claude/
 .agents/
 .vscode/
-tests/
 
 # Test artifacts (logs, snapshots, cache)
 test-output.txt

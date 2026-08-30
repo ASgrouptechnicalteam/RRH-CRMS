@@ -173,6 +173,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
   { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks' },
+  { id: 'daily-report', label: 'Daily Report', icon: FileCheck, path: '/daily-report' },
 
   // FINANCE
   { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },

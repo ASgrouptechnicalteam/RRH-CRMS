@@ -12,6 +12,9 @@ interface AttendanceLog {
     full_name: string;
     employee_code: string;
   };
+  branch_name?: string | null;
+  checkout_branch_name?: string | null;
+  isCrossBranch?: boolean;
 }
 
 export const LiveAttendanceMonitor: React.FC = () => {
@@ -93,8 +96,19 @@ export const LiveAttendanceMonitor: React.FC = () => {
               <div className="font-bold text-slate-800">
                 {log.employee.full_name}
               </div>
-              <div className="text-xs text-slate-500 font-mono mt-0.5">
-                {log.employee.employee_code}
+              <div className="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>{log.employee.employee_code}</span>
+                {log.branch_name && (
+                  <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                    {log.branch_name}
+                  </span>
+                )}
+                {log.isCrossBranch && log.checkout_branch_name && (
+                  <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider flex items-center gap-1 border border-red-200">
+                    <AlertTriangle className="w-3 h-3" />
+                    Out: {log.checkout_branch_name}
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-right">

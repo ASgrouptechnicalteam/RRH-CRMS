@@ -13,10 +13,15 @@ export const KioskCameraScanner: React.FC<KioskCameraScannerProps> = ({ onScan, 
   const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const onScanRef = useRef(onScan);
   
   // Track mounting to prevent state updates on unmounted component
   const mounted = useRef(true);
   
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -77,7 +82,7 @@ export const KioskCameraScanner: React.FC<KioskCameraScannerProps> = ({ onScan, 
           },
           (decodedText) => {
             if (mounted.current) {
-              onScan(decodedText);
+              onScanRef.current(decodedText);
             }
           },
           (errorMessage) => {
@@ -93,7 +98,7 @@ export const KioskCameraScanner: React.FC<KioskCameraScannerProps> = ({ onScan, 
 
     startScanner();
 
-  }, [activeCameraId, isActive, onScan]);
+  }, [activeCameraId, isActive]);
 
   const toggleCamera = () => {
     if (cameras.length > 1 && activeCameraId) {

@@ -99,20 +99,31 @@ const parseAndVerifyQR = (req: AuthenticatedRequest, qrPayload: any) => {
   return isValid ? payload : null;
 };
 
-// POST /api/v1/attendance/scan - Verify QR and Stamp Attendance (IST rules)
+// POST /api/v1/attendance/scan - Verify QR and Stamp Attendance (Unified Auto-Detect)
 // Kiosk-only: must be authenticated with a type:'KIOSK' token.
 // The token's embedded branchId is written to AttendanceLog.branch_id so the
-// attendance record carries the physical scan location, not the employee's
-// assigned branch.
+// attendance record carries the physical scan location.
+
+const scanDebounceMap = new Map<number, number>();
+const DEBOUNCE_MS = 10000;
+
 router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedRequest, res: Response) => {
   const targetCompanyId = req.kiosk!.companyId;
-  const branchId = req.kiosk!.branchId; // physical scan location
+  const branchId = req.kiosk!.branchId;
 
   try {
     const payload = parseAndVerifyQR(req, req.body.qrPayload);
     if (!payload) return res.status(400).json({ error: 'Invalid or forged QR Code token' });
 
     const targetEmployeeId = payload.employeeId;
+
+    // Debounce check
+    const lastScanTime = scanDebounceMap.get(targetEmployeeId);
+    const nowTime = Date.now();
+    if (lastScanTime && nowTime - lastScanTime < DEBOUNCE_MS) {
+      return res.status(429).json({ error: 'Please wait 10 seconds before scanning again' });
+    }
+    scanDebounceMap.set(targetEmployeeId, nowTime);
 
     // Load employee and verify Tenant Isolation & Status
     const scannedEmployee = await p.employee.findUnique({
@@ -130,182 +141,109 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
     const now = new Date();
     const { dateString, timeString } = getISTComponents(now);
 
-    // Concurrency Protection via Transaction
     const result = await p.$transaction(
       async (tx: import('@prisma/client').Prisma.TransactionClient) => {
-        const existingLogs = await tx.attendanceLog.findMany({
-          where: { employee_id: targetEmployeeId },
-          orderBy: { check_in_at: 'desc' },
-          take: 5,
-        });
-
-        const activeCheckIn = existingLogs.find((l: any) => l.check_out_at === null);
-        if (activeCheckIn) {
-          const checkInTime = new Date(activeCheckIn.check_in_at).getTime();
-          const diffHours = (now.getTime() - checkInTime) / (1000 * 60 * 60);
-
-          if (diffHours < 16) {
-            return { error: 'You are already checked in. Did you mean to check out?' };
-          } else {
-            await tx.attendanceLog.update({
-              where: { id: activeCheckIn.id },
-              data: {
-                check_out_at: new Date(checkInTime + 9 * 60 * 60 * 1000), // Default 9 hours shift
-                working_duration_minutes: 9 * 60,
-                notes: 'SYSTEM_AUTO_CLOSE',
-              },
-            });
-            // Continue to create new log
-          }
-        }
-
-
-        // Check for an approved late-checkin proposal covering today (IST)
+        // Fetch all logs for this employee for TODAY (IST)
         const istTodayStart = new Date(`${dateString}T00:00:00+05:30`);
         const istTodayEnd   = new Date(`${dateString}T23:59:59+05:30`);
-        const approvedProposal = await tx.attendanceProposal.findFirst({
-          where: {
+        
+        const todayLogs = await tx.attendanceLog.findMany({
+          where: { 
             employee_id: targetEmployeeId,
-            type: 'LATE_CHECKIN',
-            status: 'APPROVED',
-            target_date: { gte: istTodayStart, lte: istTodayEnd },
+            check_in_at: { gte: istTodayStart, lte: istTodayEnd }
           },
+          orderBy: { check_in_at: 'desc' },
         });
-        const hasApprovedProposal = !!approvedProposal;
 
-        const calculatedStatus = calculateAttendanceStatus(now, hasApprovedProposal, scannedEmployee.employment_type || 'FULL_TIME');
-        const newLog = await tx.attendanceLog.create({
-          data: {
-            employee_id: targetEmployeeId,
-            check_in_at: now,
-            status: calculatedStatus,
-            source: 'QR_SCAN',
-            ...(branchId != null ? { branch_id: branchId } : {}), // populate only for kiosk scans
-          },
-        });
-        return { alreadyStamped: false, log: newLog };
+        const activeCheckIn = todayLogs.find((l: any) => l.check_out_at === null);
+        
+        if (activeCheckIn) {
+          // --- CHECK-OUT LOGIC ---
+          // Kiosk logout gate: daily report check
+          if (scannedEmployee.report_required) {
+            const todayReport = await tx.dailyReport.findFirst({
+              where: {
+                employee_id: targetEmployeeId,
+                submitted_at: {
+                  gte: istTodayStart,
+                  lte: istTodayEnd,
+                },
+              },
+            });
+            if (!todayReport) {
+              return { error: "Please submit today's daily report before logging out. Go to your account, submit the report, then come back and scan out." };
+            }
+          }
+
+          const checkInTime = new Date(activeCheckIn.check_in_at).getTime();
+          const diffMs = now.getTime() - checkInTime;
+          const durationMinutes = Math.max(0, Math.round(diffMs / 60000));
+
+          const updatedLog = await tx.attendanceLog.update({
+            where: { id: activeCheckIn.id },
+            data: {
+              check_out_at: now,
+              working_duration_minutes: durationMinutes,
+              ...(branchId != null ? { checkout_branch_id: branchId } : {}),
+            },
+          });
+
+          return { action: 'CHECK_OUT', log: updatedLog };
+        } else {
+          // --- CHECK-IN LOGIC ---
+          // Check if there is already a completed log for today
+          if (todayLogs.length > 0) {
+             return { error: "Attendance already completed for today" };
+          }
+
+          // Check for an approved late-checkin proposal covering today (IST)
+          const approvedProposal = await tx.attendanceProposal.findFirst({
+            where: {
+              employee_id: targetEmployeeId,
+              type: 'LATE_CHECKIN',
+              status: 'APPROVED',
+              target_date: { gte: istTodayStart, lte: istTodayEnd },
+            },
+          });
+          const hasApprovedProposal = !!approvedProposal;
+
+          const calculatedStatus = calculateAttendanceStatus(now, hasApprovedProposal, scannedEmployee.employment_type || 'FULL_TIME');
+          const newLog = await tx.attendanceLog.create({
+            data: {
+              employee_id: targetEmployeeId,
+              check_in_at: now,
+              status: calculatedStatus,
+              source: 'QR_SCAN',
+              ...(branchId != null ? { branch_id: branchId } : {}),
+            },
+          });
+          return { action: 'CHECK_IN', log: newLog };
+        }
       },
-      { isolationLevel: 'Serializable' },
+      { isolationLevel: 'Serializable' }
     );
 
     if (result.error) {
       return res.status(400).json({ error: result.error });
     }
 
-    if (result.alreadyStamped) {
-      return res.status(200).json({
-        message: 'Already checked in for today',
-        alreadyStamped: true,
-        status: result.log?.status,
-        checkInAt: result.log?.check_in_at,
-        timeIST: timeString,
-      });
-    }
-
     return res.status(200).json({
-      message: `Attendance stamped successfully as ${result.log?.status}`,
-      alreadyStamped: false,
+      message: `Attendance stamped successfully`,
+      action: result.action,
       status: result.log?.status,
       checkInAt: result.log?.check_in_at,
+      checkOutAt: result.log?.check_out_at,
       timeIST: timeString,
+      employeeName: scannedEmployee.full_name,
     });
   } catch (error: any) {
     if (error.code === 'P2034') {
-      // Transaction conflict / deadlock. Another request won the race.
-      // We can safely assume they are already checked in.
       return res.status(400).json({
-        error: 'You are already checked in. Did you mean to check out?'
+        error: 'Concurrency error processing attendance. Please try again.'
       });
     }
     console.error('Scan attendance error:', error);
     return res.status(500).json({ error: 'Attendance scan verification failed' });
-  }
-});
-
-// POST /api/v1/attendance/checkout - Verify QR and Stamp Checkout
-// Kiosk-only: must be authenticated with a type:'KIOSK' token.
-// branch_id from the kiosk token is written to AttendanceLog so the checkout
-// record carries the physical scan location.
-router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedRequest, res: Response) => {
-  const targetCompanyId = req.kiosk!.companyId;
-  const branchId = req.kiosk!.branchId;
-
-  try {
-    const payload = parseAndVerifyQR(req, req.body.qrPayload);
-    if (!payload) return res.status(400).json({ error: 'Invalid or forged QR Code token' });
-
-    const targetEmployeeId = payload.employeeId;
-
-    const scannedEmployee = await p.employee.findUnique({ where: { id: targetEmployeeId } });
-    if (!scannedEmployee || scannedEmployee.company_id !== targetCompanyId) {
-      return res.status(403).json({ error: 'Employee does not belong to your company' });
-    }
-
-    const now = new Date();
-    const { dateString, timeString } = getISTComponents(now);
-
-    const result = await p.$transaction(
-      async (tx: import('@prisma/client').Prisma.TransactionClient) => {
-        // Find active check-in
-        const activeLog = await tx.attendanceLog.findFirst({
-          where: { employee_id: targetEmployeeId, check_out_at: null },
-          orderBy: { check_in_at: 'desc' },
-        });
-
-        if (!activeLog) return { error: 'No active check-in found to check out from. Please check in first.' };
-
-        // Kiosk logout gate: employees with report_required=true must submit today's
-        // daily report before checking out. Reuses the same lookup logic as GET /reports/today-status.
-        if (scannedEmployee.report_required) {
-          const todayReport = await tx.dailyReport.findFirst({
-            where: {
-              employee_id: targetEmployeeId,
-              submitted_at: {
-                gte: new Date(`${dateString}T00:00:00.000Z`),
-                lte: new Date(`${dateString}T23:59:59.999Z`),
-              },
-            },
-          });
-          if (!todayReport) {
-            return { error: "Please submit today's daily report before logging out. Go to your account, submit the report, then come back and scan out." };
-          }
-        }
-
-        const checkInTime = new Date(activeLog.check_in_at).getTime();
-        const diffHours = (now.getTime() - checkInTime) / (1000 * 60 * 60);
-
-        if (diffHours >= 16) {
-          return { error: 'No active check-in found to check out from. Please check in first.' };
-        }
-
-        const diffMs = now.getTime() - checkInTime;
-        const durationMinutes = Math.max(0, Math.round(diffMs / 60000));
-
-        const updatedLog = await tx.attendanceLog.update({
-          where: { id: activeLog.id },
-          data: {
-            check_out_at: now,
-            working_duration_minutes: durationMinutes,
-            ...(branchId != null ? { checkout_branch_id: branchId } : {}), // populate only for kiosk scans
-          },
-        });
-
-        return { log: updatedLog };
-      },
-      { isolationLevel: 'Serializable' },
-    );
-
-    if (result.error) return res.status(400).json({ error: result.error });
-
-    return res.status(200).json({
-      message: 'Checked out successfully',
-      checkOutAt: result.log?.check_out_at,
-      working_duration_minutes: result.log?.working_duration_minutes,
-      timeIST: timeString,
-    });
-  } catch (error) {
-    console.error('Checkout error:', error);
-    return res.status(500).json({ error: 'Attendance checkout failed' });
   }
 });
 
@@ -399,6 +337,13 @@ router.get(
     try {
       const { dateString } = getISTComponents(new Date());
 
+      // Fetch all branches for mapping
+      const branches = await p.branch.findMany({
+        where: { company_id: req.user!.companyId },
+        select: { id: true, name: true }
+      });
+      const branchMap = new Map(branches.map(b => [b.id, b.name]));
+
       // Fetch all attendance logs that occurred today
       const allLogs = await p.attendanceLog.findMany({
         where: { employee: { company_id: req.user!.companyId } },
@@ -418,6 +363,8 @@ router.get(
         return getISTComponents(new Date(l.check_in_at)).dateString === dateString;
       }).map((log: any) => ({
         ...log,
+        branch_name: log.branch_id ? branchMap.get(log.branch_id) || 'Unknown' : null,
+        checkout_branch_name: log.checkout_branch_id ? branchMap.get(log.checkout_branch_id) || 'Unknown' : null,
         isCrossBranch: log.branch_id !== null && log.checkout_branch_id !== null && log.branch_id !== log.checkout_branch_id,
       }));
 
@@ -465,6 +412,13 @@ router.get(
         }
       }
 
+      // Fetch branches for mapping
+      const branches = await p.branch.findMany({
+        where: { company_id: req.user!.companyId },
+        select: { id: true, name: true }
+      });
+      const branchMap = new Map(branches.map(b => [b.id, b.name]));
+
       const [rawLogs, total] = await Promise.all([
         p.attendanceLog.findMany({
           where: whereClause,
@@ -485,6 +439,8 @@ router.get(
 
       const logs = rawLogs.map((log: any) => ({
         ...log,
+        branch_name: log.branch_id ? branchMap.get(log.branch_id) || 'Unknown' : null,
+        checkout_branch_name: log.checkout_branch_id ? branchMap.get(log.checkout_branch_id) || 'Unknown' : null,
         isCrossBranch: log.branch_id !== null && log.checkout_branch_id !== null && log.branch_id !== log.checkout_branch_id,
       }));
 
@@ -575,6 +531,64 @@ router.post(
     } catch (error) {
       console.error('Manual correction error:', error);
       return res.status(500).json({ error: 'Failed to process manual correction' });
+    }
+  }
+);
+
+// PUT /api/v1/attendance/:id/override - HR Manual Attendance Correction
+router.put(
+  '/:id/override',
+  authenticateToken,
+  requireRole([Roles.HR_MANAGER, Roles.MD, Roles.ADMIN]),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const logId = parseInt(req.params.id, 10);
+      const { check_in_at, check_out_at, status, reason } = req.body;
+
+      if (!reason || reason.trim() === '') {
+        return res.status(400).json({ error: 'A specific reason is required for manual overrides.' });
+      }
+
+      // Verify log exists and belongs to the admin's company
+      const existingLog = await p.attendanceLog.findUnique({
+        where: { id: logId },
+        include: { employee: true },
+      });
+
+      if (!existingLog || existingLog.employee.company_id !== req.user!.companyId) {
+        return res.status(404).json({ error: 'Attendance record not found.' });
+      }
+
+      let working_duration_minutes = existingLog.working_duration_minutes;
+
+      if (check_in_at && check_out_at) {
+        const diffMs = new Date(check_out_at).getTime() - new Date(check_in_at).getTime();
+        working_duration_minutes = Math.max(0, Math.round(diffMs / 60000));
+      } else if (check_in_at && existingLog.check_out_at) {
+        const diffMs = new Date(existingLog.check_out_at).getTime() - new Date(check_in_at).getTime();
+        working_duration_minutes = Math.max(0, Math.round(diffMs / 60000));
+      } else if (check_out_at && existingLog.check_in_at) {
+        const diffMs = new Date(check_out_at).getTime() - new Date(existingLog.check_in_at).getTime();
+        working_duration_minutes = Math.max(0, Math.round(diffMs / 60000));
+      }
+
+      const updatedLog = await p.attendanceLog.update({
+        where: { id: logId },
+        data: {
+          ...(check_in_at && { check_in_at: new Date(check_in_at) }),
+          ...(check_out_at && { check_out_at: new Date(check_out_at) }),
+          ...(status && { status }),
+          working_duration_minutes,
+          source: 'HR_MANUAL',
+          created_by_id: req.user!.employeeId,
+          reason: reason,
+        },
+      });
+
+      return res.status(200).json({ message: 'Attendance record updated successfully', log: updatedLog });
+    } catch (error) {
+      console.error('HR override error:', error);
+      return res.status(500).json({ error: 'Failed to apply manual override.' });
     }
   }
 );

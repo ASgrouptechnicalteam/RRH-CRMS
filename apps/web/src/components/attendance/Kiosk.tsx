@@ -12,7 +12,7 @@ export const Kiosk: React.FC = () => {
   const [scannedData, setScannedData] = useState<string>('');
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [useScannerType, setUseScannerType] = useState<ScannerType>('CAMERA');
+  const [scannerType, setScannerType] = useState<ScannerType>('CAMERA');
 
   // Live Time state
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -73,6 +73,21 @@ export const Kiosk: React.FC = () => {
     setErrorMessage(null);
   };
 
+  const getGreeting = (type: string, name?: string) => {
+    const hour = currentTime.getHours();
+    const displayName = name ? name.split(' ')[0] : 'Employee'; // First name
+
+    if (type === 'CHECK_IN') {
+      if (hour < 12) return `Good Morning, ${displayName}!`;
+      if (hour < 16) return `Good Afternoon, ${displayName}!`;
+      return `Good Evening, ${displayName}!`;
+    } else {
+      if (hour < 15) return `Have a great rest of your day, ${displayName}!`;
+      if (hour < 19) return `Have a great evening, ${displayName}!`;
+      return `Good Night, ${displayName}!`;
+    }
+  };
+
   const fetchWithKioskToken = async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers || {});
     if (kioskToken.current) {
@@ -131,7 +146,6 @@ export const Kiosk: React.FC = () => {
     setMode('PROCESSING');
 
     try {
-      // First try check-in
       const res = await fetchWithKioskToken(`${API_BASE_URL}/attendance/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,34 +155,22 @@ export const Kiosk: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Check-in failed');
+        throw new Error(data.error || 'Scan failed');
       }
 
-      // Check-in success or already checked in
-      if (data.alreadyStamped) {
-        // If already checked in today, perform Checkout
-        const outRes = await fetchWithKioskToken(`${API_BASE_URL}/attendance/checkout`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ qrPayload: payload }),
-        });
-
-        const outData = await outRes.json();
-
-        if (!outRes.ok) {
-          throw new Error(outData.error || 'Checkout failed');
-        }
-
+      if (data.action === 'CHECK_OUT') {
         setScanResult({
           type: 'CHECK_OUT',
-          time: outData.timeIST,
-          duration: outData.working_duration_minutes,
+          time: data.timeIST,
+          duration: data.working_duration_minutes,
+          name: data.employeeName,
         });
       } else {
         setScanResult({
           type: 'CHECK_IN',
           time: data.timeIST,
           status: data.status,
+          name: data.employeeName,
         });
       }
 
@@ -343,21 +345,21 @@ export const Kiosk: React.FC = () => {
             <div className="flex justify-center mb-6">
               <div className="bg-slate-800 p-1 rounded-full inline-flex border border-slate-700">
                 <button 
-                  onClick={() => setUseScannerType('CAMERA')}
-                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${useScannerType === 'CAMERA' ? 'bg-navy-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                  onClick={() => setScannerType('CAMERA')}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${scannerType === 'CAMERA' ? 'bg-navy-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   Camera Scanner
                 </button>
                 <button 
-                  onClick={() => setUseScannerType('USB')}
-                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${useScannerType === 'USB' ? 'bg-navy-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                  onClick={() => setScannerType('USB')}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${scannerType === 'USB' ? 'bg-navy-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   USB Scanner
                 </button>
               </div>
             </div>
 
-            {useScannerType === 'CAMERA' ? (
+            {scannerType === 'CAMERA' ? (
               <div className="mb-6">
                 <h2 className="text-3xl font-bold mb-2 text-slate-100">Scan QR Code</h2>
                 <KioskCameraScanner onScan={handleScan} isActive={true} />
@@ -405,9 +407,12 @@ export const Kiosk: React.FC = () => {
               {scanResult.type === 'CHECK_IN' ? <CheckCircle2 className="w-12 h-12" /> : <LogOut className="w-12 h-12" />}
             </div>
 
-            <h2 className="text-3xl font-bold text-white mb-2">
-              {scanResult.type === 'CHECK_IN' ? 'Check-In Successful' : 'Check-Out Successful'}
+            <h2 className="text-3xl font-bold text-white mb-1">
+              {scanResult.type ? getGreeting(scanResult.type, scanResult.name) : ''}
             </h2>
+            <p className="text-navy-300 font-medium tracking-wide uppercase text-sm mb-2">
+              {scanResult.type === 'CHECK_IN' ? 'Check-In Successful' : 'Check-Out Successful'}
+            </p>
 
             <div className="mt-6 space-y-4">
               <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">

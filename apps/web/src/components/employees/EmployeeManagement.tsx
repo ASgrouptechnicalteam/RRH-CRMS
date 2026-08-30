@@ -104,6 +104,7 @@ export const EmployeeManagement: React.FC = () => {
   const [dossierEmp, setDossierEmp] = useState<Employee | null>(null);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [qrBadgeEmp, setQrBadgeEmp] = useState<Employee | null>(null);
+  const [qrBadgeData, setQrBadgeData] = useState<string | null>(null);
   const [resetPwdEmp, setResetPwdEmp] = useState<Employee | null>(null);
 
   // Employment Details
@@ -314,6 +315,20 @@ export const EmployeeManagement: React.FC = () => {
   const totalActive = employees.filter((e) => e.status === 'ACTIVE').length;
   const totalExempt = employees.filter((e) => !e.attendanceRequired).length;
 
+  const handleOpenQrBadge = async (emp: Employee) => {
+    setQrBadgeEmp(emp);
+    setQrBadgeData(null);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/employees/${emp.id}/qr`);
+      const data = await res.json();
+      if (res.ok && data.qrData) {
+        setQrBadgeData(data.qrData);
+      }
+    } catch (e) {
+      console.error('Failed to fetch QR');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Stats Overview */}
@@ -504,7 +519,7 @@ export const EmployeeManagement: React.FC = () => {
                         </button>
 
                         <button
-                          onClick={() => setQrBadgeEmp(emp)}
+                          onClick={() => handleOpenQrBadge(emp)}
                           className="p-1.5 text-slate-600 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors border border-slate-200"
                           title="View & Print Visual 2D QR ID Badge"
                         >
@@ -732,7 +747,13 @@ export const EmployeeManagement: React.FC = () => {
             </div>
 
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 inline-block mb-3">
-              <QRCodeVisual value={qrBadgeEmp.employeeCode} size={200} label={qrBadgeEmp.employeeCode} />
+              {qrBadgeData ? (
+                <QRCodeVisual value={qrBadgeData} size={200} label={qrBadgeEmp.employeeCode} />
+              ) : (
+                <div className="w-[200px] h-[200px] flex items-center justify-center text-slate-400">
+                  <RefreshCw className="w-8 h-8 animate-spin" />
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-slate-500 font-medium mb-4">

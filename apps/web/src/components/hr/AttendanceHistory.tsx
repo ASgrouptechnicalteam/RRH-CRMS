@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { Search, Calendar, ChevronLeft, ChevronRight, Clock, AlertCircle, Edit } from 'lucide-react';
 import { ManualCorrectionModal } from './ManualCorrectionModal';
+import { AttendanceOverrideModal } from './AttendanceOverrideModal';
 
 interface AttendanceLog {
   id: number;
@@ -15,6 +16,9 @@ interface AttendanceLog {
     full_name: string;
     employee_code: string;
   };
+  branch_name?: string | null;
+  checkout_branch_name?: string | null;
+  isCrossBranch?: boolean;
 }
 
 export const AttendanceHistory: React.FC = () => {
@@ -24,6 +28,7 @@ export const AttendanceHistory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [overrideLog, setOverrideLog] = useState<AttendanceLog | null>(null);
   
   // Filters
   const [search, setSearch] = useState('');
@@ -159,6 +164,9 @@ export const AttendanceHistory: React.FC = () => {
                 <th className="px-6 py-3 font-semibold">Check-Out</th>
                 <th className="px-6 py-3 font-semibold">Duration</th>
                 <th className="px-6 py-3 font-semibold">Status</th>
+                {user && (user.roles.includes('HR_MANAGER') || user.roles.includes('MD') || user.roles.includes('ADMIN')) && (
+                  <th className="px-6 py-3 font-semibold">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -170,7 +178,20 @@ export const AttendanceHistory: React.FC = () => {
                   <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3">
                       <div className="font-bold text-slate-800">{log.employee.full_name}</div>
-                      <div className="text-xs text-slate-500 font-mono mt-0.5">{log.employee.employee_code}</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                        <span>{log.employee.employee_code}</span>
+                        {log.branch_name && (
+                          <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                            {log.branch_name}
+                          </span>
+                        )}
+                        {log.isCrossBranch && log.checkout_branch_name && (
+                          <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider flex items-center gap-1 border border-red-200">
+                            <AlertCircle className="w-3 h-3" />
+                            Out: {log.checkout_branch_name}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-3">
                       <div className="text-slate-700">{inTime.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
@@ -210,6 +231,17 @@ export const AttendanceHistory: React.FC = () => {
                         )}
                       </div>
                     </td>
+                    {user && (user.roles.includes('HR_MANAGER') || user.roles.includes('MD') || user.roles.includes('ADMIN')) && (
+                      <td className="px-6 py-3">
+                        <button
+                          onClick={() => setOverrideLog(log)}
+                          className="p-1.5 text-slate-400 hover:text-navy-600 hover:bg-navy-50 rounded transition-colors"
+                          title="Edit Attendance Record"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -246,6 +278,17 @@ export const AttendanceHistory: React.FC = () => {
           onClose={() => setIsModalOpen(false)}
           onSuccess={() => {
             setIsModalOpen(false);
+            fetchHistory();
+          }}
+        />
+      )}
+
+      {overrideLog && (
+        <AttendanceOverrideModal
+          log={overrideLog}
+          onClose={() => setOverrideLog(null)}
+          onSuccess={() => {
+            setOverrideLog(null);
             fetchHistory();
           }}
         />

@@ -4,9 +4,11 @@ import { User, Phone, MapPin, Building, Briefcase, Mail } from 'lucide-react';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { PerformanceHistoryTimeline } from '../performance/PerformanceHistoryTimeline';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
+import { useNavigate } from 'react-router-dom';
 
 export const UserProfile: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = React.useState(false);
 
   if (!user) return null;
@@ -30,6 +32,12 @@ export const UserProfile: React.FC = () => {
               <p className="text-slate-500 font-medium">{user.roles?.join(', ')}</p>
             </div>
             <div className="shrink-0 flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/daily-report')}
+                className="flex-1 sm:flex-none px-4 py-2 bg-navy-600 text-white font-semibold rounded-xl hover:bg-navy-700 transition-colors text-sm shadow-sm"
+              >
+                Submit Daily Log
+              </button>
               <button
                 onClick={() => setIsPasswordModalOpen(true)}
                 className="flex-1 sm:flex-none px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors text-sm border border-slate-200"

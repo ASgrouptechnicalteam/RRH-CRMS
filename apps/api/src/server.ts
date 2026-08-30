@@ -42,6 +42,7 @@ import messageTemplateRoutes from './routes/messageTemplates';
 import pmRoutingRoutes from './routes/pm-routing';
 
 import { PortalWorker } from './services/portalWorker';
+import { initAttendanceAutoClose } from './cron/attendanceAutoClose';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -288,6 +289,7 @@ if (process.env.NODE_ENV !== 'test') {
     // Portal worker is DISABLED by default (PORTAL_WORKER_ENABLED=false).
     // Enable explicitly when the Customer Portal is available.
     PortalWorker.start();
+    initAttendanceAutoClose();
   });
 }
 

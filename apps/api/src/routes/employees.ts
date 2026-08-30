@@ -8,7 +8,7 @@ import { can } from '../authz/authorization';
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { encryptData } from '../utils/crypto';
 import { buildEmployeeScope } from '../authz/dataScope';
-
+import { generateQrHmac } from '../utils/qr';
 const router = Router();
 
 
@@ -536,6 +536,49 @@ router.post('/:id/reset-password', authenticateToken, requireAuthz(Permissions.E
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to reset employee password' });
+  }
+});
+
+// GET /api/v1/employees/:id/qr - Get Official QR Badge for Employee (HR/Admin)
+router.get('/:id/qr', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const employeeId = parseInt(req.params.id, 10);
+    
+    // Verify the admin has scope access to this employee
+    const whereClause = await buildEmployeeScope(req.user!);
+    const employee = await prisma.employee.findFirst({
+      where: { ...whereClause, id: employeeId },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found or access denied' });
+    }
+
+    const version = 1;
+    const signedToken = generateQrHmac(employeeId, employee.employee_code, version);
+
+    let qrRecord = await prisma.employeeQrCode.findFirst({
+      where: { employee_id: employeeId },
+      orderBy: { generated_at: 'desc' },
+    });
+
+    if (!qrRecord) {
+      qrRecord = await prisma.employeeQrCode.create({
+        data: { employee_id: employeeId, qr_token: signedToken },
+      });
+    }
+
+    const qrData = JSON.stringify({
+      employeeId,
+      employeeCode: employee.employee_code,
+      version,
+      signedToken,
+    });
+
+    return res.status(200).json({ qrData });
+  } catch (error) {
+    console.error('Fetch employee QR error:', error);
+    return res.status(500).json({ error: 'Failed to fetch employee QR code' });
   }
 });
 

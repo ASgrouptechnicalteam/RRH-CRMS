@@ -60,6 +60,7 @@ const UserProfile = lazy(() => import('./components/profile/UserProfile').then(m
 const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => ({
   default: m.HRDashboard
 })));
+const DailyReportPage = lazy(() => import('./components/reports/DailyReportPage').then(m => ({ default: m.DailyReportPage })));
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const KioskManagementPage = lazy(() => import('./pages/KioskManagementPage').then(m => ({ default: m.KioskManagementPage })));
@@ -147,6 +148,14 @@ const AppShell: React.FC = () => {
     }
   });
 
+  if (location.pathname === '/kiosk') {
+    return (
+      <ErrorBoundary>
+        <Kiosk />
+      </ErrorBoundary>
+    );
+  }
+
   if (authStatus === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-navy-950">
@@ -169,13 +178,6 @@ const AppShell: React.FC = () => {
     return <FirstLoginSetup />;
   }
 
-  if (location.pathname === '/kiosk') {
-    return (
-      <ErrorBoundary>
-        <Kiosk />
-      </ErrorBoundary>
-    );
-  }
 
   const isMD = user?.roles?.includes(Roles.MD);
   const isTechAdmin = user?.roles?.includes(Roles.ADMIN);
@@ -227,6 +229,7 @@ const AppShell: React.FC = () => {
       <Route path="/bookings/:id" element={<BookingDossier />} />
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/settings" element={<UserSettings />} />
+      <Route path="/daily-report" element={<DailyReportPage />} />
       
       {/* Consolidated Hubs */}
       <Route path="/hr-hub" element={(isMD || isHRManager || isTechAdmin) ? <HRDashboard /> : <Navigate to="/" replace />} />
@@ -263,6 +266,7 @@ const AppShell: React.FC = () => {
     '/bookings': 'Bookings',
     '/profile': 'Profile',
     '/settings': 'Personal Settings',
+    '/daily-report': 'Submit Daily Log',
     '/hr-hub': 'Employees & Attendance',
     '/analytics': 'Analytics & Goals',
     '/system-control': 'System Control',

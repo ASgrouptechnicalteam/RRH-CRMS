@@ -110,7 +110,7 @@ export const AppLayout: React.FC<{
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Sidebar */}
         <aside
-          className="sidebar-left bg-navy-950 border-r border-navy-900 p-4 shrink-0 h-full overflow-y-auto"
+          className="sidebar-left bg-navy-950 border-r border-navy-900 p-4 shrink-0 h-full overflow-y-auto hidden md:flex"
           style={{ width: '260px' }}
         >
           <SidebarNav />
@@ -196,10 +196,14 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
 ];
 
-export { SIDEBAR_NAV_ITEMS };
+export { SIDEBAR_NAV_ITEMS, SidebarNav };
 export type { SidebarNavItem };
 
-const SidebarNav: React.FC = () => {
+interface SidebarNavProps {
+  onItemClick?: () => void;
+}
+
+const SidebarNav: React.FC<SidebarNavProps> = ({ onItemClick }) => {
   const { user } = useAuth();
   const location = useLocation();
   const userPermissions = user?.permissions ?? [];
@@ -290,6 +294,7 @@ const SidebarNav: React.FC = () => {
                   <NavLink
                     key={item.id}
                     to={item.path || '/'}
+                    onClick={() => onItemClick?.()}
                     data-tour={`sidebar-${item.id}`}
                     className={({ isActive }) =>
                       `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${

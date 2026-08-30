@@ -80,6 +80,8 @@ export class OpportunityService {
           property_id: property_id,
           budget_min: opportunityData.budget_min,
           budget_max: opportunityData.budget_max,
+          expected_value: opportunityData.expected_value,
+          probability: opportunityData.probability,
         },
       });
 

@@ -61,6 +61,7 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
   default: m.HRDashboard
 })));
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
+const DailyReportingPage = lazy(() => import('./components/reports/DailyReportingPage').then(m => ({ default: m.DailyReportingPage })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const PMTerritories = lazy(() => import('./components/md/PMTerritories').then(m => ({ default: m.PMTerritories })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
@@ -146,6 +147,14 @@ const AppShell: React.FC = () => {
     }
   });
 
+  if (location.pathname === '/kiosk') {
+    return (
+      <ErrorBoundary>
+        <Kiosk />
+      </ErrorBoundary>
+    );
+  }
+
   if (authStatus === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-navy-950">
@@ -168,13 +177,6 @@ const AppShell: React.FC = () => {
     return <FirstLoginSetup />;
   }
 
-  if (location.pathname === '/kiosk') {
-    return (
-      <ErrorBoundary>
-        <Kiosk />
-      </ErrorBoundary>
-    );
-  }
 
   const isMD = user?.roles?.includes(Roles.MD);
   const isTechAdmin = user?.roles?.includes(Roles.ADMIN);
@@ -222,6 +224,7 @@ const AppShell: React.FC = () => {
       <Route path="/properties" element={<PropertyManagement />} />
       <Route path="/site-visits" element={<SiteVisitManagement />} />
       <Route path="/tasks" element={<TaskManager />} />
+      <Route path="/daily-report" element={<DailyReportingPage />} />
       <Route path="/bookings" element={<BookingManagement />} />
       <Route path="/bookings/:id" element={<BookingDossier />} />
       <Route path="/profile" element={<UserProfile />} />

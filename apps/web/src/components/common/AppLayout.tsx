@@ -1,6 +1,6 @@
 import React, { type ComponentType, useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map } from 'lucide-react';
+import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map, FileText } from 'lucide-react';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
@@ -173,6 +173,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
   { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks' },
+  { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/daily-report' },
 
   // FINANCE
   { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },

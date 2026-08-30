@@ -4,13 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { FormSchemaField, SpeechRecognitionLike, SpeechRecognitionEventLike } from '../../types';
 
-interface DailyReportModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface DailyReportProps {
+  isOpen?: boolean;
+  onClose?: () => void;
   onSuccess: () => void;
+  mode?: 'modal' | 'inline';
 }
 
-export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const DailyReportModal: React.FC<DailyReportProps> = ({ isOpen = true, onClose, onSuccess, mode = 'modal' }) => {
   const { user, fetchWithAuth } = useAuth();
   const roleName = user?.roles[0] || 'Agent';
 
@@ -160,7 +161,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
   };
 
 
-  if (!isOpen) return null;
+  if (mode === 'modal' && !isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,7 +218,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
       }
 
       onSuccess();
-      onClose();
+      if (onClose) onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setErrorMessage(message);
@@ -230,15 +231,16 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
     setFormResponses(prev => ({ ...prev, [id]: value }));
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 animate-scaleUp relative max-h-[90vh] flex flex-col">
+  const content = (
+      <div className={`w-full flex flex-col ${mode === 'modal' ? 'max-w-2xl bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 animate-scaleUp relative max-h-[90vh]' : 'max-w-3xl mx-auto bg-white rounded-2xl p-8 shadow-sm border border-slate-200'}`}>
+        {mode === 'modal' && onClose && (
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
+        )}
 
         <div className="text-center mb-6 shrink-0">
           <div className="w-14 h-14 bg-navy-50 text-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
@@ -420,6 +422,19 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({ isOpen, onCl
           </div>
         </form>
       </div>
+  );
+
+  if (mode === 'inline') {
+    return (
+      <div className="py-8 px-4 w-full h-full overflow-y-auto">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+      {content}
     </div>
   );
 };

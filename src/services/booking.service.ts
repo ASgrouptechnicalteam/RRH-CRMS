@@ -263,6 +263,11 @@ export class BookingService {
             probability: 100 
           },
         });
+        
+        await tx.lead.update({
+          where: { id: opp.lead_id },
+          data: { status: 'BOOKED' }
+        });
       }
 
       // Phase 9 Packet 5 — golden rule audit trail for the confirmation decision.

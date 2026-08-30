@@ -166,7 +166,7 @@ export class SiteVisitService {
         bookingData.property = { connect: { id: propertyIds[0] } };
       }
       if (projectId) {
-        bookingData.project_id = projectId;
+        bookingData.project = { connect: { id: projectId } };
       }
 
       const booking = await tx.siteVisitBooking.create({ data: bookingData });
@@ -190,30 +190,37 @@ export class SiteVisitService {
         throw { status: 409, message: route.reason || 'Invalid site visit transition' };
       }
 
-      await tx.siteVisitBooking.update({
+      const updatedBooking = await tx.siteVisitBooking.update({
         where: { id: booking.id },
         data: { status: route.nextState, project_manager_id: pmId ?? undefined },
+        include: {
+          lead: true,
+          property: true,
+          telecaller: true,
+          project_manager: true,
+          assigned_agent: true
+        }
       });
 
       // Activity log
       await tx.leadActivity.create({
         data: {
           lead: { connect: { id: data.lead_id } },
-          actor: { connect: { id: user.employeeId } },
           activity_type: 'SITE_VISIT_REQUESTED',
-          notes: `Site Visit ${booking.booking_code} requested for ${new Date(data.scheduled_date).toLocaleString()}. Auto-routed to project PM for acceptance.`,
+          notes: `Site visit scheduled. Auto-routed to project PM.`,
+          actor: { connect: { id: user.employeeId } },
         },
       });
 
-      // Notify the project PM (or MD if none).
-      const notifyId = pmId;
+      // Notifications
+      const notifyId = pmId ?? undefined;
       if (notifyId) {
         await tx.notification.create({
           data: {
             employee_id: notifyId,
             type: 'TARGET_ASSIGNED',
             title: 'New Site Visit to Accept',
-            message: `Site visit ${booking.booking_code} requires your acceptance.`,
+            message: `Site visit ${updatedBooking.booking_code} requires your acceptance.`,
           },
         });
       } else {
@@ -226,13 +233,13 @@ export class SiteVisitService {
               employee_id: md.id,
               type: 'SYSTEM_ALERT',
               title: 'Unassigned Site Visit',
-              message: `Site visit ${booking.booking_code} has no active project PM. Please reassign manually.`,
+              message: `Site visit ${updatedBooking.booking_code} has no active project PM. Please reassign manually.`,
             },
           });
         }
       }
 
-      return booking;
+      return updatedBooking;
     });
   }
 
@@ -313,8 +320,15 @@ export class SiteVisitService {
     });
     if (!visit) throw { status: 404, message: 'Site visit booking not found' };
 
-    const target = await p.employee.findFirst({ where: { id: toEmployeeId, company_id: user.companyId } });
-    if (!target) throw { status: 404, message: 'Target employee not found' };
+    const targetWithRoles = await p.employee.findFirst({
+      where: { id: toEmployeeId, company_id: user.companyId },
+      include: { roles: { include: { role: true } } },
+    });
+    if (!targetWithRoles) throw { status: 404, message: 'Target employee not found' };
+    const target = {
+      ...targetWithRoles,
+      roles: (targetWithRoles.roles || []).map((er: any) => er.role?.name).filter(Boolean),
+    };
     if (!SiteVisitPolicy.canReassignTarget(user, target)) {
       throw { status: 403, message: 'Forbidden: only PROJECT_MANAGER or AGENT may be reassignment targets' };
     }

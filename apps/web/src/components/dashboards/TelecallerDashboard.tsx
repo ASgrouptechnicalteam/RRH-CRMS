@@ -21,8 +21,10 @@ export const TelecallerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [assignedLeads, setAssignedLeads] = useState<LeadListItem[]>([]);
-  const [targetMetrics, setTargetMetrics] = useState<{ achieved: number; target: number }>({ achieved: 0, target: 25 });
+  const [targetMetrics, setTargetMetrics] = useState<{ achieved: number; target: number }>({ achieved: 0, target: 0 }); // Fallback to 0, not fake 25
   const [isLoading, setIsLoading] = useState(true);
+  const [tomorrowVisits, setTomorrowVisits] = useState<ListItem[]>([]);
+  const [whatsappTasks, setWhatsappTasks] = useState(0);
 
   const updateLeadStatus = async (leadId: number, newStatus: string) => {
     try {
@@ -46,21 +48,68 @@ export const TelecallerDashboard: React.FC = () => {
   const fetchTelecallerData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/leads`);
-      const data = await res.json();
-      if (res.ok) {
+      const [leadsRes, tgtRes, visitsRes, tasksRes] = await Promise.all([
+        fetchWithAuth(`${API_BASE_URL}/leads`),
+        fetchWithAuth(`${API_BASE_URL}/targets/my-targets`),
+        fetchWithAuth(`${API_BASE_URL}/site-visits`),
+        fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`)
+      ]);
+
+      if (leadsRes.ok) {
+        const data = await leadsRes.json();
         setAssignedLeads(data.leads || []);
       }
 
-      // Fetch daily target status
-      const tgtRes = await fetchWithAuth(`${API_BASE_URL}/targets/my-targets`);
-      const tgtData = await tgtRes.json();
-      if (tgtRes.ok && tgtData.target) {
-        setTargetMetrics({
-          achieved: tgtData.target.achieved_value || 0,
-          target: tgtData.target.target_value || 25,
-        });
+      if (tgtRes.ok) {
+        const tgtData = await tgtRes.json();
+        if (tgtData.target) {
+          setTargetMetrics({
+            achieved: tgtData.target.achieved_value || 0,
+            target: tgtData.target.target_value || 0, // No fake fallback
+          });
+        }
       }
+
+      if (visitsRes.ok) {
+        const data = await visitsRes.json();
+        const visits = data.visits || [];
+        
+        // Filter visits assigned to current user, scheduled for tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const dayAfter = new Date(tomorrow);
+        dayAfter.setDate(dayAfter.getDate() + 1);
+
+        const tmrVisits = visits.filter((v: any) => {
+          if (v.assigned_agent_id !== user?.employeeId) return false;
+          if (['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)) return false;
+          
+          const visitDate = new Date(v.scheduled_date);
+          return visitDate >= tomorrow && visitDate < dayAfter;
+        });
+
+        const visitItems: ListItem[] = tmrVisits.map((v: any) => ({
+          id: v.id.toString(),
+          title: `Visit for ${v.customer?.customer_name || 'Customer'}`,
+          subtitle: `Project: ${v.project?.name || 'N/A'}`,
+          icon: Calendar
+        }));
+        setTomorrowVisits(visitItems);
+      }
+
+      if (tasksRes.ok) {
+        const data = await tasksRes.json();
+        const tasks = data.tasks || [];
+        // Filter tasks related to WhatsApp follow-ups
+        const waTasks = tasks.filter((t: any) => 
+          !['COMPLETED', 'CANCELLED'].includes(t.status) &&
+          (t.title?.toLowerCase().includes('whatsapp') || t.description?.toLowerCase().includes('whatsapp'))
+        ).length;
+        setWhatsappTasks(waTasks);
+      }
+
     } catch (e) {
       console.error('Fetch telecaller dashboard error:', e);
     } finally {
@@ -76,12 +125,7 @@ export const TelecallerDashboard: React.FC = () => {
   const leadsAssigned = assignedLeads.length;
   const contactedToday = assignedLeads.filter(l => l.status === 'CONTACTED').length;
   const qualificationPending = assignedLeads.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
-  const whatsappFollowUps = 0; // Requires task data not currently fetched
-
-  // Transform active leads for the Distinctive Widget
-  // (Since we don't fetch Site Visits yet, we use a placeholder ListWidget for it, 
-  // and show the active leads below it)
-  const tomorrowVisits: ListItem[] = [];
+  const whatsappFollowUps = whatsappTasks; // Now using real data from tasks endpoint
 
   return (
     <div className="space-y-6">

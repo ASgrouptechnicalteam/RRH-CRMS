@@ -117,7 +117,7 @@ const TeamPerformanceTab: React.FC = () => {
 };
 
 export const HRDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'ATTENDANCE' | 'LEAVES' | 'PERFORMANCE' | 'DOCUMENTS'>('OVERVIEW');
 
   const canManageEmployees = user?.roles?.some(
@@ -127,6 +127,59 @@ export const HRDashboard: React.FC = () => {
   if (!canManageEmployees) {
     return <Navigate to="/" replace />;
   }
+
+  const [hrMetrics, setHrMetrics] = useState({
+    headcount: 0,
+    leavesToday: 0,
+    avgConversion: 0
+  });
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
+  useEffect(() => {
+    if (activeTab !== 'OVERVIEW') return;
+
+    const fetchHrMetrics = async () => {
+      setMetricsLoading(true);
+      try {
+        const [employeesRes, perfRes] = await Promise.all([
+          fetchWithAuth(`${API_BASE_URL}/employees`),
+          fetchWithAuth(`${API_BASE_URL}/analytics/sales-manager`),
+          // Could fetch attendance or leave proposals if endpoint available.
+          // Defaulting leaves to 0 as requested if no explicit endpoint.
+        ]);
+
+        let totalHeadcount = 0;
+        let activeLeaves = 0; // Or could be derived from employee status if available
+        if (employeesRes.ok) {
+          const empData = await employeesRes.json();
+          const employees = empData.employees || empData;
+          totalHeadcount = Array.isArray(employees) ? employees.filter((e: any) => e.status === 'ACTIVE').length : 0;
+          activeLeaves = Array.isArray(employees) ? employees.filter((e: any) => e.status === 'ON_LEAVE').length : 0;
+        }
+
+        let avgConversion = 0;
+        if (perfRes.ok) {
+          const perfData = await perfRes.json();
+          if (perfData.teamPerformance && perfData.teamPerformance.length > 0) {
+            const sum = perfData.teamPerformance.reduce((acc: number, row: any) => acc + (row.conversionRate || 0), 0);
+            avgConversion = sum / perfData.teamPerformance.length;
+          }
+        }
+
+        setHrMetrics({
+          headcount: totalHeadcount,
+          leavesToday: activeLeaves, // Uses ON_LEAVE status or defaults to 0
+          avgConversion: avgConversion
+        });
+      } catch (err) {
+        console.error('Failed to load HR metrics', err);
+      } finally {
+        setMetricsLoading(false);
+      }
+    };
+
+    fetchHrMetrics();
+  }, [activeTab, fetchWithAuth]);
 
   return (
     <div className="space-y-6">
@@ -173,9 +226,9 @@ export const HRDashboard: React.FC = () => {
           <div className="space-y-6 animate-fadeIn">
             <h3 className="font-bold text-slate-800 text-lg">Department Snapshot</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <StatCard label="Total Active Headcount" value="42" icon={Users} trend={{ direction: 'up', value: '3', label: 'New this month' }} />
-              <StatCard label="On Leave Today" value="2" icon={ShieldAlert} trend={{ direction: 'down', value: '1', label: 'Unplanned absence' }} />
-              <StatCard label="Avg Pipeline Conversion" value="14.2%" icon={TrendingUp} trend={{ direction: 'up', value: '2.1%', label: 'vs last month' }} />
+              <StatCard label="Total Active Headcount" value={metricsLoading ? "..." : hrMetrics.headcount.toString()} icon={Users} trend={{ direction: 'up', value: '3', label: 'New this month' }} />
+              <StatCard label="On Leave Today" value={metricsLoading ? "..." : hrMetrics.leavesToday.toString()} icon={ShieldAlert} trend={{ direction: 'down', value: '1', label: 'Unplanned absence' }} />
+              <StatCard label="Avg Pipeline Conversion" value={metricsLoading ? "..." : `${hrMetrics.avgConversion.toFixed(1)}%`} icon={TrendingUp} trend={{ direction: 'up', value: '2.1%', label: 'vs last month' }} />
             </div>
             <div className="bg-surface border border-slate-200 rounded-xl p-8 text-center text-slate-500">
               <p className="text-sm font-semibold mb-2">Extended HR Analytics arriving in a future update.</p>

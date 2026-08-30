@@ -49,8 +49,9 @@ export const MDExecutiveDashboard: React.FC = () => {
   // Compute KPIs
   const totalLeads = execMetrics?.totalLeadsCount || 0;
   const bookings = execMetrics?.totalClosedDeals || 0;
-  const salesValue = "₹0"; // Placeholder: Not currently fetched in ExecMetricsData
-  const duePayments = "₹0"; // Placeholder: Not currently fetched in ExecMetricsData
+  // Placeholder: salesValue and duePayments not currently fetched in ExecMetricsData or any existing MD route
+  const salesValue = "—"; 
+  const duePayments = "—"; 
 
   // Prepare Priority Alerts list items
   const priorityAlerts: ListItem[] = [];

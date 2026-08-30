@@ -18,16 +18,67 @@ export const PMDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const [properties, setProperties] = useState<PropertyListItem[]>([]);
+  const [metrics, setMetrics] = useState({
+    assignedDemos: 0,
+    siteVisitsPending: 0,
+    activeProjects: 0,
+  });
+  const [pendingResponses, setPendingResponses] = useState<ListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPMProperties = async () => {
+  const fetchPMData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/properties?status=PENDING_VERIFICATION`);
-      const data = await res.json();
-      if (res.ok) {
+      const [propsRes, projectsRes, visitsRes] = await Promise.all([
+        fetchWithAuth(`${API_BASE_URL}/properties?status=PENDING_VERIFICATION`),
+        fetchWithAuth(`${API_BASE_URL}/projects`),
+        fetchWithAuth(`${API_BASE_URL}/site-visits`)
+      ]);
+
+      if (propsRes.ok) {
+        const data = await propsRes.json();
         setProperties(data.properties || []);
       }
+
+      let activeProjects = 0;
+      if (projectsRes.ok) {
+        const data = await projectsRes.json();
+        activeProjects = (data.projects || []).filter((p: any) => p.status === 'ACTIVE').length;
+      }
+
+      let assignedDemos = 0;
+      let visitsPendingCount = 0;
+      const responses: ListItem[] = [];
+      
+      if (visitsRes.ok) {
+        const data = await visitsRes.json();
+        const visits = data.visits || [];
+        
+        assignedDemos = visits.filter((v: any) => 
+          v.assigned_agent_id === user?.employeeId && 
+          !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)
+        ).length;
+        
+        const pendingVisits = visits.filter((v: any) => v.status === 'PENDING');
+        visitsPendingCount = pendingVisits.length;
+        
+        pendingVisits.forEach((v: any) => {
+          responses.push({
+            id: v.id.toString(),
+            title: `Visit for ${v.customer?.customer_name || 'Customer'}`,
+            subtitle: `Requested for ${new Date(v.scheduled_date).toLocaleDateString()}`,
+            icon: MapPin
+          });
+        });
+      }
+
+      setMetrics({
+        assignedDemos,
+        siteVisitsPending: visitsPendingCount,
+        activeProjects,
+      });
+      setPendingResponses(responses);
+
     } catch (e) {
       console.error('Fetch PM properties error:', e);
     } finally {
@@ -36,18 +87,11 @@ export const PMDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchPMProperties();
+    fetchPMData();
   }, []);
 
   // Compute KPIs
   const pendingPropertyAudits = properties.length;
-  // Placeholders since data is not fetched in this layer yet
-  const assignedDemos = 0;
-  const siteVisitsPending = 0;
-  const activeProjects = 0;
-
-  // Placeholder for Distinctive Widget
-  const pendingResponses: ListItem[] = [];
 
   return (
     <div className="space-y-6">
@@ -64,22 +108,22 @@ export const PMDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           label="Assigned Demos" 
-          value={assignedDemos} 
+          value={isLoading ? "..." : metrics.assignedDemos} 
           icon={CalendarCheck} 
         />
         <StatCard 
           label="Visits Pending Acceptance" 
-          value={siteVisitsPending} 
+          value={isLoading ? "..." : metrics.siteVisitsPending} 
           icon={MapPin} 
         />
         <StatCard 
           label="Active Projects" 
-          value={activeProjects} 
+          value={isLoading ? "..." : metrics.activeProjects} 
           icon={Building} 
         />
         <StatCard 
           label="Pending Property Audits" 
-          value={pendingPropertyAudits} 
+          value={isLoading ? "..." : pendingPropertyAudits} 
           icon={ClipboardList} 
         />
       </div>

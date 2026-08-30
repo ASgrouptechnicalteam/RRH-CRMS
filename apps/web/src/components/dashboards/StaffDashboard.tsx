@@ -1,13 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { TaskManager } from '../tasks/TaskManager';
 import { Briefcase, Calendar, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { StatCard } from '../ui';
+import { API_BASE_URL } from '../../config';
 
 export const StaffDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const [showOps, setShowOps] = useState(false);
+  const [metrics, setMetrics] = useState({ leads: 0, visits: 0, tasks: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const [leadsRes, visitsRes, tasksRes] = await Promise.all([
+          fetchWithAuth(`${API_BASE_URL}/leads`),
+          fetchWithAuth(`${API_BASE_URL}/site-visits`),
+          fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`)
+        ]);
+
+        let leadsCount = 0;
+        if (leadsRes.ok) {
+          const leadsData = await leadsRes.json();
+          // Filter leads assigned to this user and not yet BOOKED or DEAD
+          leadsCount = (leadsData.leads || []).filter((l: any) => 
+            l.assigned_to_id === user?.employeeId && 
+            !['BOOKED', 'DEAD', 'LOST'].includes(l.status)
+          ).length;
+        }
+
+        let visitsCount = 0;
+        if (visitsRes.ok) {
+          const visitsData = await visitsRes.json();
+          // Filter active site visits assigned to user (as PM or agent)
+          visitsCount = (visitsData.visits || []).filter((v: any) => 
+            (v.project_manager_id === user?.employeeId || v.assigned_agent_id === user?.employeeId) &&
+            !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)
+          ).length;
+        }
+
+        let tasksCount = 0;
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          // Filter open tasks
+          tasksCount = (tasksData.tasks || []).filter((t: any) => 
+            t.status !== 'COMPLETED' && t.status !== 'CANCELLED'
+          ).length;
+        }
+
+        setMetrics({ leads: leadsCount, visits: visitsCount, tasks: tasksCount });
+      } catch (error) {
+        console.error('Failed to load dashboard metrics', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [fetchWithAuth, user]);
 
   return (
     <div className="space-y-6">
@@ -24,17 +76,17 @@ export const StaffDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard 
           label="My Active Leads" 
-          value="—" 
+          value={isLoading ? "..." : metrics.leads.toString()} 
           icon={Users} 
         />
         <StatCard 
           label="Upcoming Visits" 
-          value="—" 
+          value={isLoading ? "..." : metrics.visits.toString()} 
           icon={Calendar} 
         />
         <StatCard 
           label="My Tasks" 
-          value="—" 
+          value={isLoading ? "..." : metrics.tasks.toString()} 
           icon={Briefcase} 
         />
       </div>

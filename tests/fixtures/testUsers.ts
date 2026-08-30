@@ -96,7 +96,8 @@ export async function setupDeterministicTestUsers() {
       update: {
         company_id: crossOrgUsers.some(u => u.employee_code === user.employee_code) ? crossOrgCompany.id : testCompany.id,
         password_hash: hashedPassword,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        token_version: 1
       },
       create: {
         employee_code: user.employee_code,

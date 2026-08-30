@@ -61,7 +61,8 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
     await setupDeterministicTestUsers();
 
     const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    const mdEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } });
+    companyId = mdEmployee!.company_id;
 
     // Create a test API key
     const testApiKey = `WR1-TEST-KEY-${Date.now()}`;
@@ -167,7 +168,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
           property_id: propertyId,
           image_url: 'https://example.com/test.jpg',
           is_primary: true,
-          uploaded_by_id: 1,
+          uploaded_by_id: (await prisma.employee.findFirst())!.id,
           status: 'APPROVED',
         },
       });

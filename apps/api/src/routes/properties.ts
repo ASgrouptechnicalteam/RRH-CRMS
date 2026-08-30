@@ -15,8 +15,7 @@ import { validateRequestBody } from '../middleware/validate';
 import { PropertyService } from '../services/property.service';
 import {
   propertyImageUpload,
-  processAndStorePropertyImage,
-  deletePropertyImageFile,
+  getPropertyImageStorage,
 } from '../services/storage.service';
 import { PrismaClient, Prisma } from '@prisma/client';
 
@@ -340,7 +339,8 @@ router.post(
         return res.status(400).json({ error: 'No image file provided' });
       }
 
-      const imageUrl = await processAndStorePropertyImage(req.file.buffer, propertyId);
+      const storage = getPropertyImageStorage();
+      const imageUrl = await storage.upload(req.file.buffer, propertyId);
       const { alt_text, sort_order, is_primary } = req.body;
       const isPrimaryBool = is_primary === 'true' || is_primary === true;
 
@@ -481,7 +481,8 @@ router.delete(
       }
 
       // Delete file from disk securely
-      deletePropertyImageFile(image.image_url);
+      const storage = getPropertyImageStorage();
+      await storage.delete(image.image_url);
 
       // Delete record and auto-promote next image if needed
       await p.$transaction(async (tx: Prisma.TransactionClient) => {

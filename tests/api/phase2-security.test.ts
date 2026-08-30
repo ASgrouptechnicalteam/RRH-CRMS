@@ -140,10 +140,10 @@ describe('Phase 2 Security & Authorization Hardening', () => {
       const res = await request(app)
         .post(`/api/v1/site-visits/${rrhVisitId}/complete`)
         .set('Authorization', `Bearer ${sontAgentToken}`)
-        .send({ status: 'COMPLETED' });
+        .send({ outcomes: [{ property_id: rrhPropertyId, outcome: 'INTERESTED' }] });
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toContain('Not found');
+      expect(res.body.error).toContain('not found');
     });
   });
 
@@ -161,7 +161,7 @@ describe('Phase 2 Security & Authorization Hardening', () => {
       const res = await request(app)
         .post(`/api/v1/site-visits/${rrhVisitId}/complete`)
         .set('Authorization', `Bearer ${rrhAgentToken}`)
-        .send({ status: 'COMPLETED' });
+        .send({ outcomes: [{ property_id: rrhPropertyId, outcome: 'INTERESTED' }] });
 
       // Ownership enforcement in siteVisit.policy.ts -> canComplete -> requires assigned_agent_id === user.employeeId
       expect(res.status).toBe(403);

@@ -157,7 +157,7 @@ export const TelecallerDashboard: React.FC = () => {
                 No prospects currently assigned. Keep your performance score high for priority assignments!
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {assignedLeads.map((lead: LeadListItem) => (
                   <div
                     key={lead.id}

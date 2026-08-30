@@ -14,59 +14,131 @@ export const propertyImageUpload = multer({
 });
 
 /**
- * Validates, resizes, and saves the image to local storage using sharp.
- * @param buffer - File buffer from multer
- * @param propertyId - ID of the property
- * @returns Publicly accessible URL path
+ * Reusable helper to process image buffer before storage
  */
-export async function processAndStorePropertyImage(buffer: Buffer, propertyId: number): Promise<string> {
-  const propertyImagesDir = path.join(UPLOAD_DIR, 'properties', String(propertyId), 'images');
-  
-  if (!fs.existsSync(propertyImagesDir)) {
-    fs.mkdirSync(propertyImagesDir, { recursive: true });
-  }
-
-  const uuid = crypto.randomUUID();
-  const filename = `${uuid}.webp`;
-  const absolutePath = path.join(propertyImagesDir, filename);
-
-  // Validate, resize (max 2560x2560), and convert to WebP using Sharp
-  await sharp(buffer)
+export async function processImageBuffer(buffer: Buffer): Promise<{ processedBuffer: Buffer, filename: string }> {
+  const processedBuffer = await sharp(buffer)
     .resize(2560, 2560, {
-      fit: 'inside', // Preserves aspect ratio, only downsizes if larger than 2560x2560
+      fit: 'inside',
       withoutEnlargement: true,
     })
     .webp({ quality: 80 })
-    .toFile(absolutePath);
+    .toBuffer();
 
-  // Return public URL path
-  return `/uploads/properties/${propertyId}/images/${filename}`;
+  const uuid = crypto.randomUUID();
+  const filename = `${uuid}.webp`;
+  
+  return { processedBuffer, filename };
 }
 
-/**
- * Deletes a property image file from disk securely.
- */
-export function deletePropertyImageFile(imageUrl: string): void {
-  // Extract the part after /uploads/ to prevent path traversal
-  // Matches new format: properties/123/images/uuid.webp
-  // Matches legacy format: property-images/prop-xxx.jpg
-  const match = imageUrl.match(/^\/uploads\/(properties\/\d+\/images\/[a-f0-9-]+\.webp|property-images\/prop-[0-9-]+\.[a-z]+)$/i);
-  if (!match) {
-    console.warn(`Invalid or unrecognizable image URL for deletion: ${imageUrl}`);
-    return;
+export interface PropertyImageStorage {
+  upload(buffer: Buffer, propertyId: number): Promise<string>;
+  delete(imageUrl: string): Promise<void>;
+}
+
+export class LocalPropertyImageStorage implements PropertyImageStorage {
+  async upload(buffer: Buffer, propertyId: number): Promise<string> {
+    const { processedBuffer, filename } = await processImageBuffer(buffer);
+    const propertyImagesDir = path.join(UPLOAD_DIR, 'properties', String(propertyId), 'images');
+    
+    if (!fs.existsSync(propertyImagesDir)) {
+      fs.mkdirSync(propertyImagesDir, { recursive: true });
+    }
+
+    const absolutePath = path.join(propertyImagesDir, filename);
+    await fs.promises.writeFile(absolutePath, processedBuffer);
+    
+    return `/uploads/properties/${propertyId}/images/${filename}`;
   }
-  
-  const relativeSafePath = match[1];
-  const absolutePath = path.join(UPLOAD_DIR, relativeSafePath);
-  
-  // Extra safety check: ensure the resolved absolute path starts with UPLOAD_DIR
-  if (absolutePath.startsWith(path.resolve(UPLOAD_DIR)) && fs.existsSync(absolutePath)) {
-    try {
-      fs.unlinkSync(absolutePath);
-    } catch (err) {
-      console.error(`Failed to delete physical file: ${absolutePath}`, err);
+
+  async delete(imageUrl: string): Promise<void> {
+    const match = imageUrl.match(/^\/uploads\/(properties\/\d+\/images\/[a-f0-9-]+\.webp|property-images\/prop-[0-9-]+\.[a-z]+)$/i);
+    if (!match) {
+      console.warn(`Invalid or unrecognizable image URL for deletion: ${imageUrl}`);
+      return;
+    }
+    
+    const relativeSafePath = match[1];
+    const absolutePath = path.join(UPLOAD_DIR, relativeSafePath);
+    
+    if (absolutePath.startsWith(path.resolve(UPLOAD_DIR)) && fs.existsSync(absolutePath)) {
+      try {
+        fs.unlinkSync(absolutePath);
+      } catch (err) {
+        console.error(`Failed to delete physical file: ${absolutePath}`, err);
+      }
     }
   }
+}
+
+export class SftpPropertyImageStorage implements PropertyImageStorage {
+  async upload(buffer: Buffer, propertyId: number): Promise<string> {
+    const Client = (await import('ssh2-sftp-client')).default;
+    const sftp = new Client();
+    
+    try {
+      await sftp.connect({
+        host: process.env.SFTP_HOST,
+        port: parseInt(process.env.SFTP_PORT || '22', 10),
+        username: process.env.SFTP_USERNAME,
+        password: process.env.SFTP_PASSWORD,
+      });
+
+      const { processedBuffer, filename } = await processImageBuffer(buffer);
+      const remoteDir = path.posix.join(process.env.SFTP_REMOTE_BASE_PATH || '', String(propertyId), 'images');
+      
+      const dirExists = await sftp.exists(remoteDir);
+      if (!dirExists) {
+        await sftp.mkdir(remoteDir, true);
+      }
+
+      const remotePath = path.posix.join(remoteDir, filename);
+      await sftp.put(processedBuffer, remotePath);
+      
+      const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+      return `${baseUrl}/${propertyId}/images/${filename}`;
+    } finally {
+      await sftp.end();
+    }
+  }
+
+  async delete(imageUrl: string): Promise<void> {
+    const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+    if (!imageUrl.startsWith(baseUrl)) {
+      console.warn(`Cannot delete SFTP image, URL does not match base URL: ${imageUrl}`);
+      return;
+    }
+
+    const relativePath = imageUrl.slice(baseUrl.length);
+    const remotePath = path.posix.join(process.env.SFTP_REMOTE_BASE_PATH || '', relativePath);
+
+    const Client = (await import('ssh2-sftp-client')).default;
+    const sftp = new Client();
+    try {
+      await sftp.connect({
+        host: process.env.SFTP_HOST,
+        port: parseInt(process.env.SFTP_PORT || '22', 10),
+        username: process.env.SFTP_USERNAME,
+        password: process.env.SFTP_PASSWORD,
+      });
+      
+      const exists = await sftp.exists(remotePath);
+      if (exists) {
+        await sftp.delete(remotePath);
+      }
+    } catch (err) {
+      console.error(`Failed to delete remote SFTP file: ${remotePath}`, err);
+    } finally {
+      await sftp.end();
+    }
+  }
+}
+
+export function getPropertyImageStorage(): PropertyImageStorage {
+  if (process.env.STORAGE_DRIVER === 'sftp') {
+    return new SftpPropertyImageStorage();
+  }
+  return new LocalPropertyImageStorage();
 }
 
 /**

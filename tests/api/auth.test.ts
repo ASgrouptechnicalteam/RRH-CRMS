@@ -56,6 +56,9 @@ describe('Phase 1 - Authentication & Session Security', () => {
     await prisma.authSession.deleteMany({
       where: { employee_id: validTestUserId }
     });
+    await prisma.kioskCredential.deleteMany({
+      where: { created_by_id: validTestUserId }
+    });
     await prisma.employeeRole.deleteMany({
       where: { employee_id: validTestUserId }
     });

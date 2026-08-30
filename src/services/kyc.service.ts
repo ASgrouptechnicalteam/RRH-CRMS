@@ -93,9 +93,45 @@ export class KycService {
   static async recomputeAndNotifyTx(
     tx: any,
     customerId: number,
-    _companyId: number,
-    _actorId: number
+    companyId: number,
+    actorId: number
   ) {
-    return await tx.customer.findUnique({ where: { id: customerId } });
+    const cust = await tx.customer.findUnique({ where: { id: customerId } });
+    if (!cust) return null;
+
+    let newStatus = cust.kyc_status;
+    
+    // Simple logic: If either is present and status is not VERIFIED, it becomes PARTIAL.
+    if ((cust.pan_number || cust.aadhaar_number) && cust.kyc_status !== 'VERIFIED') {
+      newStatus = 'PARTIAL';
+    }
+
+    if (newStatus !== cust.kyc_status) {
+      await tx.customer.update({
+        where: { id: customerId },
+        data: { kyc_status: newStatus }
+      });
+      cust.kyc_status = newStatus;
+    }
+
+    const maskedPan = this.maskPan(cust.pan_number ? decryptData(cust.pan_number) : null);
+    
+    await tx.integrationEvent.create({
+      data: {
+        event_type: KYC_EVENT_TYPE,
+        crms_customer_id: customerId,
+        company_id: companyId,
+        payload: JSON.stringify({
+          event_type: KYC_EVENT_TYPE,
+          company_id: companyId,
+          crms_customer_id: customerId,
+          kyc_status: newStatus,
+          masked_pan: maskedPan
+        }),
+        status: 'CREATED'
+      }
+    });
+
+    return cust;
   }
 }

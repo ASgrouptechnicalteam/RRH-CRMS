@@ -2,14 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { QrCode, CheckCircle2, Clock, AlertCircle, RefreshCw, XCircle, LogOut, Lock, User, Key } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { ScanResult } from '../../types';
+import { KioskCameraScanner } from './KioskCameraScanner';
 
 type KioskMode = 'KIOSK_LOGIN' | 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
+type ScannerType = 'CAMERA' | 'USB';
 
 export const Kiosk: React.FC = () => {
   const [mode, setMode] = useState<KioskMode>('KIOSK_LOGIN');
   const [scannedData, setScannedData] = useState<string>('');
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [useScannerType, setUseScannerType] = useState<ScannerType>('CAMERA');
+
+  // Live Time state
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Kiosk credential login state
   const [loginUsername, setLoginUsername] = useState('');
@@ -317,7 +328,7 @@ export const Kiosk: React.FC = () => {
         </div>
         <div className="flex items-center gap-4 text-sm text-slate-400 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
           <Clock className="w-4 h-4" />
-          <span className="font-mono">{new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })} IST</span>
+          <span className="font-mono">{currentTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })} IST</span>
         </div>
       </header>
 
@@ -328,28 +339,55 @@ export const Kiosk: React.FC = () => {
             {credentialLabel && (
               <p className="text-xs text-slate-500 mb-2">Operating as: {credentialLabel}</p>
             )}
-            <div className="w-32 h-32 mx-auto mb-8 bg-slate-800 rounded-3xl flex items-center justify-center border-2 border-navy-500/30 shadow-[0_0_50px_rgba(20,184,166,0.1)] relative">
-              <div className="absolute inset-0 border border-navy-400/50 rounded-3xl animate-ping opacity-20" />
-              <QrCode className="w-16 h-16 text-navy-400" />
+            
+            <div className="flex justify-center mb-6">
+              <div className="bg-slate-800 p-1 rounded-full inline-flex border border-slate-700">
+                <button 
+                  onClick={() => setUseScannerType('CAMERA')}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${useScannerType === 'CAMERA' ? 'bg-navy-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Camera Scanner
+                </button>
+                <button 
+                  onClick={() => setUseScannerType('USB')}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${useScannerType === 'USB' ? 'bg-navy-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  USB Scanner
+                </button>
+              </div>
             </div>
-            <h2 className="text-4xl font-bold mb-4 text-slate-100">Show your QR Code</h2>
-            <p className="text-slate-400 text-lg mb-8">
-              Place your employee QR code in front of the scanner to check in or check out.
-            </p>
 
-            <div className="relative w-full max-w-sm mx-auto">
-              <input
-                ref={inputRef}
-                type="text"
-                value={scannedData}
-                onChange={(e) => setScannedData(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Scanner Input / Paste QR Token"
-                className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-navy-500 text-center font-mono text-sm opacity-50 hover:opacity-100 transition-opacity"
-                autoFocus
-              />
-              <p className="text-xs text-slate-500 mt-2">Physical scanner will type here automatically.</p>
-            </div>
+            {useScannerType === 'CAMERA' ? (
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold mb-2 text-slate-100">Scan QR Code</h2>
+                <KioskCameraScanner onScan={handleScan} isActive={true} />
+              </div>
+            ) : (
+              <div className="mb-6">
+                <div className="w-32 h-32 mx-auto mb-8 bg-slate-800 rounded-3xl flex items-center justify-center border-2 border-navy-500/30 shadow-[0_0_50px_rgba(20,184,166,0.1)] relative">
+                  <div className="absolute inset-0 border border-navy-400/50 rounded-3xl animate-ping opacity-20" />
+                  <QrCode className="w-16 h-16 text-navy-400" />
+                </div>
+                <h2 className="text-4xl font-bold mb-4 text-slate-100">Show your QR Code</h2>
+                <p className="text-slate-400 text-lg mb-8">
+                  Place your employee QR code in front of the scanner to check in or check out.
+                </p>
+
+                <div className="relative w-full max-w-sm mx-auto">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={scannedData}
+                    onChange={(e) => setScannedData(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Scanner Input / Paste QR Token"
+                    className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-navy-500 text-center font-mono text-sm opacity-50 hover:opacity-100 transition-opacity"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-2">Physical scanner will type here automatically.</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

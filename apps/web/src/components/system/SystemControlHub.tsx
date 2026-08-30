@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ShieldCheck, ServerCrash, Users, Webhook, Plug, Settings, Send } from 'lucide-react';
+import { ShieldCheck, ServerCrash, Users, Webhook, Plug, Settings, Send, MonitorSmartphone } from 'lucide-react';
 import { MDControlDashboard } from '../md/MDControlDashboard';
 import { AdminAnalyticsPortal } from '../admin/AdminAnalyticsPortal';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { BannerControlWidget } from '../dashboards/BannerControlWidget';
+import { KioskCredentialManagement } from './KioskCredentialManagement';
 import { Roles } from '@rrh-ems/shared';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
@@ -16,7 +17,7 @@ export const SystemControlHub: React.FC = () => {
   const isMD = user?.roles?.includes(Roles.MD);
   const isAdmin = user?.roles?.includes(Roles.ADMIN);
 
-  const [activeTab, setActiveTab] = useState<'roles' | 'webhooks' | 'integrations' | 'advanced'>('integrations');
+  const [activeTab, setActiveTab] = useState<'kiosks' | 'roles' | 'webhooks' | 'integrations' | 'advanced'>('kiosks');
 
   // Simulate Lead state
   const [simName, setSimName] = useState('Jane Doe');
@@ -78,7 +79,7 @@ export const SystemControlHub: React.FC = () => {
             <h1 className="text-xl font-extrabold tracking-tight">System Control Center</h1>
           </div>
           <p className="text-xs text-navy-200/80">
-            High-security administration portal for roles, webhooks, and integrations.
+            High-security administration portal for roles, webhooks, integrations, and kiosks.
           </p>
         </div>
       </div>
@@ -86,6 +87,18 @@ export const SystemControlHub: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Tab Navigation */}
         <div className="flex overflow-x-auto no-scrollbar gap-1 p-2 bg-slate-50 border-b border-slate-200">
+          <button
+            onClick={() => setActiveTab('kiosks')}
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
+              activeTab === 'kiosks' 
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200' 
+                : 'text-slate-600 hover:bg-slate-100 border border-transparent'
+            }`}
+          >
+            <MonitorSmartphone className="w-4 h-4" />
+            Kiosk Access
+          </button>
+
           <button
             onClick={() => setActiveTab('roles')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
@@ -137,6 +150,10 @@ export const SystemControlHub: React.FC = () => {
 
         {/* Tab Content */}
         <div className="p-4 sm:p-6">
+          {activeTab === 'kiosks' && (
+            <KioskCredentialManagement />
+          )}
+
           {activeTab === 'roles' && (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />

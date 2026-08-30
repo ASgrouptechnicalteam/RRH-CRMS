@@ -62,6 +62,7 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 })));
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
+const KioskManagementPage = lazy(() => import('./pages/KioskManagementPage').then(m => ({ default: m.KioskManagementPage })));
 const PMTerritories = lazy(() => import('./components/md/PMTerritories').then(m => ({ default: m.PMTerritories })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
 const UserSettings = lazy(() => import('./components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
@@ -228,7 +229,8 @@ const AppShell: React.FC = () => {
       <Route path="/settings" element={<UserSettings />} />
       
       {/* Consolidated Hubs */}
-      <Route path="/hr-hub" element={canManageEmployees ? <HRDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/hr-hub" element={(isMD || isHRManager || isTechAdmin) ? <HRDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/kiosk-management" element={(isMD || isTechAdmin) ? <KioskManagementPage /> : <Navigate to="/" replace />} />
       
       <Route path="/analytics" element={
         (canManageTargets || canViewTeamPerformance) ? <AnalyticsHub /> : <Navigate to="/" replace />

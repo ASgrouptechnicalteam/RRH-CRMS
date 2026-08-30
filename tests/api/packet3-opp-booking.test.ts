@@ -48,6 +48,18 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     const otherAgentCode = deterministicUsers.find(u => u.roles[0] === Roles.DIGITAL_LEAD_OPERATOR && u.company_id !== companyId)?.employee_code;
     if (otherAgentCode) {
       otherCompanyToken = await getAuth(otherAgentCode, 2);
+    } else {
+      // Fallback: manually generate a fake token if the DB lacks a second company user
+      const { signToken } = require('../../apps/api/src/utils/jwt');
+      otherCompanyToken = signToken({
+        employeeId: 9999,
+        employeeCode: 'RRH-FAKE-99',
+        companyId: companyId === 1 ? 2 : 1,
+        branchId: null,
+        roles: [Roles.DIGITAL_LEAD_OPERATOR],
+        permissions: [],
+        tokenVersion: 1
+      });
     }
   });
 
@@ -67,13 +79,13 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     });
   };
 
-  const createTestLead = async (company_id: number = companyId) => {
+  const createTestLead = async (company_id: number = companyId, status: string = 'BOOKING_INITIATED') => {
     return await p.lead.create({
       data: {
         lead_code: `TEST-LEAD-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         customer_name: `Test Lead ${Math.floor(Math.random() * 1000)}`,
         phone: `99${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`,
-        status: 'BOOKING_INITIATED',
+        status,
         company: { connect: { id: company_id } },
         assigned_to: { connect: { id: agentId } },
         created_by: { connect: { id: agentId } },
@@ -151,7 +163,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
 
   test('D. Opportunity in invalid stage', async () => {
     const prop = await createTestProperty('LIVE');
-    const lead = await createTestLead();
+    const lead = await createTestLead(companyId, 'NEW');
     const opp = await createTestOpportunity(lead.id, prop.id);
 
     const res = await attemptConversion(opp.id);

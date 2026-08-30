@@ -60,7 +60,6 @@ beforeAll(async () => {
   // Fix token version leakage between test suites
   try {
     await prisma.employee.updateMany({
-      where: { employee_code: { startsWith: 'RRH-TST-' } },
       data: { token_version: 1, status: 'ACTIVE' }
     });
   } catch (e) {

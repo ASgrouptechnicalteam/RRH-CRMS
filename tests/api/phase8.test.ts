@@ -231,7 +231,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .set('Authorization', `Bearer ${tcAToken}`)
         .send({
           lead_id: leadAId,
-          property_id: propAId,
+          property_ids: [propAId],
           scheduled_date: new Date(Date.now() + 86400000).toISOString(),
           notes: 'Test Phase 8 booking'
         });
@@ -253,7 +253,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .set('Authorization', `Bearer ${tcAToken}`)
         .send({
           lead_id: leadAId,
-          property_id: propBId,
+          property_ids: [propBId],
           scheduled_date: new Date(Date.now() + 86400000).toISOString(),
           notes: 'Cross company attempt'
         });

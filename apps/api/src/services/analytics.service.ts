@@ -196,8 +196,8 @@ export class AnalyticsService {
    */
   private static async targetAttainment(companyId: number): Promise<TargetAttainmentKpis> {
     const { dateString } = getISTComponents(new Date());
-    const gte = new Date(`${dateString}T00:00:00.000Z`);
-    const lte = new Date(`${dateString}T23:59:59.999Z`);
+    const gte = new Date(`${dateString}T00:00:00.000+05:30`);
+    const lte = new Date(`${dateString}T23:59:59.999+05:30`);
     const where: any = {
       employee: { company_id: companyId },
       submitted_at: { gte, lte },

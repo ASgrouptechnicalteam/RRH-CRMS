@@ -144,6 +144,15 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
     it('TC-A CAN update status with a valid workflow transition (ASSIGNED -> CONTACTED)', async () => {
       // Restore status to ASSIGNED in case TC-B IDOR succeeded
       await prisma.lead.update({ where: { id: testLeadAId }, data: { status: 'ASSIGNED' } });
+      
+      await prisma.leadActivity.create({
+        data: {
+          lead: { connect: { id: testLeadAId } },
+          activity_type: 'CALL_LOGGED',
+          notes: 'Test call',
+          actor: { connect: { id: telecallerAId } }
+        }
+      });
 
       const res = await request(app)
         .patch(`/api/v1/leads/${testLeadAId}/status`)

@@ -20,6 +20,11 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
 
   beforeAll(async () => {
     await setupDeterministicTestUsers();
+    
+    // Clean up any leaked data from previous failed runs
+    await p.kioskCredential.deleteMany({
+      where: { username: { in: ['KIOSK-TEST-001', 'KIOSK-NEW-001', 'KIOSK-XCOMP-001'] } }
+    });
 
     // 1. Create a kiosk credential for the admin's company/branch
     const adminUser = await p.employee.findUnique({ where: { employee_code: 'RRH-TST-001' } });
@@ -107,6 +112,12 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
         .patch(`/api/v1/kiosk-credentials/${kioskCredentialId}`)
         .set('Authorization', `Bearer ${await getAdminToken()}`)
         .send({ is_active: true });
+        
+      // Refresh token because activating bumped the credential_version
+      const freshLoginRes = await request(app)
+        .post('/api/v1/kiosk-auth/login')
+        .send({ username: 'KIOSK-TEST-001', password: 'Kiosk@123' });
+      kioskToken = freshLoginRes.body.accessToken;
     });
   });
 
@@ -232,6 +243,12 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
   describe('Check-out via POST /checkout (kiosk token)', () => {
     beforeEach(async () => {
       await p.attendanceLog.deleteMany({ where: { employee_id: employee1Id } });
+      
+      // Temporarily bypass the daily report check so we can test the attendance checkout logic
+      await p.employee.update({
+        where: { id: employee1Id },
+        data: { report_required: false },
+      });
     });
 
     it('should reject checkout with no token (401)', async () => {
@@ -323,13 +340,19 @@ describe('Attendance Kiosk End-to-End (Backend) — Kiosk Credential Auth', () =
 
   describe('Credential version mismatch kills active session', () => {
     it('should 401 when credential_version in token does not match DB', async () => {
+      // Get current version first
+      const currentCredRes = await request(app)
+        .get('/api/v1/kiosk-credentials')
+        .set('Authorization', `Bearer ${await getAdminToken()}`);
+      const currentVersion = currentCredRes.body.credentials.find((c: any) => c.id === kioskCredentialId).credential_version;
+      
       // Rotate password — this increments credential_version
       const rotateRes = await request(app)
         .patch(`/api/v1/kiosk-credentials/${kioskCredentialId}`)
         .set('Authorization', `Bearer ${await getAdminToken()}`)
         .send({ password: 'Kiosk@456' });
       expect(rotateRes.status).toBe(200);
-      expect(rotateRes.body.credential.credential_version).toBe(2);
+      expect(rotateRes.body.credential.credential_version).toBe(currentVersion + 1);
 
       // Old token should now be rejected
       const res = await request(app)

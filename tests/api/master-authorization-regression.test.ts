@@ -58,7 +58,11 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
     // Create Company B Resources
     const bLead = await prisma.lead.upsert({
       where: { lead_code: 'LD-999-B' },
-      update: {},
+      update: {
+        company_id: compBUser!.company_id,
+        created_by_id: compBUser!.id,
+        assigned_to_id: compBUser.id
+      },
       create: {
         customer_name: 'Comp B Lead',
         phone: '+919999900001',
@@ -75,7 +79,9 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
     const bCustomer = await prisma.customer.upsert({
       where: { customer_code: 'CUST-B-999' },
-      update: {},
+      update: {
+        company_id: compBUser!.company_id
+      },
       create: {
         customer_code: 'CUST-B-999',
         first_name: 'Comp B',
@@ -100,13 +106,16 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
     const bOpp = await prisma.opportunity.upsert({
       where: { opportunity_code: 'OPP-B-999' },
-      update: {},
+      update: {
+        company_id: compBUser!.company_id,
+        owner_id: compBUser.id
+      },
       create: {
         opportunity_code: 'OPP-B-999',
         lead: { connect: { id: compBLeadId } },
                 expected_value: 5000000,
         expected_close_date: new Date(),
-        company: { connect: { id: 2 } },
+        company: { connect: { id: compBUser!.company_id } },
         owner: { connect: { id: compBUser.id } }
       }
     });
@@ -114,7 +123,10 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
     const bProp = await prisma.property.upsert({
       where: { property_code: 'PROP-B-1' },
-      update: {},
+      update: {
+        company_id: compBUser!.company_id,
+        created_by_id: compBUser.id
+      },
       create: {
         property_code: 'PROP-B-1',
         title: 'Company B Property',
@@ -123,7 +135,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         area_sqft: 1500,
         location: 'Company B Location',
         status: 'DRAFT',
-        company: { connect: { id: 2 } },
+        company: { connect: { id: compBUser!.company_id } },
         created_by: { connect: { id: compBUser.id } }
       }
     });
@@ -133,13 +145,16 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
     // Create additional Company B resources for cross-tenant testing
     const bProject = await prisma.project.upsert({
       where: { project_code: 'PROJ-B-999' },
-      update: {},
+      update: {
+        company_id: compBUser!.company_id,
+        assigned_pm_id: compBUser.id
+      },
       create: {
         project_code: 'PROJ-B-999',
         name: 'Company B Project',
         status: 'ACTIVE',
         location: 'Company B Location',
-        company: { connect: { id: 2 } },
+        company: { connect: { id: compBUser!.company_id } },
         assigned_pm: { connect: { id: compBUser.id } }
       }
     });
@@ -177,7 +192,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         status: 'OPEN',
         priority: 'MEDIUM',
         customer: { connect: { id: compBCustomerId } },
-        company: { connect: { id: 2 } }
+        company: { connect: { id: compBUser!.company_id } }
       }
     });
     compBComplaintId = bComplaint.id;
@@ -186,7 +201,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
     const bBooking = await prisma.booking.create({
       data: {
         booking_code: `BOOK-B-${Date.now()}`,
-        company: { connect: { id: 2 } },
+        company: { connect: { id: compBUser!.company_id } },
         customer: { connect: { id: compBCustomerId } },
         property: { connect: { id: compBPropertyId } },
         agreed_price: 5000000,
@@ -201,7 +216,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
     const bPayment = await prisma.payment.create({
       data: {
         payment_code: `PAY-B-${Date.now()}`,
-        company_id: 2,
+        company_id: compBUser!.company_id,
         booking_id: compBBookingId,
         amount: 50000,
         payment_method: 'CASH',
@@ -405,7 +420,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         company_id: 2
       });
       expect(res.status).toBe(201);
-      expect(res.body.lead.company_id).toBe(1); // Must be forced to company 1
+      expect(res.body.lead.company_id).toBe(compAUser.company_id); // Must be forced to company A
     });
 
     it('25. assignee/company boundaries cannot be bypassed', async () => {

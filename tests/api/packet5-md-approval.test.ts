@@ -51,15 +51,16 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     // Clean up — Document and CustomerNotification both FK to Customer
     // (onDelete: Restrict), so they must be removed before customer.deleteMany.
     // Document is cleared first because it also FK-references booking/opportunity/lead/property.
+
     await p.integrationEvent.deleteMany({});
     await p.auditEvent.deleteMany({});
     await p.customerNotification.deleteMany({});
+    await p.complaint.deleteMany({});
     await p.booking.deleteMany({});
     await p.opportunity.deleteMany({});
     await p.siteVisitBooking.deleteMany({});
     await p.lead.deleteMany({});
     await p.payment.deleteMany({});
-    await p.customerPreference.deleteMany({});
     await p.property.deleteMany({});
     await p.customer.deleteMany({});
   });
@@ -123,7 +124,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         customer_name: 'Lead MD',
         phone: `88888${Math.floor(Math.random() * 10000)}`,
         source: 'DIRECT',
-        status: 'NEW',
+        status: 'BOOKING_INITIATED',
         created_by_id: adminEmployeeId,
         assigned_to_id: adminEmployeeId,
       }
@@ -136,8 +137,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         lead_id: lead.id,
         property_id: property.id,
         booking_id: booking.id,
-        owner_id: adminEmployeeId,
-        stage: 'BOOKING_INITIATED'
+        owner_id: adminEmployeeId
       }
     });
 
@@ -189,7 +189,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
   });
 
   it('3. MD Confirmation atomically updates Booking, Property, and Opportunity', async () => {
-    const { booking, property, opp } = await setupBookingAndOpp(true);
+    const { booking, property, opp, lead } = await setupBookingAndOpp(true);
 
     await request(app)
       .put(`/api/v1/bookings/${booking.id}/status`)
@@ -206,15 +206,15 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     const updatedProp = await p.property.findUnique({ where: { id: property.id } });
     expect(updatedProp.status).toBe('BOOKED');
 
-    const updatedOpp = await p.opportunity.findUnique({ where: { id: opp.id } });
-    expect(updatedOpp.stage).toBe('BOOKED');
+    const updatedLead = await p.lead.findUnique({ where: { id: lead.id } });
+    expect(updatedLead.status).toBe('BOOKED');
 
     const audits = await p.auditEvent.findMany({ where: { entity_type: 'Booking', entity_id: booking.id } });
     expect(audits.some((a: any) => a.action === 'BOOKING_CONFIRMED')).toBe(true);
   });
 
   it('4. MD Cancellation atomically reverts Property and drops Opportunity', async () => {
-    const { booking, property, opp } = await setupBookingAndOpp(true);
+    const { booking, property, opp, lead } = await setupBookingAndOpp(true);
 
     const res = await request(app)
       .post(`/api/v1/bookings/${booking.id}/cancel`)
@@ -228,8 +228,8 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     expect(updatedProp.locked_until).toBeNull();
     expect(updatedProp.locked_by_booking_id).toBeNull();
 
-    const updatedOpp = await p.opportunity.findUnique({ where: { id: opp.id } });
-    expect(updatedOpp.stage).toBe('DROPPED');
+    const updatedLead = await p.lead.findUnique({ where: { id: lead.id } });
+    expect(updatedLead.status).toBe('DROPPED');
   });
 
   it('5. Legacy PUT /status facade correctly routes CONFIRMED requests', async () => {

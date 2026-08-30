@@ -50,7 +50,7 @@ export class WorkflowEngine {
 
     if (!transitionRes.allowed) {
       const error = new Error(transitionRes.reason || 'Invalid state transition');
-      (error as any).status = 409;
+      (error as any).statusCode = 409;
       throw error;
     }
 

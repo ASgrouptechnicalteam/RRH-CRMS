@@ -29,7 +29,8 @@ describe('Phase C - Role UAT Beta Acceptance', () => {
           });
         if (res.status === 200) {
           tokens[u.roles[0]] = res.body.accessToken;
-          baseCompanyId = u.company_id;
+          const decoded = JSON.parse(Buffer.from(res.body.accessToken.split('.')[1], 'base64').toString());
+          baseCompanyId = decoded.companyId;
         }
 
         if (u.roles[0] === Roles.PROJECT_MANAGER) {

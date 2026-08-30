@@ -202,7 +202,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const res = await request(app)
         .post(`/api/v1/properties/${newProp.id}/dm-polish`)
         .set('Authorization', `Bearer ${dmToken}`)
-        .send({ seo_title: 'SEO Title' });
+        .send({ seo_title: 'SEO Title', digital_marketing_executive_id: pmAId });
 
       // After refactoring, this MUST be 409 Conflict.
       // Currently, returns 200.
@@ -241,7 +241,22 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const pId = propertyAId;
       
       // Fix state back to PENDING_VERIFICATION to test full flow
-      await p.property.update({ where: { id: pId }, data: { status: 'PENDING_VERIFICATION' } });
+      await p.property.update({ 
+        where: { id: pId }, 
+        data: { 
+          status: 'PENDING_VERIFICATION',
+          location_confirmed_by_pm: true
+        } 
+      });
+
+      // Provide the required photo to bypass verification validation
+      await p.propertyImage.create({
+        data: {
+          property_id: pId,
+          image_url: 'test-photo.jpg',
+          uploaded_by_id: pmAId
+        }
+      });
 
       // 1. PM Verifies
       const verRes = await request(app)
@@ -255,7 +270,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const dmRes = await request(app)
         .post(`/api/v1/properties/${pId}/dm-polish`)
         .set('Authorization', `Bearer ${dmToken}`)
-        .send({ seo_title: 'Polished', seo_keywords: 'test' });
+        .send({ seo_title: 'Polished', seo_keywords: 'test', digital_marketing_executive_id: pmAId });
       
       expect(dmRes.status).toBe(200);
 

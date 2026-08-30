@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
+import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { Roles } from '@rrh-ems/shared';
 
@@ -44,23 +44,8 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     companyId = decoded.companyId;
     agentId = decoded.employeeId;
 
-    // We need a token for a different company to test isolation
-    const otherAgentCode = deterministicUsers.find(u => u.roles[0] === Roles.DIGITAL_LEAD_OPERATOR && u.company_id !== companyId)?.employee_code;
-    if (otherAgentCode) {
-      otherCompanyToken = await getAuth(otherAgentCode, 2);
-    } else {
-      // Fallback: manually generate a fake token if the DB lacks a second company user
-      const { signToken } = require('../../apps/api/src/utils/jwt');
-      otherCompanyToken = signToken({
-        employeeId: 9999,
-        employeeCode: 'RRH-FAKE-99',
-        companyId: companyId === 1 ? 2 : 1,
-        branchId: null,
-        roles: [Roles.DIGITAL_LEAD_OPERATOR],
-        permissions: [],
-        tokenVersion: 1
-      });
-    }
+    const otherAgentCode = crossOrgUsers[0].employee_code;
+    otherCompanyToken = await getAuth(otherAgentCode, 2);
   });
 
   const createTestProperty = async (status: string = 'LIVE', override: any = {}) => {
@@ -168,7 +153,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
 
     const res = await attemptConversion(opp.id);
     expect(res.status).toBe(400);
-    expect(res.body.error).toContain('BOOKING_INITIATED stage');
+    expect(res.body.error).toContain('BOOKING_INITIATED status');
   });
 
   test('E. Opportunity already has Booking / Idempotency (N)', async () => {

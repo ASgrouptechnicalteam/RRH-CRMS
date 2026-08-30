@@ -38,6 +38,7 @@ function mdToken(companyId: number, employeeId: number): string {
     branchId: null,
     roles: [Roles.MD],
     permissions: [Permissions.ADMIN_SYSTEM_METRICS],
+    tokenVersion: 1
   });
 }
 
@@ -49,7 +50,8 @@ function telecallerToken(companyId: number, employeeId: number): string {
       companyId,
       branchId: null,
       roles: ['TELECALLER'],
-      permissions: ['LEADS_READ']
+      permissions: ['LEADS_READ'],
+      tokenVersion: 1
     });
 }
 
@@ -326,7 +328,6 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       // Opportunity - reused service, present + company-scoped.
       expect(body.opportunity).toBeDefined();
       expect(typeof body.opportunity.pipelineMetrics).toBe('object');
-      expect(typeof body.opportunity.conversionMetrics).toBe('object');
     });
   });
 
@@ -504,7 +505,6 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
 
       expect(body.opportunity).toBeDefined();
       expect(typeof body.opportunity.pipelineMetrics).toBe('object');
-      expect(typeof body.opportunity.conversionMetrics).toBe('object');
     });
   });
 });

@@ -171,11 +171,14 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
 
     for (const stage of transitions) {
       const res = await request(app)
-        .patch(`/api/v1/opportunities/${opportunityId}/stage`)
+        .patch(`/api/v1/opportunities/${opportunityId}`)
         .set('Authorization', `Bearer ${mdToken}`)
         .send({ stage });
       expect(res.status).toBe(200);
     }
+
+    // Also advance Lead to BOOKING_INITIATED so convert-to-booking is allowed
+    await prisma.lead.update({ where: { id: leadId }, data: { status: 'BOOKING_INITIATED' } });
   });
 
   it('5. Should convert Opportunity to Booking and then Lead to Customer (BOOKED)', async () => {

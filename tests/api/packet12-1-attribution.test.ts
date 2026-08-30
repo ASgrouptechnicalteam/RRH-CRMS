@@ -148,6 +148,7 @@ describe('Lead capture', () => {
         utm_campaign: 'fb-campaign',
       });
 
+      await p.lead.update({ where: { id: lead.id }, data: { status: 'BOOKING_INITIATED' } });
       const res = await convertLeadToCustomer(lead.id);
       expect(res.status).toBe(201);
       expect(res.body.customer).toBeDefined();
@@ -190,7 +191,7 @@ describe('Lead capture', () => {
 
       const property = await createLiveProperty();
       const opp = await createOpportunity(lead.id, property.id);
-      await p.opportunity.update({ where: { id: opp.id }, data: { stage: 'BOOKING_INITIATED' } });
+      await p.lead.update({ where: { id: lead.id }, data: { status: 'BOOKING_INITIATED' } });
 
       const res = await request(app)
         .post(`/api/v1/opportunities/${opp.id}/convert-to-booking`)
@@ -217,6 +218,7 @@ describe('End-to-end attribution chain', () => {
       });
 
       // Lead → Customer
+      await p.lead.update({ where: { id: lead.id }, data: { status: 'BOOKING_INITIATED' } });
       const custRes = await convertLeadToCustomer(lead.id);
       expect(custRes.status).toBe(201);
       expect(custRes.body.customer.source).toBe('BULK_UPLOAD');
@@ -235,7 +237,7 @@ describe('End-to-end attribution chain', () => {
       expect(opp.utm_campaign).toBe('bulk-import-2024');
 
       // Opportunity → Booking (customer already exists from lead conversion — idempotent)
-      await p.opportunity.update({ where: { id: opp.id }, data: { stage: 'BOOKING_INITIATED' } });
+      await p.lead.update({ where: { id: lead.id }, data: { status: 'BOOKING_INITIATED' } });
       const bookingRes = await request(app)
         .post(`/api/v1/opportunities/${opp.id}/convert-to-booking`)
         .set('Authorization', `Bearer ${telecallerAToken}`)
@@ -260,6 +262,7 @@ describe('End-to-end attribution chain', () => {
 
     it('null UTM fields remain null through conversion', async () => {
       const lead = await createLead({ source: 'MANUAL_ENTRY', campaign: 'TEST_CAMPAIGN' });
+      await p.lead.update({ where: { id: lead.id }, data: { status: 'BOOKING_INITIATED' } });
       const res = await convertLeadToCustomer(lead.id);
       expect(res.status).toBe(201);
       expect(res.body.customer.campaign).toBe('TEST_CAMPAIGN');

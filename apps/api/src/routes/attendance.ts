@@ -130,6 +130,17 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
     const now = new Date();
     const { dateString, timeString } = getISTComponents(now);
 
+    const istDate = new Date(`${dateString}T00:00:00+05:30`);
+    if (istDate.getDay() === 0) {
+      return res.status(400).json({ error: 'Today is a holiday, attendance cannot be stamped' });
+    }
+    const holidayCheck = await p.companyHoliday.findFirst({
+      where: { company_id: targetCompanyId, date: istDate },
+    });
+    if (holidayCheck) {
+      return res.status(400).json({ error: 'Today is a company holiday, attendance cannot be stamped' });
+    }
+
     // Concurrency Protection via Transaction
     const result = await p.$transaction(
       async (tx: import('@prisma/client').Prisma.TransactionClient) => {
@@ -231,6 +242,21 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
 
     const now = new Date();
     const { dateString, timeString } = getISTComponents(now);
+
+    const istDate = new Date(`${dateString}T00:00:00+05:30`);
+    if (istDate.getDay() === 0) {
+      return res.status(400).json({ error: 'Today is a holiday, attendance cannot be stamped' });
+    }
+    const holidayCheck = await p.companyHoliday.findFirst({
+      where: { company_id: targetCompanyId, date: istDate },
+    });
+    if (holidayCheck) {
+      return res.status(400).json({ error: 'Today is a company holiday, attendance cannot be stamped' });
+    }
+
+    if (timeString < '18:00:00') {
+      return res.status(400).json({ error: 'Check-out is not allowed before 18:00 IST' });
+    }
 
     // Kiosk logout gate: employees with report_required=true must submit today's
     // daily report before checking out. Reuses the same lookup logic as GET /reports/today-status.
@@ -480,5 +506,164 @@ router.get(
     }
   },
 );
+
+router.get('/holidays', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const companyId = req.user!.companyId;
+    const year = Number(req.query.year) || new Date().getFullYear();
+    const holidays = await p.companyHoliday.findMany({
+      where: {
+        company_id: companyId,
+        date: {
+          gte: new Date(`${year}-01-01T00:00:00Z`),
+          lte: new Date(`${year}-12-31T23:59:59Z`),
+        },
+      },
+      orderBy: { date: 'asc' },
+    });
+    return res.status(200).json({ holidays });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to fetch holidays' });
+  }
+});
+
+router.post('/holidays', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, date } = req.body;
+    if (!name || !date) return res.status(400).json({ error: 'Name and date are required' });
+    const companyId = req.user!.companyId;
+    const istDate = new Date(`${date}T00:00:00Z`); // Stored as db.Date
+    
+    const h = await p.companyHoliday.create({
+      data: {
+        company_id: companyId,
+        name,
+        date: istDate,
+      },
+    });
+    return res.status(201).json(h);
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to create holiday' });
+  }
+});
+
+router.delete('/holidays/:id', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const companyId = req.user!.companyId;
+    
+    const h = await p.companyHoliday.findFirst({ where: { id, company_id: companyId } });
+    if (!h) return res.status(404).json({ error: 'Holiday not found' });
+    
+    await p.companyHoliday.delete({ where: { id } });
+    return res.status(200).json({ message: 'Deleted successfully' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to delete holiday' });
+  }
+});
+
+router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const year = Number(req.query.year);
+    const month = Number(req.query.month);
+    let targetEmployeeId = req.user!.employeeId;
+    
+    if (req.query.employeeId) {
+      const hrRoles = [Roles.MD as string, Roles.ADMIN as string, Roles.HR_MANAGER as string];
+      const isHR = req.user!.roles?.some((r: string) => hrRoles.includes(r));
+      if (!isHR) return res.status(403).json({ error: 'Not authorized to view other calendars' });
+      targetEmployeeId = Number(req.query.employeeId);
+    }
+    
+    if (!year || !month) return res.status(400).json({ error: 'year and month are required' });
+
+    const startDate = new Date(`${year}-${month.toString().padStart(2, '0')}-01T00:00:00+05:30`);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
+
+    const logs = await p.attendanceLog.findMany({
+      where: {
+        employee_id: targetEmployeeId,
+        check_in_at: { gte: startDate, lt: endDate },
+      },
+      orderBy: { check_in_at: 'asc' },
+    });
+
+    const holidays = await p.companyHoliday.findMany({
+      where: {
+        company_id: req.user!.companyId,
+        date: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const proposals = await p.attendanceProposal.findMany({
+      where: {
+        employee_id: targetEmployeeId,
+        type: 'LATE_CHECKIN',
+        status: 'APPROVED',
+        target_date: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const calendarMap: any = {};
+    const d = new Date(startDate);
+    
+    let totalLates = 0;
+    let totalHalfDays = 0;
+
+    while (d < endDate) {
+      const dayStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+      calendarMap[dayStr] = { status: 'ABSENT', log: null };
+      
+      if (d.getDay() === 0) {
+        calendarMap[dayStr].status = 'HOLIDAY';
+        calendarMap[dayStr].holidayName = 'Sunday';
+      }
+      
+      d.setDate(d.getDate() + 1);
+    }
+
+    for (const h of holidays) {
+      const hd = new Date(h.date);
+      const dayStr = `${hd.getFullYear()}-${(hd.getMonth() + 1).toString().padStart(2, '0')}-${hd.getDate().toString().padStart(2, '0')}`;
+      if (calendarMap[dayStr]) {
+        calendarMap[dayStr].status = 'HOLIDAY';
+        calendarMap[dayStr].holidayName = h.name;
+      }
+    }
+
+    for (const p of proposals) {
+      const pd = new Date(p.target_date);
+      const dayStr = `${pd.getFullYear()}-${(pd.getMonth() + 1).toString().padStart(2, '0')}-${pd.getDate().toString().padStart(2, '0')}`;
+      if (calendarMap[dayStr]) {
+        calendarMap[dayStr].hasApprovedProposal = true;
+      }
+    }
+
+    for (const l of logs) {
+      const ld = new Date(l.check_in_at);
+      const { dateString } = getISTComponents(ld);
+      if (calendarMap[dateString]) {
+        calendarMap[dateString].log = l;
+        
+        let adjustedStatus = l.status;
+        if (calendarMap[dateString].hasApprovedProposal) {
+          adjustedStatus = 'PRESENT';
+        }
+        
+        calendarMap[dateString].status = adjustedStatus;
+        
+        if (adjustedStatus === 'LATE') totalLates++;
+        if (adjustedStatus === 'HALF_DAY') totalHalfDays++;
+      }
+    }
+    
+    const penaltyAbsents = Math.floor(totalLates / 3) + Math.floor(totalHalfDays / 2);
+
+    return res.status(200).json({ calendar: calendarMap, penaltyAbsents });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to generate calendar' });
+  }
+});
 
 export default router;

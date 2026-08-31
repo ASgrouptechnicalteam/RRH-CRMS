@@ -18,6 +18,7 @@ model Company {
 
   branches      Branch[]
   employees     Employee[]
+  holidays      CompanyHoliday[]
   leads         Lead[]
   opportunities Opportunity[]
   customers     Customer[]
@@ -297,6 +298,22 @@ model AttendanceProposal {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+model CompanyHoliday {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  date       DateTime @db.Date // Store IST date representation
+  name       String
+  notes      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@unique([company_id, date])
+  @@index([company_id])
 }
 
 model Task {

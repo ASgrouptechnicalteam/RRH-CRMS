@@ -159,8 +159,10 @@ export const TelecallerDashboard: React.FC = () => {
   const whatsappFollowUps = whatsappTasks; // Now using real data from tasks endpoint
 
   const activeStatuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFICATION_PENDING', 'QUALIFIED', 'SITE_VISIT_SCHEDULED'];
-  const myAssignedLeads = myAssignedLeadsRaw.filter(l => activeStatuses.includes(l.status));
-
+  const myAssignedLeads = myAssignedLeadsRaw.filter(
+    (l): l is typeof l & { status: string } =>
+      typeof l.status === 'string' && activeStatuses.includes(l.status)
+  );
   const getStatusMap = (status: string): 'hot' | 'warm' | 'cold' | 'success' | 'pending' | 'danger' | 'default' => {
     switch (status) {
       case 'NEW':
@@ -297,8 +299,10 @@ export const TelecallerDashboard: React.FC = () => {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono font-semibold text-navy-600 text-xs truncate">{lead.lead_code}</span>
-                          <StatusPill status={lead.status} type={getStatusMap(lead.status)} />
-                        </div>
+                              <StatusPill
+                                status={lead.status ?? 'UNKNOWN'}
+                                type={getStatusMap(lead.status ?? 'UNKNOWN')}
+                              />                        </div>
                         <h4 className="font-bold text-navy-900 text-sm truncate">{lead.customer_name}</h4>
                         <p className="text-xs text-slate-500 mt-0.5 truncate">
                           {lead.phone} • {getPropertyTypeLabel(lead.property_type_preference)}

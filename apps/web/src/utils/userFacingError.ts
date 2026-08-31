@@ -43,17 +43,20 @@ export function toUserFacingError(input: {
   if (textToSearch.includes('call_logged') || (textToSearch.includes('contacted') && textToSearch.includes('call')) || textToSearch.includes('requires a call')) {
     return { title: 'Cannot mark as Contacted', message: 'You need to log a call with this lead before marking them as Contacted.', nextStep: 'Tap Call, complete the call log, then use Update Status again.' };
   }
-  if (textToSearch.includes('qualified') || textToSearch.includes('qualification') || textToSearch.includes('budget') || textToSearch.includes('property_type') || textToSearch.includes('preferred_location')) {
-    return { title: 'Qualification incomplete', message: 'Budget (min and max), property type, and preferred location are required before marking Qualified.', nextStep: 'Open Qualification, fill all fields, then save.' };
-  }
   if (textToSearch.includes('lead') && (textToSearch.includes('invalid transition') || textToSearch.includes('cannot be moved') || (textToSearch.includes('from') && textToSearch.includes('to')))) {
-    return { title: 'This status change is not allowed', message: 'The lead cannot move to that status from its current status.', nextStep: 'Open the lead, check current status, and only choose an allowed next step.' };
+    return { title: 'This status change is not allowed', message: rawMsg || 'The lead cannot move to that status from its current status.', nextStep: 'Open the lead, check current status, and only choose an allowed next step.' };
+  }
+  if (textToSearch.includes('qualification fields') || (textToSearch.includes('qualified') && textToSearch.includes('requires all'))) {
+    return { title: 'Qualification incomplete', message: 'Budget (min and max), property type, and preferred location are required before marking Qualified.', nextStep: 'Open Qualification, fill all fields, then save.' };
   }
   if (textToSearch.includes('assign') && textToSearch.includes('lead')) {
     return { title: 'Cannot assign lead', message: rawMsg || 'You are not allowed to assign this lead or the selected user is invalid.', nextStep: 'Pick a valid team member or ask your manager.' };
   }
 
   // 3. Site visit
+  if (textToSearch.includes('sitevisitbooking') || textToSearch.includes('site visit booking')) {
+    return { title: 'Cannot set site visit status yet', message: 'A site visit booking must exist for this lead before status can be Site Visit Scheduled.', nextStep: 'Book a site visit from Site Visits (property + date/time), then status can update.' };
+  }
   if (textToSearch.includes('site_visit') || textToSearch.includes('visit')) {
     if (textToSearch.includes('assign')) return { title: 'Site visit not assigned', message: 'This visit needs a sales agent assigned before that action.', nextStep: 'Assign an agent, then try again.' };
     if (textToSearch.includes('schedule') || textToSearch.includes('prerequisite')) return { title: 'Cannot schedule site visit', message: 'The lead is not ready for a site visit yet (e.g. not qualified or missing details).', nextStep: 'Complete qualification and required steps on the lead first.' };

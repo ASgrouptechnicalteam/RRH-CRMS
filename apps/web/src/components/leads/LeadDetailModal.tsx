@@ -68,9 +68,10 @@ interface LeadDetailModalProps {
   onUpdateStatus: (leadId: number, newStatus: string) => Promise<void>;
   onRefreshLeads: () => void;
   onDemoComplete?: (leadId: number, qualification: any, notes: string) => Promise<void>;
+  initialShowScheduleModal?: boolean;
 }
 
-export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdateStatus, onRefreshLeads, onDemoComplete }) => {
+export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdateStatus, onRefreshLeads, onDemoComplete, initialShowScheduleModal }) => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   // Site Visit Schedule Form
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(initialShowScheduleModal || false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
   const [scheduleNotes, setScheduleNotes] = useState('Telecaller booked site visit for client discussion.');
@@ -1063,7 +1064,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           lead_id: lead.id,
-                          scheduled_date: scheduleDate,
+                          scheduled_date: new Date(scheduleDate).toISOString(),
                           notes: scheduleNotes,
                           property_id: schedulePropertyId ? parseInt(schedulePropertyId, 10) : undefined,
                         }),

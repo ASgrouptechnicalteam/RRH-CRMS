@@ -32,6 +32,7 @@ export const TelecallerDashboard: React.FC = () => {
   const [whatsappTasks, setWhatsappTasks] = useState(0);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [selectedLead, setSelectedLead] = useState<LeadListItem | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [qualifyingLead, setQualifyingLead] = useState<LeadListItem | null>(null);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export const TelecallerDashboard: React.FC = () => {
         body: JSON.stringify({ 
           status: newStatus, 
           notes: 'Updated directly from Daily Calling List',
-          qualification 
+          ...(newStatus === 'QUALIFIED' && qualification ? { qualification } : {})
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -151,11 +152,41 @@ export const TelecallerDashboard: React.FC = () => {
   }, []);
 
   // Compute KPIs from existing data (Only those explicitly assigned to current user)
-  const myAssignedLeads = assignedLeads.filter(l => l.assigned_to?.id === user?.id);
-  const leadsAssigned = myAssignedLeads.length;
-  const contactedToday = myAssignedLeads.filter(l => l.status === 'CONTACTED').length;
-  const qualificationPending = myAssignedLeads.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
+  const myAssignedLeadsRaw = assignedLeads.filter(l => l.assigned_to?.id === user?.id);
+  const leadsAssigned = myAssignedLeadsRaw.length;
+  const contactedToday = myAssignedLeadsRaw.filter(l => l.status === 'CONTACTED').length;
+  const qualificationPending = myAssignedLeadsRaw.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
   const whatsappFollowUps = whatsappTasks; // Now using real data from tasks endpoint
+
+  const activeStatuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFICATION_PENDING', 'QUALIFIED', 'SITE_VISIT_SCHEDULED'];
+  const myAssignedLeads = myAssignedLeadsRaw.filter(l => activeStatuses.includes(l.status));
+
+  const getStatusMap = (status: string): 'hot' | 'warm' | 'cold' | 'success' | 'pending' | 'danger' | 'default' => {
+    switch (status) {
+      case 'NEW':
+      case 'QUALIFIED':
+      case 'SITE_VISIT_SCHEDULED':
+      case 'SITE_VISIT_COMPLETED':
+      case 'NEGOTIATION':
+        return 'hot';
+      case 'CONTACTED':
+      case 'DEMO_SCHEDULED':
+      case 'DEMO_COMPLETED':
+        return 'warm';
+      case 'ASSIGNED':
+      case 'QUALIFICATION_PENDING':
+        return 'pending';
+      case 'BOOKING_INITIATED':
+      case 'BOOKED':
+      case 'WON':
+        return 'success';
+      case 'DROPPED':
+      case 'LOST':
+        return 'danger';
+      default:
+        return 'default';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -191,10 +222,14 @@ export const TelecallerDashboard: React.FC = () => {
       {selectedLead && (
         <LeadDetailModal
           lead={selectedLead as any}
-          onClose={() => setSelectedLead(null)}
+          onClose={() => {
+            setSelectedLead(null);
+            setScheduleModalOpen(false);
+          }}
           onUpdateStatus={updateLeadStatus}
           onRefreshLeads={fetchTelecallerData}
           onDemoComplete={async () => {}}
+          initialShowScheduleModal={scheduleModalOpen}
         />
       )}
 
@@ -262,8 +297,7 @@ export const TelecallerDashboard: React.FC = () => {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono font-semibold text-navy-600 text-xs truncate">{lead.lead_code}</span>
-                          {lead.status === 'NEW' && <StatusPill status="NEW" type="hot" />}
-                          {lead.status === 'CONTACTED' && <StatusPill status="CONTACTED" type="warm" />}
+                          <StatusPill status={lead.status} type={getStatusMap(lead.status)} />
                         </div>
                         <h4 className="font-bold text-navy-900 text-sm truncate">{lead.customer_name}</h4>
                         <p className="text-xs text-slate-500 mt-0.5 truncate">
@@ -298,40 +332,45 @@ export const TelecallerDashboard: React.FC = () => {
                           
                           {activeDropdown === lead.id && (
                             <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-10 flex flex-col overflow-hidden">
+                              {(lead.status === 'NEW' || lead.status === 'ASSIGNED') && (
+                                <button
+                                  className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateLeadStatus(lead.id, 'CONTACTED');
+                                    setActiveDropdown(null);
+                                  }}
+                                >
+                                  Mark Contacted
+                                </button>
+                              )}
+                              {(lead.status === 'CONTACTED' || lead.status === 'QUALIFICATION_PENDING') && (
+                                <button
+                                  className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setQualifyingLead(lead);
+                                    setActiveDropdown(null);
+                                  }}
+                                >
+                                  Mark Qualified
+                                </button>
+                              )}
                               <button
                                 className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  updateLeadStatus(lead.id, 'CONTACTED');
-                                  setActiveDropdown(null);
-                                }}
-                              >
-                                Mark Contacted
-                              </button>
-                              <button
-                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (lead.status !== 'CONTACTED' && lead.status !== 'QUALIFICATION_PENDING') {
+                                  if (lead.status !== 'QUALIFIED' && lead.status !== 'DEMO_COMPLETED') {
                                     showToast({
-                                      title: 'Cannot qualify lead',
-                                      message: 'You must contact the lead before marking them as qualified.',
-                                      nextStep: 'Tap Call, complete the call log, then use Update Status to mark them as Contacted first.',
+                                      title: 'Qualify lead first',
+                                      message: 'This lead must be Qualified before a site visit can be scheduled.',
+                                      nextStep: 'Use Mark Qualified and complete the form, then schedule the visit.',
                                       type: 'error'
                                     });
                                   } else {
-                                    setQualifyingLead(lead);
+                                    setSelectedLead(lead);
+                                    setScheduleModalOpen(true);
                                   }
-                                  setActiveDropdown(null);
-                                }}
-                              >
-                                Mark Qualified
-                              </button>
-                              <button
-                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateLeadStatus(lead.id, 'SITE_VISIT_SCHEDULED');
                                   setActiveDropdown(null);
                                 }}
                               >

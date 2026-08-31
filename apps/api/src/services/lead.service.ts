@@ -468,6 +468,13 @@ export class LeadService {
     if (guardFields?.demo_scheduled_at) {
       entityContext.demo_scheduled_at = new Date(guardFields.demo_scheduled_at);
     }
+    if (guardFields?.qualification) {
+      const q = guardFields.qualification;
+      if (q.budget_min !== undefined) entityContext.budget_min = q.budget_min;
+      if (q.budget_max !== undefined) entityContext.budget_max = q.budget_max;
+      if (q.property_type_preference !== undefined) entityContext.property_type_preference = q.property_type_preference;
+      if (q.preferred_location !== undefined) entityContext.preferred_location = q.preferred_location;
+    }
     // Always pull activities — the CALL_LOGGED guard (§1 row 2) needs them
     entityContext.activities = await p.leadActivity.findMany({ where: { lead_id: leadId } });
     // SITE_VISIT_* guards need the linked visits AND their property outcomes

@@ -38,13 +38,13 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (requireAllFields) {
-      if (!formData.budget_min) newErrors.budget_min = 'Min budget is required';
-      if (!formData.budget_max) newErrors.budget_max = 'Max budget is required';
+      if (formData.budget_min == null) newErrors.budget_min = 'Min budget is required';
+      if (formData.budget_max == null) newErrors.budget_max = 'Max budget is required';
       if (!formData.property_type_preference) newErrors.property_type_preference = 'Property type is required';
       if (!formData.preferred_location) newErrors.preferred_location = 'Preferred location is required';
     }
 
-    if (formData.budget_min && formData.budget_max) {
+    if (formData.budget_min != null && formData.budget_max != null) {
       if (formData.budget_max < formData.budget_min) {
         newErrors.budget_max = 'Max budget cannot be less than Min budget';
       }
@@ -96,15 +96,15 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
               <InputField
                 label="Min Budget (₹)"
                 type="number"
-                value={formData.budget_min || ''}
-                onChange={(e) => setFormData({ ...formData, budget_min: Number(e.target.value) || undefined })}
+                value={formData.budget_min ?? ''}
+                onChange={(e) => setFormData({ ...formData, budget_min: e.target.value === '' ? undefined : Number(e.target.value) })}
                 error={errors.budget_min}
               />
               <InputField
                 label="Max Budget (₹)"
                 type="number"
-                value={formData.budget_max || ''}
-                onChange={(e) => setFormData({ ...formData, budget_max: Number(e.target.value) || undefined })}
+                value={formData.budget_max ?? ''}
+                onChange={(e) => setFormData({ ...formData, budget_max: e.target.value === '' ? undefined : Number(e.target.value) })}
                 error={errors.budget_max}
               />
             </div>

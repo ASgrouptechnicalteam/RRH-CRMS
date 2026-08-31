@@ -312,7 +312,16 @@ export const TelecallerDashboard: React.FC = () => {
                                 className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setQualifyingLead(lead);
+                                  if (lead.status !== 'CONTACTED' && lead.status !== 'QUALIFICATION_PENDING') {
+                                    showToast({
+                                      title: 'Cannot qualify lead',
+                                      message: 'You must contact the lead before marking them as qualified.',
+                                      nextStep: 'Tap Call, complete the call log, then use Update Status to mark them as Contacted first.',
+                                      type: 'error'
+                                    });
+                                  } else {
+                                    setQualifyingLead(lead);
+                                  }
                                   setActiveDropdown(null);
                                 }}
                               >

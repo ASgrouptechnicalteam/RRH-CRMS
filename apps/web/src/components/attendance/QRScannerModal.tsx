@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { QrCode, CheckCircle2, Clock, ShieldCheck, AlertCircle, ArrowRight, Sun, Coffee, Camera } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { QRCodeVisual } from '../common/QRCodeVisual';
 import { CameraQRScanner } from '../common/CameraQRScanner';
 import { ScanResult } from '../../types';

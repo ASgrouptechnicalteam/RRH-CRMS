@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { LoginSchema, ChangePasswordSchema, Roles } from '@rrh-ems/shared';
+import { LoginSchema, ChangePasswordSchema, Roles } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { loginRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter';
 import { publicAssetUrl } from '../utils/media';

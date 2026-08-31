@@ -5,7 +5,7 @@ import { AdminAnalyticsPortal } from '../admin/AdminAnalyticsPortal';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { BannerControlWidget } from '../dashboards/BannerControlWidget';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';

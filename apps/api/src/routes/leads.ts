@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Roles, LeadCreateSchema, LeadStatusUpdateSchema, LeadReassignSchema, Permissions, AddPropertyInterestSchema } from '@rrh-ems/shared';
+import { Roles, LeadCreateSchema, LeadStatusUpdateSchema, LeadReassignSchema, Permissions, AddPropertyInterestSchema } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { LeadService, AppError } from '../services/lead.service';
 import { OpportunityService } from '../services/opportunity.service';

@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole, authenticateKioskToken, KioskAuthenticatedRequest } from '../middleware/auth';
 import { generateQrHmac, verifyQrHmac } from '../utils/qr';
 import { calculateAttendanceStatus, getISTComponents } from '../utils/time';
-import { Roles, LateProposalSchema } from '@rrh-ems/shared';
+import { Roles, LateProposalSchema } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 
 const router = Router();

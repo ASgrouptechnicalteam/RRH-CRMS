@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { buildProjectScope } from '../authz/dataScope';
-import { ProjectCreateInput, ProjectUpdateInput, Roles, Permissions } from '@rrh-ems/shared';
+import { ProjectCreateInput, ProjectUpdateInput, Roles, Permissions } from '../shared';
 import { can } from '../authz/authorization';
 import { slugify, generateUniqueSlug } from '../utils/slugify';
 

@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
-import { DailyTargetSetSchema, Roles, Permissions } from '@rrh-ems/shared';
+import { DailyTargetSetSchema, Roles, Permissions } from '../shared';
 import { requireAuthz } from '../middleware/authz';
 import { can } from '../authz/authorization';
 import { getDownstreamEmployeeIds } from '../utils/hierarchy';

@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
-import { DailyReportSchema, Roles } from '@rrh-ems/shared';
+import { DailyReportSchema, Roles } from '../shared';
 import { getISTComponents } from '../utils/time';
 
 const router = Router();

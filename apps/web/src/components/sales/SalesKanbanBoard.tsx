@@ -2,7 +2,7 @@ import React from 'react';
 import { SALES_STAGES_ORDER, SALES_STAGE_LABELS, SALES_STAGE_COLORS } from './SalesConstants';
 import { SalesOpportunityCard } from './SalesOpportunityCard';
 import { useAuth } from '../../context/AuthContext';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../../shared';
 import { SalesOpportunity } from '../../types';
 
 interface SalesKanbanBoardProps {

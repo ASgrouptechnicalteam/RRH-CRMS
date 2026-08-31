@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
-import { Permissions, MessageTemplateSchema } from '@rrh-ems/shared';
+import { Permissions, MessageTemplateSchema } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { MessageTemplateService } from '../services/messageTemplate.service';
 

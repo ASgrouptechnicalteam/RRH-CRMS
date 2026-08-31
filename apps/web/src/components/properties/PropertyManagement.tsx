@@ -28,8 +28,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
-import { Permissions } from '@rrh-ems/shared';
-import { Roles } from '@rrh-ems/shared';
+import { Permissions } from '../../shared';
+import { Roles } from '../../shared';
 import { AddPropertyWizard } from './AddPropertyWizard';
 import { EditPropertyModal } from './EditPropertyModal';
 import { Edit, Building2 } from 'lucide-react';

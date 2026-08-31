@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, X, MapPin, Calendar, Layout, Edit, CheckCircle2, ShieldCheck, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../../shared';
 import { useToast } from '../../context/ToastContext';
 import { PropertyManagement } from '../properties/PropertyManagement';
 import { ProjectDossierData, PropertyListItem, ProjectFormData } from '../../types';

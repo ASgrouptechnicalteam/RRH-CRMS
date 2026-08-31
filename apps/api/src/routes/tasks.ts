@@ -2,7 +2,7 @@ import { Router, Response , NextFunction} from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
-import { TaskCreateSchema, TaskUpdateStatusSchema, Roles, Permissions } from '@rrh-ems/shared';
+import { TaskCreateSchema, TaskUpdateStatusSchema, Roles, Permissions } from '../shared';
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { requireAuthz } from '../middleware/authz';
 import { can } from '../authz/authorization';

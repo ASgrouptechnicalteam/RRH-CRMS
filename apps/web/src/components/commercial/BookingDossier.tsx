@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../../shared';
 import { ArrowLeft, CheckCircle, XCircle, IndianRupee, FileText, User, MapPin, Clock } from 'lucide-react';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { useToast } from '../../context/ToastContext';

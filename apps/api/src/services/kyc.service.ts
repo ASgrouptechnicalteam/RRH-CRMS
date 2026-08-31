@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { KycPolicy } from '../policies/kyc.policy';
 import { encryptData, decryptData } from '../utils/crypto';
-import { KycStatus } from '@rrh-ems/shared';
+import { KycStatus } from '../shared';
 
 
 const p = prisma;

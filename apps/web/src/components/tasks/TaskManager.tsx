@@ -3,7 +3,7 @@ import {
   CheckCircle2, Clock, AlertTriangle, Plus, Sparkles, X, Send, Users, Briefcase, ListTodo, CheckSquare, Calendar, Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { API_BASE_URL } from '../../config';
 import { TaskItem, EmployeeListItem } from '../../types';
 import { DataTable, ColumnDef } from '../ui/DataTable';

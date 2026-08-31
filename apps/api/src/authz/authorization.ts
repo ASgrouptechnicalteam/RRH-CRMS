@@ -1,5 +1,5 @@
 import { TokenPayload } from '../utils/jwt';
-import { Permission, Permissions, Roles } from '@rrh-ems/shared';
+import { Permission, Permissions, Roles } from '../shared';
 import { PropertyPolicy } from '../policies/property.policy';
 import { LeadPolicy } from '../policies/lead.policy';
 import { SiteVisitPolicy } from '../policies/siteVisit.policy';

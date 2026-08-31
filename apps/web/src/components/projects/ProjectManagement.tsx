@@ -3,7 +3,7 @@ import { Building2, Plus, Search, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from '../../shared';
 import { ProjectFormWizard } from './ProjectFormWizard';
 import { ProjectDossier } from './ProjectDossier';
 import { ProjectListItem, ProjectFormData } from '../../types';

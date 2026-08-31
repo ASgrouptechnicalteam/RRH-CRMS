@@ -4,7 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../shared';
 import { ComplaintService } from '../services/complaint.service';
 
 const router = Router();

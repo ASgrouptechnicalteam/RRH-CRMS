@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from '../../shared';
 import { QuickAddLeadModal } from './QuickAddLeadModal';
 import { LeadDetailModal } from './LeadDetailModal';
 import {

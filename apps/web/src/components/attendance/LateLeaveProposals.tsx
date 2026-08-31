@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, Send, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { ProposalItem } from '../../types';
 
 

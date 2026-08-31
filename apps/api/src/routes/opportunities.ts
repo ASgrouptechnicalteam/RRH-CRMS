@@ -1,7 +1,7 @@
 import { Router, Response , NextFunction} from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
-import { Permissions } from '@rrh-ems/shared';
-import { OpportunityCreateSchema, OpportunityUpdateSchema } from '@rrh-ems/shared';
+import { Permissions } from '../shared';
+import { OpportunityCreateSchema, OpportunityUpdateSchema } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { OpportunityService } from '../services/opportunity.service';
 

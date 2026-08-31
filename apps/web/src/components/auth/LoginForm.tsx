@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle, Sparkles, Bug } from 'lucide-react';
-import { EMPLOYEE_CODE_REGEX } from '@rrh-ems/shared';
+import { EMPLOYEE_CODE_REGEX } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { LoginResponseData } from '../../types';

@@ -1,4 +1,4 @@
-import { RoleName, Roles } from '@rrh-ems/shared';
+import { RoleName, Roles } from '../../shared';
 
 export interface TourStep {
   target: string;

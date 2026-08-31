@@ -28,7 +28,7 @@ import { API_BASE_URL } from './config';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from './shared';
 import { Kiosk } from './components/attendance/Kiosk';
 
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
@@ -251,7 +251,7 @@ const AppShell: React.FC = () => {
       {/* Consolidated Hubs */}
       <Route path="/hr-hub" element={canManageEmployees ? <HRDashboard /> : <Navigate to="/" replace />} />
       <Route path="/hr-attendance" element={canManageEmployees ? <HRAttendanceDashboard /> : <Navigate to="/" replace />} />
-      <Route path="/team-performance" element={canManageEmployees ? <TeamPerformanceDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/team-performance" element={canViewTeamPerformance ? <TeamPerformanceDashboard /> : <Navigate to="/" replace />} />
       <Route path="/approvals" element={canManageEmployees ? <ApprovalsDashboard /> : <Navigate to="/" replace />} />
       <Route path="/hr-daily-reports" element={canManageEmployees ? <DailyReportsView /> : <Navigate to="/" replace />} />
       

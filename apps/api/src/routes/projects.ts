@@ -5,7 +5,7 @@ import {
   ProjectCreateSchema,
   ProjectUpdateSchema,
   Permissions,
-} from '@rrh-ems/shared';
+} from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { ProjectService } from '../services/project.service';
 import { prisma } from '../lib/prisma';

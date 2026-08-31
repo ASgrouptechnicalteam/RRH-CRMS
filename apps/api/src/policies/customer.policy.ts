@@ -1,5 +1,5 @@
 import { TokenPayload } from '../utils/jwt';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 import { Customer } from '@prisma/client';
 
 /**

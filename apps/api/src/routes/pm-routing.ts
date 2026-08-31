@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { PMRoutingService, AppError } from '../services/pm-routing.service';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 
 const router = Router();
 

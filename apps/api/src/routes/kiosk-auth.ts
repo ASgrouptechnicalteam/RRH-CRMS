@@ -2,7 +2,7 @@ import { Router, Response, Request } from 'express';
 import { prisma } from '../lib/prisma';
 import { generateAccessToken, TokenPayload } from '../utils/jwt';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 import bcrypt from 'bcryptjs';
 import { validateRequestBody } from '../middleware/validate';
 import { z } from 'zod';

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../shared';
 import AnalyticsService from '../services/analytics.service';
 
 const router = Router();

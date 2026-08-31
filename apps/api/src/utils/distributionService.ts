@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 
 
 const p = prisma;

@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { PortalClient } from './portalClient';
 import { KYC_EVENT_TYPE } from './kyc.service';
-import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '@rrh-ems/shared';
+import { PAYMENT_EVENT_TYPE, INSTALLMENT_EVENT_TYPE } from '../shared';
 
 
 const p = prisma;

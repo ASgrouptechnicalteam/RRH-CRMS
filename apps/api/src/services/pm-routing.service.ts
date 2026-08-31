@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 import { prisma as p } from '../lib/prisma';
 
 export class AppError extends Error {

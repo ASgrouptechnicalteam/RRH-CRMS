@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../../shared';
 import { CreateBookingModal } from '../commercial/CreateBookingModal';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 

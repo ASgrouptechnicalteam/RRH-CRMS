@@ -6,7 +6,7 @@ import { EmployeeManagement } from '../employees/EmployeeManagement';
 import { HolidayManagement } from './HolidayManagement';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { API_BASE_URL } from '../../config';
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatCard } from '../ui/StatCard';
@@ -119,7 +119,7 @@ const TeamPerformanceTab: React.FC = () => {
 export const HRDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'HOLIDAYS' | 'PERFORMANCE' | 'DOCUMENTS'>((searchParams.get('tab') as any) || 'OVERVIEW');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'HOLIDAYS' | 'PERFORMANCE' | 'DOCUMENTS'>((searchParams.get('tab') as any) || 'DIRECTORY');
 
   const canManageEmployees = user?.roles?.some(
     (r) => [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(r as never)

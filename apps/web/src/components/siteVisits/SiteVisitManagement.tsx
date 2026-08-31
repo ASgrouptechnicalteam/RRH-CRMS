@@ -20,7 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useWhatsApp } from '../../hooks/useWhatsApp';
 import { API_BASE_URL } from '../../config';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { EmployeeListItem } from '../../types';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 

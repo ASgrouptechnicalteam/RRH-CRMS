@@ -10,7 +10,6 @@
     "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
-    "@rrh-ems/shared": "*",
     "@tanstack/react-query": "^5.29.2",
     "clsx": "^2.1.0",
     "jsqr": "^1.4.0",

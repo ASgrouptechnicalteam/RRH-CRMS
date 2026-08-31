@@ -12,7 +12,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, IndianRupee, Clock, CheckCircle2, XCircle, RefreshCw, Bell, BellOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../../shared';
 import { ExpenseRefundForm } from './ExpenseRefundForm';
 import { AccountantRefundQueue } from './AccountantRefundQueue';
 import { usePushNotifications } from '../../hooks/usePushNotifications';

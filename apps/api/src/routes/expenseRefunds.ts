@@ -7,8 +7,8 @@ import {
   ExpenseRefundAccountantReviewSchema,
   ExpenseRefundMDReviewSchema,
   ExpenseRefundMarkRefundedSchema,
-} from '@rrh-ems/shared';
-import { Permissions } from '@rrh-ems/shared';
+} from '../shared';
+import { Permissions } from '../shared';
 import { ExpenseRefundService } from '../services/expenseRefund.service';
 import multer from 'multer';
 import path from 'path';

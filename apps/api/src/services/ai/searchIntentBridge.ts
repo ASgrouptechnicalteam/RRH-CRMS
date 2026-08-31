@@ -18,7 +18,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { PropertyAvailabilityType } from '@rrh-ems/shared';
+import { PropertyAvailabilityType } from '../../shared';
 import { SearchIntent } from './searchIntent';
 
 

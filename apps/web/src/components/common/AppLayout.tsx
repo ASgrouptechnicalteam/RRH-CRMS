@@ -1,7 +1,7 @@
 import React, { type ComponentType, useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map, FileText, Menu, Clock, Calendar, TrendingUp, ShieldCheck, MonitorSmartphone } from 'lucide-react';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
 import { ProductTour } from '../onboarding/ProductTour';
@@ -190,10 +190,10 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
 
   // OPERATIONS
   { id: 'group-operations', label: 'OPERATIONS', group: true, icon: undefined },
-  { id: 'hr-employees', label: 'Employees', icon: Users, path: '/hr-hub?tab=DIRECTORY', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-employees', label: 'Employees', icon: Users, path: '/hr-hub', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
   { id: 'hr-attendance', label: 'Attendance', icon: Clock, path: '/hr-attendance', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
   { id: 'hr-approvals', label: 'Approvals', icon: Calendar, path: '/approvals', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'team-performance', label: 'Team Performance', icon: TrendingUp, path: '/team-performance', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'team-performance', label: 'Team Performance', icon: TrendingUp, path: '/team-performance', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
   { id: 'hr-daily-reports', label: 'Daily Reports', icon: FileText, path: '/hr-daily-reports', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
   { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
   { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },

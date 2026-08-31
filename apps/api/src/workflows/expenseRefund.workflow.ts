@@ -1,4 +1,4 @@
-import { ExpenseRefundStatus } from '@rrh-ems/shared';
+import { ExpenseRefundStatus } from '../shared';
 
 export type ExpenseRefundAction =
   | 'ACCOUNTANT_APPROVE'

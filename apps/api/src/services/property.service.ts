@@ -1,9 +1,9 @@
 import { prisma } from '../lib/prisma';
 import { PrismaClient, Property } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
-import { Roles, PropertyAvailabilityType } from '@rrh-ems/shared';
+import { Roles, PropertyAvailabilityType } from '../shared';
 import { can } from '../authz/authorization';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../shared';
 import { WorkflowEngine } from '../workflows/workflowEngine';
 import { WorkflowDomain } from '../workflows/types';
 import { PropertyPolicy } from '../policies/property.policy';

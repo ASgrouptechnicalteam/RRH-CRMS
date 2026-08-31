@@ -1,5 +1,5 @@
 import { TokenPayload } from '../utils/jwt';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from '../shared';
 
 /**
  * Phase 5 Packet 3 — ProjectPolicy

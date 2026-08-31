@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { prisma } from './lib/prisma';
 import bcrypt from 'bcryptjs';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from './shared';
 
 import healthRoutes from './routes/health';
 import authRoutes from './routes/auth';

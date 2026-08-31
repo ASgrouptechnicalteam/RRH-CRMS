@@ -3,7 +3,7 @@ import { Building2, X, MapPin, Calendar, Layout, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { ProjectFormData, ProjectFormPayload, PmListItem } from '../../types';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 

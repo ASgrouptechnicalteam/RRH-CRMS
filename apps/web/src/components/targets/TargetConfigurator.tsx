@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Target, Sparkles, Plus, Save, Calendar, User, ShieldCheck, AlertCircle, Bookmark, Trash2, GripVertical, CheckSquare, Type, Hash, AlignLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../shared';
 import { TargetListItem, EmployeeListItem, DailyReportPreset } from '../../types';
 
 type FieldType = 'SHORT_TEXT' | 'LONG_TEXT' | 'COUNT' | 'CHECKLIST' | string;

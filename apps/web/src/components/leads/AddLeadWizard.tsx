@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { PROPERTY_TYPE_OPTIONS, getPropertyTypeLabel } from '../../constants/propertyTypes';
 
 interface AddLeadWizardProps {
   onClose: () => void;
@@ -237,17 +238,11 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2">Property Type</label>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { val: 'RESIDENTIAL_APARTMENT', label: 'Apartment' },
-                    { val: 'RESIDENTIAL_VILLA', label: 'Villa / House' },
-                    { val: 'RESIDENTIAL_PLOT', label: 'Plot / Land' },
-                    { val: 'COMMERCIAL_SHOP', label: 'Commercial' },
-                    { val: 'AGRICULTURAL_LAND', label: 'Agricultural' }
-                  ].map(pt => (
+                  {PROPERTY_TYPE_OPTIONS.map(pt => (
                     <button 
-                      key={pt.val}
-                      onClick={() => setPropertyType(pt.val)}
-                      className={`px-4 py-2 rounded-full border text-sm font-bold transition-colors ${propertyType === pt.val ? 'bg-navy-600 text-white border-navy-700 shadow-md' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                      key={pt.value}
+                      onClick={() => setPropertyType(pt.value)}
+                      className={`px-4 py-2 rounded-full border text-sm font-bold transition-colors ${propertyType === pt.value ? 'bg-navy-600 text-white border-navy-700 shadow-md' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                     >
                       {pt.label}
                     </button>
@@ -358,7 +353,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
               <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">Lead Snapshot</h3>
               <div className="grid grid-cols-2 text-sm gap-y-3">
                 <div><span className="text-slate-400 block text-xs">Name & Phone</span><span className="font-semibold text-navy-800">{customerName} - {phone}</span></div>
-                <div><span className="text-slate-400 block text-xs">Requirement</span><span className="font-semibold">{propertyType.replace('RESIDENTIAL_', '').replace('COMMERCIAL_', '')} {bhkPreference ? `(${bhkPreference})` : ''}</span></div>
+                <div><span className="text-slate-400 block text-xs">Requirement</span><span className="font-semibold">{getPropertyTypeLabel(propertyType)} {bhkPreference ? `(${bhkPreference})` : ''}</span></div>
                 <div><span className="text-slate-400 block text-xs">Budget</span><span className="font-semibold">{budgetRange || 'Not specified'}</span></div>
                 <div><span className="text-slate-400 block text-xs">Timeline</span><span className="font-semibold">{buyingTimeline || 'Not specified'}</span></div>
               </div>

@@ -71,6 +71,9 @@ export class PropertyService {
           orderBy: { created_at: 'desc' },
           include: { actor: { select: { id: true, employee_code: true, full_name: true } } },
         },
+        _count: {
+          select: { interested_leads: true }
+        },
       },
       orderBy: { created_at: 'desc' },
     });

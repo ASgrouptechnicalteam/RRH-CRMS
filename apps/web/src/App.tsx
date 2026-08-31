@@ -196,6 +196,10 @@ const AppShell: React.FC = () => {
     ([Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER,
      Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] as string[]).includes(r)
   );
+  
+  const canAccessCommercial = user?.roles?.some(r =>
+    ([Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE] as string[]).includes(r)
+  );
 
   // Role-to-dashboard resolver — each role gets its own dedicated dashboard
   const dashboardElement = (
@@ -224,14 +228,14 @@ const AppShell: React.FC = () => {
       <Route path="/leads" element={<LeadManagement />} />
       <Route path="/leads-clients" element={<LeadManagement />} />
       <Route path="/sales-pipeline" element={<SalesPipelineManagement />} />
-      <Route path="/customers" element={<CustomerManagement />} />
+      <Route path="/customers" element={canAccessCommercial ? <CustomerManagement /> : <Navigate to="/dashboard" replace />} />
       <Route path="/projects" element={<ProjectManagement />} />
       <Route path="/properties" element={<PropertyManagement />} />
       <Route path="/site-visits" element={<SiteVisitManagement />} />
       <Route path="/tasks" element={<TaskManager />} />
       <Route path="/daily-report" element={<DailyReportingPage />} />
-      <Route path="/bookings" element={<BookingManagement />} />
-      <Route path="/bookings/:id" element={<BookingDossier />} />
+      <Route path="/bookings" element={canAccessCommercial ? <BookingManagement /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/bookings/:id" element={canAccessCommercial ? <BookingDossier /> : <Navigate to="/dashboard" replace />} />
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/settings" element={<UserSettings />} />
       

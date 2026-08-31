@@ -3,6 +3,7 @@ import { Building, MapPin, IndianRupee, Clock, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { PROPERTY_TYPE_OPTIONS } from '../../constants/propertyTypes';
 
 interface QualifyLeadModalProps {
   leadId: number;
@@ -83,11 +84,14 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ leadId, curr
                 onChange={(e) => setPropertyType(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none"
               >
-                <option value="RESIDENTIAL_APARTMENT">Apartment</option>
-                <option value="RESIDENTIAL_VILLA">Villa</option>
-                <option value="RESIDENTIAL_PLOT">Plot</option>
-                <option value="COMMERCIAL_OFFICE">Commercial Office</option>
-                <option value="COMMERCIAL_SHOP">Commercial Shop</option>
+                <option value="">Select property type...</option>
+                {PROPERTY_TYPE_OPTIONS.map(pt => (
+                  <option key={pt.value} value={pt.value}>{pt.label}</option>
+                ))}
+                {/* Support legacy/unknown values if they are already set in DB */}
+                {propertyType && !PROPERTY_TYPE_OPTIONS.find(pt => pt.value === propertyType) && (
+                  <option value={propertyType}>{propertyType}</option>
+                )}
               </select>
             </div>
 

@@ -6,6 +6,7 @@ import {
   MessageCircle,
   Users,
   Clock,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -15,6 +16,9 @@ import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { TaskManager } from '../tasks/TaskManager';
 import { StatCard, ListWidget, StatusPill, ListItem } from '../ui';
 import { Button } from '../common/ui/Button';
+import { QualificationFormModal, QualificationData } from '../leads/QualificationFormModal';
+import { LeadDetailModal } from '../leads/LeadDetailModal';
+import { getPropertyTypeLabel } from '../../constants/propertyTypes';
 
 export const TelecallerDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -25,23 +29,40 @@ export const TelecallerDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [tomorrowVisits, setTomorrowVisits] = useState<ListItem[]>([]);
   const [whatsappTasks, setWhatsappTasks] = useState(0);
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [selectedLead, setSelectedLead] = useState<LeadListItem | null>(null);
+  const [qualifyingLead, setQualifyingLead] = useState<LeadListItem | null>(null);
 
-  const updateLeadStatus = async (leadId: number, newStatus: string) => {
+  useEffect(() => {
+    const handleClickOutside = () => setActiveDropdown(null);
+    if (activeDropdown !== null) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [activeDropdown]);
+
+  const updateLeadStatus = async (leadId: number, newStatus: string, qualification?: QualificationData) => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, notes: 'Updated directly from Daily Calling List' }),
+        body: JSON.stringify({ 
+          status: newStatus, 
+          notes: 'Updated directly from Daily Calling List',
+          qualification 
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         showToast('Lead status updated successfully!', 'success');
         setAssignedLeads((prev) => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
       } else {
-        showToast(data.error || 'Failed to update status', 'error');
+        showToast(data.error || data.message || 'Failed to update status', 'error');
+        throw new Error(data.message || 'Failed to update status');
       }
-    } catch (e) {
-      showToast('Error updating status', 'error');
+    } catch (e: any) {
+      showToast(e.message || 'Error updating status', 'error');
+      throw e;
     }
   };
 
@@ -148,6 +169,27 @@ export const TelecallerDashboard: React.FC = () => {
         </div>
       </div>
 
+      {qualifyingLead && (
+        <QualificationFormModal
+          title="Qualify Lead"
+          requireAllFields={true}
+          onClose={() => setQualifyingLead(null)}
+          onSave={async (data) => {
+            await updateLeadStatus(qualifyingLead.id, 'QUALIFIED', data);
+          }}
+        />
+      )}
+
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead as any}
+          onClose={() => setSelectedLead(null)}
+          onUpdateStatus={updateLeadStatus}
+          onRefreshLeads={fetchTelecallerData}
+          onDemoComplete={async () => {}}
+        />
+      )}
+
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
@@ -204,54 +246,85 @@ export const TelecallerDashboard: React.FC = () => {
             ) : (
               <div className="space-y-3 max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1">
                 {myAssignedLeads.map((lead: LeadListItem) => (
-                  <div
-                    key={lead.id}
-                    className="p-4 bg-surface rounded-xl border border-slate-200 flex items-center justify-between gap-4 hover:shadow-sm transition-shadow group"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono font-semibold text-navy-600 text-xs">{lead.lead_code}</span>
-                        {lead.status === 'NEW' && <StatusPill status="NEW" type="hot" />}
-                        {lead.status === 'CONTACTED' && <StatusPill status="CONTACTED" type="warm" />}
+                    <div
+                      key={lead.id}
+                      onClick={() => setSelectedLead(lead)}
+                      className="p-4 bg-surface rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-sm transition-shadow group min-w-0 cursor-pointer"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono font-semibold text-navy-600 text-xs truncate">{lead.lead_code}</span>
+                          {lead.status === 'NEW' && <StatusPill status="NEW" type="hot" />}
+                          {lead.status === 'CONTACTED' && <StatusPill status="CONTACTED" type="warm" />}
+                        </div>
+                        <h4 className="font-bold text-navy-900 text-sm truncate">{lead.customer_name}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          {lead.phone} • {getPropertyTypeLabel(lead.property_type_preference)}
+                        </p>
                       </div>
-                      <h4 className="font-bold text-navy-900 text-sm">{lead.customer_name}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {lead.phone} • {lead.property_type_preference || 'Villa'}
-                      </p>
-                    </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => updateLeadStatus(lead.id, 'CONTACTED')}
-                      >
-                        Mark Contacted
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => updateLeadStatus(lead.id, 'QUALIFIED')}
-                      >
-                        Mark Qualified
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => updateLeadStatus(lead.id, 'SITE_VISIT_SCHEDULED')}
-                      >
-                        Schedule Visit
-                      </Button>
-
-                      <a
-                        href={`tel:${lead.phone}`}
-                        className="px-3 py-1.5 bg-action hover:bg-navy-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5 shrink-0"
-                      >
-                        <PhoneCall className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
+                      <div className="flex items-center gap-3 shrink-0 relative" onClick={(e) => e.stopPropagation()}>
+                        <a
+                          href={`tel:${lead.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3 py-1.5 bg-action hover:bg-navy-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5 shrink-0"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5" />
+                          <span>Call</span>
+                        </a>
+                        
+                        <div className="relative">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdown(activeDropdown === lead.id ? null : lead.id);
+                            }}
+                            disabled={lead.can_edit === false}
+                            className="flex items-center gap-1"
+                          >
+                            <span>Update Status</span>
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </Button>
+                          
+                          {activeDropdown === lead.id && (
+                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-10 flex flex-col overflow-hidden">
+                              <button
+                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-navy-700 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateLeadStatus(lead.id, 'CONTACTED');
+                                  setActiveDropdown(null);
+                                }}
+                              >
+                                Mark Contacted
+                              </button>
+                              <button
+                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-navy-700 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setQualifyingLead(lead);
+                                  setActiveDropdown(null);
+                                }}
+                              >
+                                Mark Qualified
+                              </button>
+                              <button
+                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-navy-700 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateLeadStatus(lead.id, 'SITE_VISIT_SCHEDULED');
+                                  setActiveDropdown(null);
+                                }}
+                              >
+                                Schedule Visit
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
                 ))}
               </div>
             )}

@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Phone, MapPin, Building, Briefcase, Mail, Edit3, Camera, QrCode } from 'lucide-react';
+import { User, Phone, MapPin, Building, Briefcase, Mail, Edit3, Camera, QrCode, Maximize2, X } from 'lucide-react';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { PerformanceHistoryTimeline } from '../performance/PerformanceHistoryTimeline';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
 import { ProfileEditModal } from './ProfileEditModal';
 import { QRCodeVisual } from '../common/QRCodeVisual';
-import { API_BASE_URL, STATIC_URL } from '../../config';
+import { API_BASE_URL } from '../../config';
+import { mediaUrl } from '../../utils/imageUtils';
 
 export const UserProfile: React.FC = () => {
   const { user, fetchWithAuth, updateUser } = useAuth();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isQRFullscreen, setIsQRFullscreen] = useState(false);
   const [qrToken, setQrToken] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -22,6 +24,16 @@ export const UserProfile: React.FC = () => {
       .then((data) => setQrToken(data.signedToken || data.token))
       .catch(() => console.error('Failed to load QR code'));
   }, [fetchWithAuth]);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsQRFullscreen(false);
+    };
+    if (isQRFullscreen) {
+      window.addEventListener('keydown', handleEsc);
+    }
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isQRFullscreen]);
 
   if (!user) return null;
 
@@ -63,7 +75,7 @@ export const UserProfile: React.FC = () => {
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-white p-1.5 shadow-xl border border-slate-100 relative overflow-hidden">
                 <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-navy-800 overflow-hidden">
                   {user.profileImageUrl ? (
-                    <img src={`${STATIC_URL}${user.profileImageUrl}`} alt={user.fullName} className="w-full h-full object-cover" />
+                    <img src={mediaUrl(user.profileImageUrl)} alt={user.fullName} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-10 h-10 sm:w-12 sm:h-12" />
                   )}
@@ -170,7 +182,18 @@ export const UserProfile: React.FC = () => {
 
         {/* QR Code Section */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-800 px-1">Attendance QR</h2>
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-lg font-bold text-slate-800">Attendance QR</h2>
+            {qrToken && (
+              <button 
+                onClick={() => setIsQRFullscreen(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-navy-600 hover:text-navy-800 transition-colors"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Full screen</span>
+              </button>
+            )}
+          </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
             {qrToken ? (
               <>
@@ -204,6 +227,39 @@ export const UserProfile: React.FC = () => {
           <div onClick={e => e.stopPropagation()}>
             <ChangePasswordModal />
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen QR Modal */}
+      {isQRFullscreen && qrToken && (
+        <div 
+          className="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in duration-200"
+          onClick={() => setIsQRFullscreen(false)}
+        >
+          <button 
+            onClick={() => setIsQRFullscreen(false)}
+            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          <div 
+            className="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* The QR is deliberately large to ensure it can be scanned easily from a distance */}
+            <QRCodeVisual value={qrToken} size={300} />
+            <div className="mt-8 text-center">
+              <h2 className="text-2xl font-bold text-navy-900 mb-2">{user.fullName}</h2>
+              <div className="inline-block bg-slate-100 px-4 py-1.5 rounded-full font-mono text-sm font-bold text-slate-600">
+                {user.employeeCode}
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-white/60 mt-8 text-sm text-center max-w-sm">
+            Hold this QR code up to the camera on the Kiosk terminal.
+          </p>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Image, ToggleLeft, ToggleRight, Check } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
+import { mediaUrl } from '../../utils/imageUtils';
 
 export const BannerControlWidget: React.FC = () => {
   const { accessToken } = useAuth();
@@ -81,7 +82,7 @@ export const BannerControlWidget: React.FC = () => {
         {imageUrl && active && (
           <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-500 border-b border-slate-200">Preview</div>
-            <img src={imageUrl} alt="Preview" className="w-full h-auto max-h-[150px] object-cover" />
+            <img src={mediaUrl(imageUrl)} alt="Preview" className="w-full h-auto max-h-[150px] object-cover" />
           </div>
         )}
 

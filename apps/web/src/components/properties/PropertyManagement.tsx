@@ -59,8 +59,9 @@ interface Property {
   location_confirmed_by_pm?: boolean;
   assigned_pm?: { id: number; employee_code: string; full_name: string; phone: string };
   project?: { id: number; name: string };
+  _count?: { interested_leads: number };
   created_by?: { id: number; employee_code: string; full_name: string };
-    created_at: string;
+  created_at: string;
   verification_logs?: VerificationLogItem[];
   images?: PropertyImage[];
 }
@@ -452,8 +453,7 @@ export const PropertyManagement: React.FC = () => {
               ? resolveImageUrl(prop.images.find((i) => i.is_primary)?.image_url || prop.images[0].image_url) 
               : '') || '';
               
-            // Mocking interested leads randomly for visual CRM linkage until backend supports it
-            const mockInterestedLeads = (prop.id % 5) + 1;
+            const actualInterestedLeads = prop._count?.interested_leads || 0;
 
             return (
               <PropertyCard
@@ -466,7 +466,7 @@ export const PropertyManagement: React.FC = () => {
                   sqft: prop.area_sqft,
                   price: `₹${(prop.price / 100000).toFixed(1)} L`,
                   imageUrl: displayImage,
-                  interestedLeads: mockInterestedLeads,
+                  interestedLeads: actualInterestedLeads,
                 }}
                 onClick={() => setSelectedProperty(prop)}
                 brandBadge={

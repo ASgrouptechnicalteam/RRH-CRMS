@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
+import { mediaUrl } from '../../utils/imageUtils';
 
 export const GlobalAnnouncementBanner: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export const GlobalAnnouncementBanner: React.FC = () => {
   return (
     <div className="w-full bg-slate-950 overflow-hidden relative shadow-md">
       <img 
-        src={imageUrl} 
+        src={mediaUrl(imageUrl)} 
         alt="Special Offer Announcement" 
         className="w-full h-auto max-h-[150px] md:max-h-[250px] object-cover object-center animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
       />

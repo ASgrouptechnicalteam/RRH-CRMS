@@ -104,6 +104,9 @@ export interface PropertyListItem {
   verification_logs?: PropertyVerificationLog[];
   // UI view mode used by PropertyManagement
   viewMode?: 'grid' | 'list';
+  _count?: {
+    interested_leads: number;
+  };
 }
 
 export interface PropertyImage {

@@ -8,6 +8,7 @@ import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { LoginSchema, ChangePasswordSchema, Roles } from '@rrh-ems/shared';
 import { validateRequestBody } from '../middleware/validate';
 import { loginRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter';
+import { publicAssetUrl } from '../utils/media';
 
 const router = Router();
 
@@ -322,7 +323,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
         emergencyContactName: employee.emergency_contact_name,
         emergencyContactRelation: employee.emergency_contact_relation,
         emergencyContactPhone: employee.emergency_contact_phone,
-        profileImageUrl: employee.profile_image_url,
+        profileImageUrl: publicAssetUrl(employee.profile_image_url),
       },
     });
   } catch (error) {

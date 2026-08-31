@@ -31,6 +31,8 @@ import {
 } from '../../types';
 import { StatusPill } from '../ui/StatusPill';
 import { QualifyLeadModal } from './QualifyLeadModal';
+import { QualificationFormModal } from './QualificationFormModal';
+import { getPropertyTypeLabel } from '../../constants/propertyTypes';
 
 interface Lead {
   id: number;
@@ -111,6 +113,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   const [demomaxBudget, setDemomaxBudget] = useState('');
   const [demoNotes, setDemoNotes] = useState('');
   const [demoSiteVisitCompleted, setDemoSiteVisitCompleted] = useState(false);
+
+  // Qualification state for editing
+  const [showQualificationModal, setShowQualificationModal] = useState(false);
 
   // Pre-fill demo completion form when modal opens
   useEffect(() => {
@@ -641,6 +646,38 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                     ))}
                   </div>
                 </div>
+
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-navy-900 text-sm">Qualification Details</h4>
+                      {lead.can_edit !== false && (
+                        <button
+                          onClick={() => setShowQualificationModal(true)}
+                          className="text-xs font-semibold text-navy-600 hover:text-navy-700 transition-colors"
+                        >
+                          Edit Details
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Property Type</span>
+                        <span className="font-semibold text-navy-900">{getPropertyTypeLabel(lead.property_type_preference)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Location</span>
+                        <span className="font-semibold text-navy-900">{lead.preferred_location || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Min Budget</span>
+                        <span className="font-semibold text-navy-900">{lead.budget_min ? `₹${lead.budget_min.toLocaleString('en-IN')}` : '—'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Max Budget</span>
+                        <span className="font-semibold text-navy-900">{lead.budget_max ? `₹${lead.budget_max.toLocaleString('en-IN')}` : '—'}</span>
+                      </div>
+                    </div>
+                  </div>
 
                 <div className="space-y-4">
                   <h4 className="font-bold text-navy-900 text-sm">Activity Timeline</h4>
@@ -1191,6 +1228,32 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
             setShowQualifyModal(false);
             onRefreshLeads();
             onClose();
+          }}
+        />
+      )}
+
+      {showQualificationModal && (
+        <QualificationFormModal
+          title="Edit Qualification Details"
+          initialData={{
+            budget_min: lead.budget_min,
+            budget_max: lead.budget_max,
+            property_type_preference: lead.property_type_preference,
+            preferred_location: lead.preferred_location,
+          }}
+          requireAllFields={false} // Editing doesn't force all fields unless moving to QUALIFIED
+          onClose={() => setShowQualificationModal(false)}
+          onSave={async (data) => {
+            const patchRes = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            const resData = await patchRes.json();
+            if (!patchRes.ok) throw new Error(resData.message || 'Failed to update qualification');
+            showToast('Qualification details updated', 'success');
+            onRefreshLeads();
+            setShowQualificationModal(false);
           }}
         />
       )}

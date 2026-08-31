@@ -7,10 +7,21 @@ export interface ToastItem {
   id: string;
   message: string;
   type: ToastType;
+  title?: string;
+  nextStep?: string;
+  durationMs?: number;
+}
+
+export interface ToastOptions {
+  message: string;
+  title?: string;
+  nextStep?: string;
+  type?: ToastType;
+  durationMs?: number;
 }
 
 interface ToastContextType {
-  showToast: (message: string, type?: ToastType) => void;
+  showToast: (messageOrOptions: string | ToastOptions, type?: ToastType) => void;
   hideToast: (id: string) => void;
 }
 
@@ -23,14 +34,38 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const showToast = useCallback((message: string, type: ToastType = 'info') => {
+  const showToast = useCallback((messageOrOptions: string | ToastOptions, fallbackType: ToastType = 'info') => {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
+    
+    let newItem: ToastItem;
+    if (typeof messageOrOptions === 'string') {
+      const type = fallbackType;
+      newItem = {
+        id,
+        message: messageOrOptions,
+        type,
+        durationMs: type === 'error' ? 10000 : 4000
+      };
+    } else {
+      const type = messageOrOptions.type || fallbackType;
+      newItem = {
+        id,
+        message: messageOrOptions.message,
+        title: messageOrOptions.title,
+        nextStep: messageOrOptions.nextStep,
+        type,
+        durationMs: messageOrOptions.durationMs || (type === 'error' ? 10000 : 4000)
+      };
+    }
 
-    // Auto dismiss after 4 seconds
-    setTimeout(() => {
-      hideToast(id);
-    }, 4000);
+    setToasts((prev) => [...prev, newItem]);
+
+    // Auto dismiss
+    if (newItem.durationMs && newItem.durationMs > 0) {
+      setTimeout(() => {
+        hideToast(id);
+      }, newItem.durationMs);
+    }
   }, [hideToast]);
 
   return (
@@ -46,7 +81,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl shadow-xl border text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-0 animate-slideInRight ${
+              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl shadow-xl border text-sm font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-0 animate-slideInRight ${
                 isSuccess
                   ? 'bg-navy-900/95 border-navy-700 text-navy-100'
                   : isError
@@ -56,18 +91,28 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   : 'bg-slate-900/95 border-slate-700 text-slate-100'
               }`}
             >
-              {isSuccess && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />}
-              {isError && <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />}
-              {isWarning && <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />}
-              {!isSuccess && !isError && !isWarning && <Info className="w-4 h-4 shrink-0 text-navy-400 mt-0.5" />}
+              <div className="pt-0.5">
+                {isSuccess && <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />}
+                {isError && <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />}
+                {isWarning && <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />}
+                {!isSuccess && !isError && !isWarning && <Info className="w-5 h-5 shrink-0 text-navy-400" />}
+              </div>
 
-              <div className="flex-1 leading-snug">{t.message}</div>
+              <div className="flex-1 leading-snug space-y-1.5">
+                {t.title && <h5 className="font-bold text-white">{t.title}</h5>}
+                <div>{t.message}</div>
+                {t.nextStep && (
+                  <div className="text-xs opacity-90 pt-1 mt-1 border-t border-white/10">
+                    <span className="font-bold">Next:</span> {t.nextStep}
+                  </div>
+                )}
+              </div>
 
               <button
                 onClick={() => hideToast(t.id)}
-                className="text-slate-400 hover:text-white transition-colors p-0.5"
+                className="text-white/60 hover:text-white transition-colors p-1"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           );

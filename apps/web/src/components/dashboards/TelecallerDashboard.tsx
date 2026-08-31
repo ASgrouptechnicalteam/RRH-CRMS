@@ -19,6 +19,7 @@ import { Button } from '../common/ui/Button';
 import { QualificationFormModal, QualificationData } from '../leads/QualificationFormModal';
 import { LeadDetailModal } from '../leads/LeadDetailModal';
 import { getPropertyTypeLabel } from '../../constants/propertyTypes';
+import { toUserFacingError } from '../../utils/userFacingError';
 
 export const TelecallerDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -52,16 +53,23 @@ export const TelecallerDashboard: React.FC = () => {
           qualification 
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         showToast('Lead status updated successfully!', 'success');
         setAssignedLeads((prev) => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
       } else {
-        showToast(data.error || data.message || 'Failed to update status', 'error');
-        throw new Error(data.message || 'Failed to update status');
+        const formattedError = toUserFacingError({
+          status: res.status,
+          body: data
+        });
+        showToast({ ...formattedError, type: 'error' });
+        throw new Error('SILENT');
       }
     } catch (e: any) {
-      showToast(e.message || 'Error updating status', 'error');
+      if (e.message !== 'SILENT') {
+        const formattedError = toUserFacingError({ message: e.message });
+        showToast({ ...formattedError, type: 'error' });
+      }
       throw e;
     }
   };
@@ -267,7 +275,7 @@ export const TelecallerDashboard: React.FC = () => {
                         <a
                           href={`tel:${lead.phone}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="px-3 py-1.5 bg-action hover:bg-navy-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5 shrink-0"
+                          className="px-3 py-1.5 bg-action hover:bg-navy-700 text-white hover:text-white font-semibold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5 shrink-0"
                         >
                           <PhoneCall className="w-3.5 h-3.5" />
                           <span>Call</span>
@@ -276,7 +284,7 @@ export const TelecallerDashboard: React.FC = () => {
                         <div className="relative">
                           <Button
                             size="sm"
-                            variant="secondary"
+                            variant="action"
                             onClick={(e) => {
                               e.stopPropagation();
                               setActiveDropdown(activeDropdown === lead.id ? null : lead.id);
@@ -291,7 +299,7 @@ export const TelecallerDashboard: React.FC = () => {
                           {activeDropdown === lead.id && (
                             <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-10 flex flex-col overflow-hidden">
                               <button
-                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-navy-700 transition-colors"
+                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   updateLeadStatus(lead.id, 'CONTACTED');
@@ -301,7 +309,7 @@ export const TelecallerDashboard: React.FC = () => {
                                 Mark Contacted
                               </button>
                               <button
-                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-navy-700 transition-colors"
+                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setQualifyingLead(lead);
@@ -311,14 +319,14 @@ export const TelecallerDashboard: React.FC = () => {
                                 Mark Qualified
                               </button>
                               <button
-                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-navy-700 transition-colors"
+                                className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   updateLeadStatus(lead.id, 'SITE_VISIT_SCHEDULED');
                                   setActiveDropdown(null);
                                 }}
                               >
-                                Schedule Visit
+                                Schedule Site Visit
                               </button>
                             </div>
                           )}

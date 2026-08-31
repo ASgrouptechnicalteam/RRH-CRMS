@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { PROPERTY_TYPE_OPTIONS } from '../../constants/propertyTypes';
+import { toUserFacingError } from '../../utils/userFacingError';
 
 interface QualifyLeadModalProps {
   leadId: number;
@@ -44,12 +45,14 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ leadId, curr
         showToast('Lead qualified successfully', 'success');
         onSuccess();
       } else {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to qualify lead');
+        const data = await res.json().catch(() => ({}));
+        const formatted = toUserFacingError({ status: res.status, body: data });
+        showToast({ ...formatted, type: 'error' });
       }
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Error qualifying lead', 'error');
+      const formatted = toUserFacingError({ message: err.message });
+      showToast({ ...formatted, type: 'error' });
     } finally {
       setIsLoading(false);
     }

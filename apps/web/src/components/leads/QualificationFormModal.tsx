@@ -4,6 +4,8 @@ import { Button } from '../common/ui/Button';
 import { InputField } from '../common/ui/InputField';
 import { SelectField } from '../common/ui/SelectField';
 import { PROPERTY_TYPE_OPTIONS } from '../../constants/propertyTypes';
+import { useToast } from '../../context/ToastContext';
+import { toUserFacingError } from '../../utils/userFacingError';
 
 export interface QualificationData {
   budget_min?: number;
@@ -27,16 +29,10 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
   onSave,
   onClose,
 }) => {
-  const [formData, setFormData] = useState<QualificationData>({
-    budget_min: initialData?.budget_min || undefined,
-    budget_max: initialData?.budget_max || undefined,
-    property_type_preference: initialData?.property_type_preference || '',
-    preferred_location: initialData?.preferred_location || '',
-  });
-
+  const [formData, setFormData] = useState<QualificationData>(initialData || {});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -58,17 +54,24 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const propertyTypeOptions = [...PROPERTY_TYPE_OPTIONS];
+  if (formData.property_type_preference && !PROPERTY_TYPE_OPTIONS.find(pt => pt.value === formData.property_type_preference)) {
+    propertyTypeOptions.push({ value: formData.property_type_preference, label: formData.property_type_preference });
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSaving(true);
-    setApiError(null);
     try {
       await onSave(formData);
       onClose();
     } catch (err: any) {
-      setApiError(err.message || 'Failed to save qualification details');
+      if (err.message !== 'SILENT') {
+        const formatted = toUserFacingError({ message: err.message });
+        showToast({ ...formatted, type: 'error' });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -81,19 +84,13 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
           <h2 className="text-xl font-bold text-navy-900">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto">
-          {apiError && (
-            <div className="mb-4 p-3 bg-rose-50 text-rose-600 rounded-lg text-sm border border-rose-200">
-              {apiError}
-            </div>
-          )}
-
           <form id="qualification-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <InputField
@@ -114,19 +111,12 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
 
             <SelectField
               label="Property Type Preference"
+              placeholder="Select property type..."
               value={formData.property_type_preference || ''}
               onChange={(e) => setFormData({ ...formData, property_type_preference: e.target.value })}
               error={errors.property_type_preference}
-            >
-              <option value="">Select property type...</option>
-              {PROPERTY_TYPE_OPTIONS.map(pt => (
-                <option key={pt.value} value={pt.value}>{pt.label}</option>
-              ))}
-              {/* Support legacy/unknown values if they are already set in DB */}
-              {formData.property_type_preference && !PROPERTY_TYPE_OPTIONS.find(pt => pt.value === formData.property_type_preference) && (
-                <option value={formData.property_type_preference}>{formData.property_type_preference}</option>
-              )}
-            </SelectField>
+              options={propertyTypeOptions}
+            />
 
             <InputField
               label="Preferred Location"

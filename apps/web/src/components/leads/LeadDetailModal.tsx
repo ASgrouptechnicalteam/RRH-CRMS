@@ -33,6 +33,7 @@ import { StatusPill } from '../ui/StatusPill';
 import { QualifyLeadModal } from './QualifyLeadModal';
 import { QualificationFormModal } from './QualificationFormModal';
 import { getPropertyTypeLabel } from '../../constants/propertyTypes';
+import { toUserFacingError } from '../../utils/userFacingError';
 
 interface Lead {
   id: number;
@@ -1249,8 +1250,12 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
             });
-            const resData = await patchRes.json();
-            if (!patchRes.ok) throw new Error(resData.message || 'Failed to update qualification');
+            const resData = await patchRes.json().catch(() => ({}));
+            if (!patchRes.ok) {
+              const formatted = toUserFacingError({ status: patchRes.status, body: resData });
+              showToast({ ...formatted, type: 'error' });
+              throw new Error('SILENT');
+            }
             showToast('Qualification details updated', 'success');
             onRefreshLeads();
             setShowQualificationModal(false);

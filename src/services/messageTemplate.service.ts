@@ -18,17 +18,35 @@ const p = prisma;
  */
 export interface TemplateContext {
   customer_name?: string;
+  customer_phone?: string;
   property_name?: string;
+  property_location?: string;
+  property_price?: string;
+  property_code?: string;
   pm_name?: string;
+  agent_name?: string;
   visit_date?: string;
+  visit_time?: string;
+  lead_code?: string;
+  booking_code?: string;
+  company_name?: string;
 }
 
 function substitute(body: string, ctx: TemplateContext): string {
   return body
     .replace(/\{customer_name\}/g, ctx.customer_name ?? '')
+    .replace(/\{customer_phone\}/g, ctx.customer_phone ?? '')
     .replace(/\{property_name\}/g, ctx.property_name ?? '')
+    .replace(/\{property_location\}/g, ctx.property_location ?? '')
+    .replace(/\{property_price\}/g, ctx.property_price ?? '')
+    .replace(/\{property_code\}/g, ctx.property_code ?? '')
     .replace(/\{pm_name\}/g, ctx.pm_name ?? '')
-    .replace(/\{visit_date\}/g, ctx.visit_date ?? '');
+    .replace(/\{agent_name\}/g, ctx.agent_name ?? '')
+    .replace(/\{visit_date\}/g, ctx.visit_date ?? '')
+    .replace(/\{visit_time\}/g, ctx.visit_time ?? '')
+    .replace(/\{lead_code\}/g, ctx.lead_code ?? '')
+    .replace(/\{booking_code\}/g, ctx.booking_code ?? '')
+    .replace(/\{company_name\}/g, ctx.company_name ?? '');
 }
 
 export class MessageTemplateService {
@@ -45,6 +63,45 @@ export class MessageTemplateService {
       template_key: tpl.template_key,
       name: tpl.name,
       body_text: substitute(tpl.body_text, ctx),
+    };
+  }
+
+  /**
+   * Resolve a template or use a situation-specific fallback if none exists.
+   */
+  static async resolveWithFallback(templateKey: string, ctx: TemplateContext = {}): Promise<{ templateKey: string; body_text: string; usedFallback: boolean }> {
+    const tpl = await this.resolve(templateKey, ctx);
+    if (tpl) {
+      return { templateKey: tpl.template_key, body_text: tpl.body_text, usedFallback: false };
+    }
+
+    let fallbackText = '';
+    
+    // Legacy alias support for fallback logic
+    const canonicalKey = templateKey === 'LEAD_QUALIFIED_PROPERTIES' ? 'LEAD_PROPERTY_PROPOSAL' : templateKey;
+
+    switch (canonicalKey) {
+      case 'LEAD_PROPERTY_PROPOSAL':
+        fallbackText = `🏡 *EXCLUSIVE PROPERTY PROPOSAL*\n\nDear *{customer_name}*,\n\nWe found a premium property matching your requirements!\n\n📌 *Title*: {property_name} ({property_code})\n📍 *Location*: {property_location}\n💰 *Asking Price*: {property_price}\n\nContact {pm_name} / {agent_name} to schedule a site visit.\nRef: {lead_code}`;
+        break;
+      case 'DEMO_SCHEDULED':
+        fallbackText = `Dear {customer_name}, your demo is scheduled for {visit_date} at {visit_time}. Please be available.`;
+        break;
+      case 'SITE_VISIT_SCHEDULED':
+      case 'SITE_VISIT_ACCEPTED':
+        fallbackText = `Dear {customer_name}, your site visit for {property_name} is confirmed for {visit_date} at {visit_time}.`;
+        break;
+      case 'BOOKING_CONFIRMED':
+        fallbackText = `Congratulations {customer_name}! Your booking {booking_code} for {property_name} is confirmed. Welcome to {company_name}.`;
+        break;
+      default:
+        fallbackText = `Hello {customer_name}, here is an update regarding {property_name}.`;
+    }
+
+    return {
+      templateKey,
+      body_text: substitute(fallbackText, ctx),
+      usedFallback: true,
     };
   }
 

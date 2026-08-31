@@ -57,11 +57,11 @@ export class LeadPolicy {
         return lead.company_id === user.companyId;
     }
 
-    // Telecallers/Agents: can ONLY mutate leads assigned to their own employeeId
-    // or leads they created. Cross-company access is always denied.
+    // Telecallers/Agents: can ONLY mutate leads assigned to their own employeeId,
+    // OR leads they created that are currently unassigned. Cross-company access is always denied.
     if (
         lead.assigned_to_id === user.employeeId ||
-        lead.created_by_id === user.employeeId
+        (lead.assigned_to_id === null && lead.created_by_id === user.employeeId)
     ) {
         return lead.company_id === user.companyId;
     }

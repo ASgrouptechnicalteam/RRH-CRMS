@@ -40,6 +40,7 @@ import analyticsRoutes from './routes/analytics';
 import aiSearchRoutes from './routes/aiSearch';
 import messageTemplateRoutes from './routes/messageTemplates';
 import pmRoutingRoutes from './routes/pm-routing';
+import whatsappRoutes from './routes/whatsapp';
 
 import { PortalWorker } from './services/portalWorker';
 
@@ -61,9 +62,10 @@ app.use(express.json());
 
 import { apiRateLimiter } from './middleware/rateLimiter';
 
-// Serve ONLY property images publicly.
+// Serve property and profile images publicly.
 const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 app.use('/uploads/properties', express.static(path.join(uploadDir, 'properties')));
+app.use('/uploads/profiles', express.static(path.join(uploadDir, 'profiles')));
 
 // Global API Rate Limiter
 app.use('/api/', apiRateLimiter);
@@ -102,6 +104,7 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiSearchRoutes);
 app.use('/api/v1/message-templates', messageTemplateRoutes);
 app.use('/api/v1/pm-routing', pmRoutingRoutes);
+app.use('/api/v1/whatsapp', whatsappRoutes);
 
 // Fallback for unknown API routes
 app.all('/api/*', (req, res) => {

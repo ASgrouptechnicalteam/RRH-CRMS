@@ -8,11 +8,110 @@ import { can } from '../authz/authorization';
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { encryptData } from '../utils/crypto';
 import { buildEmployeeScope } from '../authz/dataScope';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
+// Setup Multer for Profile Image Uploads
+const PROFILE_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'profiles');
+if (!fs.existsSync(PROFILE_UPLOAD_DIR)) {
+  fs.mkdirSync(PROFILE_UPLOAD_DIR, { recursive: true });
+}
 
+const profileUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, PROFILE_UPLOAD_DIR),
+    filename: (req: AuthenticatedRequest, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `emp_${req.user?.employeeId}_${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed!'));
+  }
+});
+// PATCH /api/v1/employees/me - Self-update for safe profile fields
+router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const employeeId = req.user!.employeeId;
+    const { phone, secondary_phone, whatsapp_number, current_address, permanent_address, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, blood_group, social_links } = req.body;
 
+    const updateData: any = {};
+    if (phone !== undefined) updateData.phone = phone;
+    if (secondary_phone !== undefined) updateData.secondary_phone = secondary_phone;
+    if (whatsapp_number !== undefined) updateData.whatsapp_number = whatsapp_number;
+    if (current_address !== undefined) updateData.current_address = current_address;
+    if (permanent_address !== undefined) updateData.permanent_address = permanent_address;
+    if (emergency_contact_name !== undefined) updateData.emergency_contact_name = emergency_contact_name;
+    if (emergency_contact_relation !== undefined) updateData.emergency_contact_relation = emergency_contact_relation;
+    if (emergency_contact_phone !== undefined) updateData.emergency_contact_phone = emergency_contact_phone;
+    if (blood_group !== undefined) updateData.blood_group = blood_group;
+    if (social_links !== undefined) updateData.social_links = social_links;
+
+    const updatedEmp = await prisma.employee.update({
+      where: { id: employeeId },
+      data: updateData,
+      select: {
+        id: true,
+        full_name: true,
+        phone: true,
+        whatsapp_number: true,
+        email: true,
+        profile_image_url: true,
+      }
+    });
+
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      employee: updatedEmp,
+    });
+  } catch (error) {
+    console.error('Self update error:', error);
+    return res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// POST /api/v1/employees/me/photo - Upload profile photo
+router.post('/me/photo', authenticateToken, profileUpload.single('profile_image'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No image file provided.' });
+    }
+
+    const employeeId = req.user!.employeeId;
+    
+    // Check if employee already has a photo to delete the old one (optional but good practice)
+    const emp = await prisma.employee.findUnique({ where: { id: employeeId }, select: { profile_image_url: true } });
+    
+    const newImageUrl = `/uploads/profiles/${file.filename}`;
+    
+    await prisma.employee.update({
+      where: { id: employeeId },
+      data: { profile_image_url: newImageUrl },
+    });
+
+    if (emp?.profile_image_url && emp.profile_image_url.startsWith('/uploads/profiles/')) {
+      const oldFileName = emp.profile_image_url.replace('/uploads/profiles/', '');
+      const oldFilePath = path.join(PROFILE_UPLOAD_DIR, oldFileName);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+
+    return res.status(200).json({
+      message: 'Profile photo updated successfully',
+      profile_image_url: newImageUrl,
+    });
+  } catch (error) {
+    console.error('Profile photo upload error:', error);
+    return res.status(500).json({ error: 'Failed to upload profile photo' });
+  }
+});
 
 // GET /api/v1/employees - List all active/inactive employees (Admin invisible filtered)
 router.get('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), async (req: AuthenticatedRequest, res: Response) => {

@@ -1,5 +1,5 @@
 import { TokenPayload } from '../utils/jwt';
-import { Permissions, ExpenseRefundStatus } from '@rrh-ems/shared';
+import { Permissions, ExpenseRefundStatus } from '../shared';
 import { ExpenseRefund } from '@prisma/client';
 
 export class ExpenseRefundPolicy {

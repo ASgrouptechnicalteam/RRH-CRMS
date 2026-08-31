@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { Router, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { PublicLeadCreateSchema } from '@rrh-ems/shared';
+import { PublicLeadCreateSchema } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { publicReadLimiter, publicWriteLimiter } from '../middleware/rateLimiter';
 import { correlationId } from '../middleware/correlationId';

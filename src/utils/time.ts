@@ -1,4 +1,4 @@
-import { AttendanceStatus, AttendanceStatusType } from '@rrh-ems/shared';
+import { AttendanceStatus, AttendanceStatusType } from '../shared';
 
 export interface ISTTimeComponents {
   hours: number;

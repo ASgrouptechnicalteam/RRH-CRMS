@@ -34,7 +34,7 @@ import { IntegrationService } from './integration.service';
 import { OpportunityService } from './opportunity.service';
 import { getISTComponents } from '../utils/time';
 import { TokenPayload } from '../utils/jwt';
-import { IntegrationMetricsResponse } from '@rrh-ems/shared';
+import { IntegrationMetricsResponse } from '../shared';
 
 
 const p = prisma;

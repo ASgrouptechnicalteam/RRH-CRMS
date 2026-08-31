@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
-import { Roles, Permissions, ExpenseRefundStatus } from '@rrh-ems/shared';
+import { Roles, Permissions, ExpenseRefundStatus } from '../shared';
 import { ExpenseRefundPolicy } from '../policies/expenseRefund.policy';
 import { ExpenseRefundWorkflow, ExpenseRefundAction } from '../workflows/expenseRefund.workflow';
 import { notifyEmployee } from '../utils/notifyEmployee';

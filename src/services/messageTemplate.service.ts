@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
-import { MessageTemplateKeyType, MessageTemplateInput } from '@rrh-ems/shared';
+import { MessageTemplateKeyType, MessageTemplateInput } from '../shared';
 
 const p = prisma;
 

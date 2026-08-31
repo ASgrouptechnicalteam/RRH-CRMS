@@ -10,7 +10,7 @@ import {
   PropertyMDApprovalSchema,
   PropertyUpdateSchema,
   Permissions,
-} from '@rrh-ems/shared';
+} from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { PropertyService } from '../services/property.service';
 import {

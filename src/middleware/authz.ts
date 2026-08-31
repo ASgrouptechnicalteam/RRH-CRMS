@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { can } from '../authz/authorization';
 import { AuthenticatedRequest } from './auth';
-import { Permission } from '@rrh-ems/shared';
+import { Permission } from '../shared';
 
 /**
  * requireAuthz Middleware

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Roles, Permissions, CustomerCreateSchema, CustomerUpdateSchema, CustomerKycWriteSchema } from '@rrh-ems/shared';
+import { Roles, Permissions, CustomerCreateSchema, CustomerUpdateSchema, CustomerKycWriteSchema } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { CustomerService, AppError } from '../services/customer.service';
 import { KycService } from '../services/kyc.service';

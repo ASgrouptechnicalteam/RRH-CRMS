@@ -1,6 +1,6 @@
 import { Router, Response , NextFunction} from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../shared';
 import {
   SiteVisitCreateSchema,
   SiteVisitAcceptSchema,
@@ -9,7 +9,7 @@ import {
   SiteVisitRescheduleSchema,
   SiteVisitReconfirmSchema,
   SiteVisitCompleteSchema,
-} from '@rrh-ems/shared';
+} from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { SiteVisitService } from '../services/siteVisit.service';
 

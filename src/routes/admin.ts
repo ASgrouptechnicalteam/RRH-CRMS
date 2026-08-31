@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 
 const router = Router();
 

@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from '../shared';
 import { calculatePerformanceScore } from '../services/performance-metric';
 
 const router = Router();

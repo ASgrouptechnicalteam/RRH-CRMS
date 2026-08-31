@@ -1,5 +1,5 @@
 import { TokenPayload } from '../utils/jwt';
-import { Roles, Permissions } from '@rrh-ems/shared';
+import { Roles, Permissions } from '../shared';
 import { SiteVisitBooking, Lead, Employee } from '@prisma/client';
 
 export class SiteVisitPolicy {

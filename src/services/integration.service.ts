@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { PortalCallbackInput, KycCallbackInput, PaymentCallbackInput, PAYMENT_EVENT_TYPE, IntegrationMetricsQueryInput } from '@rrh-ems/shared';
+import { PortalCallbackInput, KycCallbackInput, PaymentCallbackInput, PAYMENT_EVENT_TYPE, IntegrationMetricsQueryInput } from '../shared';
 import { NotificationService } from './notification.service';
 import { getISTComponents } from '../utils/time';
 

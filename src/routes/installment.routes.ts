@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Permissions } from '@rrh-ems/shared';
+import { Permissions } from '../shared';
 import { InstallmentService } from '../services/installment.service';
 
 const router = Router();

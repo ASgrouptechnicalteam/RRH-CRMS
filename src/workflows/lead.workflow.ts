@@ -1,4 +1,4 @@
-import { LeadStatus } from '@rrh-ems/shared';
+import { LeadStatus } from '../shared';
 import { DomainWorkflow, WorkflowTransitionRequest, WorkflowTransitionResult } from './types';
 
 /**

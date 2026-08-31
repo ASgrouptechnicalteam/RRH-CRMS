@@ -1,7 +1,7 @@
 import { TokenPayload } from '../utils/jwt';
 import { Task } from '@prisma/client';
 import { isManagerOf } from '../utils/hierarchy';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 
 export class TaskPolicy {
   static async canMutate(user: TokenPayload, task: any): Promise<boolean> {

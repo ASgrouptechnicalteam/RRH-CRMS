@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Roles, DepartmentCodes, Permissions } from '@rrh-ems/shared';
+import { Roles, DepartmentCodes, Permissions } from '../shared';
 import { can } from '../authz/authorization';
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { encryptData } from '../utils/crypto';

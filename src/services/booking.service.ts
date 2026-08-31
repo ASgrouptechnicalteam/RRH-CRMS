@@ -3,7 +3,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { TokenPayload } from '../utils/jwt';
 import { AppError } from './lead.service';
 import { BookingPolicy } from '../policies/booking.policy';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 import { randomBytes } from 'crypto';
 import { WorkflowEngine } from '../workflows/workflowEngine';
 

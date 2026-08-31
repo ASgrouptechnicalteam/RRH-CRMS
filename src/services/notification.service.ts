@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { CustomerNotificationReadInput, CustomerNotificationTypeValue } from '@rrh-ems/shared';
+import { CustomerNotificationReadInput, CustomerNotificationTypeValue } from '../shared';
 
 
 const p = prisma;

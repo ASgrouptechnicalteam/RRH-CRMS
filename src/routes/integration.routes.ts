@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authenticateServiceToken, authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { validateRequestBody } from '../middleware/validate';
-import { PortalCallbackSchema, KycCallbackSchema, PaymentCallbackSchema, CustomerNotificationReadSchema, IntegrationMetricsQuerySchema, Permissions } from '@rrh-ems/shared';
+import { PortalCallbackSchema, KycCallbackSchema, PaymentCallbackSchema, CustomerNotificationReadSchema, IntegrationMetricsQuerySchema, Permissions } from '../shared';
 import { IntegrationService } from '../services/integration.service';
 import { NotificationService } from '../services/notification.service';
 import { CustomerPortalService } from '../services/customerPortal.service';

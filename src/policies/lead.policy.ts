@@ -1,5 +1,5 @@
 import { TokenPayload } from '../utils/jwt';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../shared';
 import { Lead } from '@prisma/client';
 import { AppError } from '../services/lead.service';
 

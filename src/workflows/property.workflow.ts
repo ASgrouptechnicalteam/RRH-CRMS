@@ -1,4 +1,4 @@
-import { PropertyStatus } from '@rrh-ems/shared';
+import { PropertyStatus } from '../shared';
 import { DomainWorkflow, WorkflowTransitionRequest, WorkflowTransitionResult } from './types';
 
 export type PropertyAction = 'VERIFY' | 'DM_POLISH' | 'DM_VERIFY_AS_IS' | 'MD_APPROVE';

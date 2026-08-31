@@ -121,10 +121,11 @@ export const TelecallerDashboard: React.FC = () => {
     fetchTelecallerData();
   }, []);
 
-  // Compute KPIs from existing data
-  const leadsAssigned = assignedLeads.length;
-  const contactedToday = assignedLeads.filter(l => l.status === 'CONTACTED').length;
-  const qualificationPending = assignedLeads.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
+  // Compute KPIs from existing data (Only those explicitly assigned to current user)
+  const myAssignedLeads = assignedLeads.filter(l => l.assigned_to?.id === user?.id);
+  const leadsAssigned = myAssignedLeads.length;
+  const contactedToday = myAssignedLeads.filter(l => l.status === 'CONTACTED').length;
+  const qualificationPending = myAssignedLeads.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
   const whatsappFollowUps = whatsappTasks; // Now using real data from tasks endpoint
 
   return (
@@ -172,7 +173,7 @@ export const TelecallerDashboard: React.FC = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
         {/* Left Column: Priority Call Queue & Lists */}
         <div className="lg:col-span-2 space-y-6">
@@ -191,18 +192,18 @@ export const TelecallerDashboard: React.FC = () => {
                 <Clock className="w-4 h-4 text-action" />
                 <span>Today's High-Priority Leads</span>
               </h3>
-              <StatusPill status={`${assignedLeads.length} Active`} type="default" />
+              <StatusPill status={`${myAssignedLeads.length} Active`} type="default" />
             </div>
 
             {isLoading ? (
               <div className="py-8 text-center text-sm text-slate-400">Loading priority leads...</div>
-            ) : assignedLeads.length === 0 ? (
+            ) : myAssignedLeads.length === 0 ? (
               <div className="py-8 text-center text-sm text-slate-400">
                 No leads currently assigned. Keep your performance score high for priority assignments!
               </div>
             ) : (
               <div className="space-y-3 max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1">
-                {assignedLeads.map((lead: LeadListItem) => (
+                {myAssignedLeads.map((lead: LeadListItem) => (
                   <div
                     key={lead.id}
                     className="p-4 bg-surface rounded-xl border border-slate-200 flex items-center justify-between gap-4 hover:shadow-sm transition-shadow group"
@@ -257,13 +258,15 @@ export const TelecallerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Tasks & Score */}
+        {/* Right Column: Score */}
         <div className="space-y-6">
-          <TaskManager />
-          <div className="pt-4 border-t border-slate-100">
-            <PerformanceScoreWidget />
-          </div>
+          <PerformanceScoreWidget />
         </div>
+      </div>
+
+      {/* Task Manager (Full Width Below) */}
+      <div className="w-full">
+        <TaskManager />
       </div>
     </div>
   );

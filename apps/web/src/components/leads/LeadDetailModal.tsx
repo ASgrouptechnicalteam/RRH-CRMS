@@ -56,6 +56,7 @@ interface Lead {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   referral_person_name?: string | null;
+  can_edit?: boolean;
 }
 
 interface LeadDetailModalProps {
@@ -449,6 +450,11 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
           <div className="flex items-center gap-3 mb-2">
             <span className="font-mono font-bold text-navy-800 text-sm">{lead.lead_code}</span>
             <StatusPill status={lead.status} type={getStatusMap(lead.status)} />
+            {lead.can_edit === false && (
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-200">
+                View only — {lead.assigned_to ? 'assigned to someone else' : 'not assigned to you'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-start justify-between mb-5">
@@ -518,12 +524,14 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 <span className="text-slate-500">
                   (₹{lead.budget_max ? (lead.budget_max / 100000).toFixed(1) + 'L' : 'Flexible'})
                 </span>
-                <button
-                  onClick={() => setShowQualifyModal(true)}
-                  className="px-2 py-0.5 text-[10px] font-bold bg-navy-50 text-navy-600 hover:bg-navy-100 rounded-md transition-colors"
-                >
-                  Edit
-                </button>
+                {lead.can_edit !== false && (
+                  <button
+                    onClick={() => setShowQualifyModal(true)}
+                    className="px-2 py-0.5 text-[10px] font-bold bg-navy-50 text-navy-600 hover:bg-navy-100 rounded-md transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
             </div>
             
@@ -589,8 +597,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                     {user?.permissions?.includes(Permissions.CUSTOMERS_CONVERT) && (
                       <button
                         onClick={() => handleConvertToCustomer(lead.id)}
-                        disabled={isConverting}
-                        className="px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2"
+                        disabled={isConverting || lead.can_edit === false}
+                        className={`px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <Building2 className="w-4 h-4" />
                         {isConverting ? 'Converting...' : 'Convert to Customer'}
@@ -601,7 +609,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setShowScheduleModal(true)}
-                      className="px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                      disabled={lead.can_edit === false}
+                      className={`px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <MapPin className="w-4 h-4" />
                       Book Site Visit / Demo
@@ -610,7 +619,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                     {lead.status === 'DEMO_SCHEDULED' && (
                       <button
                         onClick={() => setShowDemoCompleteModal(true)}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                        disabled={lead.can_edit === false}
+                        className={`px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         Complete Demo
@@ -623,7 +633,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                       <button
                         key={st}
                         onClick={() => onUpdateStatus(lead.id, st)}
-                        className="px-4 py-2 bg-white hover:bg-slate-50 text-navy-700 border border-slate-200 font-semibold text-xs rounded-lg transition-colors"
+                        disabled={lead.can_edit === false}
+                        className={`px-4 py-2 bg-white hover:bg-slate-50 text-navy-700 border border-slate-200 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         Move to {st.replace(/_/g, ' ')}
                       </button>
@@ -683,13 +694,15 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                         <div className="flex items-center gap-2 mt-auto">
                           <button
                             onClick={() => handleAddInterest(lead.id, m.propertyId)}
-                            className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors"
+                            disabled={lead.can_edit === false}
+                            className={`flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             Save
                           </button>
                           <button
                             onClick={() => handleSendWhatsAppProposal(lead.id, m.propertyId, m.whatsAppUrl)}
-                            className="flex-1 py-1.5 bg-success-600 hover:bg-success-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                            disabled={lead.can_edit === false}
+                            className={`flex-1 py-1.5 bg-success-600 hover:bg-success-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <PhoneCall className="w-3.5 h-3.5" /> WhatsApp
                           </button>
@@ -935,9 +948,11 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 <p className="text-sm text-slate-500">The site visit has been successfully booked and routed.</p>
                 <button
                   onClick={() => {
-                    sendWhatsAppMessage('demo_scheduled', lead.phone, {
+                    sendWhatsAppMessage('DEMO_SCHEDULED', lead.phone, {
                       customer_name: lead.customer_name,
-                      visit_date: new Date(scheduleDate).toLocaleString()
+                      visit_date: new Date(scheduleDate).toLocaleDateString(),
+                      visit_time: new Date(scheduleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      lead_code: lead.lead_code,
                     });
                   }}
                   className="mt-4 px-6 py-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"

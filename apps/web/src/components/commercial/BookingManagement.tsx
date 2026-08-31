@@ -122,9 +122,10 @@ export const BookingManagement: React.FC = () => {
                   e.stopPropagation();
                   const phone = b.customer?.phone;
                   if (phone) {
-                    sendWhatsAppMessage('booking_confirmed', phone, {
+                    sendWhatsAppMessage('BOOKING_CONFIRMED', phone, {
                       customer_name: b.customer?.first_name,
                       property_name: b.property?.title,
+                      booking_code: b.booking_code,
                     });
                   }
                 }}

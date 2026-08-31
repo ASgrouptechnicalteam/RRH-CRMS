@@ -247,6 +247,7 @@ export interface LeadListItem {
   utm_campaign?: string | null;
   referral_person_name?: string | null;
   activities?: LeadActivity[];
+  can_edit?: boolean;
 }
 
 export interface LeadActivity {

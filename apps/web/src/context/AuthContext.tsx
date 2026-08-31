@@ -12,6 +12,18 @@ export interface UserProfile {
   permissions?: string[];
   attendanceRequired: boolean;
   firstLoginDone: boolean;
+  phone?: string | null;
+  secondaryPhone?: string | null;
+  whatsappNumber?: string | null;
+  email?: string | null;
+  bloodGroup?: string | null;
+  socialLinks?: string | null;
+  currentAddress?: string | null;
+  permanentAddress?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactRelation?: string | null;
+  emergencyContactPhone?: string | null;
+  profileImageUrl?: string | null;
 }
 
 type AuthStatus = 'bootstrapping' | 'authenticated' | 'unauthenticated';
@@ -26,6 +38,7 @@ interface AuthContextType {
   logout: () => void;
   setFirstLoginDone: (done: boolean) => void;
   setAttendanceStamped: (stamped: boolean) => void;
+  updateUser: (partialUser: Partial<UserProfile>) => void;
   fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
@@ -156,6 +169,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = (partialUser: Partial<UserProfile>) => {
+    if (user) {
+      const updated = { ...user, ...partialUser };
+      setUser(updated);
+      localStorage.setItem('rrh_user', JSON.stringify(updated));
+    }
+  };
+
   const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers || {});
     if (accessToken) {
@@ -187,12 +208,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         accessToken,
         authStatus,
-        firstLoginDone,
+        firstLoginDone: firstLoginDone,
         attendanceStamped,
         login,
         logout,
         setFirstLoginDone,
         setAttendanceStamped,
+        updateUser,
         fetchWithAuth,
       }}
     >
@@ -203,7 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

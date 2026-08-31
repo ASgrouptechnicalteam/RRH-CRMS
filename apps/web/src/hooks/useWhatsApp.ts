@@ -2,11 +2,20 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { API_BASE_URL } from '../config';
 
-interface WhatsAppContext {
+export interface WhatsAppContext {
   customer_name?: string;
+  customer_phone?: string;
   property_name?: string;
+  property_location?: string;
+  property_price?: string;
+  property_code?: string;
   pm_name?: string;
+  agent_name?: string;
   visit_date?: string;
+  visit_time?: string;
+  lead_code?: string;
+  booking_code?: string;
+  company_name?: string;
 }
 
 export const useWhatsApp = () => {
@@ -19,34 +28,37 @@ export const useWhatsApp = () => {
     context?: WhatsAppContext
   ) => {
     try {
-      // Build query string
-      const queryParams = new URLSearchParams();
-      if (context?.customer_name) queryParams.append('customer_name', context.customer_name);
-      if (context?.property_name) queryParams.append('property_name', context.property_name);
-      if (context?.pm_name) queryParams.append('pm_name', context.pm_name);
-      if (context?.visit_date) queryParams.append('visit_date', context.visit_date);
+      const url = `${API_BASE_URL}/whatsapp/resolve`;
 
-      const url = `${API_BASE_URL}/message-templates/${templateKey}/resolve${
-        queryParams.toString() ? '?' + queryParams.toString() : ''
-      }`;
-
-      const res = await fetchWithAuth(url);
+      const res = await fetchWithAuth(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_key: templateKey,
+          phone,
+          context: context || {}
+        })
+      });
       
       if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('Permission denied. You cannot generate this message.');
+        }
         throw new Error('Failed to fetch WhatsApp template');
       }
 
       const data = await res.json();
-      const bodyText = data.body_text || '';
+      const whatsAppUrl = data.whatsAppUrl;
 
-      const cleanPhone = phone.replace(/\D/g, '');
-      const whatsAppUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(bodyText)}`;
+      if (!whatsAppUrl) {
+        throw new Error('Invalid WhatsApp URL received');
+      }
 
       window.open(whatsAppUrl, '_blank');
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending WhatsApp message:', err);
-      showToast('Error generating WhatsApp message', 'error');
+      showToast(err.message || 'Error generating WhatsApp message', 'error');
       return false;
     }
   };

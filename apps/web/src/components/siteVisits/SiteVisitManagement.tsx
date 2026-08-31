@@ -432,9 +432,10 @@ export const SiteVisitManagement: React.FC = () => {
                 <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
                   {visit.status === 'CONFIRMED' && (
                     <button
-                      onClick={() => sendWhatsAppMessage('site_visit_accepted', visit.lead.phone, {
+                      onClick={() => sendWhatsAppMessage('SITE_VISIT_ACCEPTED', visit.lead.phone, {
                         customer_name: visit.lead.customer_name,
-                        visit_date: new Date(visit.scheduled_date).toLocaleString(),
+                        visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
+                        visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                       })}
                       className="w-full py-2 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
                     >
@@ -445,9 +446,10 @@ export const SiteVisitManagement: React.FC = () => {
 
                   {(visit.status === 'CONFIRMED' || visit.status === 'ASSIGNED_TO_AGENT') && (
                     <button
-                      onClick={() => sendWhatsAppMessage('day_before_reconfirmation', visit.lead.phone, {
+                      onClick={() => sendWhatsAppMessage('DAY_BEFORE_RECONFIRMATION', visit.lead.phone, {
                         customer_name: visit.lead.customer_name,
-                        visit_date: new Date(visit.scheduled_date).toLocaleString(),
+                        visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
+                        visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                         pm_name: visit.project_manager?.full_name || 'Your Project Manager',
                       })}
                       className="w-full py-2 bg-white border border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
@@ -459,9 +461,10 @@ export const SiteVisitManagement: React.FC = () => {
 
                   {visit.status === 'COMPLETED' && (
                     <button
-                      onClick={() => sendWhatsAppMessage('post_visit_follow_up', visit.lead.phone, {
+                      onClick={() => sendWhatsAppMessage('POST_VISIT_INTERESTED', visit.lead.phone, {
                         customer_name: visit.lead.customer_name,
-                        visit_date: new Date(visit.scheduled_date).toLocaleString(),
+                        visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
+                        visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                         pm_name: visit.project_manager?.full_name || 'Your Project Manager',
                         property_name: visit.property?.title || 'the property',
                       })}
@@ -692,9 +695,10 @@ export const SiteVisitManagement: React.FC = () => {
                 <p className="text-sm text-slate-500">The site visit has been updated and a reconfirmation is pending.</p>
                 <button
                   onClick={() => {
-                    sendWhatsAppMessage('reschedule_confirmed', selectedVisit.lead.phone, {
+                    sendWhatsAppMessage('RESCHEDULE_CONFIRMED', selectedVisit.lead.phone, {
                       customer_name: selectedVisit.lead.customer_name,
-                      visit_date: new Date(rescheduleDate).toLocaleString(),
+                      visit_date: new Date(rescheduleDate).toLocaleDateString(),
+                      visit_time: new Date(rescheduleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     });
                   }}
                   className="mt-4 px-6 py-3 w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"

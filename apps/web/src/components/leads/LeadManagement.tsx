@@ -48,6 +48,7 @@ interface Lead {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   referral_person_name?: string | null;
+  can_edit?: boolean;
 }
 
 export const LeadManagement: React.FC = () => {
@@ -398,7 +399,12 @@ export const LeadManagement: React.FC = () => {
       key: 'actions',
       header: '',
       render: (l) => (
-        <div className="text-right">
+        <div className="text-right flex items-center justify-end gap-2">
+          {l.can_edit === false && (
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-200">
+              View Only
+            </span>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();

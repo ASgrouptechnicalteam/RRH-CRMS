@@ -81,13 +81,14 @@ model Employee {
   report_required     Boolean @default(true) // derived from employment_type at create; overridable per employee
 
   // 1. Personal Details
-  full_name       String?
-  phone           String?
-  secondary_phone String?
-  whatsapp_number String?
-  email           String?
-  blood_group     String?
-  social_links    String? // LinkedIn, Twitter, Instagram
+  full_name         String?
+  phone             String?
+  secondary_phone   String?
+  whatsapp_number   String?
+  email             String?
+  blood_group       String?
+  social_links      String? // LinkedIn, Twitter, Instagram
+  profile_image_url String?
 
   // 2. Address & Emergency Contacts
   current_address            String?
@@ -116,52 +117,52 @@ model Employee {
   company Company @relation(fields: [company_id], references: [id])
   branch  Branch? @relation(fields: [branch_id], references: [id])
 
-  roles                       EmployeeRole[]
-  branches                    EmployeeBranch[]
-  permission_overrides        EmployeePermissionOverride[]
-  qr_codes                    EmployeeQrCode[]
-  attendance_logs             AttendanceLog[]
-  daily_reports               DailyReport[]
-  kiosk_credentials_created   KioskCredential[]            @relation("KioskCredentialsCreated")
-  assigned_tasks              Task[]                       @relation("AssignedTasks")
-  notifications               Notification[]
-  performance_snapshots       PerformanceSnapshot[]
-  daily_targets               DailyTarget[]
-  assigned_leads              Lead[]                       @relation("AssignedLeads")
-  created_leads               Lead[]                       @relation("CreatedLeads")
-  referred_leads              Lead[]                       @relation("ReferredLeads")
-  assigned_customers          Customer[]                   @relation("AssignedCustomers")
-  lead_activities             LeadActivity[]
-  assigned_projects           Project[]                    @relation("AssignedPMProjects")
-  assigned_properties         Property[]                   @relation("AssignedPMProperties")
-  dm_executive_properties     Property[]                   @relation("DMExecutiveProperties")
-  created_properties          Property[]                   @relation("CreatedProperties")
-  property_images             PropertyImage[]
-  property_verification_logs  PropertyVerificationLog[]
-  telecaller_bookings         SiteVisitBooking[]           @relation("TelecallerBookings")
-  pm_bookings                 SiteVisitBooking[]           @relation("PMBookings")
-  agent_bookings              SiteVisitBooking[]           @relation("AgentBookings")
+  roles                      EmployeeRole[]
+  branches                   EmployeeBranch[]
+  permission_overrides       EmployeePermissionOverride[]
+  qr_codes                   EmployeeQrCode[]
+  attendance_logs            AttendanceLog[]
+  daily_reports              DailyReport[]
+  kiosk_credentials_created  KioskCredential[]            @relation("KioskCredentialsCreated")
+  assigned_tasks             Task[]                       @relation("AssignedTasks")
+  notifications              Notification[]
+  performance_snapshots      PerformanceSnapshot[]
+  daily_targets              DailyTarget[]
+  assigned_leads             Lead[]                       @relation("AssignedLeads")
+  created_leads              Lead[]                       @relation("CreatedLeads")
+  referred_leads             Lead[]                       @relation("ReferredLeads")
+  assigned_customers         Customer[]                   @relation("AssignedCustomers")
+  lead_activities            LeadActivity[]
+  assigned_projects          Project[]                    @relation("AssignedPMProjects")
+  assigned_properties        Property[]                   @relation("AssignedPMProperties")
+  dm_executive_properties    Property[]                   @relation("DMExecutiveProperties")
+  created_properties         Property[]                   @relation("CreatedProperties")
+  property_images            PropertyImage[]
+  property_verification_logs PropertyVerificationLog[]
+  telecaller_bookings        SiteVisitBooking[]           @relation("TelecallerBookings")
+  pm_bookings                SiteVisitBooking[]           @relation("PMBookings")
+  agent_bookings             SiteVisitBooking[]           @relation("AgentBookings")
 
   // §1 + §2 back-relations
-  demo_handler_leads          Lead[]                        @relation("DemoHandlerLeads")
-  sv_reassignments_from       SiteVisitReassignment[]       @relation("SiteVisitReassignmentFrom")
-  sv_reassignments_to         SiteVisitReassignment[]       @relation("SiteVisitReassignmentTo")
-  expense_refunds             ExpenseRefund[]              @relation("SubmittedRefunds")
-  accountant_refunds          ExpenseRefund[]              @relation("AccountantReviews")
-  md_refunds                  ExpenseRefund[]              @relation("MDReviews")
-  refunded_by_me              ExpenseRefund[]              @relation("RefundedBy")
-  created_property_interests  LeadPropertyInterest[]
-  owned_opportunities         Opportunity[]                @relation("OwnedOpportunities")
-  assigned_bookings           Booking[]                    @relation("AssignedBookings")
-  recorded_payments           Payment[]                    @relation("RecordedPayments")
-  recorded_installments       Installment[]                @relation("RecordedInstallments")
-  push_subscriptions          PushSubscription[]
-  auth_sessions               AuthSession[]
-  location_assignments        PMLocationAssignment[]
+  demo_handler_leads         Lead[]                  @relation("DemoHandlerLeads")
+  sv_reassignments_from      SiteVisitReassignment[] @relation("SiteVisitReassignmentFrom")
+  sv_reassignments_to        SiteVisitReassignment[] @relation("SiteVisitReassignmentTo")
+  expense_refunds            ExpenseRefund[]         @relation("SubmittedRefunds")
+  accountant_refunds         ExpenseRefund[]         @relation("AccountantReviews")
+  md_refunds                 ExpenseRefund[]         @relation("MDReviews")
+  refunded_by_me             ExpenseRefund[]         @relation("RefundedBy")
+  created_property_interests LeadPropertyInterest[]
+  owned_opportunities        Opportunity[]           @relation("OwnedOpportunities")
+  assigned_bookings          Booking[]               @relation("AssignedBookings")
+  recorded_payments          Payment[]               @relation("RecordedPayments")
+  recorded_installments      Installment[]           @relation("RecordedInstallments")
+  push_subscriptions         PushSubscription[]
+  auth_sessions              AuthSession[]
+  location_assignments       PMLocationAssignment[]
   // Hierarchy Management
-  manager        Employee?   @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
-  direct_reports Employee[]  @relation("EmployeeManager")
-  complaints     Complaint[] @relation("AssignedComplaints")
+  manager                    Employee?               @relation("EmployeeManager", fields: [reporting_manager_id], references: [id])
+  direct_reports             Employee[]              @relation("EmployeeManager")
+  complaints                 Complaint[]             @relation("AssignedComplaints")
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -251,7 +252,7 @@ model AttendanceLog {
   working_duration_minutes Int?
   status                   String // PRESENT, LATE, HALF_DAY, ABSENT, APPROVED_LATE
   source                   String    @default("QR_SCAN") // QR_SCAN, SYSTEM_AUTO, MANUAL
-  branch_id                Int?     // which branch kiosk performed this scan (kiosk flow only; personal QR has none)
+  branch_id                Int? // which branch kiosk performed this scan (kiosk flow only; personal QR has none)
   notes                    String?
 
   employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
@@ -262,20 +263,20 @@ model AttendanceLog {
 }
 
 model KioskCredential {
-  id                Int       @id @default(autoincrement())
-  company_id        Int
-  branch_id         Int
-  label             String
-  username          String    // unique per company (enforced by composite unique below)
-  password_hash     String
-  is_active         Boolean   @default(true)
+  id                 Int      @id @default(autoincrement())
+  company_id         Int
+  branch_id          Int
+  label              String
+  username           String // unique per company (enforced by composite unique below)
+  password_hash      String
+  is_active          Boolean  @default(true)
   credential_version Int      @default(1)
-  created_by_id     Int      // MD or ADMIN employee who created this credential
-  updated_at        DateTime  @default(now())
-  created_at        DateTime  @default(now())
+  created_by_id      Int // MD or ADMIN employee who created this credential
+  updated_at         DateTime @default(now())
+  created_at         DateTime @default(now())
 
-  company   Company   @relation(fields: [company_id], references: [id])
-  branch    Branch    @relation(fields: [branch_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [id])
+  branch     Branch   @relation(fields: [branch_id], references: [id])
   created_by Employee @relation("KioskCredentialsCreated", fields: [created_by_id], references: [id])
 
   @@unique([company_id, username]) // username must be unique within a company
@@ -448,11 +449,11 @@ model Lead {
   property_ids           Json?
 
   // §1 Lead Macro-Status Pipeline — exit & demo tracking
-  exit_reason         String?  @db.Text
-  exited_from_status  String? // snapshot of Lead.status at the moment of DROPPED (for reporting)
-  demo_scheduled_at   DateTime?
-  demo_handler_id     Int?
-  demo_handler        Employee? @relation("DemoHandlerLeads", fields: [demo_handler_id], references: [id])
+  exit_reason        String?   @db.Text
+  exited_from_status String? // snapshot of Lead.status at the moment of DROPPED (for reporting)
+  demo_scheduled_at  DateTime?
+  demo_handler_id    Int?
+  demo_handler       Employee? @relation("DemoHandlerLeads", fields: [demo_handler_id], references: [id])
 
   activities           LeadActivity[]
   matching_requirement LeadMatchingRequirement?
@@ -462,7 +463,7 @@ model Lead {
   follow_up_tasks      Task[]
   opportunities        Opportunity[]
 
-  created_at DateTime  @default(now())
+  created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([company_id])
@@ -552,61 +553,61 @@ model Project {
 }
 
 model Property {
-  id                Int       @id @default(autoincrement())
-  property_code     String    @unique
-  project_id        Int?
-  company_id        Int
-  branch_id         Int?
-  title             String
-  description       String?   @db.Text
-  brand_type        String    @default("SONTHILLU") // SONTHILLU (Residential), RADHA_REAL_HOMES (Commercial/Plots)
-  category          String    @default("VILLA") // APARTMENT, INDEPENDENT_HOUSE, DUPLEX, INDEPENDENT_FLOOR, VILLA, PENTHOUSE, STUDIO, PLOT, FARM_HOUSE, AGRICULTURAL_LAND
-  price             Float
-  area_sqft         Float
-  location          String
-  address           String?   @db.Text
-  bedrooms          Int?
-  bathrooms         Int?
-  facing            String? // EAST, WEST, NORTH, SOUTH, NORTH_EAST, SOUTH_EAST
-  details           Json? // Stores granular, property-type specific details (e.g., BHK config, plot dimensions, soil type)
-  status            String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, PENDING_DM_POLISH, PENDING_MD_APPROVAL, LIVE, REJECTED, LOCKED, BOOKED, SOLD
-  assigned_pm_id                    Int?
-  digital_marketing_executive_id    Int?      // Set by DMH when choosing "Needs Polish"
-  created_by_id                     Int?
-  verified_by_pm_at                 DateTime?
-  location_confirmed_by_pm          Boolean   @default(false) // PM must explicitly confirm on-site location before verification is allowed
-  dm_polished_at                    DateTime?
-  md_approved_at    DateTime?
-  rejection_reason  String?   @db.Text
-  seo_title         String?
-  seo_keywords      String?
-  amenities         String?   @db.Text
-  state             String? // Telangana, Andhra Pradesh, etc.
-  city              String? // Hyderabad, Vijayawada, etc.
-  locality          String? // Miyapur, Gachibowli, etc.
-  pincode           String? // 500049, etc.
-  latitude          Float? // Internal only — NOT public
-  longitude         Float? // Internal only — NOT public
-  listing_type      String?   @default("NEW") // NEW, RESALE
-  possession_status String? // READY_TO_MOVE, UNDER_CONSTRUCTION
-  slug              String?
-  source            String    @default("INTERNAL") // INTERNAL, WEBSITE_SELLER
+  id                             Int       @id @default(autoincrement())
+  property_code                  String    @unique
+  project_id                     Int?
+  company_id                     Int
+  branch_id                      Int?
+  title                          String
+  description                    String?   @db.Text
+  brand_type                     String    @default("SONTHILLU") // SONTHILLU (Residential), RADHA_REAL_HOMES (Commercial/Plots)
+  category                       String    @default("VILLA") // APARTMENT, INDEPENDENT_HOUSE, DUPLEX, INDEPENDENT_FLOOR, VILLA, PENTHOUSE, STUDIO, PLOT, FARM_HOUSE, AGRICULTURAL_LAND
+  price                          Float
+  area_sqft                      Float
+  location                       String
+  address                        String?   @db.Text
+  bedrooms                       Int?
+  bathrooms                      Int?
+  facing                         String? // EAST, WEST, NORTH, SOUTH, NORTH_EAST, SOUTH_EAST
+  details                        Json? // Stores granular, property-type specific details (e.g., BHK config, plot dimensions, soil type)
+  status                         String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, PENDING_DM_POLISH, PENDING_MD_APPROVAL, LIVE, REJECTED, LOCKED, BOOKED, SOLD
+  assigned_pm_id                 Int?
+  digital_marketing_executive_id Int? // Set by DMH when choosing "Needs Polish"
+  created_by_id                  Int?
+  verified_by_pm_at              DateTime?
+  location_confirmed_by_pm       Boolean   @default(false) // PM must explicitly confirm on-site location before verification is allowed
+  dm_polished_at                 DateTime?
+  md_approved_at                 DateTime?
+  rejection_reason               String?   @db.Text
+  seo_title                      String?
+  seo_keywords                   String?
+  amenities                      String?   @db.Text
+  state                          String? // Telangana, Andhra Pradesh, etc.
+  city                           String? // Hyderabad, Vijayawada, etc.
+  locality                       String? // Miyapur, Gachibowli, etc.
+  pincode                        String? // 500049, etc.
+  latitude                       Float? // Internal only — NOT public
+  longitude                      Float? // Internal only — NOT public
+  listing_type                   String?   @default("NEW") // NEW, RESALE
+  possession_status              String? // READY_TO_MOVE, UNDER_CONSTRUCTION
+  slug                           String?
+  source                         String    @default("INTERNAL") // INTERNAL, WEBSITE_SELLER
 
-  project           Project?                  @relation(fields: [project_id], references: [id])
-  company           Company                   @relation(fields: [company_id], references: [id])
-  branch            Branch?                   @relation(fields: [branch_id], references: [id])
-  assigned_pm       Employee?                 @relation("AssignedPMProperties", fields: [assigned_pm_id], references: [id])
-  digital_marketing_executive Employee?         @relation("DMExecutiveProperties", fields: [digital_marketing_executive_id], references: [id])
-  created_by        Employee?                 @relation("CreatedProperties", fields: [created_by_id], references: [id])
-  images            PropertyImage[]
-  publications      PropertyPublication[]
-  verification_logs PropertyVerificationLog[]
-  interested_leads  LeadPropertyInterest[]
-  site_visits       SiteVisitBooking[]
-  site_visit_property_links SiteVisitProperty[]
-  bookings          Booking[]
-  opportunities     Opportunity[]
-  complaints        Complaint[]               @relation("PropertyComplaints")
+  project                     Project?                  @relation(fields: [project_id], references: [id])
+  company                     Company                   @relation(fields: [company_id], references: [id])
+  branch                      Branch?                   @relation(fields: [branch_id], references: [id])
+  assigned_pm                 Employee?                 @relation("AssignedPMProperties", fields: [assigned_pm_id], references: [id])
+  digital_marketing_executive Employee?                 @relation("DMExecutiveProperties", fields: [digital_marketing_executive_id], references: [id])
+  created_by                  Employee?                 @relation("CreatedProperties", fields: [created_by_id], references: [id])
+  images                      PropertyImage[]
+  publications                PropertyPublication[]
+  verification_logs           PropertyVerificationLog[]
+  interested_leads            LeadPropertyInterest[]
+  site_visits                 SiteVisitBooking[]
+  site_visit_property_links   SiteVisitProperty[]
+  bookings                    Booking[]
+  opportunities               Opportunity[]
+  complaints                  Complaint[]               @relation("PropertyComplaints")
 
   locked_until         DateTime?
   locked_by_booking_id Int?      @unique
@@ -729,10 +730,10 @@ model SiteVisitBooking {
 // ─────────────────────────────────────────────────────────────
 
 model SiteVisitProperty {
-  id            Int      @id @default(autoincrement())
-  visit_id      Int
-  property_id   Int
-  outcome       String? // INTERESTED, NOT_INTERESTED — null until captured
+  id             Int     @id @default(autoincrement())
+  visit_id       Int
+  property_id    Int
+  outcome        String? // INTERESTED, NOT_INTERESTED — null until captured
   outcome_reason String? @db.Text // required when outcome = NOT_INTERESTED
 
   visit    SiteVisitBooking @relation(fields: [visit_id], references: [id], onDelete: Cascade)
@@ -751,16 +752,16 @@ model SiteVisitProperty {
 // ─────────────────────────────────────────────────────────────
 
 model SiteVisitReassignment {
-  id                Int      @id @default(autoincrement())
-  visit_id          Int
-  from_employee_id  Int?
-  to_employee_id    Int?
-  reason            String?  @db.Text // visibility restricted to executive-department roles (see §2)
-  created_at        DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  visit_id         Int
+  from_employee_id Int?
+  to_employee_id   Int?
+  reason           String?  @db.Text // visibility restricted to executive-department roles (see §2)
+  created_at       DateTime @default(now())
 
-  visit          SiteVisitBooking @relation(fields: [visit_id], references: [id], onDelete: Cascade)
-  from_employee  Employee?        @relation("SiteVisitReassignmentFrom", fields: [from_employee_id], references: [id])
-  to_employee    Employee?        @relation("SiteVisitReassignmentTo", fields: [to_employee_id], references: [id])
+  visit         SiteVisitBooking @relation(fields: [visit_id], references: [id], onDelete: Cascade)
+  from_employee Employee?        @relation("SiteVisitReassignmentFrom", fields: [from_employee_id], references: [id])
+  to_employee   Employee?        @relation("SiteVisitReassignmentTo", fields: [to_employee_id], references: [id])
 
   @@index([visit_id])
   @@index([from_employee_id])
@@ -1037,7 +1038,7 @@ model Payment {
   recorded_by Employee     @relation("RecordedPayments", fields: [recorded_by_id], references: [id])
   installment Installment? @relation(fields: [installment_id], references: [id])
 
-  created_at DateTime  @default(now())
+  created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([company_id])
@@ -1118,8 +1119,6 @@ model Opportunity {
   @@index([property_id])
   @@index([created_at])
 }
-
-
 
 // ─────────────────────────────────────────────────────────────
 // CUSTOMER PORTAL INTEGRATION — Phase 11 Packet 3A
@@ -1216,14 +1215,14 @@ model PublicApiKey {
 }
 
 model PMLocationAssignment {
-  id         Int      @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   pm_id      Int
   location   String
-  level      String   @default("CITY")
+  level      String @default("CITY")
   company_id Int
-  
-  pm         Employee @relation(fields: [pm_id], references: [id])
-  company    Company  @relation(fields: [company_id], references: [id])
+
+  pm      Employee @relation(fields: [pm_id], references: [id])
+  company Company  @relation(fields: [company_id], references: [id])
 
   @@unique([pm_id, location, company_id])
 }

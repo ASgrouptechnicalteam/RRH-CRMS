@@ -11,7 +11,7 @@ import { CustomerPortalService } from './customerPortal.service';
 import { findBestAssigneeForLead } from '../utils/distributionService';
 import { MessageTemplateService } from '../services/messageTemplate.service';
 import { buildLeadScope } from '../authz/dataScope';
-
+import { LeadPolicy } from '../policies/lead.policy';
 
 const p = prisma;
 
@@ -36,7 +36,7 @@ export class LeadService {
   static async getLeads(user: TokenPayload, take: number = 50, skip: number = 0) {
     const whereCondition = await buildLeadScope(user);
 
-    return await p.lead.findMany({
+    const leads = await p.lead.findMany({
       where: whereCondition,
       take,
       skip,
@@ -51,6 +51,11 @@ export class LeadService {
       },
       orderBy: { created_at: 'desc' },
     });
+
+    return leads.map(lead => ({
+      ...lead,
+      can_edit: LeadPolicy.canMutate(user, lead)
+    }));
   }
 
   static async getLeadById(user: TokenPayload, leadId: number) {
@@ -60,7 +65,10 @@ export class LeadService {
     if (!lead || lead.company_id !== user.companyId) {
       return null;
     }
-    return lead;
+    return {
+      ...lead,
+      can_edit: LeadPolicy.canMutate(user, lead)
+    };
   }
 
   static async getDistributionMonitor(companyId: number) {
@@ -633,37 +641,34 @@ export class LeadService {
     const property = await p.property.findFirst({ where: { id: propertyId, company_id: user.companyId } });
     if (!property) throw new AppError(404, 'Property not found');
 
+    const company = await p.company.findFirst({ where: { id: user.companyId } });
+
     // §5: resolve WhatsApp body from the MessageTemplate table (template_key
-    // LEAD_QUALIFIED_PROPERTIES), never from a hardcoded string. Falls back to
-    // a safe inline text when no active template is configured.
-    const templateKey = 'LEAD_QUALIFIED_PROPERTIES';
-    const resolved = await MessageTemplateService.resolve(templateKey, {
+    // LEAD_PROPERTY_PROPOSAL), never from a hardcoded inline string. Falls back to
+    // a safe situation-specific text containing the variables when no active template is configured.
+    const templateKey = 'LEAD_PROPERTY_PROPOSAL';
+    
+    const formattedPrice = property.price ? `${(property.price / 100000).toFixed(1)} Lakhs` : 'On Request';
+    
+    const resolved = await MessageTemplateService.resolveWithFallback(templateKey, {
       customer_name: lead.customer_name ?? '',
+      customer_phone: lead.phone ?? '',
       property_name: property.title ?? '',
-      pm_name:
-        lead.assigned_to?.full_name ??
-        lead.assigned_to?.employee_code ??
-        'Radha Real Homes Advisory Desk',
+      property_location: property.location ?? '',
+      property_price: formattedPrice,
+      property_code: property.property_code ?? '',
+      pm_name: property.assigned_pm_id ? (await p.employee.findFirst({ where: { id: property.assigned_pm_id } }))?.full_name ?? 'Property Manager' : 'Property Manager',
+      agent_name: lead.assigned_to?.full_name ?? lead.assigned_to?.employee_code ?? 'Advisory Desk',
       visit_date: new Date().toLocaleDateString('en-IN', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       }),
+      lead_code: lead.lead_code ?? '',
+      company_name: company?.name ?? 'Our Company',
     });
 
-    const text = resolved?.body_text ??
-      // Safe fallback when admin hasn't populated the template yet.
-      `🏡 *EXCLUSIVE PROPERTY PROPOSAL*
-
-Dear *${lead.customer_name}*,
-
-We found a premium property matching your requirements!
-
-📌 *Title*: ${property.title}
-📍 *Location*: ${property.location}
-💰 *Asking Price*: ${(property.price / 100000).toFixed(1)} Lakhs
-
-Reply to this message or call us to schedule a site visit.`;
+    const text = resolved.body_text;
 
     const cleanPhone = lead.phone.replace(/[^0-9]/g, '');
     const whatsAppUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(text)}`;

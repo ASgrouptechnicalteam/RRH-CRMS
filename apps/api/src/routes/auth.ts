@@ -311,6 +311,18 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
         permissions,
         attendanceRequired: employee.attendance_required,
         firstLoginDone: employee.first_login_done,
+        phone: employee.phone,
+        secondaryPhone: employee.secondary_phone,
+        whatsappNumber: employee.whatsapp_number,
+        email: employee.email,
+        bloodGroup: employee.blood_group,
+        socialLinks: employee.social_links,
+        currentAddress: employee.current_address,
+        permanentAddress: employee.permanent_address,
+        emergencyContactName: employee.emergency_contact_name,
+        emergencyContactRelation: employee.emergency_contact_relation,
+        emergencyContactPhone: employee.emergency_contact_phone,
+        profileImageUrl: employee.profile_image_url,
       },
     });
   } catch (error) {

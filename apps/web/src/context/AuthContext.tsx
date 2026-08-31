@@ -24,6 +24,12 @@ export interface UserProfile {
   emergencyContactRelation?: string | null;
   emergencyContactPhone?: string | null;
   profileImageUrl?: string | null;
+  panNumber?: string | null;
+  aadhaarNumber?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankIfsc?: string | null;
+  bankBranch?: string | null;
 }
 
 type AuthStatus = 'bootstrapping' | 'authenticated' | 'unauthenticated';

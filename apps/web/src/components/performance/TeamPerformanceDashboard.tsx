@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, Award, TrendingUp, TrendingDown, AlertTriangle,
   CheckCircle, Clock, RefreshCw, Search, ChevronDown, ChevronUp,
-  Star, ShieldAlert, Activity
+  Star, ShieldAlert, Activity, Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
@@ -24,8 +24,15 @@ interface EmployeeScore {
     lateCount: number;
     halfDayCount: number;
     uninformedAbsent: number;
+    propertyBookingContributions: number;
+    targetExceededEvents?: number;
   };
 }
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 const ZONE_CONFIG = {
   EXCELLENT: {
@@ -76,13 +83,18 @@ export const TeamPerformanceDashboard: React.FC = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'score' | 'name' | 'zone'>('score');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [showMatrix, setShowMatrix] = useState(false);
 
+
+  const currentDate = new Date();
+  const [year, setYear] = useState(currentDate.getFullYear());
+  const [month, setMonth] = useState(currentDate.getMonth() + 1);
 
   const fetchTeam = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/performance/team`);
+      const res = await fetchWithAuth(`${API_BASE_URL}/performance/team?year=${year}&month=${month}`);
       const data = await res.json();
       if (res.ok) {
         setTeam(data.team || []);
@@ -98,7 +110,25 @@ export const TeamPerformanceDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchTeam();
-  }, [fetchTeam]);
+  }, [fetchTeam, month, year]);
+
+  const handlePrevMonth = () => {
+    if (month === 1) {
+      setMonth(12);
+      setYear(y => y - 1);
+    } else {
+      setMonth(m => m - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (month === 12) {
+      setMonth(1);
+      setYear(y => y + 1);
+    } else {
+      setMonth(m => m + 1);
+    }
+  };
 
   const filtered = team
     .filter((e) => {
@@ -164,24 +194,38 @@ export const TeamPerformanceDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-7xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Users className="w-5 h-5 text-navy-600" /> Team Performance Index
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Live performance scores for {team.length} team member{team.length !== 1 ? 's' : ''} · Auto-calculated
+            Monthly performance scores for {team.length} team member{team.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          onClick={fetchTeam}
-          className="p-2 text-slate-500 hover:text-navy-700 hover:bg-navy-50 rounded-xl border border-slate-200 transition-colors"
-          title="Refresh"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <button onClick={handlePrevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2 font-bold text-slate-700 min-w-[100px] justify-center text-sm">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span>{MONTHS[month - 1]} {year}</span>
+            </div>
+            <button onClick={handleNextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={fetchTeam}
+            className="p-2 h-10 w-10 flex items-center justify-center text-slate-500 hover:text-navy-700 hover:bg-navy-50 rounded-xl border border-slate-200 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Stats Summary */}
@@ -328,14 +372,16 @@ export const TeamPerformanceDashboard: React.FC = () => {
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { label: 'Tasks Done', value: `+${emp.breakdown.tasksDone}`, color: 'text-emerald-700', hint: '+1.0 each' },
+                      { label: 'Tasks Done', value: `+${emp.breakdown.tasksDone}`, color: 'text-emerald-700', hint: '+2.0 each' },
                       { label: 'Reports Filed', value: `+${emp.breakdown.reportsDone}`, color: 'text-emerald-700', hint: '+0.5 each' },
+                      { label: 'Exceeded Target', value: `+${emp.breakdown.targetExceededEvents || 0}`, color: 'text-emerald-700', hint: '+0.5 each' },
                       { label: 'On-Time Days', value: `+${emp.breakdown.presentCount}`, color: 'text-navy-700', hint: '+0.5 each' },
+                      { label: 'Property Booked', value: `+${emp.breakdown.propertyBookingContributions}`, color: 'text-indigo-700', hint: '+10.0 each' },
                       { label: 'Late Check-ins', value: `-${emp.breakdown.lateCount}`, color: 'text-amber-700', hint: '-1.0 each' },
-                      { label: 'Overdue Tasks', value: `-${emp.breakdown.tasksOverdue}`, color: 'text-orange-700', hint: '-2.0 each' },
-                      { label: 'Sub-Target Logs', value: `-${emp.breakdown.belowTargetCount}`, color: 'text-red-700', hint: '-2.0 each' },
-                      { label: 'Half Days', value: `-${emp.breakdown.halfDayCount}`, color: 'text-red-600', hint: '-2.0 each' },
-                      { label: 'Unplanned Absences', value: `-${emp.breakdown.uninformedAbsent}`, color: 'text-red-800', hint: '-5.0 each' },
+                      { label: 'Overdue Tasks', value: `-${emp.breakdown.tasksOverdue}`, color: 'text-orange-700', hint: '-1.0 each' },
+                      { label: 'Sub-Target Logs', value: `-${emp.breakdown.belowTargetCount}`, color: 'text-red-700', hint: '-1.0 each' },
+                      { label: 'Half Days', value: `-${emp.breakdown.halfDayCount}`, color: 'text-red-600', hint: '-1.0 each' },
+                      { label: 'Unplanned Absences', value: `-${emp.breakdown.uninformedAbsent}`, color: 'text-red-800', hint: '-2.0 each' },
                     ].map((item) => (
                       <div key={item.label} className="bg-white rounded-xl p-2.5 border border-white/60 shadow-sm">
                         <span className="text-[9px] text-slate-500 block">{item.label}</span>
@@ -355,6 +401,88 @@ export const TeamPerformanceDashboard: React.FC = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* Performance Matrix Guide */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <button 
+          onClick={() => setShowMatrix(!showMatrix)}
+          className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors focus:outline-none"
+        >
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+            <Award className="w-4 h-4 text-navy-600" /> Scoring Guide & Matrix
+          </h3>
+          {showMatrix ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+        </button>
+        
+        {showMatrix && (
+          <div className="p-6 pt-0 border-t border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {/* Boosts */}
+          <div>
+            <h4 className="text-xs font-bold text-emerald-700 mb-3 uppercase flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" /> Boosts (Points Earned)
+            </h4>
+            <ul className="space-y-2 text-sm text-slate-600">
+              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                <span>Task Completed</span>
+                <span className="font-bold text-emerald-600">+2.0</span>
+              </li>
+              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                <span>Daily EOD Report Submitted</span>
+                <span className="font-bold text-emerald-600">+0.5</span>
+              </li>
+              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                <span>Exceeded Daily Target</span>
+                <span className="font-bold text-emerald-600">+0.5</span>
+              </li>
+              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                <span>Daily Check-in (Present)</span>
+                <span className="font-bold text-emerald-600">+0.5</span>
+              </li>
+              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                <span>Property Booked (All Contributors)</span>
+                <span className="font-bold text-emerald-600">+10.0</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Penalties */}
+          <div>
+            <h4 className="text-xs font-bold text-rose-700 mb-3 uppercase flex items-center gap-1">
+              <AlertTriangle className="w-4 h-4" /> Penalties (Points Deducted)
+            </h4>
+            <ul className="space-y-2 text-sm text-slate-600">
+              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                <span>Late Check-in</span>
+                <span className="font-bold text-rose-600">-1.0</span>
+              </li>
+              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                <span>Half Day</span>
+                <span className="font-bold text-rose-600">-1.0</span>
+              </li>
+              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                <span>Sub-Target Activity Log</span>
+                <span className="font-bold text-rose-600">-1.0</span>
+              </li>
+              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                <span>Task Overdue</span>
+                <span className="font-bold text-rose-600">-1.0</span>
+              </li>
+              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                <span>Uninformed Absence</span>
+                <span className="font-bold text-rose-600">-2.0</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-500">
+            <strong>Note:</strong> Employees' base scores are reset to <strong>50.0</strong> at the start of every month. The maximum possible score is uncapped, but negative scores will flag a Danger Zone rating.
+          </p>
+        </div>
+          </div>
+        )}
       </div>
     </div>
   );

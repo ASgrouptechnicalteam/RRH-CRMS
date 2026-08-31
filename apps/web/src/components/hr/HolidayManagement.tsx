@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 export const HolidayManagement: React.FC = () => {
+  const { fetchWithAuth } = useAuth();
   const [holidays, setHolidays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,13 +14,9 @@ export const HolidayManagement: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [adding, setAdding] = useState(false);
 
-  const token = localStorage.getItem('rrh_auth_token');
-
   const fetchHolidays = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/attendance/holidays`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/holidays`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch holidays');
       setHolidays(data.holidays || []);
@@ -40,11 +38,10 @@ export const HolidayManagement: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/attendance/holidays`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/holidays`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ date, name, notes }),
       });
@@ -66,9 +63,8 @@ export const HolidayManagement: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this holiday?')) return;
     setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/attendance/holidays/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/holidays/${id}`, {
+        method: 'DELETE'
       });
       if (!res.ok) {
         const data = await res.json();
@@ -169,7 +165,7 @@ export const HolidayManagement: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                holidays.map(holiday => (
+                holidays.filter(h => h && h.date).map(holiday => (
                   <tr key={holiday.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3 px-4 font-medium text-slate-700">
                       {new Date(holiday.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}

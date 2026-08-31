@@ -4,7 +4,6 @@ import {
   CalendarCheck, TrendingUp, Inbox, PhoneCall, FileText,
 } from 'lucide-react';
 import { TargetConfigurator } from '../targets/TargetConfigurator';
-import { TeamPerformanceDashboard } from '../performance/TeamPerformanceDashboard';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
@@ -79,16 +78,10 @@ export const AnalyticsHub: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
 
   const canManageTargets = user?.roles?.some(r => ['Managing director'].includes(r));
-  const canViewTeamPerformance = user?.roles?.some(r =>
-    ['Managing director', 'Admin (Technical)', 'marketing director', 'HR', 'project managers',
-     'Digital Marketing head(manager)', 'accountant'].includes(r)
-  );
-  // The KPI overview is permission-gated on the SAME permission the backend enforces.
+    // The KPI overview is permission-gated on the SAME permission the backend enforces.
   const canViewKpis = (user?.permissions ?? []).includes('admin.system_metrics');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'targets'>(
-    canViewKpis ? 'overview' : canViewTeamPerformance ? 'performance' : 'targets'
-  );
+  const [activeTab, setActiveTab] = useState<'overview' | 'targets'>(canViewKpis ? 'overview' : 'targets');
 
   // KPI fetch state
   const [kpis, setKpis] = useState<AnalyticsKpis | null>(null);
@@ -121,7 +114,7 @@ export const AnalyticsHub: React.FC = () => {
     }
   }, [canViewKpis, fetchKpis]);
 
-  if (!canManageTargets && !canViewTeamPerformance && !canViewKpis) {
+  if (!canManageTargets && !canViewKpis) {
     return <Navigate to="/" replace />;
   }
 
@@ -156,7 +149,7 @@ export const AnalyticsHub: React.FC = () => {
           Analytics & Goals
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Monitor KPI overview, team performance scores, and monthly targets.
+          Monitor KPI overview and monthly targets.
         </p>
 
         {/* Tab Navigation */}
@@ -175,19 +168,7 @@ export const AnalyticsHub: React.FC = () => {
             </button>
           )}
 
-          {canViewTeamPerformance && (
-            <button
-              onClick={() => setActiveTab('performance')}
-              className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-                activeTab === 'performance'
-                  ? 'bg-navy-50 text-navy-700 border border-navy-200'
-                  : 'text-slate-600 hover:bg-slate-50 border border-transparent'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              Team Performance
-            </button>
-          )}
+          
 
           {canManageTargets && (
             <button
@@ -365,7 +346,7 @@ export const AnalyticsHub: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'performance' && canViewTeamPerformance && <TeamPerformanceDashboard />}
+
         {activeTab === 'targets' && canManageTargets && <TargetConfigurator />}
       </div>
     </div>

@@ -179,7 +179,10 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
 
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
+  { id: 'my-attendance', label: 'My Attendance', icon: CalendarCheck, path: '/my-attendance' },
+  { id: 'my-performance', label: 'My Performance', icon: TrendingUp, path: '/my-performance' },
   { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks' },
+  { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/daily-report' },
 
   // FINANCE
   { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },
@@ -188,9 +191,10 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // OPERATIONS
   { id: 'group-operations', label: 'OPERATIONS', group: true, icon: undefined },
   { id: 'hr-employees', label: 'Employees', icon: Users, path: '/hr-hub?tab=DIRECTORY', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'hr-attendance', label: 'Attendance', icon: Clock, path: '/hr-hub?tab=ATTENDANCE', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'hr-leaves', label: 'Leave Approvals', icon: Calendar, path: '/hr-hub?tab=LEAVES', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'hr-performance', label: 'CRM Performance', icon: TrendingUp, path: '/hr-hub?tab=PERFORMANCE', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-attendance', label: 'Attendance', icon: Clock, path: '/hr-attendance', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-approvals', label: 'Approvals', icon: Calendar, path: '/approvals', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'team-performance', label: 'Team Performance', icon: TrendingUp, path: '/team-performance', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
+  { id: 'hr-daily-reports', label: 'Daily Reports', icon: FileText, path: '/hr-daily-reports', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
   { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
   { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
   { id: 'pm-territories', label: 'PM Territories', icon: Map, path: '/pm-territories', requiredAnyRole: [Roles.MD, Roles.ADMIN] },

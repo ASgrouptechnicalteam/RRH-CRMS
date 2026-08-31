@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Phone, MapPin, Building, Briefcase, Mail, Edit3, Camera, QrCode, Maximize2, X } from 'lucide-react';
+import { User, Phone, MapPin, Building, Briefcase, Mail, Edit3, Camera, QrCode, Maximize2, X, AlertTriangle, FileText, CreditCard } from 'lucide-react';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { PerformanceHistoryTimeline } from '../performance/PerformanceHistoryTimeline';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
@@ -8,11 +8,13 @@ import { ProfileEditModal } from './ProfileEditModal';
 import { QRCodeVisual } from '../common/QRCodeVisual';
 import { API_BASE_URL } from '../../config';
 import { mediaUrl } from '../../utils/imageUtils';
+import { EmergencyLogoutModal } from './EmergencyLogoutModal';
 
 export const UserProfile: React.FC = () => {
   const { user, fetchWithAuth, updateUser } = useAuth();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isQRFullscreen, setIsQRFullscreen] = useState(false);
   const [qrToken, setQrToken] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +23,7 @@ export const UserProfile: React.FC = () => {
   useEffect(() => {
     fetchWithAuth(`${API_BASE_URL}/attendance/my-qr`)
       .then((res) => res.json())
-      .then((data) => setQrToken(data.signedToken || data.token))
+      .then((data) => setQrToken(data.qrData || data.signedToken || data.token))
       .catch(() => console.error('Failed to load QR code'));
   }, [fetchWithAuth]);
 
@@ -169,6 +171,58 @@ export const UserProfile: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Address & KYC Details */}
+            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Address & KYC</h3>
+              <div className="flex items-center gap-3 text-sm text-slate-700">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 font-semibold">Current Address</p>
+                  <p className="font-semibold text-slate-800 text-xs">{user.currentAddress || 'Not provided'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-700">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 font-semibold">PAN / Aadhaar</p>
+                  <p className="font-semibold text-slate-800 text-xs">
+                    {user.panNumber || 'No PAN'} / {user.aadhaarNumber || 'No Aadhaar'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bank Details */}
+            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Bank Details</h3>
+              <div className="flex items-center gap-3 text-sm text-slate-700">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                  <Building className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 font-semibold">Account Info</p>
+                  <p className="font-semibold text-slate-800 text-xs">
+                    {user.bankName ? `${user.bankName} - ${user.bankAccountNumber}` : 'Not provided'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-700">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 font-semibold">IFSC / Branch</p>
+                  <p className="font-semibold text-slate-800 text-xs">
+                    {user.bankIfsc ? `${user.bankIfsc} (${user.bankBranch})` : 'Not provided'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -201,6 +255,15 @@ export const UserProfile: React.FC = () => {
                 <p className="text-xs text-slate-500 mt-4 text-center">
                   Scan this code at the Kiosk terminal to mark your daily attendance.
                 </p>
+                <div className="mt-4 pt-4 border-t border-slate-100 w-full text-center">
+                  <button 
+                    onClick={() => setIsEmergencyModalOpen(true)}
+                    className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center justify-center gap-1.5 mx-auto transition-colors px-3 py-2 rounded-lg hover:bg-rose-50"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Emergency Early Logout
+                  </button>
+                </div>
               </>
             ) : (
               <div className="text-center text-slate-400">
@@ -228,6 +291,10 @@ export const UserProfile: React.FC = () => {
             <ChangePasswordModal />
           </div>
         </div>
+      )}
+
+      {isEmergencyModalOpen && (
+        <EmergencyLogoutModal onClose={() => setIsEmergencyModalOpen(false)} />
       )}
 
       {/* Fullscreen QR Modal */}

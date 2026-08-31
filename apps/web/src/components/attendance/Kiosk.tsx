@@ -8,7 +8,6 @@ type KioskMode = 'KIOSK_LOGIN' | 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
 
 export const Kiosk: React.FC = () => {
   const [mode, setMode] = useState<KioskMode>('KIOSK_LOGIN');
-  const [scannedData, setScannedData] = useState<string>('');
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -28,9 +27,9 @@ export const Kiosk: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const kioskToken = useRef<string | null>(null);
   const scanDelayRef = useRef(false);
+  const cameraRunningRef = useRef(false);
 
   // Clock
   useEffect(() => {
@@ -51,20 +50,15 @@ export const Kiosk: React.FC = () => {
     }
   }, []);
 
-  // Keep focus on hidden input if camera is not active
+  // Auto-start camera on entering IDLE
   useEffect(() => {
-    if (mode !== 'IDLE' || cameraActive) return;
-    const focusInput = () => {
-      if (inputRef.current && document.activeElement !== inputRef.current) {
-        inputRef.current.focus();
-      }
-    };
-    focusInput();
-    const interval = setInterval(focusInput, 2000);
-    return () => clearInterval(interval);
-  }, [mode, cameraActive]);
+    if (mode === 'IDLE' && !cameraActive) {
+      startCamera();
+    }
+  }, [mode]);
 
   const stopCamera = () => {
+    cameraRunningRef.current = false;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -74,25 +68,33 @@ export const Kiosk: React.FC = () => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute('playsinline', 'true');
         videoRef.current.play();
         setCameraActive(true);
+        cameraRunningRef.current = true;
         requestAnimationFrame(tick);
       }
     } catch (err) {
       console.error('Error accessing camera', err);
-      setErrorMessage('Camera access denied or unavailable.');
+      if (err instanceof Error && err.name === 'NotAllowedError') {
+         setErrorMessage('Camera access denied. Please grant permission in your browser.');
+      } else if (err instanceof Error && err.name === 'NotFoundError') {
+         setErrorMessage('No camera found on this device.');
+      } else {
+         setErrorMessage('Camera access denied or unavailable. Please ensure you are using HTTPS or localhost.');
+      }
       setMode('ERROR');
       startCountdown();
     }
   };
 
   const tick = () => {
-    if (!videoRef.current || !canvasRef.current || !cameraActive || mode !== 'IDLE') return;
+    if (!cameraRunningRef.current) return;
+    if (!videoRef.current || !canvasRef.current || mode !== 'IDLE') return;
 
     if (videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
       canvasRef.current.height = videoRef.current.videoHeight;
@@ -108,7 +110,6 @@ export const Kiosk: React.FC = () => {
         if (code && !scanDelayRef.current) {
           scanDelayRef.current = true;
           handleScan(code.data);
-          // Small debounce
           setTimeout(() => { scanDelayRef.current = false; }, 2000);
         }
       }
@@ -124,7 +125,6 @@ export const Kiosk: React.FC = () => {
 
   const resetKiosk = () => {
     setMode('IDLE');
-    setScannedData('');
     setScanResult(null);
     setErrorMessage(null);
     setCountdown(null);
@@ -209,7 +209,7 @@ export const Kiosk: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Check-in failed');
+        throw new Error(data.error || 'Login failed');
       }
 
       if (data.alreadyStamped) {
@@ -222,19 +222,21 @@ export const Kiosk: React.FC = () => {
         const outData = await outRes.json();
 
         if (!outRes.ok) {
-          throw new Error(outData.error || 'Checkout failed');
+          throw new Error(outData.error || 'Logout failed');
         }
 
         setScanResult({
-          type: 'CHECK_OUT',
+          type: 'LOG_OUT',
           time: outData.timeIST,
           duration: outData.working_duration_minutes,
+          name: outData.full_name || 'Employee',
         });
       } else {
         setScanResult({
-          type: 'CHECK_IN',
+          type: 'LOG_IN',
           time: data.timeIST,
           status: data.status,
+          name: data.full_name || 'Employee',
         });
       }
 
@@ -247,12 +249,6 @@ export const Kiosk: React.FC = () => {
         setMode('ERROR');
         startCountdown();
       }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleScan(scannedData);
     }
   };
 
@@ -383,54 +379,39 @@ export const Kiosk: React.FC = () => {
 
       <main className="flex-1 flex flex-col items-center justify-center z-10 p-6">
         {mode === 'IDLE' && (
-          <div className="text-center max-w-lg w-full animate-fade-in-up">
+          <div className="text-center max-w-2xl w-full animate-fade-in-up">
             {credentialLabel && (
               <p className="text-xs text-slate-500 mb-2">Operating as: {credentialLabel}</p>
             )}
             
-            {cameraActive ? (
-              <div className="mb-8 relative rounded-3xl overflow-hidden border-2 border-navy-500/50 shadow-2xl mx-auto w-64 h-64 bg-black flex items-center justify-center">
-                <video ref={videoRef} className="w-full h-full object-cover" />
-                <canvas ref={canvasRef} className="hidden" />
-                <div className="absolute inset-0 border-4 border-navy-400/50 rounded-3xl pointer-events-none" />
-                <button
-                  onClick={stopCamera}
-                  className="absolute bottom-4 right-4 bg-slate-900/80 p-2 rounded-full hover:bg-rose-500/80 text-white transition-colors backdrop-blur-md"
-                >
-                  <VideoOff className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <div className="w-48 h-48 mx-auto mb-8 bg-slate-800 rounded-3xl flex flex-col items-center justify-center border-2 border-navy-500/30 shadow-[0_0_50px_rgba(20,184,166,0.1)] relative">
-                <div className="absolute inset-0 border border-navy-400/50 rounded-3xl animate-ping opacity-20" />
-                <QrCode className="w-16 h-16 text-navy-400 mb-3" />
-                <button
-                  onClick={startCamera}
-                  className="px-4 py-2 bg-navy-600 hover:bg-navy-500 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <Camera className="w-4 h-4" />
-                  Start Camera
-                </button>
-              </div>
-            )}
-            
             <h2 className="text-4xl font-bold mb-4 text-slate-100">Show your QR Code</h2>
             <p className="text-slate-400 text-lg mb-8">
-              Place your employee QR code in front of the scanner to check in or check out.
+              Place your employee QR code in front of the camera to log in or log out.
             </p>
 
-            <div className="relative w-full max-w-sm mx-auto">
-              <input
-                ref={inputRef}
-                type="text"
-                value={scannedData}
-                onChange={(e) => setScannedData(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Scanner Input / Paste QR Token"
-                className="w-full bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-navy-500 text-center font-mono text-sm opacity-50 hover:opacity-100 transition-opacity"
-              />
-              <p className="text-xs text-slate-500 mt-2">Physical scanner will type here automatically.</p>
+            <div className={`mb-8 relative rounded-3xl overflow-hidden border-2 border-navy-500/50 shadow-2xl mx-auto w-[90vw] max-w-[500px] aspect-square bg-black flex items-center justify-center ${!cameraActive ? 'hidden' : ''}`}>
+              <video ref={videoRef} className="w-full h-full object-cover" />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-0 border-[8px] border-navy-400/30 rounded-3xl pointer-events-none" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-64 h-64 border-2 border-dashed border-emerald-400/70 rounded-xl" />
+              </div>
             </div>
+
+            {!cameraActive && (
+              <div className="w-[90vw] max-w-[500px] aspect-square mx-auto mb-8 bg-slate-800 rounded-3xl flex flex-col items-center justify-center border-2 border-navy-500/30 shadow-[0_0_50px_rgba(20,184,166,0.1)] relative">
+                <div className="absolute inset-0 border border-navy-400/50 rounded-3xl animate-ping opacity-20" />
+                <Camera className="w-16 h-16 text-navy-400 mb-4" />
+                <button
+                  onClick={startCamera}
+                  className="px-6 py-3 bg-navy-600 hover:bg-navy-500 text-white rounded-xl text-base font-medium transition-colors flex items-center gap-2 shadow-lg"
+                >
+                  <Camera className="w-5 h-5" />
+                  Enable Camera
+                </button>
+                <p className="text-xs text-slate-500 mt-4 max-w-xs text-center">Camera permission is required to scan QR codes.</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -444,13 +425,21 @@ export const Kiosk: React.FC = () => {
 
         {mode === 'SUCCESS' && scanResult && (
           <div className="text-center max-w-md w-full bg-slate-800/80 backdrop-blur-xl rounded-3xl p-8 border border-slate-700 shadow-2xl animate-scale-up">
-            <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${scanResult.type === 'CHECK_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-navy-500/20 text-navy-400'}`}>
-              {scanResult.type === 'CHECK_IN' ? <CheckCircle2 className="w-12 h-12" /> : <LogOut className="w-12 h-12" />}
+            <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${scanResult.type === 'LOG_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-navy-500/20 text-navy-400'}`}>
+              {scanResult.type === 'LOG_IN' ? <CheckCircle2 className="w-12 h-12" /> : <LogOut className="w-12 h-12" />}
             </div>
 
-            <h2 className="text-3xl font-bold text-white mb-2">
-              {scanResult.type === 'CHECK_IN' ? 'Check-In Successful' : 'Check-Out Successful'}
+            <h2 className="text-3xl font-bold text-white mb-1">
+              {(() => {
+                const hour = new Date().getHours();
+                if (hour < 12) return `Good morning, ${scanResult.name}`;
+                if (hour < 17) return `Good afternoon, ${scanResult.name}`;
+                return `Good evening, ${scanResult.name}`;
+              })()}
             </h2>
+            <p className="text-slate-400 font-medium mb-6">
+              {scanResult.type === 'LOG_IN' ? 'You have logged in successfully.' : 'You have logged out successfully.'}
+            </p>
 
             <div className="mt-6 space-y-4">
               <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">
@@ -458,7 +447,7 @@ export const Kiosk: React.FC = () => {
                 <span className="text-white font-bold font-mono text-lg">{scanResult.time}</span>
               </div>
 
-              {scanResult.type === 'CHECK_IN' && (
+              {scanResult.type === 'LOG_IN' && (
                 <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">
                   <span className="text-slate-400">Status</span>
                   <span className={`font-bold px-3 py-1 rounded-full text-sm ${
@@ -471,7 +460,7 @@ export const Kiosk: React.FC = () => {
                 </div>
               )}
 
-              {scanResult.type === 'CHECK_OUT' && scanResult.duration !== undefined && (
+              {scanResult.type === 'LOG_OUT' && scanResult.duration !== undefined && (
                 <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">
                   <span className="text-slate-400">Working Duration</span>
                   <span className="text-navy-400 font-bold">{Math.floor(scanResult.duration / 60)}h {scanResult.duration % 60}m</span>

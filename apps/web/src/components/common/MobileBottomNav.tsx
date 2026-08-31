@@ -125,16 +125,16 @@ export const MobileBottomNav: React.FC = () => {
 
       {/* Drawer */}
       <div 
-        className={`md:hidden fixed inset-y-0 right-0 w-72 bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-y-0 right-0 w-72 bg-navy-950 z-[70] shadow-2xl transform transition-transform duration-300 ease-in-out ${
           isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
         } flex flex-col`}
       >
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
-          <h2 className="font-bold text-slate-800 text-sm">Navigation Menu</h2>
+        <div className="p-4 border-b border-navy-900 flex items-center justify-between bg-navy-950 shrink-0">
+          <h2 className="font-bold text-slate-100 text-sm">Navigation Menu</h2>
           <button 
             onClick={() => setIsDrawerOpen(false)}
             aria-label="Close navigation"
-            className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
+            className="p-1.5 bg-navy-900 rounded-lg border border-navy-800 text-slate-400 hover:bg-navy-800 hover:text-white hover:border-navy-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -148,7 +148,7 @@ export const MobileBottomNav: React.FC = () => {
                 <button
                   onClick={() => toggleGroup(group.groupItem.id)}
                   aria-expanded={isExpanded}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700 transition-colors rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-navy focus:bg-slate-50"
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors rounded-md hover:bg-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-navy-900"
                 >
                   <span>{group.groupItem.label}</span>
                   {isExpanded ? (
@@ -167,11 +167,11 @@ export const MobileBottomNav: React.FC = () => {
                           onClick={() => handleNav(item.path || '/')}
                           aria-current={isActive ? 'page' : undefined}
                           className={`w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                            isActive ? 'bg-navy-50 text-navy-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                            isActive ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-800 hover:text-white'
                           }`}
                         >
                           {item.icon ? (
-                            <item.icon className="w-4 h-4 shrink-0 text-gold" />
+                            <item.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-gold-400' : 'opacity-80'}`} />
                           ) : null}
                           <span className="truncate">{item.label}</span>
                         </button>

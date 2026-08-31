@@ -18,11 +18,8 @@ interface AttendanceLog {
   };
 }
 
-type TabType = 'HISTORY' | 'CALENDAR' | 'HOLIDAYS';
-
-export const AttendanceHistory: React.FC = () => {
+export const AttendanceHistoryLog: React.FC = () => {
   const { accessToken, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('HISTORY');
   
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +34,6 @@ export const AttendanceHistory: React.FC = () => {
   const limit = 20;
 
   const fetchHistory = async () => {
-    if (activeTab !== 'HISTORY') return;
     setIsLoading(true);
     try {
       const query = new URLSearchParams({
@@ -73,7 +69,7 @@ export const AttendanceHistory: React.FC = () => {
       fetchHistory();
     }, 300);
     return () => clearTimeout(timer);
-  }, [page, search, status, date, accessToken, activeTab]);
+  }, [page, search, status, date, accessToken]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -85,37 +81,8 @@ export const AttendanceHistory: React.FC = () => {
     }
   };
 
-  const isHR = user?.roles?.some((r: string) => ['MD', 'ADMIN', 'HR_MANAGER'].includes(r));
-
   return (
     <div className="space-y-6">
-      <div className="flex border-b border-slate-200 bg-white rounded-t-2xl shadow-sm px-6 pt-4">
-        <button
-          onClick={() => setActiveTab('HISTORY')}
-          className={`pb-4 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'HISTORY' ? 'border-navy-600 text-navy-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          <History className="w-4 h-4" />
-          History Log
-        </button>
-        <button
-          onClick={() => setActiveTab('CALENDAR')}
-          className={`pb-4 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'CALENDAR' ? 'border-navy-600 text-navy-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          <CalendarDays className="w-4 h-4" />
-          Monthly Calendar
-        </button>
-        {isHR && (
-          <button
-            onClick={() => setActiveTab('HOLIDAYS')}
-            className={`pb-4 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'HOLIDAYS' ? 'border-navy-600 text-navy-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-          >
-            <Palmtree className="w-4 h-4" />
-            Manage Holidays
-          </button>
-        )}
-      </div>
-
-      {activeTab === 'HISTORY' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           {/* Header & Filters */}
           <div className="p-4 sm:p-6 border-b border-slate-200 bg-slate-50 space-y-4">
@@ -256,15 +223,6 @@ export const AttendanceHistory: React.FC = () => {
             </div>
           )}
         </div>
-      )}
-
-      {activeTab === 'CALENDAR' && (
-        <MonthlyAttendanceCalendar />
-      )}
-
-      {activeTab === 'HOLIDAYS' && isHR && (
-        <HolidayManagement />
-      )}
     </div>
   );
 };

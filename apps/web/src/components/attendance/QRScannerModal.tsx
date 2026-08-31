@@ -9,7 +9,7 @@ import { ScanResult } from '../../types';
 
 export const QRScannerModal: React.FC = () => {
   const { user, fetchWithAuth, setAttendanceStamped } = useAuth();
-  const [qrData, setQrData] = useState<ScanResult | null>(null);
+  const [qrData, setQrData] = useState<any | null>(null);
   const [stampResult, setStampResult] = useState<ScanResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
@@ -57,8 +57,7 @@ export const QRScannerModal: React.FC = () => {
       .catch(() => console.error('Failed to load QR code'))
       .finally(() => setIsLoading(false));
   }, [user]);
-
-  const activeToken = qrData?.signedToken || qrData?.token;
+  const activeToken = qrData?.qrData || qrData?.signedToken || qrData?.token;
 
   const handleScanAndVerify = async () => {
     setIsScanning(true);

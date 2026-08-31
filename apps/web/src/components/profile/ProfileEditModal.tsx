@@ -23,7 +23,16 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
     emergency_contact_name: user?.emergencyContactName || '',
     emergency_contact_relation: user?.emergencyContactRelation || '',
     emergency_contact_phone: user?.emergencyContactPhone || '',
+    full_name: user?.fullName || '',
+    pan_number: user?.panNumber || '',
+    aadhaar_number: user?.aadhaarNumber || '',
+    bank_name: user?.bankName || '',
+    bank_account_number: user?.bankAccountNumber || '',
+    bank_ifsc: user?.bankIfsc || '',
+    bank_branch: user?.bankBranch || '',
   });
+
+  const hasBankDetails = Boolean(user?.bankAccountNumber);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +60,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
       if (!res.ok) throw new Error(data.error || 'Failed to update profile');
 
       updateUser({
+        fullName: data.employee.full_name,
         phone: data.employee.phone,
         whatsappNumber: data.employee.whatsapp_number,
         email: data.employee.email,
@@ -84,6 +94,21 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
           )}
 
           <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Personal Details</h3>
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <h3 className="text-sm font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Contact Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -188,6 +213,89 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
                     value={formData.emergency_contact_phone}
                     onChange={handleChange}
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">KYC Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">PAN Number</label>
+                  <input
+                    type="text"
+                    name="pan_number"
+                    value={formData.pan_number}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Aadhaar Number</label>
+                  <input
+                    type="text"
+                    name="aadhaar_number"
+                    value={formData.aadhaar_number}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900">Bank Details</h3>
+                {hasBankDetails && (
+                  <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-2 py-1 rounded-md">
+                    Locked (Contact HR to change)
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Bank Name</label>
+                  <input
+                    type="text"
+                    name="bank_name"
+                    value={formData.bank_name}
+                    onChange={handleChange}
+                    disabled={hasBankDetails}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Account Number</label>
+                  <input
+                    type="text"
+                    name="bank_account_number"
+                    value={formData.bank_account_number}
+                    onChange={handleChange}
+                    disabled={hasBankDetails}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">IFSC Code</label>
+                  <input
+                    type="text"
+                    name="bank_ifsc"
+                    value={formData.bank_ifsc}
+                    onChange={handleChange}
+                    disabled={hasBankDetails}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Branch</label>
+                  <input
+                    type="text"
+                    name="bank_branch"
+                    value={formData.bank_branch}
+                    onChange={handleChange}
+                    disabled={hasBankDetails}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>

@@ -61,6 +61,12 @@ const UserProfile = lazy(() => import('./components/profile/UserProfile').then(m
 const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => ({
   default: m.HRDashboard
 })));
+const ApprovalsDashboard = lazy(() => import('./components/hr/ApprovalsDashboard').then(m => ({ default: m.ApprovalsDashboard })));
+const HRAttendanceDashboard = lazy(() => import('./components/hr/HRAttendanceDashboard').then(m => ({ default: m.HRAttendanceDashboard })));
+const MyAttendancePage = lazy(() => import('./components/attendance/MyAttendancePage').then(m => ({ default: m.MyAttendancePage })));
+const DailyReportsView = lazy(() => import('./components/hr/DailyReportsView').then(m => ({ default: m.DailyReportsView })));
+const MyPerformanceDashboard = lazy(() => import('./components/performance/MyPerformanceDashboard').then(m => ({ default: m.MyPerformanceDashboard })));
+const TeamPerformanceDashboard = lazy(() => import('./components/performance/TeamPerformanceDashboard').then(m => ({ default: m.TeamPerformanceDashboard })));
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const DailyReportingPage = lazy(() => import('./components/reports/DailyReportingPage').then(m => ({ default: m.DailyReportingPage })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
@@ -238,10 +244,16 @@ const AppShell: React.FC = () => {
       <Route path="/bookings" element={canAccessCommercial ? <BookingManagement /> : <Navigate to="/dashboard" replace />} />
       <Route path="/bookings/:id" element={canAccessCommercial ? <BookingDossier /> : <Navigate to="/dashboard" replace />} />
       <Route path="/profile" element={<UserProfile />} />
+      <Route path="/my-attendance" element={<MyAttendancePage />} />
+                <Route path="/my-performance" element={<MyPerformanceDashboard />} />
       <Route path="/settings" element={<UserSettings />} />
       
       {/* Consolidated Hubs */}
       <Route path="/hr-hub" element={canManageEmployees ? <HRDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/hr-attendance" element={canManageEmployees ? <HRAttendanceDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/team-performance" element={canManageEmployees ? <TeamPerformanceDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/approvals" element={canManageEmployees ? <ApprovalsDashboard /> : <Navigate to="/" replace />} />
+      <Route path="/hr-daily-reports" element={canManageEmployees ? <DailyReportsView /> : <Navigate to="/" replace />} />
       
       <Route path="/analytics" element={
         (canManageTargets || canViewTeamPerformance) ? <AnalyticsHub /> : <Navigate to="/" replace />

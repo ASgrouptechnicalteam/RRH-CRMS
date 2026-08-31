@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Loader2, AlertCircle, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 interface CalendarProps {
   employeeId?: number; // Optional. If passed, views that employee's calendar. Otherwise views logged-in user's.
 }
 
 export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId }) => {
+  const { fetchWithAuth } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [calendarData, setCalendarData] = useState<any>(null);
-
-  const token = localStorage.getItem('rrh_auth_token');
 
   const fetchCalendar = async (year: number, month: number) => {
     setLoading(true);
@@ -24,9 +24,7 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
       if (employeeId) {
         url += `&employeeId=${employeeId}`;
       }
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetchWithAuth(url);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch calendar');
       setCalendarData(data);
@@ -64,25 +62,6 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
     const firstDay = new Date(year, month, 1).getDay();
     const grid = [];
 
-    // Map data for quick lookup
-    const logsMap = new Map();
-    (calendarData.logs || []).forEach((l: any) => {
-      const date = new Date(l.check_in_at).getDate();
-      logsMap.set(date, l);
-    });
-
-    const holidayMap = new Map();
-    (calendarData.holidays || []).forEach((h: any) => {
-      const date = new Date(h.date).getDate();
-      holidayMap.set(date, h);
-    });
-
-    const leaveMap = new Map();
-    (calendarData.approvedLeaves || []).forEach((l: any) => {
-      const date = new Date(l.target_date).getDate();
-      leaveMap.set(date, l);
-    });
-
     const today = new Date();
     const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
     const currentDay = today.getDate();
@@ -97,45 +76,56 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
       const isSunday = dateObj.getDay() === 0;
       const isFuture = isCurrentMonth && day > currentDay || dateObj > today;
       
-      const log = logsMap.get(day);
-      const holiday = holidayMap.get(day);
-      const leave = leaveMap.get(day);
+      const dayStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const dayData = calendarData.calendar ? calendarData.calendar[dayStr] : null;
+
+      let isBeforeCreation = false;
+      if (calendarData.employeeCreatedAt) {
+        const creationDate = new Date(calendarData.employeeCreatedAt);
+        creationDate.setHours(0, 0, 0, 0);
+        if (dateObj < creationDate) {
+          isBeforeCreation = true;
+        }
+      }
 
       let statusColor = 'bg-white';
       let statusText = '';
 
-      if (log) {
-        if (log.status === 'PRESENT') {
+      if (isBeforeCreation) {
+        statusColor = 'bg-slate-50 border-slate-100 opacity-50';
+        statusText = '';
+      } else if (dayData) {
+        const status = dayData.status;
+        if (status === 'PRESENT') {
           statusColor = 'bg-emerald-100 border-emerald-300';
           statusText = 'Present';
-        } else if (log.status === 'LATE') {
+        } else if (status === 'LATE') {
           statusColor = 'bg-amber-100 border-amber-300';
           statusText = 'Late';
-        } else if (log.status === 'HALF_DAY') {
+        } else if (status === 'HALF_DAY') {
           statusColor = 'bg-purple-100 border-purple-300';
           statusText = 'Half Day';
-        } else {
-          statusColor = 'bg-slate-100 border-slate-300';
-          statusText = log.status;
+        } else if (status === 'HOLIDAY') {
+          statusColor = 'bg-slate-200 border-slate-300';
+          statusText = dayData.holidayName || 'Holiday';
+        } else if (status === 'LEAVE') {
+          statusColor = 'bg-orange-100 border-orange-300';
+          statusText = 'Paid Leave';
+        } else if (status === 'ABSENT' && !isFuture) {
+          statusColor = 'bg-red-100 border-red-300';
+          statusText = 'Absent';
         }
-      } else if (leave) {
-        statusColor = 'bg-orange-100 border-orange-300';
-        statusText = 'Paid Leave';
-      } else if (holiday) {
-        statusColor = 'bg-slate-200 border-slate-300';
-        statusText = holiday.name;
-      } else if (isSunday) {
+      } else if (!isFuture && isSunday) {
         statusColor = 'bg-slate-200 border-slate-300';
         statusText = 'Sunday';
       } else if (!isFuture) {
-        // Past working day with no punch
         statusColor = 'bg-red-100 border-red-300';
         statusText = 'Absent';
       }
 
       grid.push(
         <div key={day} className={`h-24 border rounded-lg p-2 flex flex-col ${statusColor}`}>
-          <span className="text-sm font-semibold text-slate-700">{day}</span>
+          <span className={`text-sm font-semibold ${isBeforeCreation ? 'text-slate-400' : 'text-slate-700'}`}>{day}</span>
           <div className="flex-1 flex items-center justify-center">
             {statusText && (
               <span className={`text-xs font-medium text-center px-1 py-0.5 rounded ${

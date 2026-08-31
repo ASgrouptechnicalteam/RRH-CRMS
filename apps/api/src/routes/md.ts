@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
 import { Roles, Permissions } from '@rrh-ems/shared';
-import AnalyticsService from '../services/analytics.service';
+import { AnalyticsService } from '../services/analytics.service';
 
 const router = Router();
 

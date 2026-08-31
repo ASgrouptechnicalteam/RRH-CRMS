@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Clock, CalendarCheck, ShieldAlert, TrendingUp, FileText, Briefcase, Award 
+  Users, Clock, CalendarCheck, ShieldAlert, TrendingUp, FileText, Briefcase, Award, Calendar 
 } from 'lucide-react';
 import { EmployeeManagement } from '../employees/EmployeeManagement';
-import { LateLeaveProposals } from '../attendance/LateLeaveProposals';
-import { LiveAttendanceMonitor } from './LiveAttendanceMonitor';
-import { AttendanceHistory } from './AttendanceHistory';
+import { HolidayManagement } from './HolidayManagement';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { Roles } from '@rrh-ems/shared';
@@ -121,7 +119,7 @@ const TeamPerformanceTab: React.FC = () => {
 export const HRDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'ATTENDANCE' | 'LEAVES' | 'PERFORMANCE' | 'DOCUMENTS'>((searchParams.get('tab') as any) || 'OVERVIEW');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'HOLIDAYS' | 'PERFORMANCE' | 'DOCUMENTS'>((searchParams.get('tab') as any) || 'OVERVIEW');
 
   const canManageEmployees = user?.roles?.some(
     (r) => [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(r as never)
@@ -210,8 +208,7 @@ export const HRDashboard: React.FC = () => {
         {[
           { id: 'OVERVIEW', label: 'Overview', icon: Briefcase },
           { id: 'DIRECTORY', label: 'Directory', icon: Users },
-          { id: 'ATTENDANCE', label: 'Attendance', icon: CalendarCheck },
-          { id: 'LEAVES', label: 'Leave Approvals', icon: ShieldAlert },
+          { id: 'HOLIDAYS', label: 'Holidays', icon: Calendar },
           { id: 'PERFORMANCE', label: 'CRM Performance', icon: TrendingUp },
           { id: 'DOCUMENTS', label: 'Onboarding / Docs', icon: FileText },
         ].map(tab => (
@@ -256,17 +253,9 @@ export const HRDashboard: React.FC = () => {
           </div>
         )}
         
-        {activeTab === 'ATTENDANCE' && (
-          <div className="space-y-6 animate-fadeIn">
-            <LiveAttendanceMonitor />
-            <hr className="border-slate-200" />
-            <AttendanceHistory />
-          </div>
-        )}
-        
-        {activeTab === 'LEAVES' && (
+        {activeTab === 'HOLIDAYS' && (
           <div className="animate-fadeIn">
-            <LateLeaveProposals />
+            <HolidayManagement />
           </div>
         )}
         

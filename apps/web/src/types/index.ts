@@ -710,10 +710,11 @@ export interface ProposalItem {
   reason?: string;
   status?: string;
   actor_id?: number;
-  new_value?: { expected_time?: string | null; reason?: string | null } | null;
+  action?: string;
+  new_value?: { expected_time?: string | null; reason?: string | null; start_date?: string | null; end_date?: string | null; target_date?: string | null; type?: string | null } | null;
   old_value?: string | null;
   actor?: { id: number; full_name?: string | null } | null;
-  created_at?: ISODateTime;
+  created_at: ISODateTime;
 }
 
 /** Browser beforeinstallprompt event payload. */

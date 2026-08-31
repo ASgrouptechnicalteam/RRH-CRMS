@@ -190,27 +190,29 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
 
     if (result.alreadyStamped) {
       return res.status(200).json({
-        message: 'Already checked in for today',
+        message: 'Already logged in for today',
         alreadyStamped: true,
         status: result.log?.status,
         checkInAt: result.log?.check_in_at,
         timeIST: timeString,
+        full_name: scannedEmployee.full_name,
       });
     }
 
     return res.status(200).json({
-      message: `Attendance stamped successfully as ${result.log?.status}`,
+      message: `Login stamped successfully as ${result.log?.status}`,
       alreadyStamped: false,
       status: result.log?.status,
       checkInAt: result.log?.check_in_at,
       timeIST: timeString,
+      full_name: scannedEmployee.full_name,
     });
   } catch (error: any) {
     if (error.code === 'P2034') {
       // Transaction conflict / deadlock. Another request won the race.
-      // We can safely assume they are already checked in.
+      // We can safely assume they are already logged in.
       return res.status(200).json({
-        message: 'Already checked in (handled concurrent request)',
+        message: 'Already logged in (handled concurrent request)',
         alreadyStamped: true,
         status: 'PRESENT',
         timeIST: getISTComponents(new Date()).timeString,
@@ -255,7 +257,22 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
     }
 
     if (timeString < '18:00:00') {
-      return res.status(400).json({ error: 'Check-out is not allowed before 18:00 IST' });
+      // Check for approved early logout proposal
+      const earlyProposal = await p.attendanceProposal.findFirst({
+        where: {
+          employee_id: targetEmployeeId,
+          type: 'EARLY_CHECKOUT',
+          status: 'APPROVED',
+          target_date: {
+            gte: new Date(`${dateString}T00:00:00.000Z`),
+            lte: new Date(`${dateString}T23:59:59.999Z`),
+          }
+        }
+      });
+
+      if (!earlyProposal) {
+        return res.status(400).json({ error: 'Logout is not allowed before 18:00 IST without an emergency request' });
+      }
     }
 
     // Kiosk logout gate: employees with report_required=true must submit today's
@@ -308,14 +325,15 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
     if (result.error) return res.status(400).json({ error: result.error });
 
     return res.status(200).json({
-      message: 'Checked out successfully',
+      message: 'Logged out successfully',
       checkOutAt: result.log?.check_out_at,
       working_duration_minutes: result.log?.working_duration_minutes,
       timeIST: timeString,
+      full_name: scannedEmployee.full_name,
     });
   } catch (error) {
-    console.error('Checkout error:', error);
-    return res.status(500).json({ error: 'Attendance checkout failed' });
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: 'Attendance logout failed' });
   }
 });
 
@@ -372,6 +390,105 @@ router.post(
   },
 );
 
+// POST /api/v1/attendance/leave-proposal - Submit leave proposal
+router.post(
+  '/leave-proposal',
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { start_date, end_date, reason } = req.body;
+      if (!start_date || !reason) {
+        return res.status(400).json({ error: 'Start date and reason are required' });
+      }
+
+      // Check if start_date is >= tomorrow
+      const startDateObj = new Date(start_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (startDateObj <= today) {
+        return res.status(400).json({
+          error: 'Leave requests must be submitted at least 1 day in advance.',
+        });
+      }
+
+      // Record proposal
+      const proposal = await p.attendanceProposal.create({
+        data: {
+          employee_id: req.user!.employeeId,
+          type: 'LEAVE',
+          target_date: new Date(`${start_date}T00:00:00+05:30`),
+          reason: reason,
+          status: 'PENDING',
+        },
+      });
+
+      // Write AuditEvent so the HR approval queue can surface it
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'SUBMIT_LEAVE_PROPOSAL',
+          entity_type: 'ATTENDANCE_PROPOSAL',
+          entity_id: proposal.id,
+          new_value: JSON.stringify({ type: 'LEAVE', target_date: proposal.target_date, end_date, reason }),
+        },
+      });
+
+      return res.status(201).json({
+        message: 'Leave proposal submitted successfully to HR queue',
+        proposalId: proposal.id,
+      });
+    } catch (error: any) {
+      console.error('Leave proposal error:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to submit leave proposal', detail: error?.message });
+    }
+  },
+);
+
+// POST /api/v1/attendance/early-logout-proposal - Submit emergency early logout
+router.post(
+  '/early-logout-proposal',
+  authenticateToken,
+  validateRequestBody(LateProposalSchema), // Reusing LateProposalSchema since it has date, expected_time, reason
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // Record proposal in AttendanceProposal table
+      const proposal = await p.attendanceProposal.create({
+        data: {
+          employee_id: req.user!.employeeId,
+          type: 'EARLY_CHECKOUT',
+          target_date: new Date(`${req.body.date}T${req.body.expected_time}:00+05:30`),
+          reason: req.body.reason,
+          status: 'APPROVED', // Auto-approved for emergencies
+        },
+      });
+
+      // Write AuditEvent so HR sees it
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'SUBMIT_EARLY_LOGOUT',
+          entity_type: 'ATTENDANCE_PROPOSAL',
+          entity_id: proposal.id,
+          new_value: JSON.stringify({ type: 'EARLY_CHECKOUT', target_date: proposal.target_date, reason: req.body.reason }),
+        },
+      });
+
+      return res.status(201).json({
+        message: 'Emergency logout request recorded successfully. You may now scan out at the Kiosk.',
+        proposalId: proposal.id,
+      });
+    } catch (error: any) {
+      console.error('Early logout proposal error:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to submit emergency logout request', detail: error?.message });
+    }
+  },
+);
+
 // GET /api/v1/attendance/proposals/queue - HR Manager approval queue
 router.get(
   '/proposals/queue',
@@ -386,7 +503,7 @@ router.get(
 
       const proposals = await p.auditEvent.findMany({
         where: {
-          action: 'SUBMIT_LATE_PROPOSAL',
+          action: { in: ['SUBMIT_LATE_PROPOSAL', 'SUBMIT_LEAVE_PROPOSAL', 'SUBMIT_EARLY_LOGOUT'] },
           actor_id: { in: companyEmployees.map((e: any) => e.id) },
         },
         orderBy: { created_at: 'desc' },
@@ -541,7 +658,7 @@ router.post('/holidays', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, 
         date: istDate,
       },
     });
-    return res.status(201).json(h);
+    return res.status(201).json({ holiday: h });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to create holiday' });
   }
@@ -581,6 +698,13 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1);
 
+    const employee = await p.employee.findUnique({
+      where: { id: targetEmployeeId },
+      select: { created_at: true }
+    });
+
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
     const logs = await p.attendanceLog.findMany({
       where: {
         employee_id: targetEmployeeId,
@@ -599,7 +723,7 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
     const proposals = await p.attendanceProposal.findMany({
       where: {
         employee_id: targetEmployeeId,
-        type: 'LATE_CHECKIN',
+        type: { in: ['LATE_CHECKIN', 'LEAVE'] },
         status: 'APPROVED',
         target_date: { gte: startDate, lt: endDate },
       },
@@ -611,9 +735,20 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
     let totalLates = 0;
     let totalHalfDays = 0;
 
+    const now = new Date();
+    const { dateString: todayStr, hours: currentHour } = getISTComponents(now);
+
     while (d < endDate) {
       const dayStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-      calendarMap[dayStr] = { status: 'ABSENT', log: null };
+      
+      let defaultStatus = 'ABSENT';
+      if (dayStr > todayStr) {
+        defaultStatus = 'PENDING'; // Future dates
+      } else if (dayStr === todayStr && currentHour < 18) {
+        defaultStatus = 'PENDING'; // Today before 6 PM
+      }
+
+      calendarMap[dayStr] = { status: defaultStatus, log: null };
       
       if (d.getDay() === 0) {
         calendarMap[dayStr].status = 'HOLIDAY';
@@ -636,7 +771,12 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
       const pd = new Date(p.target_date);
       const dayStr = `${pd.getFullYear()}-${(pd.getMonth() + 1).toString().padStart(2, '0')}-${pd.getDate().toString().padStart(2, '0')}`;
       if (calendarMap[dayStr]) {
-        calendarMap[dayStr].hasApprovedProposal = true;
+        if (p.type === 'LEAVE') {
+          calendarMap[dayStr].status = 'LEAVE';
+          calendarMap[dayStr].isLeave = true;
+        } else if (p.type === 'LATE_CHECKIN') {
+          calendarMap[dayStr].hasApprovedLateProposal = true;
+        }
       }
     }
 
@@ -644,11 +784,18 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
       const ld = new Date(l.check_in_at);
       const { dateString } = getISTComponents(ld);
       if (calendarMap[dateString]) {
+        // If it was already marked as LEAVE from a proposal, we might still want to attach the log
         calendarMap[dateString].log = l;
         
         let adjustedStatus = l.status;
-        if (calendarMap[dateString].hasApprovedProposal) {
+        if (calendarMap[dateString].hasApprovedLateProposal) {
           adjustedStatus = 'PRESENT';
+        }
+        
+        // If there's an actual punch, and they were on leave, maybe keep it as LEAVE or let the punch override?
+        // Usually if they punch in, the punch status overrides. But let's check if it's LEAVE.
+        if (calendarMap[dateString].isLeave) {
+          adjustedStatus = 'LEAVE';
         }
         
         calendarMap[dateString].status = adjustedStatus;
@@ -660,8 +807,9 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
     
     const penaltyAbsents = Math.floor(totalLates / 3) + Math.floor(totalHalfDays / 2);
 
-    return res.status(200).json({ calendar: calendarMap, penaltyAbsents });
+    return res.status(200).json({ calendar: calendarMap, penaltyAbsents, employeeCreatedAt: employee.created_at });
   } catch (err) {
+    console.error('Failed to generate calendar:', err);
     return res.status(500).json({ error: 'Failed to generate calendar' });
   }
 });

@@ -53,7 +53,7 @@ const p = prisma;
 app.set('trust proxy', 1);
 
 // Security Middlewares
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: process.env.APP_URL || 'http://localhost:5173', credentials: true }));
 app.use(cookieParser());
 
@@ -64,8 +64,17 @@ import { apiRateLimiter } from './middleware/rateLimiter';
 
 // Serve property and profile images publicly.
 const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
-app.use('/uploads/properties', express.static(path.join(uploadDir, 'properties')));
-app.use('/uploads/profiles', express.static(path.join(uploadDir, 'profiles')));
+const propertiesDir = path.join(uploadDir, 'properties');
+const profilesDir = path.join(uploadDir, 'profiles');
+const expenseProofsDir = path.join(uploadDir, 'expense-proofs');
+
+if (!fs.existsSync(propertiesDir)) fs.mkdirSync(propertiesDir, { recursive: true });
+if (!fs.existsSync(profilesDir)) fs.mkdirSync(profilesDir, { recursive: true });
+if (!fs.existsSync(expenseProofsDir)) fs.mkdirSync(expenseProofsDir, { recursive: true });
+
+app.use('/uploads/properties', express.static(propertiesDir));
+app.use('/uploads/profiles', express.static(profilesDir));
+app.use('/uploads/expense-proofs', express.static(expenseProofsDir));
 
 // Global API Rate Limiter
 app.use('/api/', apiRateLimiter);

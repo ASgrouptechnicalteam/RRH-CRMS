@@ -11,6 +11,7 @@ import { buildEmployeeScope } from '../authz/dataScope';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { publicAssetUrl } from '../utils/media';
 
 const router = Router();
 
@@ -105,7 +106,7 @@ router.post('/me/photo', authenticateToken, profileUpload.single('profile_image'
 
     return res.status(200).json({
       message: 'Profile photo updated successfully',
-      profile_image_url: newImageUrl,
+      profile_image_url: publicAssetUrl(newImageUrl),
     });
   } catch (error) {
     console.error('Profile photo upload error:', error);

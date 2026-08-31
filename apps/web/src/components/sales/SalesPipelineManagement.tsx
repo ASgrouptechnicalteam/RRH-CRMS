@@ -8,6 +8,7 @@ import { SalesKanbanBoard } from './SalesKanbanBoard';
 import { SalesStageTransitionModal } from './SalesStageTransitionModal';
 import { SalesOpportunity } from '../../types';
 import { SalesOpportunityDetails } from './SalesOpportunityDetails';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const SalesPipelineManagement: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -18,7 +19,7 @@ export const SalesPipelineManagement: React.FC = () => {
     targetStage: ''
   });
   const { opportunities, pipelineMetrics, fetchOpportunities, fetchPipelineMetrics, updateSalesStage, isLoading, error } = useSalesPipeline();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
 
   useEffect(() => {
     fetchOpportunities();
@@ -27,13 +28,13 @@ export const SalesPipelineManagement: React.FC = () => {
 
   useEffect(() => {
     if (error) {
-      showToast(error, 'error');
+      showError({ message: error });
     }
   }, [error, showToast]);
 
   const handleStageChange = async (opportunityId: number, newStage: string) => {
     if (newStage === 'BOOKED') {
-      showToast('Booking transitions are managed in Phase 9 (Transaction Domain).', 'error');
+      showError({ message: 'Booking transitions are managed in Phase 9 (Transaction Domain).' });
       return;
     }
 
@@ -49,8 +50,7 @@ export const SalesPipelineManagement: React.FC = () => {
       fetchPipelineMetrics();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      showToast(message || 'Failed to update sales stage', 'error');
-    }
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
   };
 
   const handleModalSubmit = async (reason: string) => {
@@ -62,8 +62,7 @@ export const SalesPipelineManagement: React.FC = () => {
       fetchPipelineMetrics();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      showToast(message || 'Failed to drop sales opportunity', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setTransitionState({ isOpen: false, oppId: null, targetStage: '' });
     }
   };

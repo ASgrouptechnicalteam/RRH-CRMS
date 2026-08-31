@@ -24,10 +24,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { AdminAnalyticsData, AuditLogEntry, SecurityAlertItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const AdminAnalyticsPortal: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
 
   const [metrics, setMetrics] = useState<AdminAnalyticsData | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
@@ -65,7 +66,7 @@ export const AdminAnalyticsPortal: React.FC = () => {
       const message = e instanceof Error ? e.message : String(e);
       console.error('Failed to fetch admin data:', e);
       setMetrics({ databaseStatus: `NETWORK ERROR: ${message}` });
-      showToast('Failed to connect to secure admin endpoints', 'error');
+      showError({ message: 'Failed to connect to secure admin endpoints' });
     } finally {
       setIsLoading(false);
     }
@@ -88,11 +89,10 @@ export const AdminAnalyticsPortal: React.FC = () => {
         // Refresh logs to show the lockdown event
         fetchAdminData();
       } else {
-        showToast(data.error || 'Lockdown failed', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (e) {
-      showToast('Critical network failure during lockdown', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLockingDown(false);
     }
   };

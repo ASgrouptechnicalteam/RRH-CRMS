@@ -3,6 +3,7 @@ import { User, Phone, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface QuickAddLeadModalProps {
   onClose: () => void;
@@ -11,7 +12,7 @@ interface QuickAddLeadModalProps {
 
 export const QuickAddLeadModal: React.FC<QuickAddLeadModalProps> = ({ onClose, onSuccess }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
   const [customerName, setCustomerName] = useState('');
@@ -21,7 +22,7 @@ export const QuickAddLeadModal: React.FC<QuickAddLeadModalProps> = ({ onClose, o
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !phone) {
-      showToast('Name and Phone are required', 'error');
+      showError({ message: 'Name and Phone are required' });
       return;
     }
 
@@ -47,8 +48,7 @@ export const QuickAddLeadModal: React.FC<QuickAddLeadModalProps> = ({ onClose, o
       }
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Error capturing lead', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsLoading(false);
     }
   };

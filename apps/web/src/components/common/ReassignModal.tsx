@@ -3,6 +3,7 @@ import { X, UserPlus, FileText, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { EmployeeListItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface ReassignModalProps {
   entityType: 'lead' | 'property' | 'project' | 'customer';
@@ -22,7 +23,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
   onSuccess
 }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
@@ -41,8 +42,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
         const validEmployees = (data.employees || []).filter((e: EmployeeListItem) => e.id !== currentAssigneeId && e.status === 'ACTIVE');
         setEmployees(validEmployees);
       } catch (error) {
-        showToast('Failed to load eligible employees', 'error');
-      } finally {
+        showError(toUserFacingError({ message: error instanceof Error ? error.message : String(error), body: error })); } finally {
         setIsFetching(false);
       }
     };
@@ -52,12 +52,12 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
 
   const handleReassign = async () => {
     if (!selectedEmployeeId) {
-      showToast('Please select a new assignee', 'error');
+      showError({ message: 'Please select a new assignee' });
       return;
     }
     
     if (!reason.trim()) {
-      showToast('Please provide a reason for reassignment', 'error');
+      showError({ message: 'Please provide a reason for reassignment' });
       return;
     }
 
@@ -100,8 +100,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
       onSuccess();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      showToast(message, 'error');
-    } finally {
+      showError(toUserFacingError({ message: error instanceof Error ? error.message : String(error), body: error })); } finally {
       setIsLoading(false);
     }
   };

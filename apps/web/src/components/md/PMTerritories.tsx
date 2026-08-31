@@ -3,6 +3,7 @@ import { MapPin, Plus, Trash2, Map } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface Assignment {
   id: number;
@@ -24,7 +25,7 @@ interface PM {
 
 export const PMTerritories: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [pms, setPms] = useState<PM[]>([]);
@@ -58,8 +59,7 @@ export const PMTerritories: React.FC = () => {
         setPms(pmList);
       }
     } catch (e) {
-      showToast('Failed to load data', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setLoading(false);
     }
   };
@@ -86,11 +86,10 @@ export const PMTerritories: React.FC = () => {
         fetchData(); // Refresh list
       } else {
         const err = await res.json();
-        showToast(err.message || 'Failed to assign territory', 'error');
+        showError({ message: err.message || 'Failed to assign territory' });
       }
     } catch (e) {
-      showToast('Network error', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsSubmitting(false);
     }
   };
@@ -107,11 +106,10 @@ export const PMTerritories: React.FC = () => {
         showToast('Territory removed', 'success');
         setAssignments(prev => prev.filter(a => a.id !== id));
       } else {
-        showToast('Failed to remove territory', 'error');
+        showError({ message: 'Failed to remove territory' });
       }
     } catch (e) {
-      showToast('Network error', 'error');
-    }
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); }
   };
 
   return (

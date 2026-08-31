@@ -7,12 +7,13 @@ import { ArrowLeft, CheckCircle, XCircle, IndianRupee, FileText, User, MapPin, C
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { useToast } from '../../context/ToastContext';
 import { BookingDossierData, HandoffData, PaymentItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const BookingDossier: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchWithAuth, user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [booking, setBooking] = useState<BookingDossierData | null>(null);
   const [handoff, setHandoff] = useState<HandoffData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ export const BookingDossier: React.FC = () => {
           fetchHandoffStatus();
         }
       } else {
-        showToast('Failed to load booking details', 'error');
+        showError({ message: 'Failed to load booking details' });
         navigate('/bookings');
       }
     } catch (e) {
@@ -65,7 +66,7 @@ export const BookingDossier: React.FC = () => {
         fetchBooking();
       } else {
         const data = await res.json();
-        showToast(data.error || 'Failed to update status', 'error');
+        await handleApiError(res, showError, data);
       }
     } catch (e) {
       console.error(e);

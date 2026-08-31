@@ -3,10 +3,11 @@ import { Lock, User, Key, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const FirstLoginSetup: React.FC = () => {
   const { user, fetchWithAuth, setFirstLoginDone, login } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,11 +16,11 @@ export const FirstLoginSetup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      showToast('New passwords do not match', 'error');
+      showError({ message: 'New passwords do not match' });
       return;
     }
     if (newPassword.length < 8) {
-      showToast('Password must be at least 8 characters long', 'error');
+      showError({ message: 'Password must be at least 8 characters long' });
       return;
     }
 
@@ -40,11 +41,10 @@ export const FirstLoginSetup: React.FC = () => {
           setFirstLoginDone(true);
         }
       } else {
-        showToast(data.error || 'Failed to update password', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (e) {
-      showToast('Error connecting to server', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };

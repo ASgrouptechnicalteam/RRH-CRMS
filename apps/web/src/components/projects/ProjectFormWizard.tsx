@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { Roles } from '@rrh-ems/shared';
 import { ProjectFormData, ProjectFormPayload, PmListItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface ProjectFormWizardProps {
   onClose: () => void;
@@ -14,7 +15,7 @@ interface ProjectFormWizardProps {
 
 export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, onSuccess, initialData }) => {
   const { fetchWithAuth, user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
 
   const isEdit = !!initialData;
   const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +53,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !location) {
-      showToast('Name and Location are required', 'error');
+      showError({ message: 'Name and Location are required' });
       return;
     }
 
@@ -85,11 +86,10 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
         showToast(`Project ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
         onSuccess();
       } else {
-        showToast(data.error || 'Failed to save project', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Network error while saving project', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsLoading(false);
     }
   };
@@ -261,7 +261,7 @@ export const ProjectFormWizard: React.FC<ProjectFormWizardProps> = ({ onClose, o
             <button 
               onClick={() => {
                 if (!name || !location) {
-                  showToast('Name and Location are required', 'error');
+                  showError({ message: 'Name and Location are required' });
                   return;
                 }
                 setStep(2);

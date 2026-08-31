@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { EditableProperty, ProjectListItem, LocalImageItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface EditPropertyModalProps {
   property: EditableProperty;
@@ -14,7 +15,7 @@ interface EditPropertyModalProps {
 
 export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, onClose, onSuccess }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
 
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'specs' | 'media' | 'publishing'>('basic');
@@ -63,7 +64,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) {
-      showToast('Title and Price are required', 'error');
+      showError({ message: 'Title and Price are required' });
       return;
     }
 
@@ -106,11 +107,10 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
         showToast(`Property updated successfully!`, 'success');
         onSuccess();
       } else {
-        showToast(data.error || 'Failed to update property', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Network error while updating property', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsLoading(false);
     }
   };
@@ -330,11 +330,10 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                             setLocalImages(prev => [...prev, data.image]);
                             showToast('Image uploaded successfully', 'success');
                           } else {
-                            showToast('Failed to upload image', 'error');
+                            showError({ message: 'Failed to upload image' });
                           }
                         } catch (err) {
-                          showToast('Error uploading image', 'error');
-                        } finally {
+                          showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
                           setIsUploading(false);
                           e.target.value = '';
                         }
@@ -374,8 +373,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                                     showToast('Cover image updated', 'success');
                                   }
                                 } catch (e) {
-                                  showToast('Failed to set cover', 'error');
-                                }
+                                  showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); }
                               }}
                               className="px-3 py-1.5 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-navy-50 transition-colors"
                             >
@@ -392,8 +390,7 @@ export const EditPropertyModal: React.FC<EditPropertyModalProps> = ({ property, 
                                     showToast('Image deleted', 'success');
                                   }
                                 } catch (e) {
-                                  showToast('Failed to delete image', 'error');
-                                }
+                                  showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); }
                               }
                             }}
                             className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors flex items-center gap-1"

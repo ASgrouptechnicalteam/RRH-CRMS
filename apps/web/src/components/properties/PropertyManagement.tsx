@@ -37,6 +37,7 @@ import { Edit, Building2 } from 'lucide-react';
 import { resolveImageUrl } from '../../utils/imageUtils';
 import { ProjectListItem, PropertyListItem, PmListItem, VerificationLogItem, PropertyImage } from '../../types';
 import { PropertyCard } from '../ui/PropertyCard';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface Property {
   id: number;
@@ -119,7 +120,7 @@ const PropertyPipelineStepper: React.FC<{ status: Property['status'] }> = ({ sta
 
 export const PropertyManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [brandTab, setBrandTab] = useState<'ALL' | 'SONTHILLU' | 'RADHA_REAL_HOMES'>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -171,8 +172,7 @@ export const PropertyManagement: React.FC = () => {
       }
     } catch (e) {
       console.error('Fetch properties error:', e);
-      showToast('Failed to load property inventory', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };
@@ -231,11 +231,10 @@ export const PropertyManagement: React.FC = () => {
         setAssignedPmId('');
         fetchProperties();
       } else {
-        showToast(data.error || 'Failed to create property listing', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Network error while creating property', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsSubmitting(false);
     }
   };
@@ -255,16 +254,15 @@ export const PropertyManagement: React.FC = () => {
         setSelectedProperty(null);
         fetchProperties();
       } else {
-        showToast(data.error || 'Verification failed', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error executing PM verification', 'error');
-    }
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
   };
 
   const handleDMPolish = async (propertyId: number) => {
     if (!dmExecutiveId) {
-      showToast('Please select a Digital Marketing Executive to assign', 'error');
+      showError({ message: 'Please select a Digital Marketing Executive to assign' });
       return;
     }
     try {
@@ -288,11 +286,10 @@ export const PropertyManagement: React.FC = () => {
         setSelectedProperty(null);
         fetchProperties();
       } else {
-        showToast(data.error || 'DM Polish failed', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error executing DM polish', 'error');
-    }
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
   };
 
   const handleMDApprove = async (propertyId: number, approved: boolean) => {
@@ -309,11 +306,10 @@ export const PropertyManagement: React.FC = () => {
         setSelectedProperty(null);
         fetchProperties();
       } else {
-        showToast(data.error || 'MD approval failed', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error executing MD approval', 'error');
-    }
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
   };
 
   const filteredProperties = properties.filter((prop) => {
@@ -631,8 +627,10 @@ export const PropertyManagement: React.FC = () => {
                                 showToast('Location confirmed on-site', 'success');
                                 fetchProperties();
                                 setSelectedProperty(prev => prev ? { ...prev, location_confirmed_by_pm: true } : prev);
-                              } else { showToast(d.error || 'Failed', 'error'); }
-                            } catch { showToast('Network error', 'error'); }
+                              } else {
+          await handleApiError(res, showError, d);
+        }
+                            } catch { showError({ message: 'Network error' }); }
                           }}
                           className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-navy-700 hover:bg-navy-800 text-white text-xs font-bold rounded-lg"
                         >
@@ -677,8 +675,8 @@ export const PropertyManagement: React.FC = () => {
                                   showToast('Photo uploaded', 'success');
                                   fetchProperties();
                                   setSelectedProperty(null);
-                                } else { showToast('Upload failed', 'error'); }
-                              } catch { showToast('Network error', 'error'); }
+                                } else { showError({ message: 'Upload failed' }); }
+                              } catch { showError({ message: 'Network error' }); }
                             }}
                           />
                           <label
@@ -847,11 +845,10 @@ export const PropertyManagement: React.FC = () => {
                           // Close dossier so it refreshes (or we could fetch single property, but closing is safer for beta)
                           setSelectedProperty(null); 
                         } else {
-                          showToast('Failed to upload image', 'error');
+                          showError({ message: 'Failed to upload image' });
                         }
                       } catch (err) {
-                        showToast('Error uploading image', 'error');
-                      }
+                        showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
                     }}
                   />
                   <label htmlFor={`upload-img-${selectedProperty.id}`} className="px-3 py-1.5 bg-navy-50 hover:bg-navy-100 text-navy-700 font-bold text-xs rounded-lg flex items-center gap-1 cursor-pointer transition-colors">

@@ -8,10 +8,11 @@ import { BannerControlWidget } from '../dashboards/BannerControlWidget';
 import { Roles } from '@rrh-ems/shared';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const SystemControlHub: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const isMD = user?.roles?.includes(Roles.MD);
   const isAdmin = user?.roles?.includes(Roles.ADMIN);
@@ -49,11 +50,10 @@ export const SystemControlHub: React.FC = () => {
       if (res.ok) {
         showToast('Lead webhook simulated successfully. Check the Leads pipeline.', 'success');
       } else {
-        showToast('Failed to simulate lead.', 'error');
+        showError({ message: 'Failed to simulate lead.' });
       }
     } catch (e) {
-      showToast('Network error while simulating lead.', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsSimulating(false);
     }
   };

@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface AddEmployeeWizardProps {
   onClose: () => void;
@@ -17,7 +18,7 @@ interface AddEmployeeWizardProps {
 
 export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, onSuccess, branches, managers }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +63,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
   const handleSubmit = async () => {
     if (!fullName || !phone || !addRole || !addBranchId) {
-      showToast('Please fill all required basic details in Step 1', 'error');
+      showError({ message: 'Please fill all required basic details in Step 1' });
       return;
     }
 
@@ -112,11 +113,10 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         showToast(`Employee Onboarded Successfully! Code: ${data.employee.employee_code}`, 'success');
         onSuccess();
       } else {
-        showToast(data.error || 'Failed to onboard employee', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (e) {
-      showToast('Error connecting to server', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };

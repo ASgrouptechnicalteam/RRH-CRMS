@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { PROPERTY_TYPE_OPTIONS, getPropertyTypeLabel } from '../../constants/propertyTypes';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface AddLeadWizardProps {
   onClose: () => void;
@@ -17,7 +18,7 @@ interface AddLeadWizardProps {
 
 export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess, users }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +58,7 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
 
   const handleSubmit = async () => {
     if (!customerName || !phone) {
-      showToast('Name and Phone are required', 'error');
+      showError({ message: 'Name and Phone are required' });
       return;
     }
 
@@ -100,14 +101,13 @@ export const AddLeadWizard: React.FC<AddLeadWizardProps> = ({ onClose, onSuccess
         onSuccess();
       } else {
         if (res.status === 409) {
-          showToast(`Duplicate Lead: ${data.error}`, 'error');
+          showError({ message: `Duplicate Lead: ${data.error}` });
         } else {
-          showToast(data.error || 'Failed to capture lead', 'error');
+          await handleApiError(res, showError, data);
         }
       }
     } catch (e) {
-      showToast('Error connecting to server', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };

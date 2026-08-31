@@ -6,6 +6,7 @@ import { Permissions } from '@rrh-ems/shared';
 import { useToast } from '../../context/ToastContext';
 import { PropertyManagement } from '../properties/PropertyManagement';
 import { ProjectDossierData, PropertyListItem, ProjectFormData } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface ProjectDossierProps {
   projectId: number;
@@ -15,7 +16,7 @@ interface ProjectDossierProps {
 
 export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClose, onEdit }) => {
   const { fetchWithAuth, user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [project, setProject] = useState<ProjectDossierData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [properties, setProperties] = useState<PropertyListItem[]>([]);
@@ -41,8 +42,7 @@ export const ProjectDossier: React.FC<ProjectDossierProps> = ({ projectId, onClo
           setProperties(prData.properties || []);
         }
       } catch (e) {
-        showToast('Error loading project details', 'error');
-      } finally {
+        showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
         setIsLoading(false);
       }
     };

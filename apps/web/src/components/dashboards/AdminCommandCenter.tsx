@@ -8,6 +8,7 @@ import {
   Eye, RefreshCw, Activity, Lock, ActivitySquare, ShieldCheck
 } from 'lucide-react';
 import { StatCard, ListWidget, ListItem } from '../ui';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface SystemMetrics {
   totalLeads?: number;
@@ -63,7 +64,7 @@ const formatEntityType = (type?: string): string =>
 
 export const AdminCommandCenter: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
 
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -114,7 +115,7 @@ export const AdminCommandCenter: React.FC = () => {
       const message = e instanceof Error ? e.message : String(e);
       console.error('[AdminCommandCenter] telemetry fetch failed:', e);
       setMetricsError(`Network error: ${message}`);
-      showToast('Failed to connect to secure admin endpoints', 'error');
+      showError({ message: 'Failed to connect to secure admin endpoints' });
     } finally {
       setIsLoading(false);
     }

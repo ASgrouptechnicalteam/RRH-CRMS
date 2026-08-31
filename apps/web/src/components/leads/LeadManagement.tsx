@@ -23,6 +23,7 @@ import {
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatusPill } from '../ui/StatusPill';
 import { StatCard } from '../ui/StatCard';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface Lead {
   id: number;
@@ -53,7 +54,7 @@ interface Lead {
 
 export const LeadManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [monitorData, setMonitorData] = useState<MonitorData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,7 +100,7 @@ export const LeadManagement: React.FC = () => {
 
       const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
       if (lines.length === 0) {
-        showToast('Selected file is empty', 'error');
+        showError({ message: 'Selected file is empty' });
         return;
       }
 
@@ -149,11 +150,10 @@ export const LeadManagement: React.FC = () => {
         setParsedBulkLeads([]);
         fetchLeads();
       } else {
-        showToast(data.error || 'Failed to process bulk upload', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Network error processing bulk upload', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsBulkUploading(false);
     }
   };
@@ -176,8 +176,7 @@ export const LeadManagement: React.FC = () => {
       }
     } catch (e) {
       console.error('Fetch leads error:', e);
-      showToast('Failed to load leads list', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };
@@ -205,11 +204,10 @@ export const LeadManagement: React.FC = () => {
         showToast('Lead assigned successfully', 'success');
         fetchLeads();
       } else {
-        showToast(data.error || 'Failed to assign lead', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (e) {
-      showToast('Network error assigning lead', 'error');
-    }
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); }
   };
 
   const handleUpdateStatus = async (leadId: number, newStatus: string) => {
@@ -238,11 +236,10 @@ export const LeadManagement: React.FC = () => {
           setSelectedLead({ ...selectedLead, status: newStatus });
         }
       } else {
-        showToast(data.error || 'Failed to update status', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error updating status', 'error');
-    }
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
   };
 
   /**
@@ -273,11 +270,10 @@ export const LeadManagement: React.FC = () => {
           setSelectedLead({ ...selectedLead, status: 'DEMO_COMPLETED' });
         }
       } else {
-        showToast(data.error || 'Failed to complete demo', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error completing demo', 'error');
-    }
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
   };
 
   const getStatusMap = (status: string) => {

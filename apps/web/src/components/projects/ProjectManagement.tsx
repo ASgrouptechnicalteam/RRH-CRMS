@@ -7,10 +7,11 @@ import { Roles, Permissions } from '@rrh-ems/shared';
 import { ProjectFormWizard } from './ProjectFormWizard';
 import { ProjectDossier } from './ProjectDossier';
 import { ProjectListItem, ProjectFormData } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const ProjectManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,8 +33,7 @@ export const ProjectManagement: React.FC = () => {
         setProjects(data.projects || []);
       }
     } catch (e) {
-      showToast('Failed to load projects', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };

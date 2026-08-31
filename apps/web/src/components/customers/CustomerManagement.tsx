@@ -14,6 +14,7 @@ import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Permissions } from '@rrh-ems/shared';
 import { CreateBookingModal } from '../commercial/CreateBookingModal';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface Customer {
   id: number;
@@ -38,7 +39,7 @@ interface Customer {
 
 export const CustomerManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,11 +74,10 @@ export const CustomerManagement: React.FC = () => {
       if (res.ok) {
         setCustomers(data.customers || []);
       } else {
-        showToast(data.error || 'Failed to fetch customers', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (e) {
-      showToast('Network error fetching customers', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };
@@ -105,11 +105,10 @@ export const CustomerManagement: React.FC = () => {
         }
       } else {
         const data = await res.json();
-        showToast(data.error || 'Failed to update status', 'error');
+        await handleApiError(res, showError, data);
       }
     } catch (e) {
-      showToast('Network error updating status', 'error');
-    }
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); }
   };
 
   useEffect(() => {

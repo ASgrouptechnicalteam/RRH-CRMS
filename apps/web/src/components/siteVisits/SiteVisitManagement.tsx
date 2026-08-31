@@ -22,6 +22,7 @@ import { useWhatsApp } from '../../hooks/useWhatsApp';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '@rrh-ems/shared';
 import { EmployeeListItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface SiteVisit {
   id: number;
@@ -101,7 +102,7 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
 
 export const SiteVisitManagement: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const { sendWhatsAppMessage } = useWhatsApp();
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
@@ -140,8 +141,7 @@ export const SiteVisitManagement: React.FC = () => {
       if (empRes.ok) setEmployees(empData.employees || []);
     } catch (e) {
       console.error('Fetch site visits error:', e);
-      showToast('Failed to load site visit bookings', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };
@@ -171,11 +171,10 @@ export const SiteVisitManagement: React.FC = () => {
         setShowVerifyModal(false);
         fetchVisitsData();
       } else {
-        showToast(data.error || 'Failed to verify schedule', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error verifying site visit call', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsSubmitting(false);
     }
   };
@@ -201,11 +200,10 @@ export const SiteVisitManagement: React.FC = () => {
         setShowAssignModal(false);
         fetchVisitsData();
       } else {
-        showToast(data.error || 'Failed to assign agent', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error assigning agent', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsSubmitting(false);
     }
   };
@@ -232,11 +230,10 @@ export const SiteVisitManagement: React.FC = () => {
         setShowCompleteModal(false);
         fetchVisitsData();
       } else {
-        showToast(data.error || 'Failed to record completion', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error completing site visit', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsSubmitting(false);
     }
   };
@@ -261,11 +258,10 @@ export const SiteVisitManagement: React.FC = () => {
         setRescheduleSuccess(true);
         fetchVisitsData();
       } else {
-        showToast(data.error || 'Failed to reschedule visit', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (err) {
-      showToast('Error rescheduling site visit', 'error');
-    } finally {
+      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
       setIsSubmitting(false);
     }
   };

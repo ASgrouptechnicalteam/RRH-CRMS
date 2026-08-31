@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { ProjectListItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface AddPropertyWizardProps {
   onClose: () => void;
@@ -114,7 +115,7 @@ const AMENITIES_BY_TYPE: Record<string, string[]> = {
 
 export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, onSuccess }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -190,7 +191,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
   const lookupPincode = async () => {
     const pin = (pincode || '').trim();
     if (!/^\d{6}$/.test(pin)) {
-      showToast('Please enter a valid 6-digit Indian pincode', 'error');
+      showError({ message: 'Please enter a valid 6-digit Indian pincode' });
       return;
     }
     setIsLookingUp(true);
@@ -199,7 +200,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
       const data = await res.json();
       const office = data?.[0]?.PostOffice?.[0];
       if (!office || data?.[0]?.Status === 'Error') {
-        showToast('Pincode not found. Please enter the location details manually.', 'error');
+        showError({ message: 'Pincode not found. Please enter the location details manually.' });
         return;
       }
       const stateName = office.State || '';
@@ -213,7 +214,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
       if (!location) setLocation([office.Name, district].filter(Boolean).join(', '));
       showToast(`Location auto-filled: ${stateName}${district ? `, ${district}` : ''}`, 'success');
     } catch {
-      showToast('Pincode lookup failed (offline?). Proceed manually.', 'error');
+      showError({ message: 'Pincode lookup failed (offline?). Proceed manually.' });
     } finally {
       setIsLookingUp(false);
     }
@@ -222,11 +223,11 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
   // Step-level required-field validation. Step 1 is validated by the category button itself.
   const validateStep = (current: number): boolean => {
     if (current === 2 && (!title || !price || !areaSqft)) {
-      showToast('Please fill in all required fields (marked *)', 'error');
+      showError({ message: 'Please fill in all required fields (marked *)' });
       return false;
     }
     if (current === 3 && !location) {
-      showToast('Please enter the City / Region Area (required)', 'error');
+      showError({ message: 'Please enter the City / Region Area (required)' });
       return false;
     }
     return true;
@@ -235,7 +236,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
 
   const handleSubmit = async () => {
     if (!title || !price || !areaSqft || !location) {
-      showToast('Please fill all required basic details', 'error');
+      showError({ message: 'Please fill all required basic details' });
       return;
     }
 
@@ -243,7 +244,7 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
     try {
             const areaSqftResolved = convertToSqft(areaSqft, areaUnit);
       if (!Number.isFinite(areaSqftResolved)) {
-        showToast('Please enter a valid area', 'error');
+        showError({ message: 'Please enter a valid area' });
         setIsLoading(false);
         return;
       }
@@ -305,11 +306,10 @@ export const AddPropertyWizard: React.FC<AddPropertyWizardProps> = ({ onClose, o
         showToast(`Property Listing Created Successfully!`, 'success');
         onSuccess();
       } else {
-        showToast(data.error || 'Failed to create property', 'error');
-      }
+          await handleApiError(res, showError, data);
+        }
     } catch (e) {
-      showToast('Error connecting to server', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setIsLoading(false);
     }
   };

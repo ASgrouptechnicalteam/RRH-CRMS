@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../config';
 import { X, Building } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { PropertyListItem } from '../../types';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface CreateBookingModalProps {
   customerId: number;
@@ -13,7 +14,7 @@ interface CreateBookingModalProps {
 
 export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customerId, onClose, onSuccess }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [formData, setFormData] = useState({
@@ -62,12 +63,11 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
         onClose();
       } else {
         const data = await res.json();
-        showToast(data.error || 'Failed to create booking', 'error');
+        await handleApiError(res, showError, data);
       }
     } catch (e) {
       console.error(e);
-      showToast('An error occurred', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setLoading(false);
     }
   };

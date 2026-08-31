@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface RecordPaymentModalProps {
   bookingId: number;
@@ -12,7 +13,7 @@ interface RecordPaymentModalProps {
 
 export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ bookingId, onClose, onSuccess }) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast } = useToast();
+  const { showToast , showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     amount: '',
@@ -42,12 +43,11 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ bookingI
         onClose();
       } else {
         const data = await res.json();
-        showToast(data.error || 'Failed to record payment', 'error');
+        await handleApiError(res, showError, data);
       }
     } catch (e) {
       console.error(e);
-      showToast('An error occurred', 'error');
-    } finally {
+      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
       setLoading(false);
     }
   };

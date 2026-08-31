@@ -16,14 +16,16 @@
 export const PERFORMANCE_BASE_SCORE = 50.0;
 
 export const PERFORMANCE_WEIGHTS = {
-  completedTaskBoost: 1.0,
+  completedTaskBoost: 2.0,
   dailyReportBoost: 0.5,
   presentBoost: 0.5,
+  propertyBookingBoost: 10.0,
+  targetExceededBoost: 0.5,
   latePenalty: 1.0,
-  halfDayPenalty: 2.0,
-  belowTargetPenalty: 2.0,
-  overduePenalty: 2.0,
-  uninformedAbsentPenalty: 5.0,
+  halfDayPenalty: 1.0,
+  belowTargetPenalty: 1.0,
+  overduePenalty: 1.0,
+  uninformedAbsentPenalty: 2.0,
 } as const;
 
 export interface PerformanceScoreInputs {
@@ -31,7 +33,9 @@ export interface PerformanceScoreInputs {
   overdueTasks: number;
   dailyReports: number;
   belowTargetEvents: number;
+  targetExceededEvents: number;
   uninformedAbsentEvents: number;
+  propertyBookingContributions: number;
   presentCount: number;
   lateCount: number;
   halfDayCount: number;
@@ -45,12 +49,16 @@ export interface PerformanceScoreBreakdown {
   reportBoost: number;
   presentCount: number;
   presentBoost: number;
+  propertyBookingContributions: number;
+  propertyBookingBoost: number;
   lateCount: number;
   latePenalty: number;
   halfDayCount: number;
   halfDayPenalty: number;
   belowTargetEvents: number;
   belowTargetPenalty: number;
+  targetExceededEvents: number;
+  targetExceededBoost: number;
   overdueTasks: number;
   overduePenalty: number;
   uninformedAbsentEvents: number;
@@ -70,12 +78,16 @@ const ZERO_BREAKDOWN: PerformanceScoreBreakdown = {
   reportBoost: 0,
   presentCount: 0,
   presentBoost: 0,
+  propertyBookingContributions: 0,
+  propertyBookingBoost: 0,
   lateCount: 0,
   latePenalty: 0,
   halfDayCount: 0,
   halfDayPenalty: 0,
   belowTargetEvents: 0,
   belowTargetPenalty: 0,
+  targetExceededEvents: 0,
+  targetExceededBoost: 0,
   overdueTasks: 0,
   overduePenalty: 0,
   uninformedAbsentEvents: 0,
@@ -100,42 +112,36 @@ export function calculatePerformanceScore(inputs: PerformanceScoreInputs): Perfo
     reportBoost: inputs.dailyReports * PERFORMANCE_WEIGHTS.dailyReportBoost,
     presentCount: inputs.presentCount,
     presentBoost: inputs.presentCount * PERFORMANCE_WEIGHTS.presentBoost,
+    propertyBookingContributions: inputs.propertyBookingContributions,
+    propertyBookingBoost: inputs.propertyBookingContributions * PERFORMANCE_WEIGHTS.propertyBookingBoost,
     lateCount: inputs.lateCount,
     latePenalty: inputs.lateCount * PERFORMANCE_WEIGHTS.latePenalty,
     halfDayCount: inputs.halfDayCount,
     halfDayPenalty: inputs.halfDayCount * PERFORMANCE_WEIGHTS.halfDayPenalty,
     belowTargetEvents: inputs.belowTargetEvents,
     belowTargetPenalty: inputs.belowTargetEvents * PERFORMANCE_WEIGHTS.belowTargetPenalty,
+    targetExceededEvents: inputs.targetExceededEvents,
+    targetExceededBoost: inputs.targetExceededEvents * PERFORMANCE_WEIGHTS.targetExceededBoost,
     overdueTasks: inputs.overdueTasks,
     overduePenalty: inputs.overdueTasks * PERFORMANCE_WEIGHTS.overduePenalty,
     uninformedAbsentEvents: inputs.uninformedAbsentEvents,
     uninformedAbsentPenalty: inputs.uninformedAbsentEvents * PERFORMANCE_WEIGHTS.uninformedAbsentPenalty,
   };
 
-  const rawScore =
-    breakdown.baseScore +
-    breakdown.taskBoost +
-    breakdown.reportBoost +
-    breakdown.presentBoost -
-    breakdown.latePenalty -
-    breakdown.halfDayPenalty -
-    breakdown.belowTargetPenalty -
-    breakdown.overduePenalty -
-    breakdown.uninformedAbsentPenalty;
+  const rawScore = PERFORMANCE_BASE_SCORE
+    + breakdown.taskBoost
+    + breakdown.reportBoost
+    + breakdown.presentBoost
+    + breakdown.propertyBookingBoost
+    + breakdown.targetExceededBoost
+    - breakdown.latePenalty
+    - breakdown.halfDayPenalty
+    - breakdown.belowTargetPenalty
+    - breakdown.overduePenalty
+    - breakdown.uninformedAbsentPenalty;
 
-  return { score: roundPerformanceScore(rawScore), breakdown };
-}
-
-/**
- * Reduced leaderboard score — intentionally differs from the full score.
- * Counts only completed tasks (+1.0) and daily reports (+0.5) from base 50.0,
- * with no attendance or penalty components. Preserves the existing
- * /performance/leaderboard behavior exactly.
- */
-export function calculateLeaderboardScore(completedTasks: number, dailyReports: number): number {
-  const rawScore =
-    PERFORMANCE_BASE_SCORE +
-    completedTasks * PERFORMANCE_WEIGHTS.completedTaskBoost +
-    dailyReports * PERFORMANCE_WEIGHTS.dailyReportBoost;
-  return roundPerformanceScore(rawScore);
+  return {
+    score: roundPerformanceScore(rawScore),
+    breakdown,
+  };
 }

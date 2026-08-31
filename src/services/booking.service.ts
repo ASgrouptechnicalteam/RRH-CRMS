@@ -283,6 +283,38 @@ export class BookingService {
         },
       });
 
+      // Reward booking contributors with Performance Metric boost (+10pts per booking)
+      const cust = await tx.customer.findUnique({ where: { id: booking.customer_id } });
+      const leadId = cust?.origin_lead_id;
+
+      const contributorIds = new Set<number>();
+      if (booking.assigned_employee_id) contributorIds.add(booking.assigned_employee_id);
+
+      if (leadId) {
+        const lead = await tx.lead.findUnique({ where: { id: leadId } });
+        const leadActivities = await tx.leadActivity.findMany({ where: { lead_id: leadId } });
+
+        if (lead?.created_by_id) contributorIds.add(lead.created_by_id);
+        if (lead?.assigned_to_id) contributorIds.add(lead.assigned_to_id);
+
+        for (const act of leadActivities) {
+          contributorIds.add(act.actor_id);
+        }
+      }
+
+      for (const empId of contributorIds) {
+        await tx.auditEvent.create({
+          data: {
+            actor_id: empId,
+            action: 'PROPERTY_BOOKED_CONTRIBUTION',
+            entity_type: 'Booking',
+            entity_id: id,
+            reason: 'Contributed to a Lead/Opportunity that converted to a CONFIRMED Booking.',
+            created_at: new Date(),
+          }
+        });
+      }
+
       return updated;
     });
 

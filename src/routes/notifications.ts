@@ -21,6 +21,7 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 
     return res.status(200).json({ notifications, unreadCount });
   } catch (error) {
+    console.error('Failed to fetch notifications:', error);
     return res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });

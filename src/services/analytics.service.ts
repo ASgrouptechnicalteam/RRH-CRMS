@@ -227,14 +227,16 @@ export class AnalyticsService {
 
     const scores = await Promise.all(
       employees.map(async (emp: any) => {
-        const [tasksDone, tasksOverdue, reportsDone, belowTargetCount, attendanceLogs, uninformedAbsent] =
+        const [tasksDone, tasksOverdue, reportsDone, belowTargetCount, targetExceededEvents, attendanceLogs, uninformedAbsent, propertyBookingContributions] =
           await Promise.all([
             p.task.count({ where: { assignee_id: emp.id, status: 'COMPLETED' } }),
             p.task.count({ where: { assignee_id: emp.id, status: 'OVERDUE' } }),
             p.dailyReport.count({ where: { employee_id: emp.id } }),
             p.auditEvent.count({ where: { actor_id: emp.id, action: 'DAILY_REPORT_BELOW_TARGET' } }),
+            p.auditEvent.count({ where: { actor_id: emp.id, action: 'DAILY_REPORT_TARGET_EXCEEDED' } }),
             p.attendanceLog.findMany({ where: { employee_id: emp.id }, select: { status: true } }),
             p.auditEvent.count({ where: { actor_id: emp.id, action: 'UNINFORMED_ABSENT' } }),
+            p.auditEvent.count({ where: { actor_id: emp.id, action: 'PROPERTY_BOOKED_CONTRIBUTION' } }),
           ]);
 
         let presentCount = 0;
@@ -251,7 +253,9 @@ export class AnalyticsService {
           overdueTasks: tasksOverdue,
           dailyReports: reportsDone,
           belowTargetEvents: belowTargetCount,
+          targetExceededEvents,
           uninformedAbsentEvents: uninformedAbsent,
+          propertyBookingContributions,
           presentCount,
           lateCount,
           halfDayCount,

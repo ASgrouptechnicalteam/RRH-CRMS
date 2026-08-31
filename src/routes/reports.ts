@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest, requireRole } from '../middleware/auth';
 import { validateRequestBody } from '../middleware/validate';
 import { DailyReportSchema, Roles } from '@rrh-ems/shared';
 import { getISTComponents } from '../utils/time';
@@ -34,6 +34,7 @@ router.post('/daily', authenticateToken, validateRequestBody(DailyReportSchema),
     }
 
     let isBelowTarget = false;
+    let isTargetExceeded = false;
     const missedMetrics: string[] = [];
 
     if (activeTarget) {
@@ -48,6 +49,10 @@ router.post('/daily', authenticateToken, validateRequestBody(DailyReportSchema),
       if (deals < activeTarget.closed_deals_target) {
         isBelowTarget = true;
         missedMetrics.push(`Deals: ${deals}/${activeTarget.closed_deals_target}`);
+      }
+
+      if (!isBelowTarget && (calls > activeTarget.calls_target || visits > activeTarget.site_visits_target || deals > activeTarget.closed_deals_target)) {
+        isTargetExceeded = true;
       }
     }
 
@@ -97,6 +102,16 @@ router.post('/daily', authenticateToken, validateRequestBody(DailyReportSchema),
           new_value: JSON.stringify({ reason: below_target_reason, missedMetrics }),
         },
       });
+    } else if (isTargetExceeded) {
+      await p.auditEvent.create({
+        data: {
+          actor_id: employeeId,
+          action: 'DAILY_REPORT_TARGET_EXCEEDED',
+          entity_type: 'DAILY_REPORT',
+          entity_id: report.id,
+          new_value: JSON.stringify({ calls, visits, deals }),
+        },
+      });
     }
 
     return res.status(201).json({
@@ -139,6 +154,56 @@ router.get('/today-status', authenticateToken, async (req: AuthenticatedRequest,
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to check report status' });
+  }
+});
+// GET /api/v1/reports/all - Fetch all daily reports for HR/MD
+router.get('/all', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { date } = req.query;
+    
+    // Determine date range (defaults to today IST)
+    let startDate: Date;
+    let endDate: Date;
+    
+    if (date && typeof date === 'string') {
+      startDate = new Date(`${date}T00:00:00.000Z`);
+      endDate = new Date(`${date}T23:59:59.999Z`);
+    } else {
+      const { dateString } = getISTComponents(new Date());
+      startDate = new Date(`${dateString}T00:00:00.000Z`);
+      endDate = new Date(`${dateString}T23:59:59.999Z`);
+    }
+
+    const reports = await p.dailyReport.findMany({
+      where: {
+        submitted_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        employee: {
+          select: {
+            full_name: true,
+            employee_code: true,
+            department: true,
+            roles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        submitted_at: 'desc'
+      }
+    });
+
+    return res.status(200).json({ reports });
+  } catch (error) {
+    console.error('Fetch all reports error:', error);
+    return res.status(500).json({ error: 'Failed to fetch reports' });
   }
 });
 

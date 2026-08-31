@@ -39,9 +39,24 @@ const profileUpload = multer({
 router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = req.user!.employeeId;
-    const { phone, secondary_phone, whatsapp_number, current_address, permanent_address, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, blood_group, social_links } = req.body;
+    const { 
+      full_name, phone, secondary_phone, whatsapp_number, current_address, permanent_address, 
+      emergency_contact_name, emergency_contact_relation, emergency_contact_phone, 
+      blood_group, social_links,
+      pan_number, aadhaar_number, bank_name, bank_account_number, bank_ifsc, bank_branch 
+    } = req.body;
+
+    const currentEmp = await prisma.employee.findUnique({
+      where: { id: employeeId },
+      select: { bank_account_number: true }
+    });
+
+    if (!currentEmp) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
 
     const updateData: any = {};
+    if (full_name !== undefined) updateData.full_name = full_name;
     if (phone !== undefined) updateData.phone = phone;
     if (secondary_phone !== undefined) updateData.secondary_phone = secondary_phone;
     if (whatsapp_number !== undefined) updateData.whatsapp_number = whatsapp_number;
@@ -52,6 +67,25 @@ router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Re
     if (emergency_contact_phone !== undefined) updateData.emergency_contact_phone = emergency_contact_phone;
     if (blood_group !== undefined) updateData.blood_group = blood_group;
     if (social_links !== undefined) updateData.social_links = social_links;
+    
+    // KYC
+    if (pan_number !== undefined) updateData.pan_number = pan_number;
+    if (aadhaar_number !== undefined) updateData.aadhaar_number = aadhaar_number;
+
+    // Bank Details (only allow if not already set)
+    const hasBankDetails = Boolean(currentEmp.bank_account_number);
+    const tryingToUpdateBank = bank_name !== undefined || bank_account_number !== undefined || bank_ifsc !== undefined || bank_branch !== undefined;
+    
+    if (tryingToUpdateBank && hasBankDetails) {
+      return res.status(403).json({ error: 'Bank details cannot be changed once set. Please contact HR or MD.' });
+    }
+
+    if (!hasBankDetails) {
+      if (bank_name !== undefined) updateData.bank_name = bank_name;
+      if (bank_account_number !== undefined) updateData.bank_account_number = bank_account_number;
+      if (bank_ifsc !== undefined) updateData.bank_ifsc = bank_ifsc;
+      if (bank_branch !== undefined) updateData.bank_branch = bank_branch;
+    }
 
     const updatedEmp = await prisma.employee.update({
       where: { id: employeeId },

@@ -19,7 +19,7 @@ interface ListWidgetProps {
 
 export function ListWidget({ title, items, viewAllLink, emptyStateMessage = 'No items found' }: ListWidgetProps) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
       <div className="p-5 border-b border-slate-100 flex items-center justify-between">
         <h3 className="font-bold text-navy-900">{title}</h3>
         {viewAllLink && (

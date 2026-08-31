@@ -83,7 +83,7 @@ export const TelecallerDashboard: React.FC = () => {
         dayAfter.setDate(dayAfter.getDate() + 1);
 
         const tmrVisits = visits.filter((v: any) => {
-          if (v.assigned_agent_id !== user?.employeeId) return false;
+          if (v.assigned_agent_id !== user?.id) return false;
           if (['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)) return false;
           
           const visitDate = new Date(v.scheduled_date);

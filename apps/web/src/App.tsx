@@ -18,6 +18,7 @@ import { StaffDashboard } from './components/dashboards/StaffDashboard';
 
 // Lazy load Sales Manager Dashboard
 const SalesManagerDashboard = lazy(() => import('./components/dashboards/SalesManagerDashboard').then(m => ({ default: m.SalesManagerDashboard })));
+const MarketingDirectorDashboard = lazy(() => import('./components/dashboards/MarketingDirectorDashboard').then(m => ({ default: m.MarketingDirectorDashboard })));
 
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
@@ -63,6 +64,7 @@ const HRDashboard = lazy(() => import('./components/hr/HRDashboard').then(m => (
 const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').then(m => ({ default: m.AnalyticsHub })));
 const DailyReportingPage = lazy(() => import('./components/reports/DailyReportingPage').then(m => ({ default: m.DailyReportingPage })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
+const RoleAssignmentPage = lazy(() => import('./components/admin/RoleAssignmentPage').then(m => ({ default: m.RoleAssignmentPage })));
 const PMTerritories = lazy(() => import('./components/md/PMTerritories').then(m => ({ default: m.PMTerritories })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
 const UserSettings = lazy(() => import('./components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
@@ -184,7 +186,8 @@ const AppShell: React.FC = () => {
   const isProjectManager = user?.roles?.includes(Roles.PROJECT_MANAGER);
   const isTelecaller = user?.roles?.includes(Roles.TELECALLER);
   const isSalesManager = user?.roles?.includes(Roles.SALES_MANAGER);
-  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager;
+  const isMarketingDirector = user?.roles?.includes(Roles.MARKETING_DIRECTOR);
+  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager && !isMarketingDirector;
 
   // Role-based access for hubs
   const canManageTargets = user?.roles?.some(r => ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN] as string[]).includes(r));
@@ -209,6 +212,8 @@ const AppShell: React.FC = () => {
           <PMDashboard />
         ) : isSalesManager ? (
           <SalesManagerDashboard />
+        ) : isMarketingDirector ? (
+          <MarketingDirectorDashboard />
         ) : isTelecaller ? (
           <TelecallerDashboard />
         ) : (
@@ -239,6 +244,7 @@ const AppShell: React.FC = () => {
 
       <Route path="/system-control" element={(isMD || isTechAdmin) ? <SystemControlHub /> : <Navigate to="/" replace />} />
       <Route path="/pm-territories" element={(isMD || isTechAdmin) ? <PMTerritories /> : <Navigate to="/" replace />} />
+      <Route path="/role-assignment" element={(isMD || isTechAdmin) ? <RoleAssignmentPage /> : <Navigate to="/" replace />} />
 
       <Route path="/finance" element={
         (isMD || isTechAdmin || user?.roles?.includes(Roles.FINANCE))

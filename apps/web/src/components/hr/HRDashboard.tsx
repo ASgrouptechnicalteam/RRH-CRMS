@@ -238,7 +238,7 @@ export const HRDashboard: React.FC = () => {
         {activeTab === 'OVERVIEW' && (
           <div className="space-y-6 animate-fadeIn">
             <h3 className="font-bold text-slate-800 text-lg">Department Snapshot</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <StatCard label="Total Active Headcount" value={metricsLoading ? "..." : hrMetrics.headcount.toString()} icon={Users} trend={{ direction: 'up', value: '3', label: 'New this month' }} />
               <StatCard label="On Leave Today" value={metricsLoading ? "..." : hrMetrics.leavesToday.toString()} icon={ShieldAlert} trend={{ direction: 'down', value: '1', label: 'Unplanned absence' }} />
               <StatCard label="Avg Pipeline Conversion" value={metricsLoading ? "..." : `${hrMetrics.avgConversion.toFixed(1)}%`} icon={TrendingUp} trend={{ direction: 'up', value: '2.1%', label: 'vs last month' }} />

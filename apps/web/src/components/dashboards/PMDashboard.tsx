@@ -55,7 +55,7 @@ export const PMDashboard: React.FC = () => {
         const visits = data.visits || [];
         
         assignedDemos = visits.filter((v: any) => 
-          v.assigned_agent_id === user?.employeeId && 
+          v.assigned_agent_id === user?.id && 
           !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)
         ).length;
         

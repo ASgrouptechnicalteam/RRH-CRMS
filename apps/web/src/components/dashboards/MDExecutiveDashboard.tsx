@@ -53,10 +53,12 @@ export const MDExecutiveDashboard: React.FC = () => {
   const salesValue = "—"; 
   const duePayments = "—"; 
 
-  // Prepare Priority Alerts list items
-  const priorityAlerts: ListItem[] = [];
+  // Prepare Alerts
+  const crmAlerts: ListItem[] = [];
+  const operationalAlerts: ListItem[] = [];
+
   if (execMetrics?.attendanceExceptionsCount) {
-    priorityAlerts.push({
+    operationalAlerts.push({
       id: 'att-ex',
       title: `${execMetrics.attendanceExceptionsCount} Attendance Exception${execMetrics.attendanceExceptionsCount === 1 ? '' : 's'}`,
       subtitle: 'Requires HR/Manager review',
@@ -64,7 +66,7 @@ export const MDExecutiveDashboard: React.FC = () => {
     });
   }
   if (execMetrics?.pendingVerificationPropertiesCount) {
-    priorityAlerts.push({
+    crmAlerts.push({
       id: 'prop-ver',
       title: `${execMetrics.pendingVerificationPropertiesCount} Properties Pending Verification`,
       subtitle: 'Awaiting PM verification',
@@ -72,7 +74,7 @@ export const MDExecutiveDashboard: React.FC = () => {
     });
   }
   if (execMetrics?.pendingApprovalPropertiesCount) {
-    priorityAlerts.push({
+    crmAlerts.push({
       id: 'prop-app',
       title: `${execMetrics.pendingApprovalPropertiesCount} Properties Awaiting Approval`,
       subtitle: 'Requires Executive approval',
@@ -99,7 +101,7 @@ export const MDExecutiveDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Primary KPI Row */}
+      {/* Primary KPI Row (CRM First) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           label="Total Leads" 
@@ -125,22 +127,27 @@ export const MDExecutiveDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Distinctive Widget: Reassignment Escalations */}
+          {/* CRM Action Widgets */}
           <ListWidget 
             title="Reassignment Escalations"
             items={reassignmentEscalations}
             emptyStateMessage="No escalations pending your review."
           />
-          {/* Distinctive Widget: Unassigned Properties Routing */}
           <UnassignedPropertiesWidget />
         </div>
 
         <div className="space-y-6">
-          {/* Priority Alerts */}
+          {/* CRM Alerts */}
           <ListWidget 
-            title="Priority Alerts"
-            items={priorityAlerts}
-            emptyStateMessage="No priority alerts right now."
+            title="CRM Action Alerts"
+            items={crmAlerts}
+            emptyStateMessage="No CRM alerts right now."
+          />
+          {/* Operational Alerts (Lower Priority) */}
+          <ListWidget 
+            title="Operational Alerts"
+            items={operationalAlerts}
+            emptyStateMessage="No operational alerts right now."
           />
         </div>
       </div>

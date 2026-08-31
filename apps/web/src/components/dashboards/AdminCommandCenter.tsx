@@ -205,7 +205,7 @@ export const AdminCommandCenter: React.FC = () => {
       )}
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="Database" value={dbStatus || 'UNKNOWN'} icon={Database} />
         <StatCard label="Total Users" value={metrics?.totalUsers || '—'} icon={Users} />
         <StatCard label="Active Sessions" value={metrics?.activeSessions || '—'} icon={ActivitySquare} />

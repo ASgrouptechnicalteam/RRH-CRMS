@@ -26,7 +26,7 @@ export const StaffDashboard: React.FC = () => {
           const leadsData = await leadsRes.json();
           // Filter leads assigned to this user and not yet BOOKED or DEAD
           leadsCount = (leadsData.leads || []).filter((l: any) => 
-            l.assigned_to_id === user?.employeeId && 
+            l.assigned_to_id === user?.id && 
             !['BOOKED', 'DEAD', 'LOST'].includes(l.status)
           ).length;
         }
@@ -36,7 +36,7 @@ export const StaffDashboard: React.FC = () => {
           const visitsData = await visitsRes.json();
           // Filter active site visits assigned to user (as PM or agent)
           visitsCount = (visitsData.visits || []).filter((v: any) => 
-            (v.project_manager_id === user?.employeeId || v.assigned_agent_id === user?.employeeId) &&
+            (v.project_manager_id === user?.id || v.assigned_agent_id === user?.id) &&
             !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)
           ).length;
         }
@@ -73,7 +73,7 @@ export const StaffDashboard: React.FC = () => {
       </div>
       
       {/* Primary KPI Row - CRM Focused */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard 
           label="My Active Leads" 
           value={isLoading ? "..." : metrics.leads.toString()} 

@@ -19,6 +19,7 @@ import { StaffDashboard } from './components/dashboards/StaffDashboard';
 // Lazy load Sales Manager Dashboard
 const SalesManagerDashboard = lazy(() => import('./components/dashboards/SalesManagerDashboard').then(m => ({ default: m.SalesManagerDashboard })));
 const MarketingDirectorDashboard = lazy(() => import('./components/dashboards/MarketingDirectorDashboard').then(m => ({ default: m.MarketingDirectorDashboard })));
+const CPMDashboard = lazy(() => import('./components/dashboards/CPMDashboard').then(m => ({ default: m.CPMDashboard })));
 
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
@@ -194,7 +195,8 @@ const AppShell: React.FC = () => {
   const isTelecaller = user?.roles?.includes(Roles.TELECALLER);
   const isSalesManager = user?.roles?.includes(Roles.SALES_MANAGER);
   const isMarketingDirector = user?.roles?.includes(Roles.MARKETING_DIRECTOR);
-  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager && !isMarketingDirector;
+  const isChannelPartnerManager = user?.roles?.includes(Roles.CHANNEL_PARTNER_MANAGER);
+  const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager && !isMarketingDirector && !isChannelPartnerManager;
 
   // Role-based access for hubs
   const canManageTargets = user?.roles?.some(r => ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN] as string[]).includes(r));
@@ -205,7 +207,7 @@ const AppShell: React.FC = () => {
   );
   
   const canAccessCommercial = user?.roles?.some(r =>
-    ([Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE] as string[]).includes(r)
+    ([Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] as string[]).includes(r)
   );
 
   // Role-to-dashboard resolver — each role gets its own dedicated dashboard
@@ -227,6 +229,8 @@ const AppShell: React.FC = () => {
           <MarketingDirectorDashboard />
         ) : isTelecaller ? (
           <TelecallerDashboard />
+        ) : isChannelPartnerManager ? (
+          <CPMDashboard />
         ) : (
           <StaffDashboard />
         )

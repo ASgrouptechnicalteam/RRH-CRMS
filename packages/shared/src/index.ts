@@ -22,7 +22,8 @@ export const Roles = {
   FINANCE: 'accountant',
   AGENT: 'Agent',
   DIGITAL_MARKETING_EXECUTIVE: 'digital marketing executive',
-  SALES_MANAGER: 'Sales manager'
+  SALES_MANAGER: 'Sales manager',
+  CHANNEL_PARTNER_MANAGER: 'Channel partner manager'
 } as const;
 
 export type RoleName = typeof Roles[keyof typeof Roles];
@@ -42,6 +43,7 @@ export const DepartmentCodes: Record<string, string> = {
   [Roles.FINANCE]: 'FN',
   [Roles.MARKETING_DIRECTOR]: 'MK',
   [Roles.SALES_MANAGER]: 'SL',
+  [Roles.CHANNEL_PARTNER_MANAGER]: 'CP',
 };
 
 // Canonical Permissions Model (Phase 1 - Stage 2 Blueprint Section 7)
@@ -411,6 +413,25 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_TARGETS_CONFIGURE,
     Permissions.PERFORMANCE_READ_TEAM,
     Permissions.BOOKINGS_READ,
+  ],
+  
+  [Roles.CHANNEL_PARTNER_MANAGER]: [
+    Permissions.LEADS_CREATE,
+    Permissions.LEADS_READ,
+    Permissions.LEADS_UPDATE,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.SITE_VISITS_CREATE,
+    Permissions.SITE_VISITS_READ,
+    Permissions.SITE_VISITS_COMPLETE,
+    Permissions.PROJECTS_READ,
+    Permissions.PROPERTIES_READ,
+    Permissions.REPORTS_READ_OWN,
+    Permissions.ATTENDANCE_READ_OWN,
+    Permissions.ATTENDANCE_SCAN,
+    Permissions.PERFORMANCE_READ_OWN,
+    Permissions.TASKS_READ,
+    Permissions.TASKS_UPDATE,
   ]
 };
 

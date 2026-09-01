@@ -164,7 +164,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // SALES
   { id: 'group-customer-sales', label: 'SALES', group: true, icon: undefined },
   { id: 'leads-clients', label: 'Leads', icon: Users, path: '/leads-clients' },
-  { id: 'customers', label: 'Customers', path: '/customers', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE] },
+  { id: 'customers', label: 'Customers', path: '/customers', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
   { id: 'site-visits', label: 'Site Visits', icon: CalendarCheck, path: '/site-visits' },
   { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
 
@@ -175,7 +175,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
 
   // BOOKINGS
   { id: 'group-transactions', label: 'BOOKINGS', group: true, icon: FileCheck },
-  { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE] },
+  { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
 
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },

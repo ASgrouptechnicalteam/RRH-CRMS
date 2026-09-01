@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "node apps/api/dist/server.js",
+    "start": "node dist/server.js >> debug.log 2>&1"
     "postinstall": "prisma generate",
     "dev": "npm run dev --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",

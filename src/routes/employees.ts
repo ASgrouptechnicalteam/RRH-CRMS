@@ -1,9 +1,19 @@
+import { logger } from '../utils/logger';
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
-import { Roles, DepartmentCodes, Permissions } from '../shared';
+import { 
+  Roles, 
+  DepartmentCodes, 
+  Permissions,
+  EmployeeSelfUpdateSchema,
+  EmployeeCreateSchema,
+  EmployeeUpdateSchema,
+  EmployeeRolesUpdateSchema,
+  EmptyBodySchema
+} from '../shared';
 import { can } from '../authz/authorization';
 import { notifyEmployee } from '../utils/notifyEmployee';
 import { encryptData } from '../utils/crypto';
@@ -12,31 +22,15 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { publicAssetUrl } from '../utils/media';
+import { validateRequestBody } from '../middleware/validate';
 
 const router = Router();
 
-// Setup Multer for Profile Image Uploads
-const PROFILE_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'profiles');
-if (!fs.existsSync(PROFILE_UPLOAD_DIR)) {
-  fs.mkdirSync(PROFILE_UPLOAD_DIR, { recursive: true });
-}
+import { memoryUpload, getStorageService } from '../services/storage.service';
 
-const profileUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, PROFILE_UPLOAD_DIR),
-    filename: (req: AuthenticatedRequest, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, `emp_${req.user?.employeeId}_${Date.now()}${ext}`);
-    },
-  }),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Only image files are allowed!'));
-  }
-});
+const profileUpload = memoryUpload;
 // PATCH /api/v1/employees/me - Self-update for safe profile fields
-router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/me', authenticateToken, validateRequestBody(EmployeeSelfUpdateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = req.user!.employeeId;
     const { 
@@ -72,20 +66,11 @@ router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Re
     if (pan_number !== undefined) updateData.pan_number = pan_number;
     if (aadhaar_number !== undefined) updateData.aadhaar_number = aadhaar_number;
 
-    // Bank Details (only allow if not already set)
-    const hasBankDetails = Boolean(currentEmp.bank_account_number);
-    const tryingToUpdateBank = bank_name !== undefined || bank_account_number !== undefined || bank_ifsc !== undefined || bank_branch !== undefined;
-    
-    if (tryingToUpdateBank && hasBankDetails) {
-      return res.status(403).json({ error: 'Bank details cannot be changed once set. Please contact HR or MD.' });
-    }
-
-    if (!hasBankDetails) {
-      if (bank_name !== undefined) updateData.bank_name = bank_name;
-      if (bank_account_number !== undefined) updateData.bank_account_number = bank_account_number;
-      if (bank_ifsc !== undefined) updateData.bank_ifsc = bank_ifsc;
-      if (bank_branch !== undefined) updateData.bank_branch = bank_branch;
-    }
+    // Bank Details (always allow updating now)
+    if (bank_name !== undefined) updateData.bank_name = bank_name;
+    if (bank_account_number !== undefined) updateData.bank_account_number = bank_account_number;
+    if (bank_ifsc !== undefined) updateData.bank_ifsc = bank_ifsc;
+    if (bank_branch !== undefined) updateData.bank_branch = bank_branch;
 
     const updatedEmp = await prisma.employee.update({
       where: { id: employeeId },
@@ -94,8 +79,22 @@ router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Re
         id: true,
         full_name: true,
         phone: true,
+        secondary_phone: true,
         whatsapp_number: true,
         email: true,
+        blood_group: true,
+        social_links: true,
+        current_address: true,
+        permanent_address: true,
+        emergency_contact_name: true,
+        emergency_contact_relation: true,
+        emergency_contact_phone: true,
+        pan_number: true,
+        aadhaar_number: true,
+        bank_name: true,
+        bank_account_number: true,
+        bank_ifsc: true,
+        bank_branch: true,
         profile_image_url: true,
       }
     });
@@ -105,55 +104,63 @@ router.patch('/me', authenticateToken, async (req: AuthenticatedRequest, res: Re
       employee: updatedEmp,
     });
   } catch (error) {
-    console.error('Self update error:', error);
+    logger.error('Self update error:', error);
     return res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 
 // POST /api/v1/employees/me/photo - Upload profile photo
-router.post('/me/photo', authenticateToken, profileUpload.single('profile_image'), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({ error: 'No image file provided.' });
+router.post('/me/photo', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  profileUpload.single('profile_image')(req, res, async (err: any) => {
+    if (err) {
+      logger.error('Multer error:', err);
+      return res.status(400).json({ error: err.message || 'File upload failed' });
     }
 
-    const employeeId = req.user!.employeeId;
-    
-    // Check if employee already has a photo to delete the old one (optional but good practice)
-    const emp = await prisma.employee.findUnique({ where: { id: employeeId }, select: { profile_image_url: true } });
-    
-    const newImageUrl = `/uploads/profiles/${file.filename}`;
-    
-    await prisma.employee.update({
-      where: { id: employeeId },
-      data: { profile_image_url: newImageUrl },
-    });
-
-    if (emp?.profile_image_url && emp.profile_image_url.startsWith('/uploads/profiles/')) {
-      const oldFileName = emp.profile_image_url.replace('/uploads/profiles/', '');
-      const oldFilePath = path.join(PROFILE_UPLOAD_DIR, oldFileName);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: 'No image file provided.' });
       }
-    }
 
-    return res.status(200).json({
-      message: 'Profile photo updated successfully',
-      profile_image_url: publicAssetUrl(newImageUrl),
-    });
-  } catch (error) {
-    console.error('Profile photo upload error:', error);
-    return res.status(500).json({ error: 'Failed to upload profile photo' });
-  }
+      const employeeId = req.user!.employeeId;
+      
+      const emp = await prisma.employee.findUnique({ where: { id: employeeId }, select: { profile_image_url: true } });
+      
+      const storageService = getStorageService('profiles');
+      const newImageUrl = await storageService.upload(file.buffer, file.originalname, file.mimetype);
+      
+      await prisma.employee.update({
+        where: { id: employeeId },
+        data: { profile_image_url: newImageUrl },
+      });
+
+      if (emp?.profile_image_url) {
+        await storageService.delete(emp.profile_image_url).catch(e => logger.warn('Could not delete old profile photo:', e));
+      }
+
+      return res.status(200).json({
+        message: 'Profile photo updated successfully',
+        profile_image_url: publicAssetUrl(newImageUrl),
+      });
+    } catch (error) {
+      logger.error('Profile photo upload error:', error);
+      return res.status(500).json({ error: 'Failed to upload profile photo' });
+    }
+  });
 });
 
 // GET /api/v1/employees - List all active/inactive employees (Admin invisible filtered)
 router.get('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 20, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
     const whereClause = await buildEmployeeScope(req.user!);
 
     const employees = await prisma.employee.findMany({
+      take: limit,
+      skip: offset,
       where: whereClause,
       include: {
         branch: true,
@@ -214,9 +221,9 @@ router.get('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_READ), asy
       });
     }
 
-    return res.status(200).json({ employees: formatted });
+    return res.status(200).json({ employees: formatted, pagination: { limit, offset } });
   } catch (error) {
-    console.error('Fetch employees error:', error);
+    logger.error('Fetch employees error:', error);
     return res.status(500).json({ error: 'Failed to fetch employees list' });
   }
 });
@@ -267,7 +274,7 @@ router.get('/managers', authenticateToken, async (req: AuthenticatedRequest, res
 });
 
 // POST /api/v1/employees - Add new employee with all 20 industrial fields
-router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), validateRequestBody(EmployeeCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
 
     const {
@@ -432,13 +439,13 @@ router.post('/', authenticateToken, requireAuthz(Permissions.EMPLOYEES_CREATE), 
       },
     });
   } catch (error) {
-    console.error('Create employee error:', error);
+    logger.error('Create employee error:', error);
     return res.status(500).json({ error: 'Failed to create employee' });
   }
 });
 
 // PATCH /api/v1/employees/:id - Update employee status, branch, roles or any profile detail
-router.patch('/:id', authenticateToken, requireAuthz(Permissions.EMPLOYEES_UPDATE), async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/:id', authenticateToken, requireAuthz(Permissions.EMPLOYEES_UPDATE), validateRequestBody(EmployeeUpdateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = parseInt(req.params.id, 10);
     const targetEmployee = await prisma.employee.findUnique({ where: { id: employeeId } });
@@ -628,7 +635,7 @@ router.patch('/:id', authenticateToken, requireAuthz(Permissions.EMPLOYEES_UPDAT
 });
 
 // POST /api/v1/employees/:id/reset-password - Admin 1-click Password Reset
-router.post('/:id/reset-password', authenticateToken, requireAuthz(Permissions.EMPLOYEES_RESET_PASSWORD), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/:id/reset-password', authenticateToken, requireAuthz(Permissions.EMPLOYEES_RESET_PASSWORD), validateRequestBody(EmptyBodySchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = parseInt(req.params.id, 10);
     const targetEmployee = await prisma.employee.findUnique({ where: { id: employeeId } });
@@ -674,7 +681,7 @@ router.post('/:id/reset-password', authenticateToken, requireAuthz(Permissions.E
 });
 
 // PUT /api/v1/employees/:id/roles - Update an employee's roles
-router.put('/:id/roles', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.put('/:id/roles', authenticateToken, validateRequestBody(EmployeeRolesUpdateSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const employeeId = parseInt(req.params.id, 10);
     const { role_names } = req.body;
@@ -784,7 +791,7 @@ router.put('/:id/roles', authenticateToken, async (req: AuthenticatedRequest, re
 
     return res.status(200).json({ message: 'Roles updated successfully' });
   } catch (error) {
-    console.error('Update roles error:', error);
+    logger.error('Update roles error:', error);
     return res.status(500).json({ error: 'Failed to update roles' });
   }
 });

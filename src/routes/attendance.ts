@@ -1,10 +1,19 @@
+import { logger } from '../utils/logger';
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, AuthenticatedRequest, requireRole, authenticateKioskToken, KioskAuthenticatedRequest } from '../middleware/auth';
 import { generateQrHmac, verifyQrHmac } from '../utils/qr';
 import { calculateAttendanceStatus, getISTComponents } from '../utils/time';
-import { Roles, LateProposalSchema } from '../shared';
+import { 
+  Roles, 
+  LateProposalSchema, 
+  LeaveProposalSchema, 
+  AttendanceQRPayloadSchema, 
+  AttendanceHolidaySchema, 
+  EmptyBodySchema 
+} from '../shared';
 import { validateRequestBody } from '../middleware/validate';
+import { notifyEmployee } from '../utils/notifyEmployee';
 
 const router = Router();
 
@@ -44,7 +53,43 @@ router.get('/my-qr', authenticateToken, async (req: AuthenticatedRequest, res: R
       qrData: JSON.stringify({ employeeId, employeeCode, version, signedToken }),
     });
   } catch (error) {
-    console.error('QR fetch error:', error);
+    logger.error('QR fetch error:', error);
+    return res.status(500).json({ error: 'Failed to generate QR token' });
+  }
+});
+
+// GET /api/v1/attendance/employee-qr/:id - Generate/fetch HMAC QR payload for a specific employee (Admin/HR)
+router.get('/employee-qr/:id', authenticateToken, requireRole([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN]), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const targetId = parseInt(req.params.id);
+    if (isNaN(targetId)) return res.status(400).json({ error: 'Invalid employee ID' });
+
+    const employee = await p.employee.findUnique({ where: { id: targetId }});
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const version = 1;
+    const signedToken = generateQrHmac(employee.id, employee.employee_code, version);
+
+    let qrRecord = await p.employeeQrCode.findFirst({
+      where: { employee_id: employee.id },
+      orderBy: { generated_at: 'desc' },
+    });
+
+    if (!qrRecord) {
+      qrRecord = await p.employeeQrCode.create({
+        data: { employee_id: employee.id, qr_token: signedToken },
+      });
+    }
+
+    return res.status(200).json({
+      employeeId: employee.id,
+      employeeCode: employee.employee_code,
+      version,
+      signedToken,
+      qrData: JSON.stringify({ employeeId: employee.id, employeeCode: employee.employee_code, version, signedToken }),
+    });
+  } catch (error) {
+    logger.error('Admin QR fetch error:', error);
     return res.status(500).json({ error: 'Failed to generate QR token' });
   }
 });
@@ -104,7 +149,7 @@ const parseAndVerifyQR = (req: AuthenticatedRequest, qrPayload: any) => {
 // The token's embedded branchId is written to AttendanceLog.branch_id so the
 // attendance record carries the physical scan location, not the employee's
 // assigned branch.
-router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedRequest, res: Response) => {
+router.post('/scan', authenticateKioskToken, validateRequestBody(AttendanceQRPayloadSchema), async (req: KioskAuthenticatedRequest, res: Response) => {
   const targetCompanyId = req.kiosk!.companyId;
   const branchId = req.kiosk!.branchId; // physical scan location
 
@@ -218,16 +263,13 @@ router.post('/scan', authenticateKioskToken, async (req: KioskAuthenticatedReque
         timeIST: getISTComponents(new Date()).timeString,
       });
     }
-    console.error('Scan attendance error:', error);
+    logger.error('Scan attendance error:', error);
     return res.status(500).json({ error: 'Attendance scan verification failed' });
   }
 });
 
-// POST /api/v1/attendance/checkout - Verify QR and Stamp Checkout
-// Kiosk-only: must be authenticated with a type:'KIOSK' token.
-// branch_id from the kiosk token is written to AttendanceLog so the checkout
-// record carries the physical scan location.
-router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedRequest, res: Response) => {
+// POST /api/v1/attendance/checkout - Stamp Checkout (IST rules)
+router.post('/checkout', authenticateKioskToken, validateRequestBody(AttendanceQRPayloadSchema), async (req: KioskAuthenticatedRequest, res: Response) => {
   const targetCompanyId = req.kiosk!.companyId;
   const branchId = req.kiosk!.branchId;
 
@@ -332,7 +374,7 @@ router.post('/checkout', authenticateKioskToken, async (req: KioskAuthenticatedR
       full_name: scannedEmployee.full_name,
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error:', error);
     return res.status(500).json({ error: 'Attendance logout failed' });
   }
 });
@@ -382,7 +424,7 @@ router.post(
         proposalId: proposal.id,
       });
     } catch (error: any) {
-      console.error('Late proposal error:', error);
+      logger.error('Late proposal error:', error);
       return res
         .status(500)
         .json({ error: 'Failed to submit late proposal', detail: error?.message });
@@ -394,6 +436,7 @@ router.post(
 router.post(
   '/leave-proposal',
   authenticateToken,
+  validateRequestBody(LeaveProposalSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { start_date, end_date, reason } = req.body;
@@ -439,7 +482,7 @@ router.post(
         proposalId: proposal.id,
       });
     } catch (error: any) {
-      console.error('Leave proposal error:', error);
+      logger.error('Leave proposal error:', error);
       return res
         .status(500)
         .json({ error: 'Failed to submit leave proposal', detail: error?.message });
@@ -481,7 +524,7 @@ router.post(
         proposalId: proposal.id,
       });
     } catch (error: any) {
-      console.error('Early logout proposal error:', error);
+      logger.error('Early logout proposal error:', error);
       return res
         .status(500)
         .json({ error: 'Failed to submit emergency logout request', detail: error?.message });
@@ -493,28 +536,128 @@ router.post(
 router.get(
   '/proposals/queue',
   authenticateToken,
-  requireRole([Roles.HR_MANAGER, Roles.MD]),
+  requireRole([Roles.HR_MANAGER, Roles.MD, Roles.ADMIN]),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const companyEmployees = await p.employee.findMany({
         where: { company_id: req.user!.companyId },
-        select: { id: true },
+        select: { id: true, full_name: true, employee_code: true },
       });
 
-      const proposals = await p.auditEvent.findMany({
+      const proposals = await p.attendanceProposal.findMany({
         where: {
-          action: { in: ['SUBMIT_LATE_PROPOSAL', 'SUBMIT_LEAVE_PROPOSAL', 'SUBMIT_EARLY_LOGOUT'] },
-          actor_id: { in: companyEmployees.map((e: any) => e.id) },
+          employee_id: { in: companyEmployees.map((e: any) => e.id) },
+          status: 'PENDING',
         },
+        orderBy: { created_at: 'desc' },
+      });
+
+      const mappedProposals = proposals.map((proposal: any) => {
+        const emp = companyEmployees.find((e: any) => e.id === proposal.employee_id);
+        return {
+          ...proposal,
+          employee: emp,
+        };
+      });
+
+      return res.status(200).json({ proposals: mappedProposals });
+    } catch (error) {
+      logger.error('Proposal queue error:', error);
+      return res.status(500).json({ error: 'Failed to load HR proposal queue' });
+    }
+  },
+);
+
+// POST /api/v1/attendance/proposals/:id/approve - Approve proposal
+router.post(
+  '/proposals/:id/approve',
+  authenticateToken,
+  requireRole([Roles.HR_MANAGER, Roles.MD, Roles.ADMIN]),
+  validateRequestBody(EmptyBodySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const proposal = await p.attendanceProposal.findUnique({ where: { id } });
+      if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
+
+      const updated = await p.attendanceProposal.update({
+        where: { id },
+        data: {
+          status: 'APPROVED',
+          reviewed_by: req.user!.employeeId,
+          reviewed_at: new Date(),
+        },
+      });
+
+      notifyEmployee(proposal.employee_id, {
+        title: 'Proposal Approved',
+        message: `Your ${proposal.type === 'LEAVE' ? 'leave' : 'late'} request for ${new Date(proposal.target_date).toLocaleDateString()} has been approved.`,
+        type: 'SYSTEM',
+        link: '/attendance',
+      });
+
+      return res.status(200).json({ message: 'Proposal approved', proposal: updated });
+    } catch (error) {
+      logger.error('Proposal approve error:', error);
+      return res.status(500).json({ error: 'Failed to approve proposal' });
+    }
+  },
+);
+
+// POST /api/v1/attendance/proposals/:id/reject - Reject proposal
+router.post(
+  '/proposals/:id/reject',
+  authenticateToken,
+  requireRole([Roles.HR_MANAGER, Roles.MD, Roles.ADMIN]),
+  validateRequestBody(EmptyBodySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const proposal = await p.attendanceProposal.findUnique({ where: { id } });
+      if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
+
+      const updated = await p.attendanceProposal.update({
+        where: { id },
+        data: {
+          status: 'REJECTED',
+          reviewed_by: req.user!.employeeId,
+          reviewed_at: new Date(),
+        },
+      });
+
+      notifyEmployee(proposal.employee_id, {
+        title: 'Proposal Rejected',
+        message: `Your ${proposal.type === 'LEAVE' ? 'leave' : 'late'} request for ${new Date(proposal.target_date).toLocaleDateString()} has been rejected.`,
+        type: 'SYSTEM',
+        link: '/attendance',
+      });
+
+      return res.status(200).json({ message: 'Proposal rejected', proposal: updated });
+    } catch (error) {
+      logger.error('Proposal reject error:', error);
+      return res.status(500).json({ error: 'Failed to reject proposal' });
+    }
+  },
+);
+
+// GET /api/v1/attendance/proposals/my - Employee's own proposals
+router.get(
+  '/proposals/my',
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const proposals = await p.attendanceProposal.findMany({
+        where: { employee_id: req.user!.employeeId },
         orderBy: { created_at: 'desc' },
         take: 20,
       });
 
       return res.status(200).json({ proposals });
     } catch (error) {
-      return res.status(500).json({ error: 'Failed to load HR proposal queue' });
+      logger.error('My proposals error:', error);
+      return res.status(500).json({ error: 'Failed to load my proposals' });
     }
-  },
+  }
 );
 
 // GET /api/v1/attendance/live - HR Live Attendance Feed (Today only)
@@ -548,7 +691,7 @@ router.get(
 
       return res.status(200).json({ logs: todayLogs });
     } catch (error) {
-      console.error('Live attendance error:', error);
+      logger.error('Live attendance error:', error);
       return res.status(500).json({ error: 'Failed to load live attendance' });
     }
   },
@@ -618,7 +761,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error('History attendance error:', error);
+      logger.error('History attendance error:', error);
       return res.status(500).json({ error: 'Failed to load attendance history' });
     }
   },
@@ -644,7 +787,8 @@ router.get('/holidays', authenticateToken, async (req: AuthenticatedRequest, res
   }
 });
 
-router.post('/holidays', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), async (req: AuthenticatedRequest, res: Response) => {
+// POST /api/v1/attendance/holidays
+router.post('/holidays', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), validateRequestBody(AttendanceHolidaySchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { name, date } = req.body;
     if (!name || !date) return res.status(400).json({ error: 'Name and date are required' });
@@ -664,7 +808,8 @@ router.post('/holidays', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, 
   }
 });
 
-router.delete('/holidays/:id', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), async (req: AuthenticatedRequest, res: Response) => {
+// DELETE /api/v1/attendance/holidays/:id
+router.delete('/holidays/:id', authenticateToken, requireRole([Roles.MD, Roles.ADMIN, Roles.HR_MANAGER]), validateRequestBody(EmptyBodySchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = Number(req.params.id);
     const companyId = req.user!.companyId;
@@ -809,7 +954,7 @@ router.get('/calendar', authenticateToken, async (req: AuthenticatedRequest, res
 
     return res.status(200).json({ calendar: calendarMap, penaltyAbsents, employeeCreatedAt: employee.created_at });
   } catch (err) {
-    console.error('Failed to generate calendar:', err);
+    logger.error('Failed to generate calendar:', err);
     return res.status(500).json({ error: 'Failed to generate calendar' });
   }
 });

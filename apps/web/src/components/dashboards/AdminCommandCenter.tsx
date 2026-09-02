@@ -207,55 +207,20 @@ export const AdminCommandCenter: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Database" value={dbStatus || 'UNKNOWN'} icon={Database} link="/system-control" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Database" value={dbStatus || 'UNKNOWN'} icon={Database} />
         <StatCard label="Total Users" value={metrics?.totalUsers || '—'} icon={Users} link="/employees" />
         <StatCard label="Active Sessions" value={metrics?.activeSessions || '—'} icon={ActivitySquare} />
         <StatCard label="Total Leads" value={metrics?.totalLeads || '—'} icon={Target} link="/leads" />
-        <StatCard label="Audit Events" value={metrics?.totalAuditEvents || '—'} icon={ScrollText} link="/system-control" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Audit Activity */}
-          <div className="h-full max-h-[600px] flex flex-col">
-            <ListWidget
-              title="Recent Audit Activity"
-              items={auditError ? [] : auditItems}
-              emptyStateMessage={auditError ? 'Audit trail is currently unavailable.' : 'No audit events recorded.'}
-              viewAllLink="/system-control"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {/* Security Alerts */}
-          <ListWidget
-            title="Security / Incidents"
-            items={alertsError ? [] : securityItems}
-            emptyStateMessage={alertsError ? 'Security alerts feed unavailable.' : 'System secure — no critical security anomalies detected.'}
-            viewAllLink="/system-control"
-          />
-          
-          {/* High-Security Controls Link */}
-          <Link
-            to="/system-control"
-            className="block bg-surface hover:bg-rose-50 rounded-2xl border border-slate-200 hover:border-rose-200 shadow-sm p-5 transition-colors group"
-          >
-            <div className="flex items-start gap-4">
-              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 shrink-0 group-hover:bg-rose-100 transition-colors">
-                <ShieldAlert className="w-5 h-5 text-rose-600" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-navy-900 group-hover:text-rose-900 transition-colors">System Control Center</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  High-risk technical controls including emergency lockdown, access-code management and deep diagnostics.
-                </p>
-              </div>
-            </div>
-          </Link>
-        </div>
+      <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl">
+        <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-slate-700">System Operations Normal</h3>
+        <p className="text-sm text-slate-500 max-w-md mx-auto mt-2">
+          Key performance indicators and high-level health metrics are displayed above. 
+          Detailed audit logs and granular system controls have been migrated to the dedicated Super Admin views.
+        </p>
       </div>
     </div>
   );

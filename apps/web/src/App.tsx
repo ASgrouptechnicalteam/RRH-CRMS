@@ -73,7 +73,7 @@ const AnalyticsHub = lazy(() => import('./components/analytics/AnalyticsHub').th
 const DailyReportingPage = lazy(() => import('./components/reports/DailyReportingPage').then(m => ({ default: m.DailyReportingPage })));
 const SystemControlHub = lazy(() => import('./components/system/SystemControlHub').then(m => ({ default: m.SystemControlHub })));
 const KioskManagementPage = lazy(() => import('./components/system/KioskManagementPage').then(m => ({ default: m.KioskManagementPage })));
-const RoleAssignmentPage = lazy(() => import('./components/admin/RoleAssignmentPage').then(m => ({ default: m.RoleAssignmentPage })));
+const AdminSuperHub = lazy(() => import('./components/admin/AdminSuperHub').then(m => ({ default: m.AdminSuperHub })));
 const PMTerritories = lazy(() => import('./components/md/PMTerritories').then(m => ({ default: m.PMTerritories })));
 const FinanceHub = lazy(() => import('./components/finance/FinanceHub').then(m => ({ default: m.FinanceHub })));
 const UserSettings = lazy(() => import('./components/settings/UserSettings').then(m => ({ default: m.UserSettings })));
@@ -268,7 +268,7 @@ const AppShell: React.FC = () => {
       <Route path="/system-control" element={(isMD || isTechAdmin) ? <SystemControlHub /> : <Navigate to="/" replace />} />
       <Route path="/kiosk-management" element={(isMD || isTechAdmin) ? <KioskManagementPage /> : <Navigate to="/" replace />} />
       <Route path="/pm-territories" element={(isMD || isTechAdmin) ? <PMTerritories /> : <Navigate to="/" replace />} />
-      <Route path="/role-assignment" element={(isMD || isTechAdmin) ? <RoleAssignmentPage /> : <Navigate to="/" replace />} />
+      <Route path="/super-admin" element={isTechAdmin ? <AdminSuperHub /> : <Navigate to="/" replace />} />
 
       <Route path="/finance" element={
         (isMD || isTechAdmin || activeRole === Roles.FINANCE)

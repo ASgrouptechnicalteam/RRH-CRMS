@@ -195,7 +195,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
 
   // ADMINISTRATION
   { id: 'group-administration', label: 'ADMINISTRATION', group: true, icon: undefined },
-  { id: 'role-assignment', label: 'Role Assignment', icon: ShieldCheck, path: '/role-assignment', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
+  { id: 'super-admin', label: 'Super Admin', icon: ShieldCheck, path: '/super-admin', requiredAnyRole: [Roles.ADMIN] },
   { id: 'kiosk-management', label: 'Kiosk Management', icon: MonitorSmartphone, path: '/kiosk-management', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
   { id: 'settings', label: 'Settings', icon: Settings2, path: '/settings' },
   { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },

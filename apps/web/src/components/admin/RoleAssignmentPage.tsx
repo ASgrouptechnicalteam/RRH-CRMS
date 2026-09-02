@@ -57,15 +57,8 @@ export const RoleAssignmentPage: React.FC = () => {
     }
   };
 
-  const handleRoleToggle = (employeeId: number, roleName: string) => {
-    setEditedRoles(prev => {
-      const current = prev[employeeId] || [];
-      if (current.includes(roleName)) {
-        return { ...prev, [employeeId]: current.filter(r => r !== roleName) };
-      } else {
-        return { ...prev, [employeeId]: [...current, roleName] };
-      }
-    });
+  const handleRoleChange = (employeeId: number, roleName: string) => {
+    setEditedRoles(prev => ({ ...prev, [employeeId]: [roleName] }));
   };
 
   const saveRoles = async (employeeId: number) => {
@@ -186,28 +179,23 @@ export const RoleAssignmentPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Roles Checkboxes */}
-                    <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-wrap gap-3">
-                      {availableRoles.map(role => {
-                        const isSelected = currentEditedRoles.includes(role);
-                        // MDs cannot assign ADMIN role unless they are an ADMIN
-                        const isDisabled = role === Roles.ADMIN && !isUserAdmin;
-                        
-                        return (
-                          <label key={role} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-colors ${
-                            isSelected ? 'bg-navy-900 text-white border-navy-900' : 'bg-white text-slate-700 border-slate-300 hover:border-navy-500'
-                          } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                            <input 
-                              type="checkbox" 
-                              className="sr-only"
-                              checked={isSelected}
-                              disabled={isDisabled}
-                              onChange={() => handleRoleToggle(emp.id, role)}
-                            />
-                            <span className="text-sm font-semibold tracking-tight">{role}</span>
-                          </label>
-                        );
-                      })}
+                    {/* Role Dropdown */}
+                    <div className="flex-1 flex items-center lg:px-4">
+                      <select
+                        value={currentEditedRoles[0] || ''}
+                        onChange={(e) => handleRoleChange(emp.id, e.target.value)}
+                        className="w-full max-w-sm p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 focus:border-navy-500 outline-none text-sm transition-all bg-slate-50"
+                      >
+                        <option value="" disabled>Select a role...</option>
+                        {availableRoles.map(role => {
+                          const isDisabled = role === Roles.ADMIN && !isUserAdmin;
+                          return (
+                            <option key={role} value={role} disabled={isDisabled}>
+                              {role}
+                            </option>
+                          );
+                        })}
+                      </select>
                     </div>
 
                     {/* Action */}

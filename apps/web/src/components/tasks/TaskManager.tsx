@@ -11,7 +11,7 @@ import { StatusPill } from '../ui/StatusPill';
 import { StatCard } from '../ui/StatCard';
 
 export const TaskManager: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [teamTasks, setTeamTasks] = useState<TaskItem[]>([]);
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
@@ -29,8 +29,8 @@ export const TaskManager: React.FC = () => {
   const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canViewTeam = user?.roles.includes(Roles.MD) || user?.roles.includes(Roles.MARKETING_DIRECTOR) || user?.roles.includes(Roles.ADMIN) || user?.roles.includes(Roles.HR_MANAGER) || user?.roles.includes(Roles.PROJECT_MANAGER) || user?.roles.includes(Roles.SALES_MANAGER);
-  const canCreateTask = user?.roles.some((r: string) => [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.SALES_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_LEAD_OPERATOR].includes(r as never));
+  const canViewTeam = ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.SALES_MANAGER] as string[]).includes(activeRole);
+  const canCreateTask = ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.SALES_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_LEAD_OPERATOR] as string[]).includes(activeRole);
 
   const fetchTasks = async () => {
     setIsLoading(true);

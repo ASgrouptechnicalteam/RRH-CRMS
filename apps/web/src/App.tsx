@@ -31,6 +31,7 @@ import { usePushNotifications } from './hooks/usePushNotifications';
 import { GlobalAnnouncementBanner } from './components/common/GlobalAnnouncementBanner';
 import { Roles, Permissions } from './shared';
 import { Kiosk } from './components/attendance/Kiosk';
+import { ThemeProvider } from './hooks/useTheme';
 
 // Lazy-loaded heavy tab modules for optimal initial load performance & code splitting
 const LeadManagement = lazy(() => import('./components/leads/LeadManagement').then(m => ({ default: m.LeadManagement })));
@@ -92,7 +93,7 @@ const DefaultRedirect: React.FC<{ user: unknown }> = () => (
 // responsive 12-column content grid, and optional right rail. The Routes and
 // internal modal logic are rendered as children inside the AppLayout content canvas.
 const AppShell: React.FC = () => {
-  const { user, accessToken, authStatus, firstLoginDone, attendanceStamped, login, logout, fetchWithAuth } = useAuth();
+  const { user, activeRole, accessToken, authStatus, firstLoginDone, attendanceStamped, login, logout, fetchWithAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = location.pathname.replace('/', '') || 'dashboard';
@@ -188,27 +189,28 @@ const AppShell: React.FC = () => {
   }
 
 
-  const isMD = user?.roles?.includes(Roles.MD);
-  const isTechAdmin = user?.roles?.includes(Roles.ADMIN);
-  const isHRManager = user?.roles?.includes(Roles.HR_MANAGER);
-  const isProjectManager = user?.roles?.includes(Roles.PROJECT_MANAGER);
-  const isTelecaller = user?.roles?.includes(Roles.TELECALLER);
-  const isSalesManager = user?.roles?.includes(Roles.SALES_MANAGER);
-  const isMarketingDirector = user?.roles?.includes(Roles.MARKETING_DIRECTOR);
-  const isChannelPartnerManager = user?.roles?.includes(Roles.CHANNEL_PARTNER_MANAGER);
+  const isMD = activeRole === Roles.MD || activeRole === Roles.ADMIN;
+  const isTechAdmin = activeRole === Roles.ADMIN;
+  const isHRManager = activeRole === Roles.HR_MANAGER;
+  const isProjectManager = activeRole === Roles.PROJECT_MANAGER;
+  const isTelecaller = activeRole === Roles.TELECALLER;
+  const isSalesManager = activeRole === Roles.SALES_MANAGER;
+  const isMarketingDirector = activeRole === Roles.MARKETING_DIRECTOR;
+  const isChannelPartnerManager = activeRole === Roles.CHANNEL_PARTNER_MANAGER;
   const isStandardStaff = !isMD && !isTechAdmin && !isHRManager && !isProjectManager && !isTelecaller && !isSalesManager && !isMarketingDirector && !isChannelPartnerManager;
 
   // Role-based access for hubs
-  const canManageTargets = user?.roles?.some(r => ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN] as string[]).includes(r));
-  const canManageEmployees = user?.roles?.some(r => ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] as string[]).includes(r));
-  const canViewTeamPerformance = user?.roles?.some(r =>
-    ([Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER,
-     Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] as string[]).includes(r)
-  );
+  const canManageTargets = ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN] as string[]).includes(activeRole);
+  const canManageEmployees = ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] as string[]).includes(activeRole);
+  const canViewTeamPerformance = ([
+    Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER,
+    Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER
+  ] as string[]).includes(activeRole);
   
-  const canAccessCommercial = user?.roles?.some(r =>
-    ([Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] as string[]).includes(r)
-  );
+  const canAccessCommercial = ([
+    Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, 
+    Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER
+  ] as string[]).includes(activeRole);
 
   // Role-to-dashboard resolver — each role gets its own dedicated dashboard
   const dashboardElement = (
@@ -269,7 +271,7 @@ const AppShell: React.FC = () => {
       <Route path="/role-assignment" element={(isMD || isTechAdmin) ? <RoleAssignmentPage /> : <Navigate to="/" replace />} />
 
       <Route path="/finance" element={
-        (isMD || isTechAdmin || user?.roles?.includes(Roles.FINANCE))
+        (isMD || isTechAdmin || activeRole === Roles.FINANCE)
           ? <FinanceHub />
           : <Navigate to="/" replace />
       } />
@@ -389,11 +391,13 @@ const AppShell: React.FC = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AppShell />
-      </ToastProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <AppShell />
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

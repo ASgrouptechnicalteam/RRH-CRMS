@@ -50,7 +50,8 @@ export const SalesManagerDashboard: React.FC = () => {
     subtitle: 'Waiting for Assignment',
     value: new Date(l.created_at || '').toLocaleDateString(),
     icon: AlertCircle,
-    color: 'text-amber-500'
+    color: 'text-amber-500',
+    link: `/leads/${l.id}`
   })) || [];
 
   // Prepare ListWidget data for Stalled Leads
@@ -59,7 +60,8 @@ export const SalesManagerDashboard: React.FC = () => {
     title: `Lead #${l.id}`,
     subtitle: l.assigned_to?.full_name || 'Unassigned',
     value: new Date(l.last_contacted_at || l.created_at || '').toLocaleDateString(),
-    icon: ShieldAlert
+    icon: ShieldAlert,
+    link: `/leads/${l.id}`
   }));
 
   // Prepare ListWidget data for Overdue Tasks
@@ -68,7 +70,8 @@ export const SalesManagerDashboard: React.FC = () => {
     title: t.lead?.customer_name || 'No Lead',
     subtitle: t.assignee?.full_name || 'Unassigned',
     value: new Date(t.target_date || '').toLocaleDateString(),
-    icon: Clock
+    icon: Clock,
+    link: `/tasks`
   }));
 
   return (
@@ -84,20 +87,23 @@ export const SalesManagerDashboard: React.FC = () => {
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard 
-          label="Team Lead Load" 
-          value={kpis.totalLeads} 
-          icon={Users} 
+        <StatCard
+          label="Team Lead Load"
+          value={kpis.totalLeads}
+          icon={Users}
+          link="/leads"
         />
-        <StatCard 
-          label="Conversion Rate" 
-          value={`${kpis.conversionRate.toFixed(1)}%`} 
-          icon={TrendingUp} 
+        <StatCard
+          label="Conversion Rate"
+          value={`${kpis.conversionRate.toFixed(1)}%`}
+          icon={TrendingUp}
+          link="/leads"
         />
-        <StatCard 
-          label="Site Visits (This Week)" 
-          value={kpis.siteVisits} 
-          icon={Calendar} 
+        <StatCard
+          label="Site Visits (This Week)"
+          value={kpis.siteVisits}
+          icon={Calendar}
+          link="/site-visits"
         />
       </div>
 
@@ -171,23 +177,26 @@ export const SalesManagerDashboard: React.FC = () => {
 
         <div className="space-y-6">
           {recoveredItems.length > 0 && (
-            <ListWidget 
+            <ListWidget
               title="Recovered but Unassigned"
               items={recoveredItems}
               emptyStateMessage="No stuck recovered leads."
+              viewAllLink="/leads"
             />
           )}
 
-          <ListWidget 
+          <ListWidget
             title="Stalled Leads (>7 Days)"
             items={stalledItems}
             emptyStateMessage="No stalled leads. Good job!"
+            viewAllLink="/leads"
           />
 
-          <ListWidget 
+          <ListWidget
             title="Overdue Follow-ups"
             items={taskItems}
             emptyStateMessage="No overdue tasks. All caught up!"
+            viewAllLink="/tasks"
           />
 
           {/* Target Progress (Repurposed as simple custom widget to retain logic) */}

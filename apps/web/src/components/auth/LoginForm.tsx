@@ -110,7 +110,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           attendanceRequired: u.attendanceRequired ?? true,
           firstLoginDone: u.firstLoginDone ?? false,
         };
-        login(userProfile, responseJson.accessToken);
+        login(userProfile, responseJson.accessToken, responseJson.refreshToken);
       }
 
 

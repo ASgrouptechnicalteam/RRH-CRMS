@@ -7,6 +7,7 @@ import { TargetConfigurator } from '../targets/TargetConfigurator';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import { Roles } from '../../shared';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis,
@@ -75,9 +76,9 @@ function SectionCard({
 }
 
 export const AnalyticsHub: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
 
-  const canManageTargets = user?.roles?.some(r => ['Managing director'].includes(r));
+  const canManageTargets = ([Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
     // The KPI overview is permission-gated on the SAME permission the backend enforces.
   const canViewKpis = (user?.permissions ?? []).includes('admin.system_metrics');
 

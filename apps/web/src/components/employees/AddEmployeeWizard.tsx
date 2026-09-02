@@ -188,6 +188,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                   <option value="Digital Marketing head(manager)">Digital Marketing head(manager)</option>
                   <option value="marketing director">marketing director</option>
                   <option value="project managers">project managers</option>
+                  <option value="Channel partner manager">Channel partner manager</option>
                   <option value="HR">HR</option>
                   <option value="accountant">accountant</option>
                   <option value="Managing director">Managing director (MD)</option>

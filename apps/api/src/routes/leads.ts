@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { Router, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { requireAuthz } from '../middleware/authz';
@@ -13,7 +14,7 @@ const handleServiceError = (error: any, res: Response) => {
   if (error instanceof AppError || error.name === 'AppError' || error.statusCode) {
     return res.status(error.statusCode || 400).json({ error: error.message, code: (error as any).code });
   }
-  console.error('Unhandled route error:', error);
+  logger.error('Unhandled route error:', error);
   return res.status(500).json({ error: 'Internal Server Error' });
 };
 
@@ -24,7 +25,7 @@ router.get(
   requireAuthz(Permissions.LEADS_READ),
   async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 20, 1), 100);
     const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
     
     const leads = await LeadService.getLeads(req.user!, limit, offset);

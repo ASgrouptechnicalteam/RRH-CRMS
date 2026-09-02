@@ -55,76 +55,79 @@ export const DailyReportsView: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col shadow-sm">
-        <div className="overflow-x-auto h-full">
-          <table className="w-full text-left text-sm relative">
-            <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 sticky top-0 z-10 shadow-sm">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Employee</th>
-                <th className="px-6 py-4 font-semibold">Submitted At</th>
-                <th className="px-6 py-4 font-semibold text-center">Calls</th>
-                <th className="px-6 py-4 font-semibold text-center">Visits</th>
-                <th className="px-6 py-4 font-semibold text-center">Deals</th>
-                <th className="px-6 py-4 font-semibold text-center">Target Status</th>
-                <th className="px-6 py-4 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
-                    <div className="w-8 h-8 border-2 border-navy-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    Loading reports...
-                  </td>
-                </tr>
-              ) : reports.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
-                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                    No reports submitted for this date.
-                  </td>
-                </tr>
-              ) : (
-                reports.map(report => (
-                  <tr key={report.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-800">{report.employee?.full_name || 'Unknown'}</div>
-                      <div className="text-xs text-slate-500 font-mono">{report.employee?.employee_code}</div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
+      <div className="flex-1 overflow-auto">
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <div className="w-8 h-8 border-4 border-navy-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center shadow-sm">
+            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">No reports submitted for this date.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reports.map(report => (
+              <div key={report.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-navy-200 transition-all flex flex-col">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-lg">{report.employee?.full_name || 'Unknown'}</h3>
+                    <p className="text-xs text-slate-500 font-mono">{report.employee?.employee_code}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                       {new Date(report.submitted_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-slate-700">{report.call_count}</td>
-                    <td className="px-6 py-4 text-center font-bold text-slate-700">{report.site_visit_count}</td>
-                    <td className="px-6 py-4 text-center font-bold text-slate-700">{report.closed_deal_count}</td>
-                    <td className="px-6 py-4 text-center">
-                      {report.target_met ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Met
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          Below
-                        </span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  {report.target_met ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Target Met
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-100">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Missed Target
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  {report.metrics_json && Object.keys(report.metrics_json).length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {Object.entries(report.metrics_json).slice(0, 4).map(([key, value]) => (
+                        <div key={key} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 truncate" title={key}>{key}</p>
+                          <p className="text-sm font-black text-slate-700 truncate" title={String(value)}>
+                            {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
+                          </p>
+                        </div>
+                      ))}
+                      {Object.keys(report.metrics_json).length > 4 && (
+                        <div className="col-span-2 text-xs text-center text-slate-400 mt-1 italic">
+                          +{Object.keys(report.metrics_json).length - 4} more metrics
+                        </div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setSelectedReport(report)}
-                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-navy-600 hover:bg-navy-50 rounded-lg transition-colors"
-                        title="View Details"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic mb-4">No dynamic metrics available.</p>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setSelectedReport(report)}
+                  className="w-full py-2 bg-navy-50 text-navy-600 hover:bg-navy-100 hover:text-navy-700 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-transparent hover:border-navy-200"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Full Report
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Detail Modal */}

@@ -602,6 +602,7 @@ export interface LoginResponseData {
   error?: string;
   message?: string;
   accessToken?: string;
+  refreshToken?: string;
   user?: EmployeeListItem;
 }
 
@@ -633,6 +634,7 @@ export interface NotificationItem {
   type?: string;
   title?: string;
   message?: string;
+  link?: string;
   is_read?: boolean;
   created_at?: ISODateTime;
 }
@@ -700,21 +702,20 @@ export interface ExecMetricsData {
   pendingVerificationPropertiesCount?: number;
   pendingApprovalPropertiesCount?: number;
   attendanceExceptionsCount?: number;
+  pendingLeaveRequestsCount?: number;
 }
 export interface ProposalItem {
   id: number;
-  employee_id?: number;
+  employee_id: number;
   employee?: { id: number; full_name?: string | null; employee_code?: string } | null;
-  proposal_type?: string;
-  proposed_date?: ISODateTime;
-  reason?: string;
-  status?: string;
-  actor_id?: number;
-  action?: string;
-  new_value?: { expected_time?: string | null; reason?: string | null; start_date?: string | null; end_date?: string | null; target_date?: string | null; type?: string | null } | null;
-  old_value?: string | null;
-  actor?: { id: number; full_name?: string | null } | null;
+  type: string;
+  target_date: ISODateTime;
+  reason: string;
+  status: string;
+  reviewed_by?: number | null;
+  reviewed_at?: ISODateTime | null;
   created_at: ISODateTime;
+  updated_at: ISODateTime;
 }
 
 /** Browser beforeinstallprompt event payload. */

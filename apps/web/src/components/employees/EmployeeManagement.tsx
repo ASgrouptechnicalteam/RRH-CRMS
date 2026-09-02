@@ -104,7 +104,22 @@ export const EmployeeManagement: React.FC = () => {
   const [dossierEmp, setDossierEmp] = useState<Employee | null>(null);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [qrBadgeEmp, setQrBadgeEmp] = useState<Employee | null>(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
   const [resetPwdEmp, setResetPwdEmp] = useState<Employee | null>(null);
+
+  const handleViewQr = async (emp: Employee) => {
+    setQrBadgeEmp(emp);
+    setQrToken(null);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/employee-qr/${emp.id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setQrToken(data.qrData || data.signedToken || data.token);
+      }
+    } catch (error) {
+      console.error('Failed to load employee QR', error);
+    }
+  };
 
   // Employment Details
   // 20 Employment Form Fields State
@@ -420,6 +435,7 @@ export const EmployeeManagement: React.FC = () => {
             <option value="Digital Lead Operator">Digital Marketing</option>
             <option value="Project Manager">Operations / Project Manager</option>
             <option value="Finance">Finance</option>
+            <option value="Channel partner manager">Channel Partner Manager</option>
           </select>
         </div>
       </div>
@@ -504,7 +520,7 @@ export const EmployeeManagement: React.FC = () => {
                         </button>
 
                         <button
-                          onClick={() => setQrBadgeEmp(emp)}
+                          onClick={() => handleViewQr(emp)}
                           className="p-1.5 text-slate-600 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors border border-slate-200"
                           title="View & Print Visual 2D QR ID Badge"
                         >
@@ -731,8 +747,15 @@ export const EmployeeManagement: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 inline-block mb-3">
-              <QRCodeVisual value={qrBadgeEmp.employeeCode} size={200} label={qrBadgeEmp.employeeCode} />
+            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 inline-block mb-3 min-h-[240px] flex items-center justify-center">
+              {qrToken ? (
+                <QRCodeVisual value={qrToken} size={200} label={qrBadgeEmp.employeeCode} />
+              ) : (
+                <div className="flex flex-col items-center text-slate-400 gap-2">
+                  <div className="w-6 h-6 border-2 border-slate-300 border-t-navy-500 rounded-full animate-spin"></div>
+                  <span className="text-xs">Generating secure token...</span>
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-slate-500 font-medium mb-4">

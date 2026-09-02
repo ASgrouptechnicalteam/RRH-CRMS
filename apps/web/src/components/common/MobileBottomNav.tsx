@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { SIDEBAR_NAV_ITEMS, type SidebarNavItem } from './AppLayout';
 
 export const MobileBottomNav: React.FC = () => {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -13,7 +13,7 @@ export const MobileBottomNav: React.FC = () => {
   const userPermissions = user?.permissions ?? [];
   const isVisible = (item: SidebarNavItem): boolean =>
     (!item.requiredPermission || userPermissions.includes(item.requiredPermission)) &&
-    (!item.requiredAnyRole || item.requiredAnyRole.some((r) => user?.roles?.includes(r)));
+    (!item.requiredAnyRole || item.requiredAnyRole.includes(activeRole));
 
   // Drawer grouping logic
   type NavGroup = { groupItem: SidebarNavItem; children: SidebarNavItem[] };
@@ -214,6 +214,14 @@ export const MobileBottomNav: React.FC = () => {
             </button>
           );
         })}
+
+        <button
+          onClick={() => setIsDrawerOpen(true)}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all text-slate-400 hover:text-slate-200"
+        >
+          <Menu className="w-5 h-5" />
+          <span className="text-[9px] truncate w-full text-center">Menu</span>
+        </button>
 
       </div>
     </>

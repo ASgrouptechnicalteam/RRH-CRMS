@@ -8,7 +8,7 @@ import { CameraQRScanner } from '../common/CameraQRScanner';
 import { ScanResult } from '../../types';
 
 export const QRScannerModal: React.FC = () => {
-  const { user, fetchWithAuth, setAttendanceStamped } = useAuth();
+  const { user, fetchWithAuth, setAttendanceStamped, activeRole } = useAuth();
   const [qrData, setQrData] = useState<any | null>(null);
   const [stampResult, setStampResult] = useState<ScanResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +23,7 @@ export const QRScannerModal: React.FC = () => {
 
   useEffect(() => {
     // Attendance Exemption Guard (MD, HR Manager, Admin, Marketing Director or attendanceRequired = false)
-    const isManagementRole = user?.roles?.some((r) => ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR] as readonly string[]).includes(r));
+    const isManagementRole = ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR] as string[]).includes(activeRole);
     if (user?.attendanceRequired === false || isManagementRole) {
       setAttendanceStamped(true);
       return;

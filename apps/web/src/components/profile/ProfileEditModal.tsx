@@ -32,7 +32,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
     bank_branch: user?.bankBranch || '',
   });
 
-  const hasBankDetails = Boolean(user?.bankAccountNumber);
+
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +62,23 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
       updateUser({
         fullName: data.employee.full_name,
         phone: data.employee.phone,
+        secondaryPhone: data.employee.secondary_phone,
         whatsappNumber: data.employee.whatsapp_number,
         email: data.employee.email,
+        bloodGroup: data.employee.blood_group,
+        socialLinks: data.employee.social_links,
+        currentAddress: data.employee.current_address,
+        permanentAddress: data.employee.permanent_address,
+        emergencyContactName: data.employee.emergency_contact_name,
+        emergencyContactRelation: data.employee.emergency_contact_relation,
+        emergencyContactPhone: data.employee.emergency_contact_phone,
         profileImageUrl: data.employee.profile_image_url,
+        panNumber: data.employee.pan_number,
+        aadhaarNumber: data.employee.aadhaar_number,
+        bankName: data.employee.bank_name,
+        bankAccountNumber: data.employee.bank_account_number,
+        bankIfsc: data.employee.bank_ifsc,
+        bankBranch: data.employee.bank_branch,
       });
 
       onSuccess();
@@ -247,11 +261,6 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
             <div>
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                 <h3 className="text-sm font-bold text-slate-900">Bank Details</h3>
-                {hasBankDetails && (
-                  <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-2 py-1 rounded-md">
-                    Locked (Contact HR to change)
-                  </span>
-                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -261,8 +270,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
                     name="bank_name"
                     value={formData.bank_name}
                     onChange={handleChange}
-                    disabled={hasBankDetails}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none"
                   />
                 </div>
                 <div>
@@ -272,8 +280,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
                     name="bank_account_number"
                     value={formData.bank_account_number}
                     onChange={handleChange}
-                    disabled={hasBankDetails}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none"
                   />
                 </div>
                 <div>
@@ -283,8 +290,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
                     name="bank_ifsc"
                     value={formData.bank_ifsc}
                     onChange={handleChange}
-                    disabled={hasBankDetails}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none uppercase"
                   />
                 </div>
                 <div>
@@ -294,8 +300,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ onClose, onS
                     name="bank_branch"
                     value={formData.bank_branch}
                     onChange={handleChange}
-                    disabled={hasBankDetails}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-shadow outline-none"
                   />
                 </div>
               </div>

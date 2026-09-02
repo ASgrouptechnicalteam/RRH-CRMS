@@ -11,10 +11,27 @@ import {
   AlertCircle, 
   ShieldCheck, 
   Building,
-  ArrowRightLeft
+  ArrowRightLeft,
+  FileText
 } from 'lucide-react';
 import { StatCard, ListWidget, ListItem } from '../ui';
 import { UnassignedPropertiesWidget } from '../md/UnassignedPropertiesWidget';
+
+const ClockWidget: React.FC = () => {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <div className="bg-gradient-to-br from-navy-900 to-navy-950 rounded-3xl p-6 shadow-xl border border-navy-800 text-white flex flex-col justify-center h-full relative overflow-hidden">
+      <div className="absolute top-0 right-0 p-8 opacity-10"><Clock className="w-24 h-24" /></div>
+      <div className="text-sm font-semibold text-gold-400 mb-1 uppercase tracking-widest">{time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+      <div className="text-4xl font-black tracking-tight">{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+    </div>
+  );
+};
 
 export const MDExecutiveDashboard: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
@@ -62,7 +79,17 @@ export const MDExecutiveDashboard: React.FC = () => {
       id: 'att-ex',
       title: `${execMetrics.attendanceExceptionsCount} Attendance Exception${execMetrics.attendanceExceptionsCount === 1 ? '' : 's'}`,
       subtitle: 'Requires HR/Manager review',
-      icon: Clock
+      icon: Clock,
+      link: '/hr-attendance'
+    });
+  }
+  if (execMetrics?.pendingLeaveRequestsCount) {
+    operationalAlerts.push({
+      id: 'leave-req',
+      title: `${execMetrics.pendingLeaveRequestsCount} Pending Leave Request${execMetrics.pendingLeaveRequestsCount === 1 ? '' : 's'}`,
+      subtitle: 'Requires HR/MD approval',
+      icon: AlertCircle,
+      link: '/approvals'
     });
   }
   if (execMetrics?.pendingVerificationPropertiesCount) {
@@ -70,7 +97,8 @@ export const MDExecutiveDashboard: React.FC = () => {
       id: 'prop-ver',
       title: `${execMetrics.pendingVerificationPropertiesCount} Properties Pending Verification`,
       subtitle: 'Awaiting PM verification',
-      icon: Building
+      icon: Building,
+      link: '/properties'
     });
   }
   if (execMetrics?.pendingApprovalPropertiesCount) {
@@ -78,7 +106,8 @@ export const MDExecutiveDashboard: React.FC = () => {
       id: 'prop-app',
       title: `${execMetrics.pendingApprovalPropertiesCount} Properties Awaiting Approval`,
       subtitle: 'Requires Executive approval',
-      icon: ShieldCheck
+      icon: ShieldCheck,
+      link: '/properties'
     });
   }
 
@@ -101,53 +130,85 @@ export const MDExecutiveDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Top Banner Row: Clock and Quick Links */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2">
+        <div className="lg:col-span-1">
+          <ClockWidget />
+        </div>
+        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <button onClick={() => navigate('/approvals')} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:border-gold-500 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform"><ShieldCheck className="w-6 h-6" /></div>
+            <span className="text-xs font-bold text-slate-700 text-center leading-tight">HR<br/>Approvals</span>
+          </button>
+          <button onClick={() => navigate('/bookings')} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:border-gold-500 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform"><Award className="w-6 h-6" /></div>
+            <span className="text-xs font-bold text-slate-700 text-center leading-tight">Recent<br/>Bookings</span>
+          </button>
+          <button onClick={() => navigate('/hr-daily-reports')} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:border-gold-500 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform"><FileText className="w-6 h-6" /></div>
+            <span className="text-xs font-bold text-slate-700 text-center leading-tight">Daily<br/>Reports</span>
+          </button>
+          <button onClick={() => navigate('/hr-attendance')} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:border-gold-500 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform"><Clock className="w-6 h-6" /></div>
+            <span className="text-xs font-bold text-slate-700 text-center leading-tight">Live<br/>Attendance</span>
+          </button>
+        </div>
+      </div>
+
       {/* Primary KPI Row (CRM First) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Total Leads" 
-          value={isLoading ? '...' : totalLeads} 
-          icon={Users} 
+        <StatCard
+          label="Total Leads"
+          value={isLoading ? '...' : totalLeads}
+          icon={Users}
+          link="/leads"
         />
-        <StatCard 
-          label="Bookings" 
-          value={isLoading ? '...' : bookings} 
-          icon={Award} 
+        <StatCard
+          label="Bookings"
+          value={isLoading ? '...' : bookings}
+          icon={Award}
+          link="/bookings"
         />
-        <StatCard 
-          label="Sales Value" 
-          value={isLoading ? '...' : salesValue} 
-          icon={IndianRupee} 
+        <StatCard
+          label="Sales Value"
+          value={isLoading ? '...' : salesValue}
+          icon={IndianRupee}
+          link="/finance"
         />
-        <StatCard 
-          label="Due Payments" 
-          value={isLoading ? '...' : duePayments} 
-          icon={Clock} 
+        <StatCard
+          label="Due Payments"
+          value={isLoading ? '...' : duePayments}
+          icon={Clock}
+          link="/finance"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* CRM Action Widgets */}
-          <ListWidget 
+          <ListWidget
             title="Reassignment Escalations"
             items={reassignmentEscalations}
             emptyStateMessage="No escalations pending your review."
+            viewAllLink="/leads"
           />
           <UnassignedPropertiesWidget />
         </div>
 
         <div className="space-y-6">
           {/* CRM Alerts */}
-          <ListWidget 
+          <ListWidget
             title="CRM Action Alerts"
             items={crmAlerts}
             emptyStateMessage="No CRM alerts right now."
+            viewAllLink="/properties"
           />
           {/* Operational Alerts (Lower Priority) */}
-          <ListWidget 
+          <ListWidget
             title="Operational Alerts"
             items={operationalAlerts}
             emptyStateMessage="No operational alerts right now."
+            viewAllLink="/approvals"
           />
         </div>
       </div>

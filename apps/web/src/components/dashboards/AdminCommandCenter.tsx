@@ -123,6 +123,7 @@ export const AdminCommandCenter: React.FC = () => {
 
   useEffect(() => {
     fetchTelemetry();
+
   }, [fetchTelemetry]);
 
   const dbStatus = metrics?.databaseStatus;
@@ -133,7 +134,8 @@ export const AdminCommandCenter: React.FC = () => {
     id: alert.id,
     title: alert.new_value || alert.action,
     subtitle: `${new Date(alert.created_at).toLocaleString()} · Actor #${alert.actor_id} ${alert.entity_type ? `· ${alert.entity_type} #${alert.entity_id}` : ''}`,
-    icon: ShieldAlert
+    icon: ShieldAlert,
+    link: '/system-control'
   }));
 
   const auditItems: ListItem[] = auditLogs.slice(0, 30).map(log => ({
@@ -207,31 +209,33 @@ export const AdminCommandCenter: React.FC = () => {
 
       {/* KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Database" value={dbStatus || 'UNKNOWN'} icon={Database} />
-        <StatCard label="Total Users" value={metrics?.totalUsers || '—'} icon={Users} />
+        <StatCard label="Database" value={dbStatus || 'UNKNOWN'} icon={Database} link="/system-control" />
+        <StatCard label="Total Users" value={metrics?.totalUsers || '—'} icon={Users} link="/employees" />
         <StatCard label="Active Sessions" value={metrics?.activeSessions || '—'} icon={ActivitySquare} />
-        <StatCard label="Total Leads" value={metrics?.totalLeads || '—'} icon={Target} />
-        <StatCard label="Audit Events" value={metrics?.totalAuditEvents || '—'} icon={ScrollText} />
+        <StatCard label="Total Leads" value={metrics?.totalLeads || '—'} icon={Target} link="/leads" />
+        <StatCard label="Audit Events" value={metrics?.totalAuditEvents || '—'} icon={ScrollText} link="/system-control" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Audit Activity */}
           <div className="h-full max-h-[600px] flex flex-col">
-            <ListWidget 
+            <ListWidget
               title="Recent Audit Activity"
               items={auditError ? [] : auditItems}
               emptyStateMessage={auditError ? 'Audit trail is currently unavailable.' : 'No audit events recorded.'}
+              viewAllLink="/system-control"
             />
           </div>
         </div>
 
         <div className="space-y-6">
           {/* Security Alerts */}
-          <ListWidget 
+          <ListWidget
             title="Security / Incidents"
             items={alertsError ? [] : securityItems}
             emptyStateMessage={alertsError ? 'Security alerts feed unavailable.' : 'System secure — no critical security anomalies detected.'}
+            viewAllLink="/system-control"
           />
           
           {/* High-Security Controls Link */}

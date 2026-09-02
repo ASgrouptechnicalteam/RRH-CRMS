@@ -28,9 +28,24 @@ export const ApprovalsDashboard: React.FC = () => {
     }
   };
 
-  const leaves = queue.filter(q => q.action === 'SUBMIT_LEAVE_PROPOSAL');
-  const lates = queue.filter(q => q.action === 'SUBMIT_LATE_PROPOSAL');
-  const earlys = queue.filter(q => q.action === 'SUBMIT_EARLY_LOGOUT');
+  const handleAction = async (id: number, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/proposals/${id}/${action}`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        fetchQueue();
+      } else {
+        alert('Failed to update proposal');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const leaves = queue.filter(q => q.type === 'LEAVE');
+  const lates = queue.filter(q => q.type === 'LATE');
+  const earlys = queue.filter(q => q.type === 'EARLY_LOGOUT'); // Or whatever type
 
   const renderQueueSection = (title: string, items: ProposalItem[], icon: React.ReactNode, emptyMsg: string) => (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -49,30 +64,21 @@ export const ApprovalsDashboard: React.FC = () => {
               <div key={item.id} className="py-4 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800 text-sm">Employee #{item.actor_id}</span>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {item.employee?.full_name || 'Unknown Employee'} ({item.employee?.employee_code || '---'})
+                    </span>
                     <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-mono">
-                      {new Date(item.created_at).toLocaleDateString()}
+                      Target: {new Date(item.target_date).toLocaleDateString()}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-3 text-sm text-slate-600">
-                    {item.new_value?.start_date && (
-                      <span className="font-medium text-navy-600">Start: {item.new_value.start_date}</span>
-                    )}
-                    {item.new_value?.end_date && (
-                      <span className="font-medium text-navy-600">End: {item.new_value.end_date}</span>
-                    )}
-                    {item.new_value?.expected_time && (
-                      <span className="font-medium text-navy-600">Time: {item.new_value.expected_time}</span>
-                    )}
-                  </div>
-                  <p className="text-slate-600 mt-1 text-sm italic">"{item.new_value?.reason}"</p>
+                  <p className="text-slate-600 mt-2 text-sm font-medium">"{item.reason}"</p>
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium">
+                  <button onClick={() => handleAction(item.id, 'approve')} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium">
                     <CheckCircle className="w-4 h-4" />
                     Approve
                   </button>
-                  <button className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
+                  <button onClick={() => handleAction(item.id, 'reject')} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
                     <XCircle className="w-4 h-4" />
                     Reject
                   </button>

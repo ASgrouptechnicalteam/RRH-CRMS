@@ -1,33 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { BeforeInstallPromptEvent } from '../../types';
 import { Download, X, Smartphone, Sparkles } from 'lucide-react';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const PWAInstallPrompt: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const { canInstall, install, dismiss } = usePWAInstall();
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsVisible(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsVisible(false);
-    }
-    setDeferredPrompt(null);
-  };
-
-  if (!isVisible) return null;
+  if (!canInstall) return null;
 
   return (
     <div className="fixed bottom-16 md:bottom-6 right-4 left-4 md:left-auto md:w-96 z-50 bg-gradient-to-r from-slate-900 via-slate-800 to-navy-950 text-white rounded-3xl p-4 shadow-2xl border border-navy-500/30 flex items-center justify-between gap-3 backdrop-blur-xl animate-fade-in">
@@ -46,14 +23,14 @@ export const PWAInstallPrompt: React.FC = () => {
 
       <div className="flex items-center gap-1.5 shrink-0">
         <button
-          onClick={handleInstallClick}
+          onClick={install}
           className="px-3 py-1.5 bg-navy-500 hover:bg-navy-400 text-navy-950 font-extrabold text-[11px] rounded-xl shadow transition-all flex items-center gap-1"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Install</span>
         </button>
         <button
-          onClick={() => setIsVisible(false)}
+          onClick={dismiss}
           className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-white/10"
         >
           <X className="w-4 h-4" />

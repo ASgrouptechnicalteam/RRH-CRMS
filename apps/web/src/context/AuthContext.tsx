@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 
 export interface UserProfile {
   id: number;
@@ -40,7 +41,9 @@ interface AuthContextType {
   authStatus: AuthStatus;
   firstLoginDone: boolean;
   attendanceStamped: boolean;
-  login: (userData: UserProfile, token: string) => void;
+  activeRole: string;
+  setActiveRole: (role: string) => void;
+  login: (userData: UserProfile, token: string, refreshToken?: string) => void;
   logout: () => void;
   setFirstLoginDone: (done: boolean) => void;
   setAttendanceStamped: (stamped: boolean) => void;
@@ -59,14 +62,23 @@ let refreshPromise: Promise<RefreshResult> | null = null;
 
 const performRefresh = async (): Promise<RefreshResult> => {
   try {
+    const refreshToken = await idbGet('rrh_refresh_token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (refreshToken) {
+      headers['x-refresh-token'] = refreshToken;
+    }
+
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers
     });
     
     if (res.ok) {
       const data = await res.json();
+      if (data.refreshToken) {
+        await idbSet('rrh_refresh_token', data.refreshToken);
+      }
       return { success: true, token: data.accessToken };
     } else if (res.status === 401 || res.status === 403) {
       return { success: false, reason: 'unauthorized' };
@@ -106,9 +118,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Boolean(user.firstLoginDone);
   });
 
+  const [activeRole, setActiveRoleState] = useState<string>(() => {
+    const savedUser = localStorage.getItem('rrh_user');
+    const u = savedUser ? JSON.parse(savedUser) : null;
+    const savedRole = localStorage.getItem('rrh_active_role');
+    if (savedRole && u?.roles?.includes(savedRole)) return savedRole;
+    return u?.roles?.[0] || 'Employee';
+  });
+
+  const setActiveRole = (role: string) => {
+    setActiveRoleState(role);
+    localStorage.setItem('rrh_active_role', role);
+  };
+
   const [attendanceStamped, setAttendanceStamped] = useState<boolean>(false);
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     setAccessToken(null);
     setAttendanceStamped(false);
@@ -116,8 +141,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Ensure no token persistence remains
     localStorage.removeItem('rrh_token');
     setAuthStatus('unauthenticated');
+    
+    const refreshToken = await idbGet('rrh_refresh_token').catch(() => null);
+    idbDel('rrh_refresh_token').catch(() => {});
+    
+    const headers: Record<string, string> = {};
+    if (refreshToken) {
+      headers['x-refresh-token'] = refreshToken;
+    }
+    
     // Best effort background request to destroy backend session explicitly
-    fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers }).catch(() => {});
   };
 
   useEffect(() => {
@@ -134,6 +168,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
         if (result.success) {
           setAccessToken(result.token);
+          
+          try {
+            const res = await fetch(`${API_BASE_URL}/auth/me`, {
+              headers: { Authorization: `Bearer ${result.token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.user) {
+                setUser(data.user);
+                localStorage.setItem('rrh_user', JSON.stringify(data.user));
+                
+                const currentActiveRole = localStorage.getItem('rrh_active_role');
+                if (!currentActiveRole || !data.user.roles.includes(currentActiveRole)) {
+                  const newRole = data.user.roles?.[0] || 'Employee';
+                  setActiveRoleState(newRole);
+                  localStorage.setItem('rrh_active_role', newRole);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to sync latest user profile on boot', e);
+          }
+
           setAuthStatus('authenticated');
         } else if (result.reason === 'unauthorized') {
           logout();
@@ -156,9 +213,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [accessToken]);
 
-  const login = (userData: UserProfile, token: string) => {
+  const login = (userData: UserProfile, token: string, refreshToken?: string) => {
     setUser(userData);
     setAccessToken(token);
+    if (refreshToken) {
+      idbSet('rrh_refresh_token', refreshToken).catch(console.error);
+    }
+    const savedRole = localStorage.getItem('rrh_active_role');
+    if (savedRole && userData.roles?.includes(savedRole)) {
+      setActiveRoleState(savedRole);
+    } else {
+      const initialRole = userData.roles?.[0] || 'Employee';
+      setActiveRoleState(initialRole);
+      localStorage.setItem('rrh_active_role', initialRole);
+    }
     const isDone = Boolean(userData.firstLoginDone);
     setFirstLoginDoneState(isDone);
     localStorage.setItem('rrh_user', JSON.stringify({ ...userData, firstLoginDone: isDone }));
@@ -216,6 +284,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authStatus,
         firstLoginDone: firstLoginDone,
         attendanceStamped,
+        activeRole,
+        setActiveRole,
         login,
         logout,
         setFirstLoginDone,

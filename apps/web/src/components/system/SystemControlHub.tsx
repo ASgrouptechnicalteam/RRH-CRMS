@@ -11,11 +11,11 @@ import { API_BASE_URL } from '../../config';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const SystemControlHub: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const { showToast , showError } = useToast();
   
-  const isMD = user?.roles?.includes(Roles.MD);
-  const isAdmin = user?.roles?.includes(Roles.ADMIN);
+  const isMD = activeRole === Roles.MD;
+  const isAdmin = activeRole === Roles.ADMIN;
 
   const [activeTab, setActiveTab] = useState<'roles' | 'webhooks' | 'integrations' | 'advanced'>('integrations');
 

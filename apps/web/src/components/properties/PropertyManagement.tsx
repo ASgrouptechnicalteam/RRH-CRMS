@@ -119,7 +119,7 @@ const PropertyPipelineStepper: React.FC<{ status: Property['status'] }> = ({ sta
 };
 
 export const PropertyManagement: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const { showToast , showError } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [brandTab, setBrandTab] = useState<'ALL' | 'SONTHILLU' | 'RADHA_REAL_HOMES'>('ALL');
@@ -158,9 +158,9 @@ export const PropertyManagement: React.FC = () => {
   const [dmExecutiveId, setDmExecutiveId] = useState('');
   const [dmExecutives, setDmExecutives] = useState<PmListItem[]>([]);
 
-  const isPM = user?.roles?.some((r) => ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
-  const isDM = user?.roles?.some((r) => ([Roles.DIGITAL_LEAD_OPERATOR, Roles.DIGITAL_MARKETING_HEAD, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
-  const isMD = user?.roles?.some((r) => ([Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
+  const isPM = ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
+  const isDM = ([Roles.DIGITAL_LEAD_OPERATOR, Roles.DIGITAL_MARKETING_HEAD, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
+  const isMD = ([Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
 
   const fetchProperties = async () => {
     setIsLoading(true);

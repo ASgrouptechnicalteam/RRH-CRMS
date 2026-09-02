@@ -60,8 +60,8 @@ Under Hostinger Node.js Application settings, set the environment variables:
 ```env
 PORT=3000
 NODE_ENV=production
-DATABASE_URL="mysql://u988844918_crms:Hostinger%402026@82.25.121.145:3306/u988844918_crms"
-JWT_SECRET="RRH_SONTHILLU_ENTERPRISE_JWT_SECRET_2026_PROD"
+DATABASE_URL="mysql://username:REDACTED_AND_ROTATED@82.25.121.145:3306/u988844918_crms"
+JWT_SECRET="786ada7e49163e8a92e64549df02b6326e17ca7cfd5d285797c71ce18f4e33d3"
 APP_URL="https://your-domain.com"
 ```
 

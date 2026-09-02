@@ -12,8 +12,8 @@ interface DailyReportProps {
 }
 
 export const DailyReportModal: React.FC<DailyReportProps> = ({ isOpen = true, onClose, onSuccess, mode = 'modal' }) => {
-  const { user, fetchWithAuth } = useAuth();
-  const roleName = user?.roles[0] || 'Agent';
+  const { user, fetchWithAuth, activeRole } = useAuth();
+  const roleName = activeRole || user?.roles[0] || 'Agent';
 
   // Dynamic Form State
   const [formSchema, setFormSchema] = useState<FormSchemaField[]>([]);
@@ -43,7 +43,7 @@ export const DailyReportModal: React.FC<DailyReportProps> = ({ isOpen = true, on
   // Fetch active target (schema) on modal open
   useEffect(() => {
     if (isOpen) {
-      fetchWithAuth(`${API_BASE_URL}/targets/my-target`)
+      fetchWithAuth(`${API_BASE_URL}/targets/my-target?role=${roleName}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.target && data.target.form_schema_json) {

@@ -20,7 +20,7 @@ export const AppLayout: React.FC<{
   showRightRail?: boolean;
   title?: string;
 }> = ({ children, showRightRail = false, title }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, activeRole, setActiveRole } = useAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -45,12 +45,11 @@ export const AppLayout: React.FC<{
   };
 
   const initials = getInitials(user?.fullName, user?.employeeCode);
-  const roleLabel = user?.roles?.[0] || 'Employee';
 
   return (
     <div className="app-shell h-[100dvh] w-full flex flex-col overflow-hidden bg-canvas">
       {/* Top Utility Bar */}
-      <header className="utility-bar shrink-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+      <header className="utility-bar shrink-0 bg-white dark:bg-slate-800 border-b border-neutral-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img src="/logo.svg" alt="RRH-CRMS Logo" className="h-8 w-auto hidden sm:block" />
           <span className="text-sm font-black tracking-tight text-gold whitespace-nowrap sm:hidden md:inline-block">RRH-CRMS</span>
@@ -73,43 +72,48 @@ export const AppLayout: React.FC<{
               aria-label="Open user menu"
               aria-expanded={isProfileMenuOpen}
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2 focus:ring-navy"
+              className="flex items-center gap-2 p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-navy"
             >
               <span className="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center font-medium text-sm shadow-sm">
                 {initials}
               </span>
             </button>
             {isProfileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-neutral-100 py-2 z-50">
-                <div className="px-4 py-3 border-b border-neutral-100">
-                  <p className="text-sm font-semibold text-navy truncate">{user?.fullName || 'Unknown User'}</p>
-                  <p className="text-xs text-neutral-500 capitalize truncate">{roleLabel}</p>
-                  <p className="text-[10px] text-neutral-400 mt-1 uppercase tracking-wider">{user?.employeeCode}</p>
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-neutral-100 dark:border-slate-700 py-2 z-50">
+                <div className="px-4 py-3 border-b border-neutral-100 dark:border-slate-700">
+                  <p className="text-sm font-semibold text-navy dark:text-navy-300 truncate">{user?.fullName || 'Unknown User'}</p>
+                  {user?.roles && user.roles.length > 1 ? (
+                    <select
+                      value={activeRole}
+                      onChange={(e) => setActiveRole(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 block w-full text-xs text-neutral-500 dark:text-slate-400 capitalize bg-neutral-50 dark:bg-slate-700 border border-neutral-200 dark:border-slate-600 rounded px-2 py-1 outline-none cursor-pointer"
+                    >
+                      {user.roles.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  ) : (
+                    <p className="text-xs text-neutral-500 dark:text-slate-400 capitalize truncate">{activeRole}</p>
+                  )}
+                  <p className="text-[10px] text-neutral-400 dark:text-slate-500 mt-1 uppercase tracking-wider">{user?.employeeCode}</p>
                 </div>
                 <div className="py-1">
-                  <NavLink to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
+                  <NavLink to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 dark:text-slate-300 hover:bg-neutral-50 dark:hover:bg-slate-700">
                     Profile
                   </NavLink>
-                  <NavLink to="/settings" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
+                  <NavLink to="/settings" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 dark:text-slate-300 hover:bg-neutral-50 dark:hover:bg-slate-700">
                     Settings
                   </NavLink>
-                  <button onClick={() => { setIsProfileMenuOpen(false); window.dispatchEvent(new Event('restart-product-tour')); }} className="w-full text-left px-4 py-2 text-sm text-navy-600 hover:bg-navy-50">
+                  <button onClick={() => { setIsProfileMenuOpen(false); window.dispatchEvent(new Event('restart-product-tour')); }} className="w-full text-left px-4 py-2 text-sm text-navy-600 dark:text-navy-300 hover:bg-navy-50 dark:hover:bg-slate-700">
                     Take Product Tour
                   </button>
-                  <button onClick={() => { setIsProfileMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-red-50">
+                  <button onClick={() => { setIsProfileMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-red-50 dark:hover:bg-red-900/20">
                     Logout
                   </button>
                 </div>
               </div>
             )}
           </div>
-          <button
-            onClick={() => window.dispatchEvent(new Event('open-mobile-drawer'))}
-            aria-label="Open mobile navigation"
-            className="md:hidden p-1 rounded-full hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2 focus:ring-navy ml-1"
-          >
-            <Menu className="w-6 h-6 text-slate-700" />
-          </button>
+          <div className="md:hidden w-8" /> {/* Placeholder to balance the layout since the menu button moved to bottom nav */}
         </div>
       </header>
 
@@ -124,14 +128,14 @@ export const AppLayout: React.FC<{
         </aside>
 
         {/* Main Content Canvas */}
-        <main className="main-content flex-1 min-w-0 h-full overflow-y-auto p-8 relative">
+        <main className="main-content flex-1 min-w-0 h-full overflow-y-auto p-8 relative pb-20 md:pb-8">
           {children}
         </main>
 
         {/* Optional Right Rail */}
         {showRightRail && (
           <div
-            className="rail-right bg-white border-l border-neutral-200 p-6 shrink-0 h-full overflow-y-auto"
+            className="rail-right bg-white dark:bg-slate-800 border-l border-neutral-200 dark:border-slate-700 p-6 shrink-0 h-full overflow-y-auto"
             style={{ width: '320px' }}
           >
             <ContextualRail />
@@ -157,25 +161,15 @@ type SidebarNavItem = {
 };
 
 const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
-  // HOME
-  { id: 'group-workspace', label: 'HOME', group: true, icon: undefined },
+  // CORE APP (Un-grouped)
   { id: 'command-center', label: 'Dashboard', icon: Settings2, path: '/dashboard' },
-
-  // SALES
-  { id: 'group-customer-sales', label: 'SALES', group: true, icon: undefined },
   { id: 'leads-clients', label: 'Leads', icon: Users, path: '/leads-clients' },
   { id: 'customers', label: 'Customers', path: '/customers', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
   { id: 'site-visits', label: 'Site Visits', icon: CalendarCheck, path: '/site-visits' },
   { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
-
-  // PROPERTY
-  { id: 'group-property', label: 'PROPERTY', group: true, icon: undefined },
   { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties' },
   { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects' },
-
-  // BOOKINGS
-  { id: 'group-transactions', label: 'BOOKINGS', group: true, icon: FileCheck },
-  { id: 'bookings', label: 'Bookings', icon: undefined, path: '/bookings', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
+  { id: 'bookings', label: 'Bookings', icon: FileCheck, path: '/bookings', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
 
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
@@ -211,31 +205,33 @@ export { SIDEBAR_NAV_ITEMS };
 export type { SidebarNavItem };
 
 const SidebarNav: React.FC = () => {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const location = useLocation();
   const userPermissions = user?.permissions ?? [];
   const isVisible = (item: SidebarNavItem): boolean =>
     (!item.requiredPermission || userPermissions.includes(item.requiredPermission)) &&
-    (!item.requiredAnyRole || item.requiredAnyRole.some((r) => user?.roles?.includes(r)));
+    (!item.requiredAnyRole || item.requiredAnyRole.includes(activeRole));
 
-  type NavGroup = { groupItem: SidebarNavItem; children: SidebarNavItem[] };
-  const groups: NavGroup[] = [];
-  let currentGroup: NavGroup | null = null;
+  type NavNode = { isGroup: boolean; groupItem?: SidebarNavItem; children?: SidebarNavItem[]; item?: SidebarNavItem };
+  const nodes: NavNode[] = [];
+  let currentGroup: { groupItem: SidebarNavItem; children: SidebarNavItem[] } | null = null;
   
   for (const entry of SIDEBAR_NAV_ITEMS) {
     if (entry.group) {
       if (currentGroup && currentGroup.children.length > 0) {
-        groups.push(currentGroup);
+        nodes.push({ isGroup: true, groupItem: currentGroup.groupItem, children: currentGroup.children });
       }
       currentGroup = { groupItem: entry, children: [] };
     } else if (isVisible(entry)) {
       if (currentGroup) {
         currentGroup.children.push(entry);
+      } else {
+        nodes.push({ isGroup: false, item: entry });
       }
     }
   }
   if (currentGroup && currentGroup.children.length > 0) {
-    groups.push(currentGroup);
+    nodes.push({ isGroup: true, groupItem: currentGroup.groupItem, children: currentGroup.children });
   }
 
   const storageKey = `rrh_sidebar_state_${user?.id || 'default'}`;
@@ -250,11 +246,13 @@ const SidebarNav: React.FC = () => {
   useEffect(() => {
     let shouldUpdate = false;
     const newExpanded = { ...expandedGroups };
-    for (const g of groups) {
-      if (g.children.some(child => child.path && location.pathname.startsWith(child.path))) {
-        if (!newExpanded[g.groupItem.id]) {
-          newExpanded[g.groupItem.id] = true;
-          shouldUpdate = true;
+    for (const node of nodes) {
+      if (node.isGroup && node.children) {
+        if (node.children.some(child => child.path && location.pathname.startsWith(child.path))) {
+          if (!newExpanded[node.groupItem!.id]) {
+            newExpanded[node.groupItem!.id] = true;
+            shouldUpdate = true;
+          }
         }
       }
     }
@@ -265,7 +263,7 @@ const SidebarNav: React.FC = () => {
         localStorage.setItem(storageKey, JSON.stringify(newExpanded));
       }
     }
-  }, [location.pathname, groups, storageKey, user?.id]);
+  }, [location.pathname, nodes, storageKey, user?.id]);
 
   const toggleGroup = (groupId: string) => {
     const newExpanded = { ...expandedGroups, [groupId]: !expandedGroups[groupId] };
@@ -278,17 +276,36 @@ const SidebarNav: React.FC = () => {
 
   return (
     <nav className="space-y-4 pb-12" aria-label="Main navigation">
-      {groups.map((group) => {
-        const isExpanded = expandedGroups[group.groupItem.id];
+      {nodes.map((node, idx) => {
+        if (!node.isGroup && node.item) {
+          const item = node.item;
+          return (
+            <NavLink
+              key={item.id}
+              to={item.path || '/'}
+              data-tour={`sidebar-${item.id}`}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
+                  isActive ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-800 hover:text-white'
+                }`
+              }
+            >
+              {item.icon && <item.icon className="w-4 h-4 shrink-0 opacity-80" />}
+              <span className="truncate">{item.label}</span>
+            </NavLink>
+          );
+        }
+
+        const isExpanded = expandedGroups[node.groupItem!.id];
         return (
-          <div key={group.groupItem.id} className="space-y-1">
+          <div key={node.groupItem!.id} className="space-y-1">
             <button
-              onClick={() => toggleGroup(group.groupItem.id)}
+              onClick={() => toggleGroup(node.groupItem!.id)}
               aria-expanded={isExpanded}
-              aria-controls={`group-${group.groupItem.id}`}
+              aria-controls={`group-${node.groupItem!.id}`}
               className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors rounded-md hover:bg-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-navy-900"
             >
-              <span>{group.groupItem.label}</span>
+              <span>{node.groupItem!.label}</span>
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4 shrink-0" aria-label="Collapse group" />
               ) : (
@@ -296,8 +313,8 @@ const SidebarNav: React.FC = () => {
               )}
             </button>
             {isExpanded && (
-              <div id={`group-${group.groupItem.id}`} className="space-y-1 mt-1">
-                {group.children.map((item) => (
+              <div id={`group-${node.groupItem!.id}`} className="space-y-1 mt-1">
+                {node.children!.map((item) => (
                   <NavLink
                     key={item.id}
                     to={item.path || '/'}
@@ -308,9 +325,7 @@ const SidebarNav: React.FC = () => {
                       }`
                     }
                   >
-                    {item.icon ? (
-                      <item.icon className="w-4 h-4 shrink-0 opacity-80" />
-                    ) : null}
+                    {item.icon && <item.icon className="w-4 h-4 shrink-0 opacity-80" />}
                     <span className="truncate">{item.label}</span>
                   </NavLink>
                 ))}

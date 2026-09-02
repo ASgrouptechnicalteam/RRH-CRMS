@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
-import { Moon, Sun, Monitor, Bell, BellOff, Navigation, User, Lock, LogOut } from 'lucide-react';
+import { Moon, Sun, Monitor, Bell, BellOff, Navigation, User, Lock, LogOut, Smartphone, Download, Volume2, Check } from 'lucide-react';
+import { playNotificationSound, getStoredTone, setStoredTone, NotificationTone } from '../../hooks/useNotificationSound';
+import { useTheme, ThemeMode } from '../../hooks/useTheme';
 
 export const UserSettings: React.FC = () => {
   const { user, logout } = useAuth();
-  const { isSupported, permission, isSubscribing, subscribe, unsubscribe } = usePushNotifications();
+  const { isSupported, permission, isActive, isEnabled, isSubscribing, subscribe, unsubscribe } = usePushNotifications();
+  const { canInstall, install } = usePWAInstall();
   
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
+  const { theme, setTheme, isDark } = useTheme();
+  const [notifTone, setNotifTone] = useState<NotificationTone>(getStoredTone);
+
+  // Selecting a tone saves it AND plays it immediately (like alarm ringtone picker)
+  const handleToneChange = (tone: NotificationTone) => {
+    setNotifTone(tone);
+    setStoredTone(tone);
+    playNotificationSound(tone); // play immediately on selection
+  };
   
   const persistKey = `rrh_sidebar_persist_off_${user?.id || 'default'}`;
   const [rememberNav, setRememberNav] = useState(() => {
@@ -28,170 +40,248 @@ export const UserSettings: React.FC = () => {
   }, [rememberNav, user?.id]);
 
   const handleNotificationsToggle = async () => {
-    if (permission === 'granted') {
-      await unsubscribe();
-      // To fully reflect "off" in UI without reloading, we'd need a local state, but since it's browser level, 
-      // they might have to revoke permission in browser. We'll just call unsubscribe.
-      alert('Unsubscribed from push notifications. You may need to disable them in your browser settings to prevent future prompts.');
-    } else if (permission === 'default' || permission === 'denied') {
-      await subscribe();
+    if (isActive || isEnabled) {
+      await unsubscribe(); // sets isEnabled = false in hook
+    } else {
+      await subscribe(); // requests permission + sets isEnabled = true
     }
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Personal Settings</h1>
-        <p className="text-slate-500">Manage your individual application preferences.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Personal Settings</h1>
+        <p className="text-slate-500 dark:text-slate-400">Manage your individual application preferences.</p>
       </div>
 
       {/* APPEARANCE */}
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-800">Appearance</h2>
-          <p className="text-sm text-slate-500">Customize the application theme.</p>
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
+        <div className="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Appearance</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Choose how the application looks on your device.</p>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          <button 
-            onClick={() => setTheme('light')}
-            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-colors ${theme === 'light' ? 'border-navy-600 bg-navy-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
-          >
-            <Sun className={`w-8 h-8 mb-2 ${theme === 'light' ? 'text-navy-700' : 'text-slate-400'}`} />
-            <span className={`font-semibold ${theme === 'light' ? 'text-navy-800' : 'text-slate-600'}`}>Light</span>
-          </button>
-          
-          <button 
-            disabled
-            className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed"
-          >
-            <Moon className="w-8 h-8 mb-2 text-slate-400" />
-            <span className="font-semibold text-slate-600">Dark (Coming Soon)</span>
-          </button>
-          
-          <button 
-            disabled
-            className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed"
-          >
-            <Monitor className="w-8 h-8 mb-2 text-slate-400" />
-            <span className="font-semibold text-slate-600">System (Coming Soon)</span>
-          </button>
+
+        <div className="grid grid-cols-3 gap-3 pt-2">
+          {([
+            { mode: 'light' as ThemeMode, icon: Sun, label: 'Light', preview: 'bg-white border-slate-200' },
+            { mode: 'dark' as ThemeMode, icon: Moon, label: 'Dark', preview: 'bg-slate-900 border-slate-700' },
+            { mode: 'system' as ThemeMode, icon: Monitor, label: 'System', preview: 'bg-gradient-to-br from-white to-slate-800 border-slate-300' },
+          ]).map(({ mode, icon: Icon, label, preview }) => {
+            const isSelected = theme === mode;
+            return (
+              <button
+                key={mode}
+                onClick={() => setTheme(mode)}
+                className={`relative flex flex-col items-center justify-center gap-2.5 p-4 rounded-2xl border-2 transition-all ${
+                  isSelected
+                    ? 'border-navy-600 bg-navy-50 dark:bg-navy-900/40 dark:border-navy-400 shadow-md'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                {/* Mini theme preview swatch */}
+                <div className={`w-full h-8 rounded-lg border ${preview} mb-1 flex items-center justify-center overflow-hidden`}>
+                  <div className="w-2/3 h-2 rounded bg-current opacity-20" />
+                </div>
+                <Icon className={`w-5 h-5 ${isSelected ? 'text-navy-700 dark:text-navy-300' : 'text-slate-400'}`} />
+                <span className={`text-xs font-bold ${isSelected ? 'text-navy-800 dark:text-navy-200' : 'text-slate-600 dark:text-slate-400'}`}>{label}</span>
+                {isSelected && (
+                  <span className="absolute top-2 right-2 w-5 h-5 bg-navy-600 rounded-full flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+
+        {theme === 'system' && (
+          <p className="text-xs text-slate-400 dark:text-slate-500 text-center pt-1">
+            Currently showing <strong>{isDark ? 'dark' : 'light'}</strong> based on your device preference.
+          </p>
+        )}
       </section>
 
       {/* NOTIFICATIONS */}
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-800">Notifications</h2>
-          <p className="text-sm text-slate-500">Manage real-time alerts and push notifications.</p>
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-5">
+        <div className="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Notifications</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Manage real-time alerts, push notifications, and alert sounds.</p>
         </div>
-        
-        <div className="flex items-center justify-between pt-2">
+
+        {/* Push Toggle */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${permission === 'granted' ? 'bg-navy-100 text-navy-700' : 'bg-slate-100 text-slate-500'}`}>
-              {permission === 'granted' ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+            <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-navy-100 text-navy-700' : 'bg-slate-100 text-slate-500'}`}>
+              {isActive ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
             </div>
             <div>
-              <p className="font-semibold text-slate-800">Push Notifications</p>
-              <p className="text-xs text-slate-500">
-                {!isSupported ? 'Not supported in this browser' : 
-                  permission === 'denied' ? 'Blocked by browser settings' : 
-                  'Receive real-time lead and task alerts'}
+              <p className="font-semibold text-slate-800 dark:text-slate-100">Push Notifications</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {!isSupported
+                  ? 'Not supported in this browser'
+                  : permission === 'denied'
+                  ? 'Blocked — please enable in browser settings'
+                  : isActive
+                  ? 'On — you will receive real-time alerts'
+                  : 'Off — tap to enable'}
               </p>
             </div>
           </div>
-          
           <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
-              checked={permission === 'granted'}
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isActive}
               disabled={!isSupported || permission === 'denied' || isSubscribing}
               onChange={handleNotificationsToggle}
             />
             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-navy-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-navy-600 disabled:opacity-50"></div>
           </label>
         </div>
+
+        {/* Sound Selector — only visible when notifications are ON */}
+        {isActive && (
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Volume2 className="w-4 h-4 text-navy-600 dark:text-navy-300" />
+              <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Alert Sound</p>
+              <span className="text-xs text-slate-400 dark:text-slate-500 ml-1">Tap to select</span>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {(['chime', 'ding', 'alert', 'pop', 'none'] as NotificationTone[]).map((tone) => (
+                <button
+                  key={tone}
+                  onClick={() => handleToneChange(tone)}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-xl border-2 transition-all ${
+                    notifTone === tone
+                      ? 'border-navy-600 bg-navy-50 dark:bg-navy-900/40 text-navy-800 dark:text-navy-200 shadow-sm'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+                >
+                  <span className="text-lg">
+                    {tone === 'none' ? '🔕' :
+                     tone === 'chime' ? '🎵' :
+                     tone === 'ding' ? '🔔' :
+                     tone === 'alert' ? '⚡' : '💫'}
+                  </span>
+                  <span className="text-[10px] font-bold capitalize">{tone}</span>
+                  {notifTone === tone && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-navy-600 dark:bg-navy-400" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* NAVIGATION */}
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-800">Navigation</h2>
-          <p className="text-sm text-slate-500">Configure how the application menus behave.</p>
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
+        <div className="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Navigation</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Configure how the application menus behave.</p>
         </div>
-        
+
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-navy-50 text-navy-700">
+            <div className="p-2 rounded-lg bg-navy-50 dark:bg-navy-900/40 text-navy-700 dark:text-navy-300">
               <Navigation className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-semibold text-slate-800">Remember Sidebar State</p>
-              <p className="text-xs text-slate-500">Keep menu groups expanded/collapsed across visits</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-100">Remember Sidebar State</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Keep menu groups expanded/collapsed across visits</p>
             </div>
           </div>
-          
+
           <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
+            <input
+              type="checkbox"
+              className="sr-only peer"
               checked={rememberNav}
               onChange={(e) => setRememberNav(e.target.checked)}
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-navy-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-navy-600"></div>
+            <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-navy-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-navy-600"></div>
           </label>
         </div>
       </section>
 
-      {/* ACCOUNT */}
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-800">Account</h2>
-          <p className="text-sm text-slate-500">Manage your profile and security credentials.</p>
+      {/* APP INSTALLATION */}
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
+        <div className="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">App Installation</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Install RRH CRMS as a native app on your device.</p>
         </div>
-        
+
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-navy-50 dark:bg-navy-900/40 text-navy-700 dark:text-navy-300">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Install App</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Add to your home screen for quick access</p>
+            </div>
+          </div>
+
+          <button
+            disabled={!canInstall}
+            onClick={install}
+            className="flex items-center gap-2 px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white font-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            {canInstall ? 'Install Now' : 'Installed'}
+          </button>
+        </div>
+      </section>
+
+      {/* ACCOUNT */}
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
+        <div className="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Account</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Manage your profile and security credentials.</p>
+        </div>
+
         <div className="pt-2 space-y-3">
-          <a href="/profile" className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors">
+          <a href="/profile" className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
+              <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-slate-800 text-sm">View Profile</p>
-                <p className="text-xs text-slate-500">See your employment and contact details</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">View Profile</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">See your employment and contact details</p>
               </div>
             </div>
-            <span className="text-slate-400 text-sm font-medium">View &rarr;</span>
+            <span className="text-slate-400 dark:text-slate-500 text-sm font-medium">View &rarr;</span>
           </a>
 
-          <button 
+          <button
             onClick={() => setIsPasswordModalOpen(true)}
-            className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors text-left"
+            className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-50 text-amber-700">
+              <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                 <Lock className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-slate-800 text-sm">Change Password</p>
-                <p className="text-xs text-slate-500">Update your account access credentials</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Change Password</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Update your account access credentials</p>
               </div>
             </div>
-            <span className="text-slate-400 text-sm font-medium">Update &rarr;</span>
+            <span className="text-slate-400 dark:text-slate-500 text-sm font-medium">Update &rarr;</span>
           </button>
 
-          <button 
+          <button
             onClick={logout}
-            className="w-full flex items-center justify-between p-3 rounded-xl border border-red-100 hover:bg-red-50 transition-colors text-left group"
+            className="w-full flex items-center justify-between p-3 rounded-xl border border-red-100 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left group"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100 text-red-700 group-hover:bg-red-200 transition-colors">
+              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 group-hover:bg-red-200 dark:group-hover:bg-red-900/60 transition-colors">
                 <LogOut className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-red-700 text-sm">Sign Out</p>
-                <p className="text-xs text-red-500">End your current session</p>
+                <p className="font-semibold text-red-700 dark:text-red-400 text-sm">Sign Out</p>
+                <p className="text-xs text-red-500 dark:text-red-500">End your current session</p>
               </div>
             </div>
           </button>

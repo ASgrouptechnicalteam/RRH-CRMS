@@ -39,6 +39,13 @@ export const UserProfile: React.FC = () => {
 
   if (!user) return null;
 
+  const maskString = (str?: string | null, visibleCount = 4) => {
+    if (!str) return '';
+    if (str.length <= visibleCount) return '••••';
+    return '•'.repeat(str.length - visibleCount) + str.slice(-visibleCount);
+  };
+
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -191,7 +198,7 @@ export const UserProfile: React.FC = () => {
                 <div>
                   <p className="text-[10px] text-slate-500 font-semibold">PAN / Aadhaar</p>
                   <p className="font-semibold text-slate-800 text-xs">
-                    {user.panNumber || 'No PAN'} / {user.aadhaarNumber || 'No Aadhaar'}
+                    {user.panNumber ? maskString(user.panNumber) : 'No PAN'} / {user.aadhaarNumber ? maskString(user.aadhaarNumber) : 'No Aadhaar'}
                   </p>
                 </div>
               </div>
@@ -207,7 +214,7 @@ export const UserProfile: React.FC = () => {
                 <div>
                   <p className="text-[10px] text-slate-500 font-semibold">Account Info</p>
                   <p className="font-semibold text-slate-800 text-xs">
-                    {user.bankName ? `${user.bankName} - ${user.bankAccountNumber}` : 'Not provided'}
+                    {user.bankName ? `${user.bankName} - ${maskString(user.bankAccountNumber)}` : 'Not provided'}
                   </p>
                 </div>
               </div>

@@ -67,7 +67,8 @@ export const PMDashboard: React.FC = () => {
             id: v.id.toString(),
             title: `Visit for ${v.customer?.customer_name || 'Customer'}`,
             subtitle: `Requested for ${new Date(v.scheduled_date).toLocaleDateString()}`,
-            icon: MapPin
+            icon: MapPin,
+            link: '/site-visits'
           });
         });
       }
@@ -106,25 +107,29 @@ export const PMDashboard: React.FC = () => {
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Assigned Demos" 
-          value={isLoading ? "..." : metrics.assignedDemos} 
-          icon={CalendarCheck} 
+        <StatCard
+          label="Assigned Demos"
+          value={isLoading ? "..." : metrics.assignedDemos}
+          icon={CalendarCheck}
+          link="/site-visits"
         />
-        <StatCard 
-          label="Visits Pending Acceptance" 
-          value={isLoading ? "..." : metrics.siteVisitsPending} 
-          icon={MapPin} 
+        <StatCard
+          label="Visits Pending Acceptance"
+          value={isLoading ? "..." : metrics.siteVisitsPending}
+          icon={MapPin}
+          link="/site-visits"
         />
-        <StatCard 
-          label="Active Projects" 
-          value={isLoading ? "..." : metrics.activeProjects} 
-          icon={Building} 
+        <StatCard
+          label="Active Projects"
+          value={isLoading ? "..." : metrics.activeProjects}
+          icon={Building}
+          link="/projects"
         />
-        <StatCard 
-          label="Pending Property Audits" 
-          value={isLoading ? "..." : pendingPropertyAudits} 
-          icon={ClipboardList} 
+        <StatCard
+          label="Pending Property Audits"
+          value={isLoading ? "..." : pendingPropertyAudits}
+          icon={ClipboardList}
+          link="/properties"
         />
       </div>
 
@@ -136,10 +141,11 @@ export const PMDashboard: React.FC = () => {
 
         {/* Right Column: Distinctive Widget */}
         <div className="space-y-6">
-          <ListWidget 
+          <ListWidget
             title="Pending My Response"
             items={pendingResponses}
             emptyStateMessage="No visit requests pending acceptance."
+            viewAllLink="/site-visits"
           />
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { Router, Response , NextFunction} from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
 import { Permissions } from '../shared';
@@ -9,6 +10,7 @@ import {
   SiteVisitRescheduleSchema,
   SiteVisitReconfirmSchema,
   SiteVisitCompleteSchema,
+  EmptyBodySchema,
 } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { SiteVisitService } from '../services/siteVisit.service';
@@ -31,7 +33,7 @@ router.get(
       const visits = await SiteVisitService.listVisits(req.user!, filters);
       return res.status(200).json({ visits });
     } catch (error: any) {
-      console.error('Fetch site visits error:', error);
+      logger.error('Fetch site visits error:', error);
       next(error);
     }
   }
@@ -51,7 +53,7 @@ router.post(
         booking,
       });
     } catch (error: any) {
-      console.error('Book site visit error:', error);
+      logger.error('Book site visit error:', error);
       next(error);
     }
   }
@@ -74,7 +76,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Accept site visit error:', error);
+      logger.error('Accept site visit error:', error);
       next(error);
     }
   }
@@ -97,7 +99,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Reassign site visit error:', error);
+      logger.error('Reassign site visit error:', error);
       next(error);
     }
   }
@@ -120,7 +122,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Escalate site visit error:', error);
+      logger.error('Escalate site visit error:', error);
       next(error);
     }
   }
@@ -131,6 +133,7 @@ router.post(
   '/:id/reconfirm-customer',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_VERIFY]),
+  validateRequestBody(EmptyBodySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
@@ -141,7 +144,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Reconfirm-customer error:', error);
+      logger.error('Reconfirm-customer error:', error);
       next(error);
     }
   }
@@ -163,7 +166,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Reschedule error:', error);
+      logger.error('Reschedule error:', error);
       next(error);
     }
   }
@@ -188,7 +191,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('PM reconfirm error:', error);
+      logger.error('PM reconfirm error:', error);
       next(error);
     }
   }
@@ -199,6 +202,7 @@ router.post(
   '/:id/confirm',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_VERIFY]),
+  validateRequestBody(EmptyBodySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
@@ -209,7 +213,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Confirm visit error:', error);
+      logger.error('Confirm visit error:', error);
       next(error);
     }
   }
@@ -220,6 +224,7 @@ router.post(
   '/:id/start',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_COMPLETE]),
+  validateRequestBody(EmptyBodySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
@@ -230,7 +235,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Start visit error:', error);
+      logger.error('Start visit error:', error);
       next(error);
     }
   }
@@ -253,7 +258,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Complete site visit error:', error);
+      logger.error('Complete site visit error:', error);
       next(error);
     }
   }
@@ -264,6 +269,7 @@ router.post(
   '/:id/cancel',
   authenticateToken,
   requirePermission([Permissions.SITE_VISITS_COMPLETE]),
+  validateRequestBody(EmptyBodySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
@@ -275,7 +281,7 @@ router.post(
         visit,
       });
     } catch (error: any) {
-      console.error('Cancel site visit error:', error);
+      logger.error('Cancel site visit error:', error);
       next(error);
     }
   }

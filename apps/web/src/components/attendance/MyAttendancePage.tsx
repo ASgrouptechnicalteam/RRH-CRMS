@@ -1,8 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MonthlyAttendanceCalendar } from '../hr/MonthlyAttendanceCalendar';
-import { CalendarCheck, AlertTriangle, FileText, X } from 'lucide-react';
+import { CalendarCheck, AlertTriangle, FileText, X, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { LateLeaveProposals } from './LateLeaveProposals';
 import { EmergencyLogoutModal } from '../profile/EmergencyLogoutModal';
+import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
+
+const MyLeaveRequestsWidget: React.FC = () => {
+  const { fetchWithAuth } = useAuth();
+  const [proposals, setProposals] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchWithAuth(`${API_BASE_URL}/attendance/proposals/my`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.proposals) setProposals(data.proposals);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (proposals.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">My Recent Requests</h3>
+      <div className="divide-y divide-slate-100">
+        {proposals.map(p => (
+          <div key={p.id} className="py-3 flex items-center justify-between">
+            <div>
+              <div className="font-bold text-slate-800 text-sm">{p.type}</div>
+              <div className="text-slate-500 text-xs mt-0.5">
+                {new Date(p.target_date).toLocaleDateString()} &middot; {p.reason}
+              </div>
+            </div>
+            <div>
+              {p.status === 'PENDING' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><Clock className="w-3.5 h-3.5" /> Pending</span>}
+              {p.status === 'APPROVED' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><CheckCircle2 className="w-3.5 h-3.5" /> Approved</span>}
+              {p.status === 'REJECTED' && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200"><XCircle className="w-3.5 h-3.5" /> Rejected</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const MyAttendancePage: React.FC = () => {
   const [isLateLeaveModalOpen, setIsLateLeaveModalOpen] = useState(false);
@@ -80,6 +121,8 @@ export const MyAttendancePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <MyLeaveRequestsWidget />
 
       {/* Modals */}
       {isLateLeaveModalOpen && (

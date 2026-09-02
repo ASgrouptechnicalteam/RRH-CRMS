@@ -11,7 +11,7 @@ interface LateLeaveProposalsProps {
 }
 
 export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOnly = false }) => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const [activeTab, setActiveTab] = useState<'submit' | 'queue'>(hrViewOnly ? 'queue' : 'submit');
   const [proposalType, setProposalType] = useState<'late' | 'leave'>('late');
 
@@ -26,7 +26,7 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [queue, setQueue] = useState<ProposalItem[]>([]);
 
-  const isHrOrMd = user?.roles.some((r) => r === Roles.HR_MANAGER || r === Roles.MD);
+  const isHrOrMd = ([Roles.HR_MANAGER, Roles.MD] as string[]).includes(activeRole);
 
   useEffect(() => {
     if (isHrOrMd && activeTab === 'queue') {
@@ -62,20 +62,32 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
         }),
       });
 
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit late proposal');
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Late request submitted to HR.' });
+        setReason('');
+      } else {
+        const err = await res.json();
+        setMessage({ type: 'error', text: err.error || 'Failed to submit.' });
       }
-
-      setMessage({ type: 'success', text: 'Late proposal submitted to HR queue!' });
-      setReason('');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setMessage({ type: 'error', text: message });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'An unexpected error occurred.' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAction = async (id: number, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/proposals/${id}/${action}`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        fetchQueue();
+      } else {
+        alert('Failed to update proposal');
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -308,15 +320,25 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
               {queue.map((item) => (
                 <div key={item.id} className="py-3 flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-bold text-slate-800">Actor #{item.actor_id}</span>
-                    <span className="ml-2 text-slate-500 font-mono">{item.new_value?.expected_time}</span>
-                    <p className="text-slate-600 mt-0.5">{item.new_value?.reason}</p>
+                    <span className="font-bold text-slate-800">
+                      {item.employee?.full_name || 'Unknown Employee'} ({item.employee?.employee_code || '---'})
+                    </span>
+                    <span className="ml-2 text-slate-500 font-mono">
+                      {item.type} {item.target_date ? new Date(item.target_date).toLocaleDateString() : ''}
+                    </span>
+                    <p className="text-slate-600 mt-0.5 font-medium">{item.reason}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 font-medium">
+                    <button 
+                      onClick={() => handleAction(item.id, 'approve')}
+                      className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 font-medium transition-colors"
+                    >
                       Approve
                     </button>
-                    <button className="p-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 font-medium">
+                    <button 
+                      onClick={() => handleAction(item.id, 'reject')}
+                      className="p-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 font-medium transition-colors"
+                    >
                       Reject
                     </button>
                   </div>

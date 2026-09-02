@@ -101,7 +101,7 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
 };
 
 export const SiteVisitManagement: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const { showToast , showError } = useToast();
   const { sendWhatsAppMessage } = useWhatsApp();
   const [visits, setVisits] = useState<SiteVisit[]>([]);
@@ -127,7 +127,7 @@ export const SiteVisitManagement: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isPMOrMD = user?.roles?.some((r) => ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as readonly string[]).includes(r));
+  const isPMOrMD = ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
 
   const fetchVisitsData = async () => {
     setIsLoading(true);

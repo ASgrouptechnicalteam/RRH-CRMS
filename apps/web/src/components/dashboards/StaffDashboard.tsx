@@ -74,20 +74,23 @@ export const StaffDashboard: React.FC = () => {
       
       {/* Primary KPI Row - CRM Focused */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard 
-          label="My Active Leads" 
-          value={isLoading ? "..." : metrics.leads.toString()} 
-          icon={Users} 
+        <StatCard
+          label="My Active Leads"
+          value={isLoading ? "..." : metrics.leads.toString()}
+          icon={Users}
+          link="/leads"
         />
-        <StatCard 
-          label="Upcoming Visits" 
-          value={isLoading ? "..." : metrics.visits.toString()} 
-          icon={Calendar} 
+        <StatCard
+          label="Upcoming Visits"
+          value={isLoading ? "..." : metrics.visits.toString()}
+          icon={Calendar}
+          link="/site-visits"
         />
-        <StatCard 
-          label="My Tasks" 
-          value={isLoading ? "..." : metrics.tasks.toString()} 
-          icon={Briefcase} 
+        <StatCard
+          label="My Tasks"
+          value={isLoading ? "..." : metrics.tasks.toString()}
+          icon={Briefcase}
+          link="/tasks"
         />
       </div>
 

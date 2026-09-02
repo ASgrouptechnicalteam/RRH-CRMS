@@ -10,7 +10,7 @@ import { ProjectListItem, ProjectFormData } from '../../types';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const ProjectManagement: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const { showToast , showError } = useToast();
   
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
@@ -22,7 +22,7 @@ export const ProjectManagement: React.FC = () => {
   const [editingProject, setEditingProject] = useState<ProjectFormData | null>(null);
   const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
 
-  const canCreate = user?.permissions?.includes(Permissions.PROJECTS_CREATE) || user?.roles?.includes(Roles.MD) || user?.roles?.includes(Roles.ADMIN);
+  const canCreate = user?.permissions?.includes(Permissions.PROJECTS_CREATE) || ([Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
 
   const fetchProjects = async () => {
     setIsLoading(true);

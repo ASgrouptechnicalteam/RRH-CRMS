@@ -1,5 +1,5 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-export const STATIC_URL = API_BASE_URL.replace('/api/v1', '');
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1/internal';
+export const STATIC_URL = API_BASE_URL.replace('/api/v1/internal', '').replace('/api/v1', '');
 
 export function mediaUrl(path?: string) {
   if (!path) return '';

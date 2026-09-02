@@ -67,25 +67,29 @@ export const MarketingDirectorDashboard: React.FC = () => {
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Total Lead Volume" 
-          value={kpis?.totalLeads ?? '—'} 
-          icon={Users} 
+        <StatCard
+          label="Total Lead Volume"
+          value={kpis?.totalLeads ?? '—'}
+          icon={Users}
+          link="/leads"
         />
-        <StatCard 
-          label="Conversion Rate" 
-          value={kpis?.conversionRate != null ? `${kpis.conversionRate.toFixed(1)}%` : '—'} 
-          icon={TrendingUp} 
+        <StatCard
+          label="Conversion Rate"
+          value={kpis?.conversionRate != null ? `${kpis.conversionRate.toFixed(1)}%` : '—'}
+          icon={TrendingUp}
+          link="/leads"
         />
-        <StatCard 
-          label="Site Visits Generated" 
-          value={kpis?.siteVisits ?? '—'} 
-          icon={Calendar} 
+        <StatCard
+          label="Site Visits Generated"
+          value={kpis?.siteVisits ?? '—'}
+          icon={Calendar}
+          link="/site-visits"
         />
-        <StatCard 
-          label="Top Lead Introducer" 
-          value={topSource} 
-          icon={Zap} 
+        <StatCard
+          label="Top Lead Introducer"
+          value={topSource}
+          icon={Zap}
+          link="/employees"
         />
       </div>
 

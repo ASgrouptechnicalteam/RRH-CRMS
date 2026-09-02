@@ -53,7 +53,7 @@ interface Lead {
 }
 
 export const LeadManagement: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const { showToast , showError } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [monitorData, setMonitorData] = useState<MonitorData | null>(null);
@@ -81,9 +81,7 @@ export const LeadManagement: React.FC = () => {
   const [parsedBulkLeads, setParsedBulkLeads] = useState<ParsedBulkLeadRow[]>([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
 
-  const isOperatorOrAdmin = user?.roles.some((r: string) =>
-    [Roles.DIGITAL_LEAD_OPERATOR, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN].includes(r as never)
-  );
+  const isOperatorOrAdmin = ([Roles.DIGITAL_LEAD_OPERATOR, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
 
   const handleBulkUploadBtnClick = () => {
     fileInputRef.current?.click();

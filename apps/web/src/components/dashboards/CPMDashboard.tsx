@@ -124,7 +124,8 @@ export const CPMDashboard: React.FC = () => {
           id: v.id.toString(),
           title: `Visit for ${v.customer?.customer_name || 'Customer'}`,
           subtitle: `Project: ${v.project?.name || 'N/A'}`,
-          icon: Calendar
+          icon: Calendar,
+          link: '/site-visits'
         }));
         setTomorrowVisits(visitItems);
       }
@@ -226,25 +227,29 @@ export const CPMDashboard: React.FC = () => {
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Leads Assigned" 
-          value={leadsAssigned} 
-          icon={Users} 
+        <StatCard
+          label="Leads Assigned"
+          value={leadsAssigned}
+          icon={Users}
+          link="/leads"
         />
-        <StatCard 
-          label="Contacted Today" 
-          value={contactedToday} 
-          icon={PhoneCall} 
+        <StatCard
+          label="Contacted Today"
+          value={contactedToday}
+          icon={PhoneCall}
+          link="/leads"
         />
-        <StatCard 
-          label="Qualification Pending" 
-          value={qualificationPending} 
-          icon={Clock} 
+        <StatCard
+          label="Qualification Pending"
+          value={qualificationPending}
+          icon={Clock}
+          link="/leads"
         />
-        <StatCard 
-          label="WhatsApp Follow-ups" 
-          value={whatsappFollowUps} 
-          icon={MessageCircle} 
+        <StatCard
+          label="WhatsApp Follow-ups"
+          value={whatsappFollowUps}
+          icon={MessageCircle}
+          link="/tasks"
         />
       </div>
 

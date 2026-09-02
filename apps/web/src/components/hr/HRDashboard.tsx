@@ -117,13 +117,11 @@ const TeamPerformanceTab: React.FC = () => {
 };
 
 export const HRDashboard: React.FC = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, fetchWithAuth, activeRole } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'DIRECTORY' | 'HOLIDAYS' | 'PERFORMANCE' | 'DOCUMENTS'>((searchParams.get('tab') as any) || 'DIRECTORY');
 
-  const canManageEmployees = user?.roles?.some(
-    (r) => [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(r as never)
-  );
+  const canManageEmployees = ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR] as string[]).includes(activeRole);
 
   if (!canManageEmployees) {
     return <Navigate to="/" replace />;

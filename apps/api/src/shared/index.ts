@@ -1399,6 +1399,7 @@ export const EmployeeSelfUpdateSchema = z.object({
   phone: z.string().min(10).optional(),
   secondary_phone: z.string().optional().nullable(),
   whatsapp_number: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
   current_address: z.string().optional().nullable(),
   permanent_address: z.string().optional().nullable(),
   emergency_contact_name: z.string().optional().nullable(),

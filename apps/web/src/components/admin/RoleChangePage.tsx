@@ -72,6 +72,7 @@ export const RoleChangePage: React.FC = () => {
 
       const res = await fetchWithAuth(`${API_BASE_URL}/employees/${selectedEmployeeId}/roles`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role_names: [selectedRole] }) // Send as single item array
       });
 

@@ -4,7 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { ShieldCheck, ScrollText, ShieldAlert, Users, Lock, Eye } from 'lucide-react';
 import { ListWidget, ListItem } from '../ui';
-import { RoleAssignmentPage } from './RoleAssignmentPage';
+import { RoleChangePage } from './RoleChangePage';
 
 interface AuditLog {
   id: number;
@@ -177,7 +177,7 @@ export const AdminSuperHub: React.FC = () => {
         <div className="p-4 sm:p-6 bg-slate-50 min-h-[600px]">
           {activeTab === 'roles' && (
             <div className="max-w-7xl mx-auto">
-              <RoleAssignmentPage />
+              <RoleChangePage />
             </div>
           )}
 

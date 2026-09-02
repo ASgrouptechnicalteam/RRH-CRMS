@@ -18,6 +18,7 @@ export const RoleAssignmentPage: React.FC = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
 
   // Maintain a local state for editing roles before saving
   const [editedRoles, setEditedRoles] = useState<Record<number, string[]>>({});
@@ -42,6 +43,13 @@ export const RoleAssignmentPage: React.FC = () => {
         rolesMap[emp.id] = [...emp.roles];
       });
       setEditedRoles(rolesMap);
+
+      // Fetch available roles from the database
+      const rolesRes = await fetchWithAuth(`${API_BASE_URL}/roles`);
+      if (rolesRes.ok) {
+        const rolesData = await rolesRes.json();
+        setAvailableRoles((rolesData.roles || []).map((r: any) => r.name));
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred while loading data.');
     } finally {
@@ -101,7 +109,6 @@ export const RoleAssignmentPage: React.FC = () => {
     return emp.fullName.toLowerCase().includes(search) || emp.employeeCode.toLowerCase().includes(search);
   });
 
-  const availableRoles = Object.values(Roles);
   const isUserAdmin = user?.roles?.includes(Roles.ADMIN);
 
   return (
@@ -159,7 +166,7 @@ export const RoleAssignmentPage: React.FC = () => {
           <div className="max-h-[600px] overflow-y-auto pr-1 space-y-4">
             {filteredEmployees.map((emp) => {
               const currentEditedRoles = editedRoles[emp.id] || [];
-              const hasChanges = JSON.stringify(currentEditedRoles.sort()) !== JSON.stringify([...emp.roles].sort());
+              const hasChanges = JSON.stringify([...currentEditedRoles].sort()) !== JSON.stringify([...emp.roles].sort());
               const isSaving = savingId === emp.id;
 
               return (

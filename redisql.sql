@@ -1,3 +1,0 @@
-SHOW DATABASES;
-USE test_db;
-SHOW TABLES;

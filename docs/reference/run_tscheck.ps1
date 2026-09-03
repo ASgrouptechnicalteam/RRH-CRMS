@@ -1,1 +1,0 @@
-& npx tsc -p apps/api/tsconfig.json --noEmit 2>&1

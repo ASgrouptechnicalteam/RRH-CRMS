@@ -1,1 +1,0 @@
-const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.publicApiKey.findMany().then(keys => console.log(keys)).catch(console.error).finally(() => prisma.$disconnect());

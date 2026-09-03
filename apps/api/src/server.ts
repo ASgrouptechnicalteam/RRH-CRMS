@@ -65,7 +65,22 @@ const allowedOrigins = [
 if (process.env.APP_URL && !allowedOrigins.includes(process.env.APP_URL)) {
   allowedOrigins.push(process.env.APP_URL);
 }
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    
+    // Allow known origins or any vercel preview URL
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.includes('radharealhomeproperties.com')) {
+      return callback(null, true);
+    }
+    
+    logger.warn(`CORS blocked for origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(cookieParser());
 app.use(compression({ threshold: 0 }));
 

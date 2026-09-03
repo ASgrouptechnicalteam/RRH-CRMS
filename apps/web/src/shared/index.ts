@@ -160,7 +160,52 @@ const ALL_PERMISSIONS = Object.values(Permissions);
 export const RolePermissionsMatrix: Record<RoleName, string[]> = {
   [Roles.MD]: ALL_PERMISSIONS, // MD gets all permissions
   
-  [Roles.ADMIN]: ALL_PERMISSIONS,
+  [Roles.ADMIN]: [
+    Permissions.ADMIN_SYSTEM_METRICS,
+    Permissions.ADMIN_AUDIT_LOGS,
+    Permissions.ADMIN_SECURITY_ALERTS,
+    Permissions.ADMIN_EMERGENCY_LOCKDOWN,
+    Permissions.EMPLOYEES_CREATE,
+    Permissions.EMPLOYEES_READ,
+    Permissions.EMPLOYEES_UPDATE,
+    Permissions.EMPLOYEES_RESET_PASSWORD,
+    Permissions.CUSTOMERS_CREATE,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.CUSTOMERS_DELETE,
+    Permissions.CUSTOMERS_CONVERT,
+    Permissions.CUSTOMERS_KYC_WRITE,
+    Permissions.PROJECTS_CREATE,
+    Permissions.PROJECTS_READ,
+    Permissions.PROJECTS_UPDATE,
+    Permissions.PROJECTS_DELETE,
+    Permissions.BOOKINGS_CREATE,
+    Permissions.BOOKINGS_READ,
+    Permissions.BOOKINGS_UPDATE,
+    Permissions.PAYMENTS_CREATE,
+    Permissions.PAYMENTS_READ,
+    Permissions.PAYMENTS_UPDATE,
+    Permissions.PAYMENTS_CANCEL,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_READ,
+    Permissions.DOCUMENTS_VERIFY,
+    Permissions.DOCUMENTS_DELETE,
+    Permissions.COMPLAINTS_CREATE,
+    Permissions.COMPLAINTS_READ,
+    Permissions.COMPLAINTS_UPDATE,
+    Permissions.COMPLAINTS_ASSIGN,
+    Permissions.COMPLAINTS_RESOLVE,
+    Permissions.COMPLAINTS_CLOSE,
+    Permissions.PROPERTIES_CREATE,
+    Permissions.PROPERTIES_READ,
+    Permissions.PROPERTIES_UPDATE,
+    Permissions.PROPERTIES_DELETE,
+    Permissions.PROPERTIES_VERIFY,
+    Permissions.PROPERTIES_DM_POLISH,
+    Permissions.PROPERTIES_MD_APPROVE,
+    Permissions.AI_SEARCH,
+    // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
+  ],
   
   [Roles.HR_MANAGER]: [
     Permissions.EMPLOYEES_CREATE,
@@ -374,27 +419,19 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
-    Permissions.LEADS_WHATSAPP_PROPOSAL,
+    Permissions.CUSTOMERS_READ,
+    Permissions.CUSTOMERS_UPDATE,
+    Permissions.SITE_VISITS_CREATE,
+    Permissions.SITE_VISITS_READ,
+    Permissions.SITE_VISITS_COMPLETE,
     Permissions.PROJECTS_READ,
     Permissions.PROPERTIES_READ,
+    Permissions.REPORTS_READ_OWN,
     Permissions.ATTENDANCE_READ_OWN,
     Permissions.ATTENDANCE_SCAN,
-    Permissions.ATTENDANCE_LATE_PROPOSAL,
-    Permissions.ATTENDANCE_LEAVE_PROPOSAL,
-    Permissions.REPORTS_CREATE,
-    Permissions.REPORTS_READ_OWN,
     Permissions.PERFORMANCE_READ_OWN,
     Permissions.TASKS_READ,
     Permissions.TASKS_UPDATE,
-    Permissions.TASKS_CREATE,
-    Permissions.BOOKINGS_READ,
-    Permissions.PAYMENTS_READ,
-    Permissions.DOCUMENTS_READ,
-    Permissions.SITE_VISITS_CREATE,
-    Permissions.SITE_VISITS_READ,
-    Permissions.CUSTOMERS_READ,
-    Permissions.CUSTOMERS_UPDATE,
-    Permissions.CUSTOMERS_CONVERT,
   ]
 };
 
@@ -562,6 +599,8 @@ export const LeadSource = {
 
 export const LeadCreateSchema = z.object({
   customer_name: z.string().min(2, 'Customer name is required'),
+  ownership_type: z.enum(['POOL', 'DIRECT']).default('POOL'),
+  introduced_by_id: z.number().int().optional().nullable(),
   phone: z.string().min(10, 'Valid phone number is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   source: z.string().default('MANUAL_ENTRY'),
@@ -1323,6 +1362,11 @@ export const SiteVisitCompleteSchema = z.object({
 });
 export type SiteVisitCompleteInput = z.infer<typeof SiteVisitCompleteSchema>;
 
+export const SiteVisitCancelConfirmSchema = z.object({
+  reason: z.string().min(1, "A cancellation reason is required"),
+});
+export type SiteVisitCancelConfirmInput = z.infer<typeof SiteVisitCancelConfirmSchema>;
+
 // Generic update (used by older/aux endpoints; status is free-form here but
 // routed through the §2 workflow engine in the service layer).
 export const SiteVisitUpdateSchema = z.object({
@@ -1365,4 +1409,100 @@ export const MessageTemplateKey = {
   BOOKING_CONFIRMED: 'BOOKING_CONFIRMED', // welcome + portal credentials
 } as const;
 export type MessageTemplateKeyType = typeof MessageTemplateKey[keyof typeof MessageTemplateKey];
+
+
+export const PropertyTogglePublicationBodySchema = z.object({
+  company_id: z.number().int().positive(),
+  is_published: z.boolean(),
+});
+
+export const PropertyImageMetadataSchema = z.object({
+  alt_text: z.string().optional(),
+  sort_order: z.union([z.string().regex(/^\d+$/).transform(Number), z.number().int().nonnegative()]).optional(),
+  is_primary: z.union([
+    z.string().toLowerCase().transform(v => v === 'true'),
+    z.boolean()
+  ]).optional(),
+});
+
+export const EmptyBodySchema = z.object({}).strict();
+
+export const EmployeeSelfUpdateSchema = z.object({
+  full_name: z.string().min(1).optional(),
+  phone: z.string().min(10).optional(),
+  secondary_phone: z.string().optional().nullable(),
+  whatsapp_number: z.string().optional().nullable(),
+  current_address: z.string().optional().nullable(),
+  permanent_address: z.string().optional().nullable(),
+  emergency_contact_name: z.string().optional().nullable(),
+  emergency_contact_relation: z.string().optional().nullable(),
+  emergency_contact_phone: z.string().optional().nullable(),
+  blood_group: z.string().optional().nullable(),
+  social_links: z.string().optional().nullable(),
+  pan_number: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format').optional().nullable(),
+  aadhaar_number: z.string().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional().nullable(),
+  bank_name: z.string().optional().nullable(),
+  bank_account_number: z.string().optional().nullable(),
+  bank_ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC format').optional().nullable(),
+  bank_branch: z.string().optional().nullable(),
+});
+
+export const EmployeeCreateSchema = z.object({
+  full_name: z.string().min(1, 'Full name is required'),
+  phone: z.string().min(10, 'Phone is required'),
+  role_name: z.string().min(1, 'Role name is required'),
+  branch_id: z.union([z.string(), z.number()]),
+  secondary_phone: z.string().optional().nullable(),
+  whatsapp_number: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  blood_group: z.string().optional().nullable(),
+  social_links: z.string().optional().nullable(),
+  current_address: z.string().optional().nullable(),
+  permanent_address: z.string().optional().nullable(),
+  emergency_contact_name: z.string().optional().nullable(),
+  emergency_contact_relation: z.string().optional().nullable(),
+  emergency_contact_phone: z.string().optional().nullable(),
+  pan_number: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format').optional().nullable(),
+  aadhaar_number: z.string().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional().nullable(),
+  bank_name: z.string().optional().nullable(),
+  bank_account_number: z.string().optional().nullable(),
+  bank_ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC format').optional().nullable(),
+  bank_branch: z.string().optional().nullable(),
+  job_title: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  employment_type: z.string().optional().nullable(),
+  reporting_manager_id: z.union([z.string(), z.number()]).optional().nullable(),
+  date_of_joining: z.string().optional().nullable(),
+  salary_ctc: z.union([z.string(), z.number()]).optional().nullable(),
+  background_education: z.string().optional().nullable(),
+  additional_branch_ids: z.array(z.union([z.string(), z.number()])).optional(),
+  initial_password: z.string()
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+    .optional().nullable(),
+  company_id: z.union([z.string(), z.number()]).optional().nullable(),
+});
+
+export const EmployeeUpdateSchema = EmployeeSelfUpdateSchema.extend({
+  email: z.string().email().optional().nullable(),
+  salary_ctc: z.union([z.string(), z.number()]).optional().nullable(),
+  job_title: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  employment_type: z.string().optional().nullable(),
+  report_required: z.boolean().optional().nullable(),
+  reporting_manager_id: z.union([z.string(), z.number()]).optional().nullable(),
+  date_of_joining: z.string().optional().nullable(),
+  background_education: z.string().optional().nullable(),
+  branch_id: z.union([z.string(), z.number()]).optional().nullable(),
+  status: z.string().optional().nullable(),
+  attendance_required: z.boolean().optional().nullable(),
+  role_name: z.string().optional().nullable(),
+});
+
+export const EmployeeRolesUpdateSchema = z.object({
+  role_names: z.array(z.string()).min(1, 'At least one role is required')
+});
 

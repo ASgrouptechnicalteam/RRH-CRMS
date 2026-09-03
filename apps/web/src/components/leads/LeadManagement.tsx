@@ -287,7 +287,6 @@ export const LeadManagement: React.FC = () => {
       case 'DEMO_COMPLETED':
         return 'warm';
       case 'ASSIGNED':
-      case 'QUALIFICATION_PENDING':
         return 'pending';
       case 'BOOKING_INITIATED':
       case 'BOOKED':
@@ -511,7 +510,6 @@ export const LeadManagement: React.FC = () => {
               <option value="NEW">NEW</option>
               <option value="ASSIGNED">ASSIGNED</option>
               <option value="CONTACTED">CONTACTED</option>
-              <option value="QUALIFICATION_PENDING">QUALIFICATION PENDING</option>
               <option value="QUALIFIED">QUALIFIED</option>
               <option value="SITE_VISIT_SCHEDULED">SITE VISIT SCHEDULED</option>
               <option value="NEGOTIATION">NEGOTIATION</option>

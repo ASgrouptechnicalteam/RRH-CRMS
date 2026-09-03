@@ -599,6 +599,8 @@ export const LeadSource = {
 
 export const LeadCreateSchema = z.object({
   customer_name: z.string().min(2, 'Customer name is required'),
+  ownership_type: z.enum(['POOL', 'DIRECT']).default('POOL'),
+  introduced_by_id: z.number().int().optional().nullable(),
   phone: z.string().min(10, 'Valid phone number is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   source: z.string().default('MANUAL_ENTRY'),
@@ -1359,6 +1361,11 @@ export const SiteVisitCompleteSchema = z.object({
   proof_photo_url: z.string().optional(),
 });
 export type SiteVisitCompleteInput = z.infer<typeof SiteVisitCompleteSchema>;
+
+export const SiteVisitCancelConfirmSchema = z.object({
+  reason: z.string().min(1, "A cancellation reason is required"),
+});
+export type SiteVisitCancelConfirmInput = z.infer<typeof SiteVisitCancelConfirmSchema>;
 
 // Generic update (used by older/aux endpoints; status is free-form here but
 // routed through the §2 workflow engine in the service layer).

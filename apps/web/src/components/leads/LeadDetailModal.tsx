@@ -409,7 +409,6 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
       case 'DEMO_COMPLETED':
         return 'warm';
       case 'ASSIGNED':
-      case 'QUALIFICATION_PENDING':
         return 'pending';
       case 'BOOKING_INITIATED':
       case 'BOOKED':
@@ -429,8 +428,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
     
     if (current === 'NEW') valid.push('ASSIGNED');
     if (current === 'ASSIGNED') valid.push('CONTACTED');
-    if (current === 'CONTACTED') valid.push('QUALIFICATION_PENDING', 'QUALIFIED');
-    if (current === 'QUALIFICATION_PENDING') valid.push('QUALIFIED');
+    if (current === 'CONTACTED') valid.push('QUALIFIED');
     if (current === 'QUALIFIED') valid.push('DEMO_SCHEDULED', 'SITE_VISIT_SCHEDULED');
     if (current === 'DEMO_SCHEDULED') valid.push('DEMO_COMPLETED');
     if (current === 'DEMO_COMPLETED') valid.push('SITE_VISIT_SCHEDULED');

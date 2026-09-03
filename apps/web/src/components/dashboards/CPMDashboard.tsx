@@ -156,10 +156,10 @@ export const CPMDashboard: React.FC = () => {
   const myAssignedLeadsRaw = assignedLeads.filter(l => l.assigned_to?.id === user?.id);
   const leadsAssigned = myAssignedLeadsRaw.length;
   const contactedToday = myAssignedLeadsRaw.filter(l => l.status === 'CONTACTED').length;
-  const qualificationPending = myAssignedLeadsRaw.filter(l => l.status === 'NEW' || l.status === 'QUALIFICATION_PENDING').length;
+  const uncontactedLeads = myAssignedLeadsRaw.filter(l => l.status === 'NEW' || l.status === 'ASSIGNED').length;
   const whatsappFollowUps = whatsappTasks; // Now using real data from tasks endpoint
 
-  const activeStatuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFICATION_PENDING', 'QUALIFIED', 'SITE_VISIT_SCHEDULED'];
+  const activeStatuses = ['NEW', 'ASSIGNED', 'CONTACTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED'];
   const myAssignedLeads = myAssignedLeadsRaw.filter(
     (l): l is typeof l & { status: string } =>
       typeof l.status === 'string' && activeStatuses.includes(l.status)
@@ -177,7 +177,6 @@ export const CPMDashboard: React.FC = () => {
       case 'DEMO_COMPLETED':
         return 'warm';
       case 'ASSIGNED':
-      case 'QUALIFICATION_PENDING':
         return 'pending';
       case 'BOOKING_INITIATED':
       case 'BOOKED':
@@ -240,8 +239,8 @@ export const CPMDashboard: React.FC = () => {
           link="/leads"
         />
         <StatCard
-          label="Qualification Pending"
-          value={qualificationPending}
+          label="Uncontacted Leads"
+          value={uncontactedLeads}
           icon={Clock}
           link="/leads"
         />
@@ -342,7 +341,7 @@ export const CPMDashboard: React.FC = () => {
                                   Mark Contacted
                                 </button>
                               )}
-                              {(lead.status === 'CONTACTED' || lead.status === 'QUALIFICATION_PENDING') && (
+                              {(lead.status === 'CONTACTED') && (
                                 <button
                                   className="px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                                   onClick={(e) => {

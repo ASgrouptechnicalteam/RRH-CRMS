@@ -109,7 +109,7 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
       .patch(`/api/v1/leads/${leadId}/status`)
       .set('Authorization', `Bearer ${telecallerToken}`)
       .send({
-        status: 'QUALIFICATION_PENDING',
+        status: 'QUALIFIED',
         qualification: {
           budget_min: 5000000,
           budget_max: 10000000,

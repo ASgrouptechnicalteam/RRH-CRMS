@@ -3,6 +3,7 @@ import app from '../../apps/api/src/server';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import { LeadService } from '../../apps/api/src/services/lead.service';
 
 
 
@@ -205,12 +206,19 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
         
       expect(res.status).toBe(201);
       
-      // 3. Assert it is NOT assigned to the Agent, but IS assigned to a Telecaller
-      const assignedId = res.body.lead.assigned_to_id;
+      // 3. Trigger batch distribution manually
+      const tcA = await prisma.employee.findUnique({ where: { id: telecallerAId } });
+      await LeadService.distributeUnassignedPoolLeads(tcA!.company_id);
+
+      // 4. Assert it is NOT assigned to the Agent, but IS assigned to a Telecaller
+      const refreshedLead = await prisma.lead.findUnique({ where: { id: res.body.lead.id } });
+      const assignedId = refreshedLead!.assigned_to_id;
+      
       expect(assignedId).toBeDefined();
+      expect(assignedId).not.toBeNull();
       expect(assignedId).not.toBe(agentId);
       
-      const assignee = await prisma.employee.findUnique({ where: { id: assignedId }, include: { roles: { include: { role: true } } } });
+      const assignee = await prisma.employee.findUnique({ where: { id: assignedId as number }, include: { roles: { include: { role: true } } } });
       const roleNames = assignee!.roles.map(r => r.role.name);
       expect(roleNames).toContain(Roles.TELECALLER);
       expect(roleNames).not.toContain(Roles.AGENT);
@@ -300,6 +308,62 @@ describe('Phase 3 - Lead Domain Extraction & Hardening', () => {
       await prisma.employeeRole.deleteMany({ where: { employee_id: { in: [isolatedAdmin.id, isolatedAgent.id] } } });
       await prisma.employee.deleteMany({ where: { company_id: isolatedCompany.id } });
       await prisma.company.delete({ where: { id: isolatedCompany.id } });
+    });
+
+    it('should explicitly ignore DIRECT leads during batch distribution', async () => {
+      // Get the company ID for mdId
+      const md = await prisma.employee.findUnique({ where: { id: mdId } });
+      const testCompanyId = md!.company_id;
+
+      // 1. Create a POOL lead that is NEW and unassigned
+      const pCode = `TEST-POOL-${Date.now()}`;
+      const poolLead = await prisma.lead.create({
+        data: {
+          lead_code: pCode,
+          company_id: testCompanyId,
+          customer_name: 'Pool Lead To Distribute',
+          phone: '+919999000001',
+          source: 'MANUAL_ENTRY',
+          status: 'NEW',
+          ownership_type: 'POOL',
+          assigned_to_id: null,
+          created_by_id: mdId
+        }
+      });
+
+      // 2. Create a DIRECT lead that is also NEW and unassigned (simulating an edge case/error state)
+      const dCode = `TEST-DIRECT-${Date.now()}`;
+      const directLead = await prisma.lead.create({
+        data: {
+          lead_code: dCode,
+          company_id: testCompanyId,
+          customer_name: 'Direct Lead Do Not Distribute',
+          phone: '+919999000002',
+          source: 'MANUAL_ENTRY',
+          status: 'NEW',
+          ownership_type: 'DIRECT',
+          assigned_to_id: null,
+          created_by_id: mdId
+        }
+      });
+
+      // 3. Run the distribution algorithm
+      const assignedCount = await LeadService.distributeUnassignedPoolLeads(testCompanyId);
+      
+      // 4. Verify outcomes
+      expect(assignedCount).toBeGreaterThanOrEqual(1);
+      
+      const refreshedPoolLead = await prisma.lead.findUnique({ where: { id: poolLead.id } });
+      expect(refreshedPoolLead!.status).toBe('ASSIGNED');
+      expect(refreshedPoolLead!.assigned_to_id).not.toBeNull();
+
+      const refreshedDirectLead = await prisma.lead.findUnique({ where: { id: directLead.id } });
+      expect(refreshedDirectLead!.status).toBe('NEW');
+      expect(refreshedDirectLead!.assigned_to_id).toBeNull();
+      
+      // Cleanup
+      await prisma.leadActivity.deleteMany({ where: { lead_id: { in: [poolLead.id, directLead.id] } } });
+      await prisma.lead.deleteMany({ where: { id: { in: [poolLead.id, directLead.id] } } });
     });
   });
 });

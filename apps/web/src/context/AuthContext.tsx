@@ -158,46 +158,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
   
     const initAuth = async () => {
-      setAuthStatus('bootstrapping');
       const savedUser = localStorage.getItem('rrh_user');
       
       if (savedUser && !accessToken) {
-        const result = await refreshAccessToken();
+        // Fast path: Immediately transition to authenticated to avoid blocking UI
+        setAuthStatus('authenticated');
         
+        // Proactively refresh in background
+        const result = await refreshAccessToken();
         if (!isMounted) return;
-  
+        
         if (result.success) {
           setAccessToken(result.token);
           
-          try {
-            const res = await fetch(`${API_BASE_URL}/auth/me`, {
-              headers: { Authorization: `Bearer ${result.token}` }
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.user) {
-                setUser(data.user);
-                localStorage.setItem('rrh_user', JSON.stringify(data.user));
-                
-                const currentActiveRole = localStorage.getItem('rrh_active_role');
-                if (!currentActiveRole || !data.user.roles.includes(currentActiveRole)) {
-                  const newRole = data.user.roles?.[0] || 'Employee';
-                  setActiveRoleState(newRole);
-                  localStorage.setItem('rrh_active_role', newRole);
-                }
+          // Background sync profile
+          fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${result.token}` }
+          }).then(res => {
+            if (res.ok) return res.json();
+            throw new Error('Failed to fetch /me');
+          }).then(data => {
+            if (data.user && isMounted) {
+              setUser(data.user);
+              localStorage.setItem('rrh_user', JSON.stringify(data.user));
+              const currentActiveRole = localStorage.getItem('rrh_active_role');
+              if (!currentActiveRole || !data.user.roles.includes(currentActiveRole)) {
+                const newRole = data.user.roles?.[0] || 'Employee';
+                setActiveRoleState(newRole);
+                localStorage.setItem('rrh_active_role', newRole);
               }
             }
-          } catch (e) {
-            console.error('Failed to sync latest user profile on boot', e);
-          }
-
-          setAuthStatus('authenticated');
+          }).catch(console.error);
         } else if (result.reason === 'unauthorized') {
           logout();
-        } else {
-          // Network or server error - don't destroy local auth state so we can retry
-          setAccessToken(null);
-          setAuthStatus('unauthenticated');
         }
       } else if (savedUser && accessToken) {
         setAuthStatus('authenticated');

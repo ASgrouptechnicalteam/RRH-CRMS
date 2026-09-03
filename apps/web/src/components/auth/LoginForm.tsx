@@ -103,7 +103,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           employeeCode: u.employeeCode || u.employee_code || '',
           fullName: u.fullName || u.full_name || '',
           department: u.department || '',
-          company: u.company?.name || 'RRH EMS',
+          company: u.company?.name || 'RS CRM',
           branch: u.branch || 'HO',
           roles: u.roles || [],
           permissions: responseJson.permissions || [],
@@ -132,10 +132,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl p-8 border border-slate-100 relative">
       {/* Brand Header */}
       <div className="text-center mb-6">
-        <img src="/logo.svg" alt="RRH EMS Logo" className="w-14 h-14 rounded-2xl shadow-md mx-auto mb-3 object-contain" />
+        <img src="/logo.svg" alt="RS CRM Logo" className="w-14 h-14 rounded-2xl shadow-md mx-auto mb-3 object-contain" />
         <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Welcome Back</h2>
         <p className="text-xs text-slate-500 mt-1">
-          Radha Real Homes & Sonthillu EMS
+          RS CRM
         </p>
       </div>
 

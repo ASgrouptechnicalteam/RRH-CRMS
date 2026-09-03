@@ -121,8 +121,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'RRH & Sonthillu EMS',
-        short_name: 'RRH EMS',
+        name: 'RS CRM',
+        short_name: 'RS CRM',
         description: 'Employee Management System & CRM for Radha Real Homes',
         theme_color: '#0f766e',
         icons: [

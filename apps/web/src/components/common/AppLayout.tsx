@@ -51,8 +51,8 @@ export const AppLayout: React.FC<{
       {/* Top Utility Bar */}
       <header className="utility-bar shrink-0 bg-white dark:bg-slate-800 border-b border-neutral-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="RRH-CRMS Logo" className="h-8 w-auto hidden sm:block" />
-          <span className="text-sm font-black tracking-tight text-gold whitespace-nowrap sm:hidden md:inline-block">RRH-CRMS</span>
+          <img src="/logo.svg" alt="RS CRM Logo" className="h-8 w-auto hidden sm:block" />
+          <span className="text-sm font-black tracking-tight text-gold whitespace-nowrap sm:hidden md:inline-block">RS CRM</span>
           {title && (
             <>
               <span className="text-neutral-300 hidden sm:inline-block" aria-hidden="true">/</span>

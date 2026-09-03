@@ -14,7 +14,7 @@ export const PWAInstallPrompt: React.FC = () => {
         </div>
         <div>
           <h4 className="font-extrabold text-xs text-white flex items-center gap-1">
-            Install RRH EMS PWA
+            Install RS CRM PWA
             <Sparkles className="w-3 h-3 text-amber-400" />
           </h4>
           <p className="text-[10px] text-slate-300">Add to home screen for offline work log dictation & quick access</p>

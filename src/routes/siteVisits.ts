@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { Router, Response , NextFunction} from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
 import { Permissions } from '../shared';
 import {
@@ -15,6 +15,7 @@ import {
 } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { SiteVisitService } from '../services/siteVisit.service';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 
@@ -25,10 +26,11 @@ router.get(
   requirePermission([Permissions.SITE_VISITS_READ]),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const { status, leadId } = req.query;
+      const { status, leadId, escalated } = req.query;
       const filters = {
         status: status as string,
         leadId: leadId as string,
+        escalated: escalated === 'true',
       };
 
       const visits = await SiteVisitService.listVisits(req.user!, filters);
@@ -37,7 +39,43 @@ router.get(
       logger.error('Fetch site visits error:', error);
       next(error);
     }
-  }
+  },
+);
+
+// GET /api/v1/site-visits/:id/history - Get reassignment/routing history
+router.get(
+  '/:id/history',
+  authenticateToken,
+  requirePermission([Permissions.SITE_VISITS_READ]),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const visitId = parseInt(req.params.id, 10);
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+
+      // First check if user can access the visit
+      const filters = { leadId: '' }; // Just to pass valid type
+      // Check access implicitly by fetching from db directly but constrained to company
+      const visit = await prisma.siteVisitBooking.findFirst({
+        where: { id: visitId, lead: { company_id: req.user!.companyId } },
+      });
+      if (!visit) throw { status: 404, message: 'Site visit not found' };
+
+      const history = await prisma.siteVisitReassignment.findMany({
+        where: { visit_id: visitId },
+        include: {
+          from_employee: { select: { id: true, full_name: true, employee_code: true } },
+          to_employee: { select: { id: true, full_name: true, employee_code: true } },
+        },
+        orderBy: { created_at: 'asc' },
+      });
+
+      return res.status(200).json({ history });
+    } catch (error: any) {
+      logger.error('Fetch site visit history error:', error);
+      next(error);
+    }
+  },
 );
 
 // POST /api/v1/site-visits - Telecaller books site visit (→ REQUESTED → PENDING_ACCEPTANCE)
@@ -57,7 +95,7 @@ router.post(
       logger.error('Book site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/accept - PM/Agent accepts the routed visit
@@ -69,7 +107,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { notes } = req.body;
       const visit = await SiteVisitService.acceptVisit(req.user!, visitId, notes);
       return res.status(200).json({
@@ -80,7 +119,7 @@ router.post(
       logger.error('Accept site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/reassign - Open reassignment chain (logged, §2)
@@ -92,9 +131,15 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { to_employee_id, reason } = req.body;
-      const visit = await SiteVisitService.reassignVisit(req.user!, visitId, to_employee_id, reason);
+      const visit = await SiteVisitService.reassignVisit(
+        req.user!,
+        visitId,
+        to_employee_id,
+        reason,
+      );
       return res.status(200).json({
         message: `Site visit ${visit.booking_code} reassigned.`,
         visit,
@@ -103,7 +148,7 @@ router.post(
       logger.error('Reassign site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/escalate - No PM/Agent left → Marketing Director
@@ -115,7 +160,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { reason } = req.body;
       const visit = await SiteVisitService.escalateVisit(req.user!, visitId, reason);
       return res.status(200).json({
@@ -126,7 +172,7 @@ router.post(
       logger.error('Escalate site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/reconfirm-customer - Day-before reconfirmation call
@@ -138,7 +184,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.reconfirmCustomer(req.user!, visitId);
       return res.status(200).json({
         message: `Reconfirmation call initiated for ${visit.booking_code}.`,
@@ -148,7 +195,7 @@ router.post(
       logger.error('Reconfirm-customer error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/reschedule - Customer requested reschedule (date/property)
@@ -160,7 +207,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.rescheduleVisit(req.user!, visitId, req.body);
       return res.status(200).json({
         message: `Reschedule requested for ${visit.booking_code}. Awaiting PM reconfirmation.`,
@@ -170,7 +218,7 @@ router.post(
       logger.error('Reschedule error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/pm-reconfirm - PM confirms or releases after reschedule
@@ -182,7 +230,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { release } = req.body;
       const visit = await SiteVisitService.pmReconfirm(req.user!, visitId, !!release);
       return res.status(200).json({
@@ -195,7 +244,7 @@ router.post(
       logger.error('PM reconfirm error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/confirm - PENDING_CUSTOMER_RECONFIRMATION / RESCHEDULE_REQUESTED → CONFIRMED
@@ -207,7 +256,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.confirmVisit(req.user!, visitId);
       return res.status(200).json({
         message: `Site visit ${visit.booking_code} confirmed.`,
@@ -217,7 +267,7 @@ router.post(
       logger.error('Confirm visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/start - CONFIRMED → ACTIVE (day-of)
@@ -229,7 +279,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.startVisit(req.user!, visitId);
       return res.status(200).json({
         message: `Site visit ${visit.booking_code} is now ACTIVE.`,
@@ -239,7 +290,7 @@ router.post(
       logger.error('Start visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/complete - ACTIVE → COMPLETED with per-property outcomes (§2)
@@ -251,9 +302,16 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { outcomes, feedback_notes, proof_photo_url } = req.body;
-      const visit = await SiteVisitService.completeVisit(req.user!, visitId, outcomes, feedback_notes, proof_photo_url);
+      const visit = await SiteVisitService.completeVisit(
+        req.user!,
+        visitId,
+        outcomes,
+        feedback_notes,
+        proof_photo_url,
+      );
       return res.status(200).json({
         message: `Site visit ${visit.booking_code} completed! Outcomes recorded.`,
         visit,
@@ -262,7 +320,7 @@ router.post(
       logger.error('Complete site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/cancel - any active state → CANCELLED
@@ -274,7 +332,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { reason } = req.body || {};
       const visit = await SiteVisitService.cancelVisit(req.user!, visitId, reason);
       return res.status(200).json({
@@ -285,7 +344,7 @@ router.post(
       logger.error('Cancel site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // ==========================================
@@ -301,7 +360,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.holdVisit(req.user!, visitId);
       return res.status(200).json({
         message: `Site visit ${visit.booking_code} placed on hold.`,
@@ -311,7 +371,7 @@ router.post(
       logger.error('Hold site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/initiate-cancel - Telecaller requests PM cross-check
@@ -323,7 +383,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.initiateCancellation(req.user!, visitId);
       return res.status(200).json({
         message: `Cancellation cross-check initiated for ${visit.booking_code}.`,
@@ -333,7 +394,7 @@ router.post(
       logger.error('Initiate cancel site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/reject-cancel - PM indicates customer responded
@@ -345,7 +406,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const visit = await SiteVisitService.rejectCancellation(req.user!, visitId);
       return res.status(200).json({
         message: `Cancellation rejected for ${visit.booking_code}. Reverted to active reconfirmation.`,
@@ -355,7 +417,7 @@ router.post(
       logger.error('Reject cancel site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // POST /api/v1/site-visits/:id/confirm-cancel - PM explicitly confirms cancellation
@@ -367,7 +429,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = parseInt(req.params.id, 10);
-      if (isNaN(visitId)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(visitId))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const { reason } = req.body;
       const visit = await SiteVisitService.confirmCancellation(req.user!, visitId, reason);
       return res.status(200).json({
@@ -378,7 +441,7 @@ router.post(
       logger.error('Confirm cancel site visit error:', error);
       next(error);
     }
-  }
+  },
 );
 
 export default router;

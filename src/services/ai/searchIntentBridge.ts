@@ -21,8 +21,6 @@ import { prisma } from '../../lib/prisma';
 import { PropertyAvailabilityType } from '../../shared';
 import { SearchIntent } from './searchIntent';
 
-
-
 /** Safe client-facing shape of a matched property. Never carries internal CRM fields. */
 export interface SearchMatchResult {
   propertyId: number;
@@ -61,7 +59,8 @@ const MATCH_PROPERTY_SELECT = {
   title: true,
   brand_type: true,
   category: true,
-  price: true,
+  // § Phase 3: Property.price removed — final_price is now authoritative.
+  final_price: true,
   area_sqft: true,
   location: true,
   state: true,
@@ -88,11 +87,12 @@ export function translateToPropertyFilters(intent: SearchIntent): Record<string,
     const budget: Record<string, number> = {};
     if (intent.budget.min !== undefined) budget.gte = intent.budget.min;
     if (intent.budget.max !== undefined) budget.lte = intent.budget.max;
-    if (Object.keys(budget).length) filter.price = budget;
+    if (Object.keys(budget).length) filter.final_price = budget;
   }
 
   if (intent.bhk && intent.bhk.min !== undefined) filter.bedrooms = { gte: intent.bhk.min };
-  if (intent.bathrooms && intent.bathrooms.min !== undefined) filter.bathrooms = { gte: intent.bathrooms.min };
+  if (intent.bathrooms && intent.bathrooms.min !== undefined)
+    filter.bathrooms = { gte: intent.bathrooms.min };
 
   if (intent.area) {
     const area: Record<string, number> = {};
@@ -113,7 +113,9 @@ export function translateToPropertyFilters(intent: SearchIntent): Record<string,
  * `state` / `city` / `pincode` columns plus the free-text `location` column for
  * backward compatibility. Returns an empty array when no location is supplied.
  */
-export function buildLocationConditions(loc: SearchIntent['location'] | null | undefined): Record<string, unknown>[] {
+export function buildLocationConditions(
+  loc: SearchIntent['location'] | null | undefined,
+): Record<string, unknown>[] {
   if (!loc) return [];
   const conditions: Record<string, unknown>[] = [];
   if (loc.state) conditions.push({ state: { contains: loc.state } });
@@ -135,7 +137,10 @@ export function buildLocationConditions(loc: SearchIntent['location'] | null | u
  * It is structurally impossible for a strictly-matching-but-SOLD or unpublished property to
  * appear in results.
  */
-export function buildCrmSearchWhere(intent: SearchIntent, companyId: number): Record<string, unknown> {
+export function buildCrmSearchWhere(
+  intent: SearchIntent,
+  companyId: number,
+): Record<string, unknown> {
   const where: any = {
     ...translateToPropertyFilters(intent),
     company_id: companyId,
@@ -162,7 +167,10 @@ export function buildCrmSearchWhere(intent: SearchIntent, companyId: number): Re
 }
 
 /** Derived availability, mirroring property.service deriveAvailability (LIVE / expired-lock = AVAILABLE). */
-export function deriveSearchAvailability(status: string, lockedUntil: Date | null): PropertyAvailabilityType {
+export function deriveSearchAvailability(
+  status: string,
+  lockedUntil: Date | null,
+): PropertyAvailabilityType {
   if (status === 'LIVE') return 'AVAILABLE';
   if (status === 'LOCKED') {
     return lockedUntil && lockedUntil < new Date() ? 'AVAILABLE' : 'RESERVED';
@@ -174,8 +182,11 @@ export function deriveSearchAvailability(status: string, lockedUntil: Date | nul
 /** Score a raw property row against the SearchIntent using the CRM weights. */
 export function scoreProperty(
   prop: any,
-  intent: SearchIntent
-): { score: number; breakdown: { locationMatch: boolean; budgetMatch: boolean; categoryMatch: boolean } } {
+  intent: SearchIntent,
+): {
+  score: number;
+  breakdown: { locationMatch: boolean; budgetMatch: boolean; categoryMatch: boolean };
+} {
   let score = 0;
   const breakdown = { locationMatch: false, budgetMatch: false, categoryMatch: false };
 
@@ -199,7 +210,7 @@ export function scoreProperty(
 
   const max = intent.budget?.max;
   const min = intent.budget?.min;
-  const price = Number(prop.price || 0);
+  const price = Number(prop.final_price || 0);
   if (max && price <= max) {
     score += SEARCH_MATCH_WEIGHTS.BUDGET;
     breakdown.budgetMatch = true;
@@ -219,7 +230,7 @@ export function scoreProperty(
   const prefBrand = String(intent.brandType || '').toLowerCase();
   const catHit = Boolean(
     (prefCat && (prefCat === propCat || propCat.includes(prefCat))) ||
-      (prefBrand && propBrand === prefBrand)
+    (prefBrand && propBrand === prefBrand),
   );
   score += catHit ? SEARCH_MATCH_WEIGHTS.CATEGORY : 10;
 
@@ -237,7 +248,7 @@ export function scoreAndSortPropertyRows(rows: any[], intent: SearchIntent): Sea
         title: prop.title,
         brandType: prop.brand_type,
         category: prop.category,
-        price: Number(prop.price),
+        price: Number(prop.final_price),
         areaSqft: Number(prop.area_sqft),
         location: prop.location,
         state: prop.state,
@@ -270,7 +281,7 @@ export class CRMSearchError extends Error {
 export async function searchCrmMatches(
   intent: SearchIntent,
   companyId: number,
-  db?: { property: { findMany: (args: any) => Promise<any[]> } }
+  db?: { property: { findMany: (args: any) => Promise<any[]> } },
 ): Promise<SearchMatchResult[]> {
   const client = db ?? prisma;
   const c = client as any;

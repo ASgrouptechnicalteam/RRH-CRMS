@@ -45,6 +45,7 @@ router.get(
       const formatted = employees.map((emp: any) => ({
         id: emp.id,
         employeeCode: emp.employee_code,
+        fullName: emp.full_name || emp.employee_code,
         company: emp.company.name,
         branch: emp.branch?.name || 'All Branches',
         roles: emp.roles.map((r: any) => r.role.name),
@@ -58,7 +59,7 @@ router.get(
       logger.error('MD employees fetch error:', error);
       return res.status(500).json({ error: 'Failed to fetch employee list' });
     }
-  }
+  },
 );
 
 // PATCH /api/v1/md/employees/:id/attendance-requirement - Toggle attendance requirement
@@ -116,7 +117,7 @@ router.patch(
     } catch (error: any) {
       next(error);
     }
-  }
+  },
 );
 
 // GET /api/v1/md/executive-metrics - Real DB Metrics Aggregator for MD Executive Dashboard
@@ -136,6 +137,24 @@ router.get(
       logger.error('Fetch executive metrics error:', error);
       return res.status(500).json({ error: 'Failed to fetch executive metrics' });
     }
-  }
+  },
 );
+
+// GET /api/v1/md/recent-activity - Portal-wide activity feed for the MD dashboard
+router.get(
+  '/recent-activity',
+  authenticateToken,
+  requireAuthz(Permissions.ADMIN_SYSTEM_METRICS),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const companyId = req.user?.companyId || 1;
+      const activity = await AnalyticsService.getRecentActivity(companyId);
+      return res.status(200).json({ activity });
+    } catch (error: any) {
+      logger.error('Fetch recent activity error:', error);
+      return res.status(500).json({ error: 'Failed to fetch recent activity' });
+    }
+  },
+);
+
 export default router;

@@ -1,7 +1,10 @@
 import { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { CustomerService } from './customer.service';
+import { generateWhatsAppLink } from '../utils/whatsapp';
 
 /**
  * §6 — Customer conversion & portal handoff (stub).
@@ -77,10 +80,6 @@ export class CustomerPortalService {
     lead: { id: number; company_id: number; customer_name: string; phone: string },
     user: TokenPayload,
   ): Promise<CustomerPortalProvisionResult> {
-    const bcrypt = await import('bcryptjs');
-    const crypto = await import('crypto');
-    const { generateWhatsAppLink } = await import('../utils/whatsapp');
-
     // 1. Reuse existing convert-to-customer logic (handles idempotency via
     //    Customer.origin_lead_id unique constraint).
     const customer = await CustomerService.upsertFromLead(user, lead.id, tx);
@@ -95,8 +94,8 @@ export class CustomerPortalService {
       data: {
         password_hash: passwordHash,
         temp_password_expiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // expires in 24 hours
-        force_password_reset: true
-      }
+        force_password_reset: true,
+      },
     });
 
     // 4. Provision via the (stub) portal provisioner.
@@ -120,8 +119,8 @@ export class CustomerPortalService {
         lead_id: lead.id,
         actor_id: user.employeeId,
         activity_type: 'CREDENTIALS_GENERATED',
-        notes: `Customer portal credentials generated. PM must send this message manually: ${whatsappLink}`
-      }
+        notes: `Customer portal credentials generated. PM must send this message manually: ${whatsappLink}`,
+      },
     });
 
     return result;

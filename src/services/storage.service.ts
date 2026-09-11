@@ -5,8 +5,13 @@ import fs from 'fs';
 import sharp from 'sharp';
 import crypto from 'crypto';
 import * as ftp from 'basic-ftp';
+import SftpClient = require('ssh2-sftp-client');
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+// Accepts either name: existing deployments (Render, .env.example) already
+// document UPLOAD_ROOT; the code historically read UPLOAD_DIR instead, so
+// UPLOAD_ROOT was silently never applied. Both now work.
+const UPLOAD_DIR =
+  process.env.UPLOAD_DIR || process.env.UPLOAD_ROOT || path.join(process.cwd(), 'uploads');
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -23,7 +28,9 @@ export const memoryUpload = multer({
 /**
  * Reusable helper to process image buffer before storage
  */
-export async function processImageBuffer(buffer: Buffer): Promise<{ processedBuffer: Buffer, filename: string }> {
+export async function processImageBuffer(
+  buffer: Buffer,
+): Promise<{ processedBuffer: Buffer; filename: string }> {
   const processedBuffer = await sharp(buffer)
     .resize(2560, 2560, {
       fit: 'inside',
@@ -34,7 +41,7 @@ export async function processImageBuffer(buffer: Buffer): Promise<{ processedBuf
 
   const uuid = crypto.randomUUID();
   const filename = `${uuid}.webp`;
-  
+
   return { processedBuffer, filename };
 }
 
@@ -47,27 +54,29 @@ export class LocalPropertyImageStorage implements PropertyImageStorage {
   async upload(buffer: Buffer, propertyId: number): Promise<string> {
     const { processedBuffer, filename } = await processImageBuffer(buffer);
     const propertyImagesDir = path.join(UPLOAD_DIR, 'properties', String(propertyId), 'images');
-    
+
     if (!fs.existsSync(propertyImagesDir)) {
       fs.mkdirSync(propertyImagesDir, { recursive: true });
     }
 
     const absolutePath = path.join(propertyImagesDir, filename);
     await fs.promises.writeFile(absolutePath, processedBuffer);
-    
+
     return `/uploads/properties/${propertyId}/images/${filename}`;
   }
 
   async delete(imageUrl: string): Promise<void> {
-    const match = imageUrl.match(/^\/uploads\/(properties\/\d+\/images\/[a-f0-9-]+\.webp|property-images\/prop-[0-9-]+\.[a-z]+)$/i);
+    const match = imageUrl.match(
+      /^\/uploads\/(properties\/\d+\/images\/[a-f0-9-]+\.webp|property-images\/prop-[0-9-]+\.[a-z]+)$/i,
+    );
     if (!match) {
       logger.warn(`Invalid or unrecognizable image URL for deletion: ${imageUrl}`);
       return;
     }
-    
+
     const relativeSafePath = match[1];
     const absolutePath = path.join(UPLOAD_DIR, relativeSafePath);
-    
+
     if (absolutePath.startsWith(path.resolve(UPLOAD_DIR)) && fs.existsSync(absolutePath)) {
       try {
         fs.unlinkSync(absolutePath);
@@ -96,17 +105,22 @@ export class FtpPropertyImageStorage implements PropertyImageStorage {
     const client = await getFtpClient();
     try {
       const { processedBuffer, filename } = await processImageBuffer(buffer);
-      const remoteDir = path.posix.join(process.env.FTP_REMOTE_BASE_PATH || '', 'properties', String(propertyId), 'images');
-      
+      const remoteDir = path.posix.join(
+        process.env.FTP_REMOTE_BASE_PATH || '',
+        'properties',
+        String(propertyId),
+        'images',
+      );
+
       await client.ensureDir(remoteDir);
-      
+
       // Write buffer to stream for basic-ftp
       const { Readable } = await import('stream');
       const stream = Readable.from(processedBuffer);
-      
+
       const remotePath = path.posix.join(remoteDir, filename);
       await client.uploadFrom(stream, remotePath);
-      
+
       const baseUrl = process.env.FTP_PUBLIC_BASE_URL || '';
       return `${baseUrl}/properties/${propertyId}/images/${filename}`;
     } finally {
@@ -135,7 +149,130 @@ export class FtpPropertyImageStorage implements PropertyImageStorage {
   }
 }
 
+// ---------------------------------------------------------------------------
+// SFTP (SSH File Transfer Protocol) — most managed hosts (Hostinger, cPanel,
+// Render's persistent-disk alternative) expose SFTP, not the plaintext FTP
+// basic-ftp implements above. `ssh2-sftp-client` was already an installed
+// dependency (package.json) but had never actually been wired up — every
+// property/image/document upload silently ran in local-disk mode instead.
+// ---------------------------------------------------------------------------
+
+async function getSftpClient() {
+  const client = new SftpClient();
+  const config: any = {
+    host: process.env.SFTP_HOST,
+    port: parseInt(process.env.SFTP_PORT || '22', 10),
+    username: process.env.SFTP_USERNAME,
+  };
+  // Either a password or a private key works — whichever the host provides.
+  if (process.env.SFTP_PRIVATE_KEY) {
+    config.privateKey = process.env.SFTP_PRIVATE_KEY;
+    if (process.env.SFTP_PASSPHRASE) config.passphrase = process.env.SFTP_PASSPHRASE;
+  } else {
+    config.password = process.env.SFTP_PASSWORD;
+  }
+  await client.connect(config);
+  return client;
+}
+
+export class SftpPropertyImageStorage implements PropertyImageStorage {
+  async upload(buffer: Buffer, propertyId: number): Promise<string> {
+    const client = await getSftpClient();
+    try {
+      const { processedBuffer, filename } = await processImageBuffer(buffer);
+      const remoteDir = path.posix.join(
+        process.env.SFTP_REMOTE_BASE_PATH || '',
+        'properties',
+        String(propertyId),
+        'images',
+      );
+      await client.mkdir(remoteDir, true);
+      const remotePath = path.posix.join(remoteDir, filename);
+      await client.put(processedBuffer, remotePath);
+      const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+      return `${baseUrl}/properties/${propertyId}/images/${filename}`;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async delete(imageUrl: string): Promise<void> {
+    const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+    if (!imageUrl.startsWith(baseUrl)) {
+      logger.warn(`Cannot delete SFTP image, URL does not match base URL: ${imageUrl}`);
+      return;
+    }
+    const relativePath = imageUrl.slice(baseUrl.length);
+    const remotePath = path.posix.join(process.env.SFTP_REMOTE_BASE_PATH || '', relativePath);
+    const client = await getSftpClient();
+    try {
+      await client.delete(remotePath);
+    } catch (err) {
+      logger.error(`Failed to delete remote SFTP file: ${remotePath}`, err);
+    } finally {
+      await client.end();
+    }
+  }
+}
+
+export class SftpStorageService implements StorageService {
+  constructor(private readonly remoteSubdir: string = 'documents') {}
+
+  async upload(buffer: Buffer, originalName: string, _mimeType: string): Promise<string> {
+    const ext = path.extname(originalName).toLowerCase() || '.bin';
+    const filename = `doc-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    const client = await getSftpClient();
+    try {
+      const remoteDir = path.posix.join(process.env.SFTP_REMOTE_BASE_PATH || '', this.remoteSubdir);
+      await client.mkdir(remoteDir, true);
+      const remotePath = path.posix.join(remoteDir, filename);
+      await client.put(buffer, remotePath);
+      const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+      return `${baseUrl}/${this.remoteSubdir}/${filename}`;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async download(storagePath: string): Promise<Buffer> {
+    const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+    if (!storagePath.startsWith(baseUrl)) {
+      throw new Error(`Cannot download SFTP file, URL does not match base URL: ${storagePath}`);
+    }
+    const relativePath = storagePath.slice(baseUrl.length);
+    const remotePath = path.posix.join(process.env.SFTP_REMOTE_BASE_PATH || '', relativePath);
+    const client = await getSftpClient();
+    try {
+      const data = await client.get(remotePath);
+      return Buffer.isBuffer(data) ? data : Buffer.from(data as any);
+    } finally {
+      await client.end();
+    }
+  }
+
+  async delete(storagePath: string): Promise<void> {
+    const baseUrl = process.env.SFTP_PUBLIC_BASE_URL || '';
+    if (!storagePath.startsWith(baseUrl)) {
+      logger.warn(`Cannot delete SFTP file, URL does not match base URL: ${storagePath}`);
+      return;
+    }
+    const relativePath = storagePath.slice(baseUrl.length);
+    const remotePath = path.posix.join(process.env.SFTP_REMOTE_BASE_PATH || '', relativePath);
+    const client = await getSftpClient();
+    try {
+      await client.delete(remotePath);
+    } catch (err) {
+      logger.error(`Failed to delete remote SFTP file: ${remotePath}`, err);
+    } finally {
+      await client.end();
+    }
+  }
+}
+
 export function getPropertyImageStorage(): PropertyImageStorage {
+  if (process.env.STORAGE_DRIVER === 'sftp') {
+    return new SftpPropertyImageStorage();
+  }
   if (process.env.STORAGE_DRIVER === 'ftp') {
     return new FtpPropertyImageStorage();
   }
@@ -155,9 +292,18 @@ export interface StorageService {
 
 export class LocalStorageService implements StorageService {
   private readonly baseDir: string;
+  private readonly subdir: string;
 
-  constructor(baseDir: string) {
+  // `subdir` used to be silently dropped — every caller (project layout
+  // images, project media/documents, employee profile photos) wrote into a
+  // single hardcoded uploads/documents/ folder regardless of what subdir it
+  // asked for, while the URL it returned pointed at uploads/<subdir>/... —
+  // a path server.ts never even serves statically for anything but
+  // properties/profiles. Every non-property local upload was effectively
+  // unreachable. Now the class actually uses the subdir it's given.
+  constructor(baseDir: string, subdir: string = 'documents') {
     this.baseDir = path.resolve(baseDir);
+    this.subdir = subdir;
   }
 
   private resolveSafe(storagePath: string): string {
@@ -171,8 +317,8 @@ export class LocalStorageService implements StorageService {
   async upload(buffer: Buffer, originalName: string, _mimeType: string): Promise<string> {
     const ext = path.extname(originalName).toLowerCase() || '.bin';
     const filename = `doc-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    const relativePath = path.posix.join('documents', filename);
-    const dir = path.join(this.baseDir, 'documents');
+    const relativePath = path.posix.join(this.subdir, filename);
+    const dir = path.join(this.baseDir, this.subdir);
     fs.mkdirSync(dir, { recursive: true });
     await fs.promises.writeFile(path.join(dir, filename), buffer);
     return `/uploads/${relativePath}`; // Make it accessible via public URL locally
@@ -202,18 +348,18 @@ export class FtpStorageService implements StorageService {
   async upload(buffer: Buffer, originalName: string, _mimeType: string): Promise<string> {
     const ext = path.extname(originalName).toLowerCase() || '.bin';
     const filename = `doc-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    
+
     const client = await getFtpClient();
     try {
       const remoteDir = path.posix.join(process.env.FTP_REMOTE_BASE_PATH || '', this.remoteSubdir);
       await client.ensureDir(remoteDir);
-      
+
       const { Readable } = await import('stream');
       const stream = Readable.from(buffer);
-      
+
       const remotePath = path.posix.join(remoteDir, filename);
       await client.uploadFrom(stream, remotePath);
-      
+
       const baseUrl = process.env.FTP_PUBLIC_BASE_URL || '';
       return `${baseUrl}/${this.remoteSubdir}/${filename}`;
     } finally {
@@ -236,7 +382,7 @@ export class FtpStorageService implements StorageService {
       const stream = new PassThrough();
       const chunks: Buffer[] = [];
       stream.on('data', (chunk) => chunks.push(chunk));
-      
+
       await client.downloadTo(stream, remotePath);
       return Buffer.concat(chunks);
     } finally {
@@ -266,8 +412,11 @@ export class FtpStorageService implements StorageService {
 }
 
 export function getStorageService(subdir: string = 'documents'): StorageService {
+  if (process.env.STORAGE_DRIVER === 'sftp') {
+    return new SftpStorageService(subdir);
+  }
   if (process.env.STORAGE_DRIVER === 'ftp') {
     return new FtpStorageService(subdir);
   }
-  return new LocalStorageService(UPLOAD_DIR);
+  return new LocalStorageService(UPLOAD_DIR, subdir);
 }

@@ -7,7 +7,6 @@ import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
@@ -40,10 +39,12 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
       return res.body.accessToken;
     };
 
-    const mdCode = deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code;
+    const mdCode = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code;
     mdToken = await getAuth(mdCode, 0);
 
-    const agentCode = deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!.employee_code;
+    const agentCode = deterministicUsers.find(
+      (u) => u.roles[0] === Roles.TELECALLER,
+    )!.employee_code;
     telecallerToken = await getAuth(agentCode, 1);
 
     const decoded = JSON.parse(Buffer.from(mdToken.split('.')[1], 'base64').toString());
@@ -60,7 +61,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
         company_id: companyId,
         pan_number: 'ABCDE1234F',
         aadhaar_number: '123456789012',
-      }
+      },
     });
     customerId = customer.id;
 
@@ -70,13 +71,13 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
         property_code: `TEST-PROP-PH-${Date.now()}`,
         company_id: companyId,
         title: 'Portal Handoff Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
     propertyId = property.id;
   });
@@ -105,7 +106,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
         property_id: propertyId,
         agreed_price: 4900000,
         booking_amount: 100000,
-        notes: 'Portal Handoff Test Booking'
+        notes: 'Portal Handoff Test Booking',
       });
     return res;
   };
@@ -134,14 +135,14 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
     expect(confirmRes.body.status).toBe('CONFIRMED');
 
     const event = await p.integrationEvent.findFirst({
-      where: { crms_booking_id: bookingId }
+      where: { crms_booking_id: bookingId },
     });
     expect(event).toBeTruthy();
   });
 
   test('2. IntegrationEvent status is CREATED', async () => {
     const event = await p.integrationEvent.findFirst({
-      where: { crms_booking_id: bookingId }
+      where: { crms_booking_id: bookingId },
     });
     expect(event).toBeTruthy();
     expect(event.status).toBe('CREATED');
@@ -149,7 +150,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
 
   test('3. Event is created atomically with booking confirmation', async () => {
     const event = await p.integrationEvent.findFirst({
-      where: { crms_booking_id: bookingId }
+      where: { crms_booking_id: bookingId },
     });
     expect(event).toBeTruthy();
     expect(event.event_type).toBe('BOOKING_PORTAL_HANDOFF');
@@ -158,7 +159,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
 
   test('4. BookingPortalMapping is created with CREATED status', async () => {
     const mapping = await p.bookingPortalMapping.findFirst({
-      where: { crms_booking_id: bookingId }
+      where: { crms_booking_id: bookingId },
     });
     expect(mapping).toBeTruthy();
     expect(mapping.handoff_status).toBe('CREATED');
@@ -170,7 +171,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
 
   test('5. Event payload contains approved fields only', async () => {
     const event = await p.integrationEvent.findFirst({
-      where: { crms_booking_id: bookingId }
+      where: { crms_booking_id: bookingId },
     });
     const payload = JSON.parse(event.payload);
 
@@ -194,7 +195,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
 
   test('6. Event payload excludes KYC/bank/password data', async () => {
     const event = await p.integrationEvent.findFirst({
-      where: { crms_booking_id: bookingId }
+      where: { crms_booking_id: bookingId },
     });
     const payload = JSON.parse(event.payload);
 
@@ -209,7 +210,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
   test('7. Handoff status respects company isolation', async () => {
     // Create a booking in a different company
     const otherCompany = await p.company.create({
-      data: { name: 'Other Test Company', code: `OTHER-${Date.now()}` }
+      data: { name: 'Other Test Company', code: `OTHER-${Date.now()}` },
     });
     const otherEmployee = await p.employee.create({
       data: {
@@ -219,7 +220,7 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
         password_hash: 'hash',
         company_id: otherCompany.id,
         status: 'ACTIVE',
-      }
+      },
     });
     const otherCustomer = await p.customer.create({
       data: {
@@ -227,20 +228,20 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
         first_name: 'Other',
         phone: '7777777777',
         company_id: otherCompany.id,
-      }
+      },
     });
     const otherProperty = await p.property.create({
       data: {
         property_code: `PROP-OTH-${Date.now()}`,
         company_id: otherCompany.id,
         title: 'Other Property',
-        price: 3000000,
+        final_price: 3000000,
         area_sqft: 1000,
         location: 'Other Location',
         category: 'PLOT',
         status: 'LIVE',
         created_by_id: otherEmployee.id,
-      }
+      },
     });
 
     // Create and confirm booking in other company
@@ -292,13 +293,13 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
         property_code: `TEST-PROP-FRESH-${Date.now()}`,
         company_id: companyId,
         title: 'Fresh Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Fresh Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
 
     // Create a new booking without triggering handoff
@@ -316,13 +317,13 @@ describe('Phase 11 Packet 3A - Portal Handoff Foundation', () => {
 
     // Verify no handoff event for unconfirmed booking
     const event = await p.integrationEvent.findFirst({
-      where: { crms_booking_id: newBookingId }
+      where: { crms_booking_id: newBookingId },
     });
     expect(event).toBeNull();
 
     // Verify no mapping for unconfirmed booking
     const mapping = await p.bookingPortalMapping.findFirst({
-      where: { crms_booking_id: newBookingId }
+      where: { crms_booking_id: newBookingId },
     });
     expect(mapping).toBeNull();
 

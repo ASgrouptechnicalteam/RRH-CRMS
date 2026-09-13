@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Public Property Detail API', () => {
@@ -65,11 +64,16 @@ describe('Public Property Detail API', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    const mdEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } });
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+    const mdEmployee = await prisma.employee.findFirst({
+      where: { employee_code: getCode(Roles.MD) },
+    });
     companyId = mdEmployee!.company_id;
-    
-    const pmEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.PROJECT_MANAGER) } });
+
+    const pmEmployee = await prisma.employee.findFirst({
+      where: { employee_code: getCode(Roles.PROJECT_MANAGER) },
+    });
     pmUserId = pmEmployee!.id;
 
     // Create a test API key
@@ -94,7 +98,7 @@ describe('Public Property Detail API', () => {
         description: 'A beautiful test property for detail API testing',
         brand_type: 'SONTHILLU',
         category: 'APARTMENT',
-        price: 7500000,
+        final_price: 7500000,
         area_sqft: 1500,
         location: 'Miyapur',
         address: '123 Test Street, Miyapur, Hyderabad',
@@ -337,7 +341,7 @@ describe('Public Property Detail API', () => {
           title: 'Locked Property',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 10000000,
+          final_price: 10000000,
           area_sqft: 2000,
           location: 'Test',
           status: 'LOCKED',
@@ -375,7 +379,7 @@ describe('Public Property Detail API', () => {
           title: 'Sold Property',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1000,
           location: 'Test',
           status: 'SOLD',
@@ -412,7 +416,7 @@ describe('Public Property Detail API', () => {
           title: 'Unpublished Property',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 8000000,
+          final_price: 8000000,
           area_sqft: 1800,
           location: 'Test',
           status: 'LIVE',
@@ -494,8 +498,7 @@ describe('Public Property Detail API', () => {
     });
 
     it('returns 401 for missing API key', async () => {
-      const res = await request(app)
-        .get(`/api/v1/public/sonthillu/properties/${propertyId}`);
+      const res = await request(app).get(`/api/v1/public/sonthillu/properties/${propertyId}`);
 
       expect(res.status).toBe(401);
     });

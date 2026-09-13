@@ -2,12 +2,15 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
-
 
 const p = prisma as any;
 
@@ -38,7 +41,9 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
     // Clean up specifically for this test
     await p.leadPropertyInterest.deleteMany({});
     await p.siteVisitBooking.deleteMany({ where: { booking_code: { startsWith: 'RRH-SV-P8' } } });
-    await p.property.deleteMany({ where: { property_code: { in: ['RRH-PROP-P8A', 'RRH-PROP-P8B'] } } });
+    await p.property.deleteMany({
+      where: { property_code: { in: ['RRH-PROP-P8A', 'RRH-PROP-P8B'] } },
+    });
     await p.lead.deleteMany({ where: { lead_code: { in: ['RRH-L-P8A', 'RRH-L-P8B'] } } });
 
     const getAuth = async (code: string, idx: number = 0) => {
@@ -50,12 +55,18 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
       return res.body.accessToken;
     };
 
-    const tcACode = deterministicUsers.find(u => u.roles.includes(Roles.TELECALLER))?.employee_code;
-    const pmACode = deterministicUsers.find(u => u.roles.includes(Roles.PROJECT_MANAGER))?.employee_code;
-    const tcBCode = crossOrgUsers.find(u => u.roles.includes(Roles.TELECALLER))?.employee_code;
+    const tcACode = deterministicUsers.find((u) =>
+      u.roles.includes(Roles.TELECALLER),
+    )?.employee_code;
+    const pmACode = deterministicUsers.find((u) =>
+      u.roles.includes(Roles.PROJECT_MANAGER),
+    )?.employee_code;
+    const tcBCode = crossOrgUsers.find((u) => u.roles.includes(Roles.TELECALLER))?.employee_code;
 
     if (!tcACode || !pmACode || !tcBCode) {
-      throw new Error('Deterministic users missing expected roles (TELECALLER, PROJECT_MANAGER) in Phase 8 setup.');
+      throw new Error(
+        'Deterministic users missing expected roles (TELECALLER, PROJECT_MANAGER) in Phase 8 setup.',
+      );
     }
 
     const tcA = await p.employee.findUnique({ where: { employee_code: tcACode } });
@@ -80,8 +91,8 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         password_hash: tcA.password_hash,
         status: 'ACTIVE',
         company_id: compBId,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
 
     tcAId = tcA.id;
@@ -101,7 +112,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         phone: '9998887771',
         created_by: { connect: { id: tcAId } },
         assigned_to: { connect: { id: tcAId } },
-      }
+      },
     });
     leadAId = leadA.id;
 
@@ -110,13 +121,13 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         property_code: 'RRH-PROP-P8A',
         company: { connect: { id: compAId } },
         title: 'P8 Property A',
-        price: 1500000,
+        final_price: 1500000,
         area_sqft: 1200,
         location: 'Hyderabad',
         created_by: { connect: { id: pmAId } },
         assigned_pm: { connect: { id: pmAId } },
-        status: 'LIVE'
-      }
+        status: 'LIVE',
+      },
     });
     propAId = propA.id;
 
@@ -129,7 +140,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         phone: '9998887772',
         created_by: { connect: { id: tcBId } },
         assigned_to: { connect: { id: tcBId } },
-      }
+      },
     });
     leadBId = leadB.id;
 
@@ -138,13 +149,13 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         property_code: 'RRH-PROP-P8B',
         company: { connect: { id: compBId } },
         title: 'P8 Property B',
-        price: 2500000,
+        final_price: 2500000,
         area_sqft: 1500,
         location: 'Bangalore',
         created_by: { connect: { id: pmBId } },
         assigned_pm: { connect: { id: pmBId } },
-        status: 'LIVE'
-      }
+        status: 'LIVE',
+      },
     });
     propBId = propB.id;
   });
@@ -152,7 +163,9 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
   afterAll(async () => {
     await p.leadPropertyInterest.deleteMany({});
     await p.siteVisitBooking.deleteMany({ where: { booking_code: { startsWith: 'RRH-SV-P8' } } });
-    await p.property.deleteMany({ where: { property_code: { in: ['RRH-PROP-P8A', 'RRH-PROP-P8B'] } } });
+    await p.property.deleteMany({
+      where: { property_code: { in: ['RRH-PROP-P8A', 'RRH-PROP-P8B'] } },
+    });
     await p.lead.deleteMany({ where: { lead_code: { in: ['RRH-L-P8A', 'RRH-L-P8B'] } } });
     await prisma.$disconnect();
   });
@@ -163,7 +176,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .post(`/api/v1/leads/${leadAId}/properties`)
         .set('Authorization', `Bearer ${tcAToken}`)
         .send({ property_id: propAId });
-      
+
       expect(res.status).toBe(201);
       expect(res.body.interest.property_id).toBe(propAId);
     });
@@ -173,28 +186,28 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
         .post(`/api/v1/leads/${leadAId}/properties`)
         .set('Authorization', `Bearer ${tcAToken}`)
         .send({ property_id: propBId });
-      
+
       expect(res.status).toBe(404); // Invalid relation
     });
   });
 
   describe('B. Property Interest Retrieval and Isolation', () => {
-    it('Company A actor can retrieve Company A Lead\'s property interests', async () => {
+    it("Company A actor can retrieve Company A Lead's property interests", async () => {
       const res = await request(app)
         .get(`/api/v1/leads/${leadAId}/properties`)
         .set('Authorization', `Bearer ${tcAToken}`);
-      
+
       expect(res.status).toBe(200);
       expect(res.body.interests).toBeDefined();
       expect(res.body.interests.length).toBeGreaterThan(0);
       expect(res.body.interests[0].property.id).toBe(propAId);
     });
 
-    it('Company B actor CANNOT retrieve Company A Lead\'s property interests', async () => {
+    it("Company B actor CANNOT retrieve Company A Lead's property interests", async () => {
       const res = await request(app)
         .get(`/api/v1/leads/${leadAId}/properties`)
         .set('Authorization', `Bearer ${tcBToken}`);
-      
+
       expect(res.status).toBe(404);
     });
   });
@@ -204,7 +217,7 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
       const res = await request(app)
         .delete(`/api/v1/leads/${leadAId}/properties/${propAId}`)
         .set('Authorization', `Bearer ${tcBToken}`);
-      
+
       expect(res.status).toBe(404);
     });
 
@@ -212,14 +225,14 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
       const res = await request(app)
         .delete(`/api/v1/leads/${leadAId}/properties/${propAId}`)
         .set('Authorization', `Bearer ${tcAToken}`);
-      
+
       expect(res.status).toBe(200);
-      
+
       // Verify it was deactivated
       const listRes = await request(app)
         .get(`/api/v1/leads/${leadAId}/properties`)
         .set('Authorization', `Bearer ${tcAToken}`);
-      
+
       expect(listRes.body.interests.length).toBe(0);
     });
   });
@@ -233,16 +246,16 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
           lead_id: leadAId,
           property_ids: [propAId],
           scheduled_date: new Date(Date.now() + 86400000).toISOString(),
-          notes: 'Test Phase 8 booking'
+          notes: 'Test Phase 8 booking',
         });
-      
+
       expect(res.status).toBe(201);
-      
+
       // Keep it clean
       if (res.body.booking?.booking_code) {
         await p.siteVisitBooking.update({
           where: { id: res.body.booking.id },
-          data: { booking_code: `RRH-SV-P8-VALID` }
+          data: { booking_code: `RRH-SV-P8-VALID` },
         });
       }
     });
@@ -255,9 +268,9 @@ describe('Phase 8 - CRM Core / Lead-to-Opportunity Domain Hardening', () => {
           lead_id: leadAId,
           property_ids: [propBId],
           scheduled_date: new Date(Date.now() + 86400000).toISOString(),
-          notes: 'Cross company attempt'
+          notes: 'Cross company attempt',
         });
-      
+
       expect(res.status).toBe(404); // Invalid relation
     });
   });

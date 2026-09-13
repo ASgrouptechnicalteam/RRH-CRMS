@@ -2,12 +2,15 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
-
 
 const p = prisma as any;
 
@@ -39,11 +42,20 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
 
     // 0. Proactive cleanup
     await p.employee.deleteMany({
-      where: { employee_code: { in: ['RRH-OP-998', 'RRH-OP-997', 'RRH-SL-996'] } }
+      where: { employee_code: { in: ['RRH-OP-998', 'RRH-OP-997', 'RRH-SL-996'] } },
     });
     // Delete stale test fixtures in correct FK-safe order
-    await p.siteVisitProperty.deleteMany({ where: { property: { property_code: 'RRH-PR-TEST-SV' } } });
-    await p.siteVisitBooking.deleteMany({ where: { OR: [{ booking_code: 'RRH-SV-SKIP-TEST' }, { property: { property_code: 'RRH-PR-TEST-SV' } }] } });
+    await p.siteVisitProperty.deleteMany({
+      where: { property: { property_code: 'RRH-PR-TEST-SV' } },
+    });
+    await p.siteVisitBooking.deleteMany({
+      where: {
+        OR: [
+          { booking_code: 'RRH-SV-SKIP-TEST' },
+          { property: { property_code: 'RRH-PR-TEST-SV' } },
+        ],
+      },
+    });
     await p.property.deleteMany({ where: { property_code: 'RRH-PR-TEST-SV' } });
     await p.project.deleteMany({ where: { project_code: 'RRH-PJ-TEST-SV' } });
     await p.lead.deleteMany({ where: { lead_code: 'RRH-L-TEST-SV' } });
@@ -57,7 +69,8 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
       return res.body.accessToken;
     };
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
 
     const pmACode = getCode(Roles.PROJECT_MANAGER);
     const mdCode = getCode(Roles.MD);
@@ -67,7 +80,8 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
     tcId = (await p.employee.findFirst({ where: { employee_code: tcCode } })).id;
     pmAId = (await p.employee.findFirst({ where: { employee_code: pmACode } })).id;
 
-    const pmAHash = (await p.employee.findFirst({ where: { employee_code: pmACode } })).password_hash;
+    const pmAHash = (await p.employee.findFirst({ where: { employee_code: pmACode } }))
+      .password_hash;
 
     const pmB = await p.employee.upsert({
       where: { employee_code: 'RRH-OP-998' },
@@ -78,12 +92,14 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: companyId,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
     pmBId = pmB.id;
 
-    const crossOrgCompanyId = (await p.employee.findFirst({ where: { employee_code: crossOrgUsers[0].employee_code } })).company_id;
+    const crossOrgCompanyId = (
+      await p.employee.findFirst({ where: { employee_code: crossOrgUsers[0].employee_code } })
+    ).company_id;
 
     const pmOrgB = await p.employee.upsert({
       where: { employee_code: 'RRH-OP-997' },
@@ -94,8 +110,8 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: crossOrgCompanyId,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
 
     const agentA = await p.employee.upsert({
@@ -107,8 +123,8 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: companyId,
-        roles: { create: { role: { connect: { name: Roles.AGENT } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.AGENT } } } },
+      },
     });
     agentId = agentA.id;
 
@@ -121,8 +137,14 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
       getAuth('RRH-SL-996', 6),
     ]);
 
-    console.log('pmOrgBToken Payload:', JSON.parse(Buffer.from(pmOrgBToken.split('.')[1], 'base64').toString()));
-    console.log('agentToken Payload:', JSON.parse(Buffer.from(agentToken.split('.')[1], 'base64').toString()));
+    console.log(
+      'pmOrgBToken Payload:',
+      JSON.parse(Buffer.from(pmOrgBToken.split('.')[1], 'base64').toString()),
+    );
+    console.log(
+      'agentToken Payload:',
+      JSON.parse(Buffer.from(agentToken.split('.')[1], 'base64').toString()),
+    );
 
     const lead = await p.lead.upsert({
       where: { lead_code: 'RRH-L-TEST-SV' },
@@ -135,8 +157,8 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         preferred_location: 'SV Location',
         status: 'NEW',
         assigned_to: { connect: { id: tcId } },
-        created_by: { connect: { id: tcId } }
-      }
+        created_by: { connect: { id: tcId } },
+      },
     });
     leadId = lead.id;
 
@@ -149,13 +171,17 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         name: 'SV Test Project',
         location: 'SV Location',
         assigned_pm: { connect: { id: pmAId } },
-        status: 'ACTIVE'
-      }
+        status: 'ACTIVE',
+      },
     });
 
     const property = await p.property.upsert({
       where: { property_code: 'RRH-PR-TEST-SV' },
-      update: { project: { connect: { id: project.id } }, assigned_pm: { connect: { id: pmAId } }, status: 'LIVE' },
+      update: {
+        project: { connect: { id: project.id } },
+        assigned_pm: { connect: { id: pmAId } },
+        status: 'LIVE',
+      },
       create: {
         property_code: 'RRH-PR-TEST-SV',
         project: { connect: { id: project.id } },
@@ -163,13 +189,13 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         title: 'SV Test Property',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
-        price: 10000,
+        final_price: 10000,
         area_sqft: 1000,
         location: 'SV Location',
         assigned_pm: { connect: { id: pmAId } },
         created_by: { connect: { id: pmAId } },
-        status: 'LIVE'
-      }
+        status: 'LIVE',
+      },
     });
     propertyId = property.id;
   });
@@ -200,7 +226,7 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
           lead_id: leadId,
           scheduled_date: new Date(Date.now() + 86400000).toISOString(),
         });
-      
+
       expect(res.status).toBe(403);
     });
   });
@@ -210,7 +236,7 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
       const res = await request(app)
         .get('/api/v1/site-visits')
         .set('Authorization', `Bearer ${pmOrgBToken}`);
-      
+
       if (res.status === 403) console.log('Listing properties 403 BODY:', res.body);
       expect(res.status).toBe(200);
       // Cross-company PM should NOT see visitAId
@@ -237,15 +263,15 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         .post(`/api/v1/site-visits/${reassignVisitId}/reassign`)
         .set('Authorization', `Bearer ${tcToken}`)
         .send({ to_employee_id: agentId, reason: 'Not authorized test' });
-      
+
       expect(res.status).toBe(403);
-      
+
       // PM from same company can reassign (visit is in PENDING_ACCEPTANCE)
       const res2 = await request(app)
         .post(`/api/v1/site-visits/${reassignVisitId}/reassign`)
         .set('Authorization', `Bearer ${pmAToken}`)
         .send({ to_employee_id: agentId, reason: 'Assigning to agent' });
-        
+
       expect(res2.status).toBe(200);
     });
   });
@@ -256,15 +282,15 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         .post(`/api/v1/site-visits/${visitAId}/accept`)
         .set('Authorization', `Bearer ${pmOrgBToken}`)
         .send({ notes: 'Verified cross company' });
-      
+
       expect(res.status).toBe(404);
     });
     it('Valid authorized actor can verify a site visit', async () => {
       const res = await request(app)
         .post(`/api/v1/site-visits/${visitAId}/accept`)
-        .set('Authorization', `Bearer ${pmAToken}`) 
+        .set('Authorization', `Bearer ${pmAToken}`)
         .send({ notes: 'Verified' });
-      
+
       expect(res.status).toBe(200);
     });
   });
@@ -276,7 +302,7 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
         update: {
           assigned_agent: { connect: { id: agentId } },
           lead: { connect: { id: leadId } },
-          status: 'PENDING_ACCEPTANCE'
+          status: 'PENDING_ACCEPTANCE',
         },
         create: {
           booking_code: 'RRH-SV-SKIP-TEST',
@@ -284,15 +310,18 @@ describe('Phase 5A - Site Visit Domain Baseline', () => {
           telecaller: { connect: { id: tcId } },
           assigned_agent: { connect: { id: agentId } },
           scheduled_date: new Date(),
-          status: 'PENDING_ACCEPTANCE' // Initial state
-        }
+          status: 'PENDING_ACCEPTANCE', // Initial state
+        },
       });
 
       const res = await request(app)
         .post(`/api/v1/site-visits/${booking.id}/complete`)
         .set('Authorization', `Bearer ${mdToken}`)
-        .send({ outcomes: [{ property_id: propertyId, outcome: 'INTERESTED' }], feedback_notes: 'Skipped states' });
-      
+        .send({
+          outcomes: [{ property_id: propertyId, outcome: 'INTERESTED' }],
+          feedback_notes: 'Skipped states',
+        });
+
       if (res.status === 403) console.log('Complete visit 403 BODY:', res.body);
       expect(res.status).toBe(409); // Conflict - invalid transition
     });

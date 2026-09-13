@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Public Project API', () => {
@@ -17,11 +16,7 @@ describe('Public Project API', () => {
   let propertyId: number;
   let projectCode: string;
 
-  const INTERNAL_PROJECT_FIELDS = [
-    'company_id',
-    'branch_id',
-    'assigned_pm_id',
-  ];
+  const INTERNAL_PROJECT_FIELDS = ['company_id', 'branch_id', 'assigned_pm_id'];
 
   const PUBLIC_PROJECT_FIELDS = [
     'id',
@@ -45,8 +40,10 @@ describe('Public Project API', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!
+      .company_id;
 
     // Create a test API key
     const testApiKey = `PROJECT-TEST-KEY-${Date.now()}`;
@@ -86,7 +83,7 @@ describe('Public Project API', () => {
         title: 'Test Property in Project',
         brand_type: 'SONTHILLU',
         category: 'APARTMENT',
-        price: 7500000,
+        final_price: 7500000,
         area_sqft: 1500,
         location: 'Miyapur',
         status: 'LIVE',
@@ -198,7 +195,7 @@ describe('Public Project API', () => {
           title: 'RRH Property',
           brand_type: 'RADHA_REAL_HOMES',
           category: 'PLOT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1200,
           location: 'Test',
           status: 'LIVE',
@@ -252,7 +249,7 @@ describe('Public Project API', () => {
           title: 'RRH Property',
           brand_type: 'RADHA_REAL_HOMES',
           category: 'PLOT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1200,
           location: 'Test',
           status: 'LIVE',
@@ -269,9 +266,7 @@ describe('Public Project API', () => {
         },
       });
 
-      const res = await request(app)
-        .get('/api/v1/public/rrh/projects')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/projects').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const project = res.body.find((p: any) => p.id === rrhProject.id);
@@ -284,9 +279,7 @@ describe('Public Project API', () => {
     });
 
     it('does not return sonthillu projects', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/projects')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/projects').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const project = res.body.find((p: any) => p.id === projectId);
@@ -382,7 +375,7 @@ describe('Public Project API', () => {
           title: 'RRH Property',
           brand_type: 'RADHA_REAL_HOMES',
           category: 'PLOT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1200,
           location: 'Test',
           status: 'LIVE',
@@ -459,8 +452,7 @@ describe('Public Project API', () => {
     });
 
     it('returns 401 for missing API key', async () => {
-      const res = await request(app)
-        .get(`/api/v1/public/sonthillu/projects/${projectId}`);
+      const res = await request(app).get(`/api/v1/public/sonthillu/projects/${projectId}`);
 
       expect(res.status).toBe(401);
     });
@@ -494,7 +486,7 @@ describe('Public Project API', () => {
           title: 'Expired Locked Property',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1000,
           location: 'Test',
           status: 'LOCKED',
@@ -535,7 +527,7 @@ describe('Public Project API', () => {
           title: 'Active Locked Property',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1000,
           location: 'Test',
           status: 'LOCKED',
@@ -574,7 +566,7 @@ describe('Public Project API', () => {
           title: 'Sold Property',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1000,
           location: 'Test',
           status: 'SOLD',

@@ -2,12 +2,15 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000); // Prevent hook timeout during DB setup and hashing
-
 
 const p = prisma as any;
 
@@ -17,8 +20,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
   let pmBToken: string;
   let pmOrgBToken: string; // cross-company PM
   let dmToken: string;
-     let telecallerToken: string;
-   let adminToken: string;
+  let telecallerToken: string;
+  let adminToken: string;
 
   let pmAId: number;
   let pmBId: number;
@@ -47,25 +50,28 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       return res.body.accessToken;
     };
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
 
     const pmACode = getCode(Roles.PROJECT_MANAGER);
     const mdCode = getCode(Roles.MD);
     const dmCode = getCode(Roles.DIGITAL_MARKETING_HEAD);
-        const tcCode = getCode(Roles.TELECALLER);
+    const tcCode = getCode(Roles.TELECALLER);
     const adminCode = getCode(Roles.ADMIN);
-    
-    companyId = (await prisma.employee.findFirst({where:{employee_code: pmACode}}))!.company_id;
+
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: pmACode } }))!
+      .company_id;
 
     // Ensure Branch 1 exists to satisfy the hardcoded fallback in the old routes/properties.ts
     await prisma.branch.upsert({
       where: { id: 1 },
       update: { company_id: companyId },
-      create: { id: 1, name: 'Main Branch', company_id: companyId }
+      create: { id: 1, name: 'Main Branch', company_id: companyId },
     });
 
     // Extract the hash from PM A so we don't have to spend 600ms bcrypting new passwords
-    const pmAHash = (await prisma.employee.findFirst({where:{employee_code: pmACode}}))!.password_hash;
+    const pmAHash = (await prisma.employee.findFirst({ where: { employee_code: pmACode } }))!
+      .password_hash;
 
     const pmB = await prisma.employee.upsert({
       where: { employee_code: 'RRH-TST-998' },
@@ -76,8 +82,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: companyId,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
 
     const pmOrgB = await prisma.employee.upsert({
@@ -88,22 +94,25 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         full_name: 'PM Org B',
         password_hash: pmAHash,
         status: 'ACTIVE',
-        company_id: (await prisma.employee.findFirst({where:{employee_code: crossOrgUsers[0].employee_code}}))!.company_id,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        company_id: (await prisma.employee.findFirst({
+          where: { employee_code: crossOrgUsers[0].employee_code },
+        }))!.company_id,
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
 
-        [adminToken, mdToken, pmAToken, dmToken, telecallerToken, pmBToken, pmOrgBToken] = await Promise.all([
-      getAuth(adminCode, 7),
-      getAuth(mdCode, 1),
-      getAuth(pmACode, 2),
-      getAuth(dmCode, 3),
-      getAuth(tcCode, 4),
-      getAuth('RRH-TST-998', 5),
-      getAuth('RRH-TST-997', 6),
-    ]);
+    [adminToken, mdToken, pmAToken, dmToken, telecallerToken, pmBToken, pmOrgBToken] =
+      await Promise.all([
+        getAuth(adminCode, 7),
+        getAuth(mdCode, 1),
+        getAuth(pmACode, 2),
+        getAuth(dmCode, 3),
+        getAuth(tcCode, 4),
+        getAuth('RRH-TST-998', 5),
+        getAuth('RRH-TST-997', 6),
+      ]);
 
-    pmAId = (await prisma.employee.findFirst({where:{employee_code: pmACode}}))!.id;
+    pmAId = (await prisma.employee.findFirst({ where: { employee_code: pmACode } }))!.id;
     pmBId = pmB.id;
   });
 
@@ -116,7 +125,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
           title: 'Test Villa 1',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 15000000,
+          base_rate: 6000,
           area_sqft: 2500,
           location: 'Test Location',
           assigned_pm_id: pmAId,
@@ -137,11 +146,11 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
           title: 'Test Villa by TC',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 5000000,
+          base_rate: 5000,
           area_sqft: 1500,
           location: 'TC Location',
         });
-      
+
       // After refactoring, this MUST be 403. Currently it succeeds (returns 201).
       expect(res.status).toBe(403);
     });
@@ -150,7 +159,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const res = await request(app)
         .get('/api/v1/properties')
         .set('Authorization', `Bearer ${pmBToken}`);
-      
+
       expect(res.status).toBe(200);
       const properties = res.body.properties;
       // Expect false because PM B should NOT be able to list PM A's property (properly scoped listing)
@@ -159,7 +168,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
   });
 
   describe('Property PM Verification IDOR & State Vulnerabilities', () => {
-    it('Unassigned PM (PM B) CAN verify PM A\'s property (IDOR VULNERABILITY)', async () => {
+    it("Unassigned PM (PM B) CAN verify PM A's property (IDOR VULNERABILITY)", async () => {
       const res = await request(app)
         .post(`/api/v1/properties/${propertyAId}/verify`)
         .set('Authorization', `Bearer ${pmBToken}`)
@@ -170,7 +179,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       expect(res.status).toBe(403);
     });
 
-    it('Cross-Company PM CAN verify Org A\'s property (IDOR VULNERABILITY)', async () => {
+    it("Cross-Company PM CAN verify Org A's property (IDOR VULNERABILITY)", async () => {
       const res = await request(app)
         .post(`/api/v1/properties/${propertyAId}/verify`)
         .set('Authorization', `Bearer ${pmOrgBToken}`)
@@ -186,16 +195,18 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const skipCode1 = `TEST-SKIP-1-${Date.now()}`;
       const newProp = await p.property.create({
         data: {
-        assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: skipCode1,
           company_id: companyId,
           title: 'Skip Test',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 1, area_sqft: 1, location: 'Loc',
+          final_price: 1,
+          area_sqft: 1,
+          location: 'Loc',
           status: 'PENDING_VERIFICATION',
-          created_by_id: pmAId
-        }
+          created_by_id: pmAId,
+        },
       });
 
       // DM Polish requires PENDING_VERIFICATION to be done first (should be PENDING_DM_POLISH)
@@ -213,16 +224,18 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       const skipCode2 = `TEST-SKIP-2-${Date.now()}`;
       const newProp2 = await p.property.create({
         data: {
-        assigned_pm_id: (await prisma.employee.findFirst())!.id,
+          assigned_pm_id: (await prisma.employee.findFirst())!.id,
           property_code: skipCode2,
           company_id: companyId,
           title: 'Skip Test 2',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 1, area_sqft: 1, location: 'Loc',
+          final_price: 1,
+          area_sqft: 1,
+          location: 'Loc',
           status: 'PENDING_VERIFICATION',
-          created_by_id: pmAId
-        }
+          created_by_id: pmAId,
+        },
       });
 
       const res = await request(app)
@@ -235,18 +248,18 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
       expect(res.status).toBe(409);
     });
   });
-  
+
   describe('Valid Workflow Completion', () => {
     it('Can complete the 3-stage approval properly (PASSING BASELINE)', async () => {
       const pId = propertyAId;
-      
+
       // Fix state back to PENDING_VERIFICATION to test full flow
-      await p.property.update({ 
-        where: { id: pId }, 
-        data: { 
+      await p.property.update({
+        where: { id: pId },
+        data: {
           status: 'PENDING_VERIFICATION',
-          location_confirmed_by_pm: true
-        } 
+          location_confirmed_by_pm: true,
+        },
       });
 
       // Provide the required photo to bypass verification validation
@@ -254,8 +267,8 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         data: {
           property_id: pId,
           image_url: 'test-photo.jpg',
-          uploaded_by_id: pmAId
-        }
+          uploaded_by_id: pmAId,
+        },
       });
 
       // 1. PM Verifies
@@ -263,15 +276,19 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         .post(`/api/v1/properties/${pId}/verify`)
         .set('Authorization', `Bearer ${pmAToken}`)
         .send({ approved: true, notes: 'Good' });
-      
+
       expect(verRes.status).toBe(200);
 
       // 2. DM Polishes
       const dmRes = await request(app)
         .post(`/api/v1/properties/${pId}/dm-polish`)
         .set('Authorization', `Bearer ${dmToken}`)
-        .send({ seo_title: 'Polished', seo_keywords: 'test', digital_marketing_executive_id: pmAId });
-      
+        .send({
+          seo_title: 'Polished',
+          seo_keywords: 'test',
+          digital_marketing_executive_id: pmAId,
+        });
+
       expect(dmRes.status).toBe(200);
 
       // 3. MD Approves
@@ -279,9 +296,9 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
         .post(`/api/v1/properties/${pId}/md-approve`)
         .set('Authorization', `Bearer ${mdToken}`)
         .send({ approved: true, comments: 'Looks good' });
-      
+
       expect(mdRes.status).toBe(200);
-          expect(mdRes.body.property.status).toBe('LIVE');
+      expect(mdRes.body.property.status).toBe('LIVE');
     });
   });
 
@@ -303,7 +320,7 @@ describe('Phase 4 - Property Domain Extraction & Hardening Baseline', () => {
           title: 'ADMIN Regression Villa',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 2000000,
+          base_rate: 5000,
           area_sqft: 1200,
           location: 'Hyderabad, Telangana',
           assigned_pm_id: pmAId,

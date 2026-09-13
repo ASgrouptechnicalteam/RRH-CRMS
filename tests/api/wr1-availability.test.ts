@@ -8,7 +8,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('WR-1 P0-3: Availability Derivation', () => {
@@ -36,15 +35,21 @@ describe('WR-1 P0-3: Availability Derivation', () => {
     });
 
     it('PENDING_VERIFICATION property -> UNAVAILABLE', () => {
-      expect(deriveAvailability({ status: 'PENDING_VERIFICATION', locked_until: null })).toBe('UNAVAILABLE');
+      expect(deriveAvailability({ status: 'PENDING_VERIFICATION', locked_until: null })).toBe(
+        'UNAVAILABLE',
+      );
     });
 
     it('PENDING_DM_POLISH property -> UNAVAILABLE', () => {
-      expect(deriveAvailability({ status: 'PENDING_DM_POLISH', locked_until: null })).toBe('UNAVAILABLE');
+      expect(deriveAvailability({ status: 'PENDING_DM_POLISH', locked_until: null })).toBe(
+        'UNAVAILABLE',
+      );
     });
 
     it('PENDING_MD_APPROVAL property -> UNAVAILABLE', () => {
-      expect(deriveAvailability({ status: 'PENDING_MD_APPROVAL', locked_until: null })).toBe('UNAVAILABLE');
+      expect(deriveAvailability({ status: 'PENDING_MD_APPROVAL', locked_until: null })).toBe(
+        'UNAVAILABLE',
+      );
     });
 
     it('REJECTED property -> UNAVAILABLE', () => {
@@ -67,8 +72,11 @@ describe('WR-1 P0-3: Availability Derivation', () => {
 
       await setupDeterministicTestUsers();
 
-      const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-      companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+      const getCode = (role: string) =>
+        deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+      companyId = (await prisma.employee.findFirst({
+        where: { employee_code: getCode(Roles.MD) },
+      }))!.company_id;
 
       // Create test API key
       const testApiKey = `WR1-AVAIL-${Date.now()}`;
@@ -85,7 +93,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
             title: `Availability Test - ${status}`,
             brand_type: 'SONTHILLU',
             category: 'VILLA',
-            price: 10000000,
+            final_price: 10000000,
             area_sqft: 2000,
             location: 'Test Location',
             status,
@@ -98,13 +106,20 @@ describe('WR-1 P0-3: Availability Derivation', () => {
 
       livePropId = await makeProp('LIVE');
       lockedPropId = await makeProp('LOCKED', { locked_until: new Date(Date.now() + 3600000) });
-      expiredLockPropId = await makeProp('LOCKED', { locked_until: new Date(Date.now() - 3600000) });
+      expiredLockPropId = await makeProp('LOCKED', {
+        locked_until: new Date(Date.now() - 3600000),
+      });
       bookedPropId = await makeProp('BOOKED');
 
       // Publish all properties
       for (const pid of [livePropId, lockedPropId, expiredLockPropId, bookedPropId]) {
         await p.propertyPublication.create({
-          data: { property_id: pid, company_id: companyId, is_published: true, published_at: new Date() },
+          data: {
+            property_id: pid,
+            company_id: companyId,
+            is_published: true,
+            published_at: new Date(),
+          },
         });
       }
     });
@@ -121,9 +136,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
     });
 
     it('LIVE properties appear in public listing', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const ids = res.body.map((p: any) => p.id);
@@ -131,9 +144,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
     });
 
     it('LOCKED properties with active lock do NOT appear', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const ids = res.body.map((p: any) => p.id);
@@ -141,9 +152,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
     });
 
     it('LOCKED properties with expired lock DO appear (available)', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const ids = res.body.map((p: any) => p.id);
@@ -151,9 +160,7 @@ describe('WR-1 P0-3: Availability Derivation', () => {
     });
 
     it('BOOKED properties do NOT appear', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const ids = res.body.map((p: any) => p.id);

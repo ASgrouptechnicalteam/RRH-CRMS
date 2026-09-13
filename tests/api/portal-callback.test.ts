@@ -7,7 +7,6 @@ import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3B - Portal Callback', () => {
@@ -44,7 +43,7 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
       return res.body.accessToken;
     };
 
-    const mdCode = deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code;
+    const mdCode = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code;
     mdToken = await getAuth(mdCode, 0);
 
     const decoded = JSON.parse(Buffer.from(mdToken.split('.')[1], 'base64').toString());
@@ -60,7 +59,7 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
         company_id: companyId,
         pan_number: 'ABCDE1234F',
         aadhaar_number: '123456789012',
-      }
+      },
     });
     customerId = customer.id;
 
@@ -69,13 +68,13 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
         property_code: `TEST-PROP-3B-${Date.now()}`,
         company_id: companyId,
         title: 'Callback Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
     propertyId = property.id;
   });
@@ -109,7 +108,7 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
         property_id: propId,
         agreed_price: 4900000,
         booking_amount: 100000,
-        notes: 'Portal Callback Test Booking'
+        notes: 'Portal Callback Test Booking',
       });
     expect(createRes.status).toBe(201);
     const id = createRes.body.id;
@@ -163,7 +162,9 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
 
     expect(res.status).toBe(200);
 
-    const mapping = await p.bookingPortalMapping.findFirst({ where: { crms_booking_id: bookingId } });
+    const mapping = await p.bookingPortalMapping.findFirst({
+      where: { crms_booking_id: bookingId },
+    });
     expect(mapping.handoff_status).toBe('ACTIVE');
     expect(mapping.portal_customer_id).toBe('PORTAL-CUST-1');
     expect(mapping.portal_booking_id).toBe('PORTAL-BKG-1');
@@ -188,7 +189,9 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
     expect(res.body.duplicate).toBe(true);
 
     // Original portal IDs preserved
-    const mapping = await p.bookingPortalMapping.findFirst({ where: { crms_booking_id: bookingId } });
+    const mapping = await p.bookingPortalMapping.findFirst({
+      where: { crms_booking_id: bookingId },
+    });
     expect(mapping.portal_customer_id).toBe('PORTAL-CUST-1');
   });
 
@@ -278,13 +281,13 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
         property_code: `TEST-PROP-CB8-${Date.now()}`,
         company_id: companyId,
         title: 'Callback Test Property 8',
-        price: 4800000,
+        final_price: 4800000,
         area_sqft: 1400,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
     const freshBookingId = await createConfirmedBookingForProperty(freshProperty.id);
     const freshEventId = await getEventId(freshBookingId);
@@ -334,13 +337,13 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
         property_code: `TEST-PROP-CB11-${Date.now()}`,
         company_id: companyId,
         title: 'Callback Test Property 11',
-        price: 4700000,
+        final_price: 4700000,
         area_sqft: 1300,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
     const freshBookingId = await createConfirmedBookingForProperty(freshProperty.id);
     const freshEventId = await getEventId(freshBookingId);
@@ -360,7 +363,9 @@ describe('Phase 11 Packet 3B - Portal Callback', () => {
 
     expect(res.status).toBe(200);
 
-    const mapping = await p.bookingPortalMapping.findFirst({ where: { crms_booking_id: freshBookingId } });
+    const mapping = await p.bookingPortalMapping.findFirst({
+      where: { crms_booking_id: freshBookingId },
+    });
     expect(mapping.handoff_status).toBe('WAITING_ACTIVATION');
     expect(mapping.error_message).toContain('OTP');
 

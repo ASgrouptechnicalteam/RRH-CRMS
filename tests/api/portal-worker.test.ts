@@ -8,7 +8,6 @@ import { PortalWorker } from '../../apps/api/src/services/portalWorker';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3B - Portal Worker', () => {
@@ -45,7 +44,7 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
       return res.body.accessToken;
     };
 
-    const mdCode = deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code;
+    const mdCode = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code;
     mdToken = await getAuth(mdCode, 0);
 
     const decoded = JSON.parse(Buffer.from(mdToken.split('.')[1], 'base64').toString());
@@ -61,7 +60,7 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
         company_id: companyId,
         pan_number: 'ABCDE1234F',
         aadhaar_number: '123456789012',
-      }
+      },
     });
     customerId = customer.id;
 
@@ -70,13 +69,13 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
         property_code: `TEST-PROP-W-${Date.now()}`,
         company_id: companyId,
         title: 'Worker Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
     propertyId = property.id;
   });
@@ -102,13 +101,13 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
         property_code: `TEST-PROP-W-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         company_id: companyId,
         title: `Worker Test Property ${Math.floor(Math.random() * 10000)}`,
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: agentId,
-      }
+      },
     });
     return prop.id;
   };
@@ -122,7 +121,7 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
         property_id: freshPropertyId,
         agreed_price: 4900000,
         booking_amount: 100000,
-        notes: 'Portal Worker Test Booking'
+        notes: 'Portal Worker Test Booking',
       });
     expect(createRes.status).toBe(201);
     const id = createRes.body.id;
@@ -185,7 +184,9 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
   });
 
   test('3. Successful handoff updates BookingPortalMapping to WAITING_ACTIVATION', async () => {
-    const mapping = await p.bookingPortalMapping.findFirst({ where: { crms_booking_id: bookingId } });
+    const mapping = await p.bookingPortalMapping.findFirst({
+      where: { crms_booking_id: bookingId },
+    });
     expect(mapping.handoff_status).toBe('WAITING_ACTIVATION');
     expect(mapping.portal_customer_id).toBe('PORTAL-CUST-W1');
     expect(mapping.portal_booking_id).toBe('PORTAL-BKG-W1');
@@ -222,7 +223,9 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
     expect(afterThird.retry_count).toBe(3);
 
     // Mapping marked FAILED
-    const mapping = await p.bookingPortalMapping.findFirst({ where: { crms_booking_id: freshBookingId } });
+    const mapping = await p.bookingPortalMapping.findFirst({
+      where: { crms_booking_id: freshBookingId },
+    });
     expect(mapping.handoff_status).toBe('FAILED');
 
     await p.integrationEvent.deleteMany({ where: { crms_booking_id: freshBookingId } });
@@ -256,7 +259,11 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
     const freshBookingId = await createConfirmedBooking(freshProp);
     const freshEvent = await getEvent(freshBookingId);
 
-    mockFetch(200, { status: 'error', code: 'INVALID_PAYLOAD', message: 'Schema validation failed' });
+    mockFetch(200, {
+      status: 'error',
+      code: 'INVALID_PAYLOAD',
+      message: 'Schema validation failed',
+    });
 
     const processed = await PortalWorker.processNextEvent();
     expect(processed).toBe(true);
@@ -290,7 +297,9 @@ describe('Phase 11 Packet 3B - Portal Worker', () => {
     const after = await p.integrationEvent.findUnique({ where: { id: freshEvent.id } });
     expect(after.status).toBe('COMPLETED');
 
-    const mapping = await p.bookingPortalMapping.findFirst({ where: { crms_booking_id: freshBookingId } });
+    const mapping = await p.bookingPortalMapping.findFirst({
+      where: { crms_booking_id: freshBookingId },
+    });
     expect(mapping.handoff_status).toBe('WAITING_ACTIVATION');
     expect(mapping.portal_customer_id).toBe('PORTAL-CUST-EXIST');
 

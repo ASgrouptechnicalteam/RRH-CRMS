@@ -2,12 +2,15 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
-
 
 const p = prisma as any;
 
@@ -46,7 +49,8 @@ describe('Phase 5 - Project & Property Management', () => {
       return res.body.accessToken;
     };
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
 
     const pmACode = getCode(Roles.PROJECT_MANAGER);
     const mdCode = getCode(Roles.MD);
@@ -139,7 +143,9 @@ describe('Phase 5 - Project & Property Management', () => {
     });
 
     it('Should block cross-company PM assignment on project creation', async () => {
-      const crossOrgPmId = (await prisma.employee.findFirst({ where: { employee_code: crossOrgUsers[0].employee_code } }))!.id;
+      const crossOrgPmId = (await prisma.employee.findFirst({
+        where: { employee_code: crossOrgUsers[0].employee_code },
+      }))!.id;
       const res = await request(app)
         .post('/api/v1/projects')
         .set('Authorization', `Bearer ${pmAToken}`)
@@ -283,7 +289,7 @@ describe('Phase 5 - Project & Property Management', () => {
           title: 'Standalone Prop P3',
           brand_type: 'RADHA_REAL_HOMES',
           category: 'PLOT',
-          price: 5000000,
+          base_rate: 2500,
           area_sqft: 2000,
           location: 'Shamshabad',
           assigned_pm_id: pmAId,
@@ -310,7 +316,7 @@ describe('Phase 5 - Project & Property Management', () => {
           title: 'Hacked Prop',
           brand_type: 'RADHA_REAL_HOMES',
           category: 'PLOT',
-          price: 5000000,
+          base_rate: 2500,
           area_sqft: 2000,
           location: 'Pune',
           project_id: projectId,

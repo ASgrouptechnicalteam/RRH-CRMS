@@ -2,7 +2,11 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 import { jest } from '@jest/globals';
 
@@ -36,11 +40,20 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
 
     // Proactive cleanup
     await p.employee.deleteMany({
-      where: { employee_code: { in: ['RRH-OP-998', 'RRH-OP-997', 'RRH-SL-996'] } }
+      where: { employee_code: { in: ['RRH-OP-998', 'RRH-OP-997', 'RRH-SL-996'] } },
     });
     // Delete stale test fixtures in correct FK-safe order
-    await p.siteVisitProperty.deleteMany({ where: { property: { property_code: 'RRH-PR-TEST-SV' } } });
-    await p.siteVisitBooking.deleteMany({ where: { OR: [{ booking_code: 'RRH-SV-SKIP-TEST' }, { property: { property_code: 'RRH-PR-TEST-SV' } }] } });
+    await p.siteVisitProperty.deleteMany({
+      where: { property: { property_code: 'RRH-PR-TEST-SV' } },
+    });
+    await p.siteVisitBooking.deleteMany({
+      where: {
+        OR: [
+          { booking_code: 'RRH-SV-SKIP-TEST' },
+          { property: { property_code: 'RRH-PR-TEST-SV' } },
+        ],
+      },
+    });
     await p.property.deleteMany({ where: { property_code: 'RRH-PR-TEST-SV' } });
     await p.project.deleteMany({ where: { project_code: 'RRH-PJ-TEST-SV' } });
     await p.lead.deleteMany({ where: { lead_code: 'RRH-L-TEST-SV' } });
@@ -54,7 +67,8 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
       return res.body.accessToken;
     };
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
 
     const pmACode = getCode(Roles.PROJECT_MANAGER);
     const mdCode = getCode(Roles.MD);
@@ -63,9 +77,12 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
     companyId = (await p.employee.findFirst({ where: { employee_code: pmACode } })).company_id;
     tcId = (await p.employee.findFirst({ where: { employee_code: tcCode } })).id;
     pmAId = (await p.employee.findFirst({ where: { employee_code: pmACode } })).id;
-    const pmAHash = (await p.employee.findFirst({ where: { employee_code: pmACode } })).password_hash;
+    const pmAHash = (await p.employee.findFirst({ where: { employee_code: pmACode } }))
+      .password_hash;
 
-    const crossOrgCompanyId = (await p.employee.findFirst({ where: { employee_code: crossOrgUsers[0].employee_code } })).company_id;
+    const crossOrgCompanyId = (
+      await p.employee.findFirst({ where: { employee_code: crossOrgUsers[0].employee_code } })
+    ).company_id;
 
     await p.employee.upsert({
       where: { employee_code: 'RRH-OP-998' },
@@ -76,8 +93,8 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: companyId,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
 
     await p.employee.upsert({
@@ -89,8 +106,8 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: crossOrgCompanyId,
-        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.PROJECT_MANAGER } } } },
+      },
     });
 
     const agentA = await p.employee.upsert({
@@ -102,8 +119,8 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         password_hash: pmAHash,
         status: 'ACTIVE',
         company_id: companyId,
-        roles: { create: { role: { connect: { name: Roles.AGENT } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.AGENT } } } },
+      },
     });
     agentId = agentA.id;
 
@@ -116,8 +133,14 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
       getAuth('RRH-SL-996', 6),
     ]);
 
-    console.log('pmOrgBToken Payload:', JSON.parse(Buffer.from(pmOrgBToken.split('.')[1], 'base64').toString()));
-    console.log('agentToken Payload:', JSON.parse(Buffer.from(agentToken.split('.')[1], 'base64').toString()));
+    console.log(
+      'pmOrgBToken Payload:',
+      JSON.parse(Buffer.from(pmOrgBToken.split('.')[1], 'base64').toString()),
+    );
+    console.log(
+      'agentToken Payload:',
+      JSON.parse(Buffer.from(agentToken.split('.')[1], 'base64').toString()),
+    );
 
     const lead = await p.lead.upsert({
       where: { lead_code: 'RRH-L-TEST-SV' },
@@ -130,8 +153,8 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         preferred_location: 'SV Location',
         status: 'NEW',
         assigned_to: { connect: { id: tcId } },
-        created_by: { connect: { id: tcId } }
-      }
+        created_by: { connect: { id: tcId } },
+      },
     });
     leadId = lead.id;
 
@@ -144,13 +167,17 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         name: 'SV Test Project',
         location: 'SV Location',
         assigned_pm: { connect: { id: pmAId } },
-        status: 'ACTIVE'
-      }
+        status: 'ACTIVE',
+      },
     });
 
     const property = await p.property.upsert({
       where: { property_code: 'RRH-PR-TEST-SV' },
-      update: { project: { connect: { id: project.id } }, assigned_pm: { connect: { id: pmAId } }, status: 'LIVE' },
+      update: {
+        project: { connect: { id: project.id } },
+        assigned_pm: { connect: { id: pmAId } },
+        status: 'LIVE',
+      },
       create: {
         property_code: 'RRH-PR-TEST-SV',
         project: { connect: { id: project.id } },
@@ -158,13 +185,13 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         title: 'SV Test Property',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
-        price: 10000,
+        final_price: 10000,
         area_sqft: 1000,
         location: 'SV Location',
         assigned_pm: { connect: { id: pmAId } },
         created_by: { connect: { id: pmAId } },
-        status: 'LIVE'
-      }
+        status: 'LIVE',
+      },
     });
     propertyId = property.id;
   });
@@ -264,21 +291,24 @@ describe('Phase 4 - Site Visit Workflow Automation', () => {
         where: { booking_code: 'RRH-SV-SKIP-TEST' },
         update: {
           lead: { connect: { id: leadId } },
-          status: 'REQUESTED'
+          status: 'REQUESTED',
         },
         create: {
           booking_code: 'RRH-SV-SKIP-TEST',
           lead: { connect: { id: leadId } },
           telecaller: { connect: { id: tcId } },
           scheduled_date: new Date(),
-          status: 'REQUESTED'
-        }
+          status: 'REQUESTED',
+        },
       });
 
       const res = await request(app)
         .post(`/api/v1/site-visits/${booking.id}/complete`)
         .set('Authorization', `Bearer ${mdToken}`)
-        .send({ outcomes: [{ property_id: propertyId, outcome: 'INTERESTED' }], feedback_notes: 'Skipped states' });
+        .send({
+          outcomes: [{ property_id: propertyId, outcome: 'INTERESTED' }],
+          feedback_notes: 'Skipped states',
+        });
 
       if (res.status === 403) console.log('Complete visit 403 BODY:', res.body);
       expect(res.status).toBe(409);

@@ -25,7 +25,7 @@ const MANAGEMENT_ROLES = [
  * if no explicit grant rows exist yet, so an ungranted employee is scoped
  * to at least one company rather than zero or all of them.
  */
-async function getAccessibleCompanyIds(user: TokenPayload): Promise<number[]> {
+export async function getAccessibleCompanyIds(user: TokenPayload): Promise<number[]> {
   const grants = await prisma.employeeCompanyAccess.findMany({
     where: { employee_id: user.employeeId },
     select: { company_id: true },

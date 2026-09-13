@@ -32,113 +32,111 @@ router.post(
   },
 );
 
-router.get('/my-score', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const employeeId = req.user!.employeeId;
-    const [istYear, istMonth] = getISTComponents().dateString.split('-').map(Number);
-    const year = req.query.year ? Number(req.query.year) : istYear;
-    const month = req.query.month ? Number(req.query.month) : istMonth;
-    const { startOfMonth, endOfMonth } = getISTMonthRange(year, month);
+/**
+ * Computes an employee's performance score for one calendar month. Shared by
+ * /my-score (current month, tiered off the prior month) and the internal
+ * prior-month lookup that feeds it — the prior-month call omits
+ * `tierBasisScore`, which applies no tier multiplier, so tiers only ever
+ * escalate off of an already-flat, untiered figure.
+ */
+async function computeMonthScore(
+  employeeId: number,
+  startOfMonth: Date,
+  endOfMonth: Date,
+  tierBasisScore?: number,
+) {
+  const taskEvents = await p.task.count({
+    where: {
+      assignee_id: employeeId,
+      status: 'COMPLETED',
+      updated_at: { gte: startOfMonth, lte: endOfMonth },
+      created_by: { not: employeeId },
+    },
+  });
+  const reportEvents = await p.dailyReport.count({
+    where: { employee_id: employeeId, submitted_at: { gte: startOfMonth, lte: endOfMonth } },
+  });
+  const belowTargetEvents = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'DAILY_REPORT_BELOW_TARGET',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const targetExceededEvents = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'DAILY_REPORT_TARGET_EXCEEDED',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const overdueTasksCount = await p.task.count({
+    where: {
+      assignee_id: employeeId,
+      status: 'OVERDUE',
+      updated_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const uninformedAbsentEvents = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'UNINFORMED_ABSENT',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const midnightAutoCheckoutEvents = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'ATTENDANCE_AUTO_CHECKOUT_MIDNIGHT',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const missingDailyReportEvents = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'MISSING_DAILY_REPORT',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const completedAllWorkEvents = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'COMPLETED_ALL_WORK',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
+  const propertyBookingContributions = await p.auditEvent.count({
+    where: {
+      actor_id: employeeId,
+      action: 'PROPERTY_BOOKED_CONTRIBUTION',
+      created_at: { gte: startOfMonth, lte: endOfMonth },
+    },
+  });
 
-    const taskEvents = await p.task.count({
-      where: {
-        assignee_id: employeeId,
-        status: 'COMPLETED',
-        updated_at: { gte: startOfMonth, lte: endOfMonth },
-        // Self-assigned tasks (created_by === assignee_id) don't count —
-        // otherwise anyone could inflate their own score by creating and
-        // completing trivial tasks for themselves.
-        created_by: { not: employeeId },
-      },
-    });
-    const reportEvents = await p.dailyReport.count({
-      where: { employee_id: employeeId, submitted_at: { gte: startOfMonth, lte: endOfMonth } },
-    });
-    const belowTargetEvents = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'DAILY_REPORT_BELOW_TARGET',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const targetExceededEvents = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'DAILY_REPORT_TARGET_EXCEEDED',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const overdueTasksCount = await p.task.count({
-      where: {
-        assignee_id: employeeId,
-        status: 'OVERDUE',
-        updated_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const uninformedAbsentEvents = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'UNINFORMED_ABSENT',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const midnightAutoCheckoutEvents = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'ATTENDANCE_AUTO_CHECKOUT_MIDNIGHT',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const missingDailyReportEvents = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'MISSING_DAILY_REPORT',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const completedAllWorkEvents = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'COMPLETED_ALL_WORK',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
-    const propertyBookingContributions = await p.auditEvent.count({
-      where: {
-        actor_id: employeeId,
-        action: 'PROPERTY_BOOKED_CONTRIBUTION',
-        created_at: { gte: startOfMonth, lte: endOfMonth },
-      },
-    });
+  const attendanceLogs = await p.attendanceLog.findMany({
+    where: { employee_id: employeeId, check_in_at: { gte: startOfMonth, lte: endOfMonth } },
+    include: { employee: { select: { employment_type: true } } },
+  });
 
-    const attendanceLogs = await p.attendanceLog.findMany({
-      where: { employee_id: employeeId, check_in_at: { gte: startOfMonth, lte: endOfMonth } },
-      include: { employee: { select: { employment_type: true } } },
-    });
-
-    let presentCount = 0;
-    let lateCount = 0;
-    let halfDayCount = 0;
-    let attendanceBoost = 0;
-    for (const log of attendanceLogs) {
-      if (log.status === 'PRESENT' || log.status === 'APPROVED_LATE') presentCount++;
-      if (log.status === 'LATE') lateCount++;
-      if (log.status === 'HALF_DAY') halfDayCount++;
-      // Only PRESENT logs feed the boost here — LATE/HALF_DAY are still
-      // penalized via lateCount/halfDayCount below (unchanged), and calling
-      // calculateAttendancePoints on them too would double-count that
-      // penalty. APPROVED_LATE/APPROVED_HALF_DAY correctly contribute 0 by
-      // simply not being added anywhere, matching "no gain, no lose".
-      if (log.status === 'PRESENT') {
-        attendanceBoost += calculateAttendancePoints(
-          log.status as AttendanceStatusType,
-          log.check_in_at,
-          log.employee.employment_type || 'FULL_TIME',
-        );
-      }
+  let presentCount = 0;
+  let lateCount = 0;
+  let halfDayCount = 0;
+  let attendanceBoost = 0;
+  for (const log of attendanceLogs) {
+    if (log.status === 'PRESENT' || log.status === 'APPROVED_LATE') presentCount++;
+    if (log.status === 'LATE') lateCount++;
+    if (log.status === 'HALF_DAY') halfDayCount++;
+    if (log.status === 'PRESENT') {
+      attendanceBoost += calculateAttendancePoints(
+        log.status as AttendanceStatusType,
+        log.check_in_at,
+        log.employee.employment_type || 'FULL_TIME',
+      );
     }
+  }
 
-    const { score: totalScore, breakdown } = calculatePerformanceScore({
+  return calculatePerformanceScore(
+    {
       completedTasks: taskEvents,
       overdueTasks: overdueTasksCount,
       dailyReports: reportEvents,
@@ -153,7 +151,34 @@ router.get('/my-score', authenticateToken, async (req: AuthenticatedRequest, res
       attendanceBoost,
       lateCount,
       halfDayCount,
-    });
+    },
+    tierBasisScore,
+  );
+}
+
+router.get('/my-score', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const employeeId = req.user!.employeeId;
+    const [istYear, istMonth] = getISTComponents().dateString.split('-').map(Number);
+    const year = req.query.year ? Number(req.query.year) : istYear;
+    const month = req.query.month ? Number(req.query.month) : istMonth;
+    const { startOfMonth, endOfMonth } = getISTMonthRange(year, month);
+
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
+    const prevRange = getISTMonthRange(prevYear, prevMonth);
+    const { score: tierBasisScore } = await computeMonthScore(
+      employeeId,
+      prevRange.startOfMonth,
+      prevRange.endOfMonth,
+    );
+
+    const { score: totalScore, breakdown } = await computeMonthScore(
+      employeeId,
+      startOfMonth,
+      endOfMonth,
+      tierBasisScore,
+    );
 
     return res.status(200).json({ employeeId, score: totalScore, breakdown });
   } catch (error) {
@@ -186,6 +211,9 @@ router.get('/history', authenticateToken, async (req: AuthenticatedRequest, res:
         assignee_id: employeeId,
         status: 'COMPLETED',
         updated_at: { gte: startOfMonth, lte: endOfMonth },
+        // Keep in sync with /my-score: self-assigned tasks don't earn points,
+        // so they must not appear here as if they did.
+        created_by: { not: employeeId },
       },
       orderBy: { completed_at: 'desc' },
     });

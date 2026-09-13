@@ -7,6 +7,7 @@ import { requireAuthz } from '../../middleware/authz';
 import { Roles, DepartmentCodes, Permissions, EmployeeCreateSchema } from '../../shared';
 import { encryptData } from '../../utils/crypto';
 import { validateRequestBody } from '../../middleware/validate';
+import { generateTemporaryPassword } from '../../utils/tempPassword';
 
 const router = Router();
 
@@ -125,7 +126,8 @@ router.post(
         return res.status(400).json({ error: 'Invalid role specified' });
       }
 
-      const passwordHash = await bcrypt.hash(initial_password || 'Radhareal@123', 12);
+      const effectivePassword = initial_password || generateTemporaryPassword();
+      const passwordHash = await bcrypt.hash(effectivePassword, 12);
       const isExempt = [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR].includes(
         role_name,
       );
@@ -197,7 +199,7 @@ router.post(
           status: newEmp.status,
           attendanceRequired: newEmp.attendance_required,
           roles: newEmp.roles.map((r) => r.role.name),
-          defaultPassword: initial_password || 'Radhareal@123',
+          defaultPassword: effectivePassword,
         },
       });
     } catch (error) {

@@ -24,10 +24,11 @@ import {
   getMatches,
   getLeadTasks,
   getPropertyInterests,
+  getUnclaimedLeads,
 } from './lead/query';
 import { calculateLeadScore } from './lead/shared';
 import { createLead } from './lead/create';
-import { reassignLead, updateLeadStatus, bulkUploadLeads } from './lead/status';
+import { reassignLead, updateLeadStatus, bulkUploadLeads, claimLead } from './lead/status';
 import { sendWhatsAppProposal, addPropertyInterest, removePropertyInterest } from './lead/interest';
 import {
   distributeUnassignedPoolLeads,
@@ -38,6 +39,8 @@ import {
 
 export class LeadService {
   static getLeads = getLeads;
+  static getUnclaimedLeads = getUnclaimedLeads;
+  static claimLead = claimLead;
   static getLeadById = getLeadById;
   static getDistributionMonitor = getDistributionMonitor;
   static calculateLeadScore = calculateLeadScore;

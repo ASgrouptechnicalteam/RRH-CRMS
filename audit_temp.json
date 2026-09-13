@@ -1,0 +1,1938 @@
+{
+  "routes": [
+    {
+      "file": "admin.ts",
+      "method": "GET",
+      "path": "/system-metrics"
+    },
+    {
+      "file": "admin.ts",
+      "method": "GET",
+      "path": "/audit-logs"
+    },
+    {
+      "file": "admin.ts",
+      "method": "GET",
+      "path": "/security-alerts"
+    },
+    {
+      "file": "admin.ts",
+      "method": "POST",
+      "path": "/emergency/lockdown"
+    },
+    {
+      "file": "admin.ts",
+      "method": "POST",
+      "path": "/cache/clear"
+    },
+    {
+      "file": "aiSearch.ts",
+      "method": "POST",
+      "path": "/search"
+    },
+    {
+      "file": "aiSearch.ts",
+      "method": "POST",
+      "path": "/chat"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "PUT",
+      "path": "/:amenityId"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "DELETE",
+      "path": "/:amenityId"
+    },
+    {
+      "file": "analytics.ts",
+      "method": "GET",
+      "path": "/kpis"
+    },
+    {
+      "file": "analytics.ts",
+      "method": "GET",
+      "path": "/sales-manager"
+    },
+    {
+      "file": "analytics.ts",
+      "method": "GET",
+      "path": "/hr-overview"
+    },
+    {
+      "file": "announcement.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "announcement.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "auth.ts",
+      "method": "POST",
+      "path": "/login"
+    },
+    {
+      "file": "auth.ts",
+      "method": "POST",
+      "path": "/change-password"
+    },
+    {
+      "file": "auth.ts",
+      "method": "GET",
+      "path": "/me"
+    },
+    {
+      "file": "auth.ts",
+      "method": "POST",
+      "path": "/refresh"
+    },
+    {
+      "file": "auth.ts",
+      "method": "POST",
+      "path": "/logout"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/pending-md-approval"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/:id/handoff-status"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/initiate"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/:id/submit-form"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/:id/md-approve"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/:id/md-reject"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/:id/confirm"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/:id/cancel"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "PUT",
+      "path": "/:id/status"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id/status"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id/assign"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id/resolve"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id/close"
+    },
+    {
+      "file": "customers.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "customers.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "customers.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "customers.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "customers.ts",
+      "method": "PUT",
+      "path": "/:id/kyc"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "GET",
+      "path": "/my"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "GET",
+      "path": "/queue"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "PATCH",
+      "path": "/:id/accountant-review"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "PATCH",
+      "path": "/:id/md-review"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "PATCH",
+      "path": "/:id/mark-refunded"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "GET",
+      "path": "/:id/proof"
+    },
+    {
+      "file": "feedback.ts",
+      "method": "GET",
+      "path": "/team"
+    },
+    {
+      "file": "feedback.ts",
+      "method": "GET",
+      "path": "/:token"
+    },
+    {
+      "file": "feedback.ts",
+      "method": "POST",
+      "path": "/:token"
+    },
+    {
+      "file": "health.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "installment.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "installment.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/portal/callback"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/portal/kyc-callback"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/portal/payment-callback"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "GET",
+      "path": "/portal/customer-notifications"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "GET",
+      "path": "/metrics"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/customer-portal/provision"
+    },
+    {
+      "file": "kiosk-auth.ts",
+      "method": "POST",
+      "path": "/login"
+    },
+    {
+      "file": "kiosk-auth.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "kiosk-auth.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "kiosk-auth.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/distribution-monitor"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/convert-to-customer"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/bulk-upload"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/assign"
+    },
+    {
+      "file": "leads.ts",
+      "method": "PATCH",
+      "path": "/:id/status"
+    },
+    {
+      "file": "leads.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/:id/matches"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/:id/opportunities"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/whatsapp-proposal/:propertyId"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/properties"
+    },
+    {
+      "file": "leads.ts",
+      "method": "DELETE",
+      "path": "/:id/properties/:propertyId"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/:id/properties"
+    },
+    {
+      "file": "leads.ts",
+      "method": "GET",
+      "path": "/:id/tasks"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/recover-manual"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/recover-fresh"
+    },
+    {
+      "file": "md.ts",
+      "method": "GET",
+      "path": "/employees"
+    },
+    {
+      "file": "md.ts",
+      "method": "PATCH",
+      "path": "/employees/:id/attendance-requirement"
+    },
+    {
+      "file": "md.ts",
+      "method": "GET",
+      "path": "/executive-metrics"
+    },
+    {
+      "file": "md.ts",
+      "method": "GET",
+      "path": "/recent-activity"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "GET",
+      "path": "/:key/resolve"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "PATCH",
+      "path": "/:key/active"
+    },
+    {
+      "file": "notifications.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "notifications.ts",
+      "method": "PATCH",
+      "path": "/:id/read"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "GET",
+      "path": "/pipeline-metrics"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "POST",
+      "path": "/:id/convert-to-booking"
+    },
+    {
+      "file": "payment.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "payment.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "payment.routes.ts",
+      "method": "PUT",
+      "path": "/:id/status"
+    },
+    {
+      "file": "performance.ts",
+      "method": "POST",
+      "path": "/reset-score-history"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/my-score"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/history"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/team"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/telecaller-metrics"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/pm-metrics"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/achievements"
+    },
+    {
+      "file": "pm-routing.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "pm-routing.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "pm-routing.ts",
+      "method": "DELETE",
+      "path": "/:id"
+    },
+    {
+      "file": "public.ts",
+      "method": "GET",
+      "path": "/companies"
+    },
+    {
+      "file": "public.ts",
+      "method": "GET",
+      "path": "/:brand/properties"
+    },
+    {
+      "file": "public.ts",
+      "method": "GET",
+      "path": "/:brand/properties/:id"
+    },
+    {
+      "file": "public.ts",
+      "method": "GET",
+      "path": "/:brand/projects"
+    },
+    {
+      "file": "public.ts",
+      "method": "GET",
+      "path": "/:brand/projects/:id"
+    },
+    {
+      "file": "public.ts",
+      "method": "POST",
+      "path": "/:brand/leads"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/account/register"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/account/login"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "GET",
+      "path": "/:brand/account/me"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "GET",
+      "path": "/:brand/account/${kind}"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/account/${kind}"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "DELETE",
+      "path": "/:brand/account/${kind}"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/activity/track"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/search/parse"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "GET",
+      "path": "/:brand/search"
+    },
+    {
+      "file": "pushSubscriptions.ts",
+      "method": "GET",
+      "path": "/vapid-public-key"
+    },
+    {
+      "file": "pushSubscriptions.ts",
+      "method": "POST",
+      "path": "/subscribe"
+    },
+    {
+      "file": "pushSubscriptions.ts",
+      "method": "DELETE",
+      "path": "/unsubscribe"
+    },
+    {
+      "file": "reports.ts",
+      "method": "POST",
+      "path": "/daily"
+    },
+    {
+      "file": "reports.ts",
+      "method": "GET",
+      "path": "/today-status"
+    },
+    {
+      "file": "reports.ts",
+      "method": "GET",
+      "path": "/my-history"
+    },
+    {
+      "file": "reports.ts",
+      "method": "GET",
+      "path": "/all"
+    },
+    {
+      "file": "reports.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "roles.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/accept"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reassign"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/escalate"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reconfirm-customer"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reschedule"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/pm-reconfirm"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/confirm"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/start"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/complete"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/cancel"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/hold"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/initiate-cancel"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reject-cancel"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/confirm-cancel"
+    },
+    {
+      "file": "targets.ts",
+      "method": "GET",
+      "path": "/presets"
+    },
+    {
+      "file": "targets.ts",
+      "method": "GET",
+      "path": "/my-target"
+    },
+    {
+      "file": "targets.ts",
+      "method": "GET",
+      "path": "/all"
+    },
+    {
+      "file": "targets.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "tasks.ts",
+      "method": "GET",
+      "path": "/all-team-tasks"
+    },
+    {
+      "file": "tasks.ts",
+      "method": "GET",
+      "path": "/my-tasks"
+    },
+    {
+      "file": "tasks.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "tasks.ts",
+      "method": "GET",
+      "path": "/:id/sla"
+    },
+    {
+      "file": "tasks.ts",
+      "method": "PATCH",
+      "path": "/:id/status"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "GET",
+      "path": "/status"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "POST",
+      "path": "/register-options"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "POST",
+      "path": "/register-verify"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "DELETE",
+      "path": "/credentials/:id"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "POST",
+      "path": "/unlock-options"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "POST",
+      "path": "/unlock-verify"
+    },
+    {
+      "file": "whatsapp.ts",
+      "method": "POST",
+      "path": "/resolve"
+    },
+    {
+      "file": "holidays-calendar.ts",
+      "method": "GET",
+      "path": "/holidays"
+    },
+    {
+      "file": "holidays-calendar.ts",
+      "method": "POST",
+      "path": "/holidays"
+    },
+    {
+      "file": "holidays-calendar.ts",
+      "method": "DELETE",
+      "path": "/holidays/:id"
+    },
+    {
+      "file": "holidays-calendar.ts",
+      "method": "GET",
+      "path": "/calendar"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/late-proposal"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/leave-proposal"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/early-logout-proposal"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "GET",
+      "path": "/proposals/queue"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "GET",
+      "path": "/proposals/history"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/proposals/:id/approve"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/proposals/:id/reject"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "GET",
+      "path": "/proposals/my"
+    },
+    {
+      "file": "qr.ts",
+      "method": "GET",
+      "path": "/my-qr"
+    },
+    {
+      "file": "qr.ts",
+      "method": "GET",
+      "path": "/employee-qr/:id"
+    },
+    {
+      "file": "qr.ts",
+      "method": "GET",
+      "path": "/my-status"
+    },
+    {
+      "file": "qr.ts",
+      "method": "POST",
+      "path": "/scan"
+    },
+    {
+      "file": "qr.ts",
+      "method": "POST",
+      "path": "/checkout"
+    },
+    {
+      "file": "reports.ts",
+      "method": "GET",
+      "path": "/live"
+    },
+    {
+      "file": "reports.ts",
+      "method": "GET",
+      "path": "/history"
+    },
+    {
+      "file": "admin-actions.ts",
+      "method": "POST",
+      "path": "/:id/reset-password"
+    },
+    {
+      "file": "admin-actions.ts",
+      "method": "PUT",
+      "path": "/:id/roles"
+    },
+    {
+      "file": "create.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "lifecycle.ts",
+      "method": "POST",
+      "path": "/:id/resign"
+    },
+    {
+      "file": "lifecycle.ts",
+      "method": "POST",
+      "path": "/:id/promote"
+    },
+    {
+      "file": "lifecycle.ts",
+      "method": "POST",
+      "path": "/:id/convert-employment-type"
+    },
+    {
+      "file": "list.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "list.ts",
+      "method": "GET",
+      "path": "/branches"
+    },
+    {
+      "file": "list.ts",
+      "method": "GET",
+      "path": "/managers"
+    },
+    {
+      "file": "list.ts",
+      "method": "GET",
+      "path": "/demo-assignees"
+    },
+    {
+      "file": "self.ts",
+      "method": "PATCH",
+      "path": "/me"
+    },
+    {
+      "file": "self.ts",
+      "method": "POST",
+      "path": "/me/photo"
+    },
+    {
+      "file": "update.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "GET",
+      "path": "/:id/amenities"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "PUT",
+      "path": "/:id/amenities/:amenityId"
+    },
+    {
+      "file": "amenities.ts",
+      "method": "DELETE",
+      "path": "/:id/amenities/:amenityId"
+    },
+    {
+      "file": "core.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "core.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "core.ts",
+      "method": "PUT",
+      "path": "/:id"
+    },
+    {
+      "file": "core.ts",
+      "method": "DELETE",
+      "path": "/:id"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/:id/reassign"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/:id/submit-for-review"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/:id/verify"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/:id/layout-images"
+    },
+    {
+      "file": "core.ts",
+      "method": "GET",
+      "path": "/:id/layout-images"
+    },
+    {
+      "file": "core.ts",
+      "method": "DELETE",
+      "path": "/:id/layout-images/:imageId"
+    },
+    {
+      "file": "core.ts",
+      "method": "PUT",
+      "path": "/:id/layout-images/:imageId/regions"
+    },
+    {
+      "file": "core.ts",
+      "method": "DELETE",
+      "path": "/layout-regions/:regionId"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/:id/media"
+    },
+    {
+      "file": "core.ts",
+      "method": "GET",
+      "path": "/:id/media"
+    },
+    {
+      "file": "core.ts",
+      "method": "DELETE",
+      "path": "/:id/media/:mediaId"
+    },
+    {
+      "file": "core.ts",
+      "method": "POST",
+      "path": "/:id/documents"
+    },
+    {
+      "file": "core.ts",
+      "method": "GET",
+      "path": "/:id/documents"
+    },
+    {
+      "file": "core.ts",
+      "method": "DELETE",
+      "path": "/:id/documents/:documentId"
+    },
+    {
+      "file": "core.ts",
+      "method": "GET",
+      "path": "/:id/activity"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "GET",
+      "path": "/:id/pricing-rules"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "POST",
+      "path": "/:id/pricing-rules"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "PUT",
+      "path": "/:id/pricing-rules/:ruleId"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "DELETE",
+      "path": "/:id/pricing-rules/:ruleId"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "GET",
+      "path": "/:id/pricing/recalculate-preview"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "POST",
+      "path": "/:id/pricing/recalculate"
+    },
+    {
+      "file": "units.ts",
+      "method": "POST",
+      "path": "/:id/units/preview-price"
+    },
+    {
+      "file": "units.ts",
+      "method": "GET",
+      "path": "/:id/units/summary"
+    },
+    {
+      "file": "units.ts",
+      "method": "POST",
+      "path": "/:id/units/generate"
+    },
+    {
+      "file": "units.ts",
+      "method": "GET",
+      "path": "/:id/units"
+    },
+    {
+      "file": "units.ts",
+      "method": "POST",
+      "path": "/:id/units"
+    },
+    {
+      "file": "units.ts",
+      "method": "GET",
+      "path": "/:id/units/:unitId"
+    },
+    {
+      "file": "units.ts",
+      "method": "PUT",
+      "path": "/:id/units/:unitId"
+    },
+    {
+      "file": "units.ts",
+      "method": "DELETE",
+      "path": "/:id/units/:unitId"
+    },
+    {
+      "file": "units.ts",
+      "method": "POST",
+      "path": "/:id/units/:unitId/status"
+    },
+    {
+      "file": "units.ts",
+      "method": "POST",
+      "path": "/:id/units/:unitId/override-price"
+    },
+    {
+      "file": "units.ts",
+      "method": "POST",
+      "path": "/:id/units/:unitId/features"
+    },
+    {
+      "file": "units.ts",
+      "method": "DELETE",
+      "path": "/:id/units/:unitId/features/:featureId"
+    },
+    {
+      "file": "units.ts",
+      "method": "GET",
+      "path": "/:id/units/:unitId/activity"
+    },
+    {
+      "file": "crud.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "crud.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "crud.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "crud.ts",
+      "method": "PUT",
+      "path": "/:id"
+    },
+    {
+      "file": "crud.ts",
+      "method": "DELETE",
+      "path": "/:id"
+    },
+    {
+      "file": "crud.ts",
+      "method": "POST",
+      "path": "/:id/reassign"
+    },
+    {
+      "file": "images.ts",
+      "method": "POST",
+      "path": "/:id/images"
+    },
+    {
+      "file": "images.ts",
+      "method": "PUT",
+      "path": "/:id/images/:imageId"
+    },
+    {
+      "file": "images.ts",
+      "method": "DELETE",
+      "path": "/:id/images/:imageId"
+    },
+    {
+      "file": "images.ts",
+      "method": "POST",
+      "path": "/:id/images/:imageId/approve"
+    },
+    {
+      "file": "images.ts",
+      "method": "POST",
+      "path": "/:id/images/:imageId/reject"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "GET",
+      "path": "/:id/pricing-rules"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "POST",
+      "path": "/:id/pricing-rules"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "PUT",
+      "path": "/:id/pricing-rules/:ruleId"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "DELETE",
+      "path": "/:id/pricing-rules/:ruleId"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "POST",
+      "path": "/:id/pricing/preview"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "POST",
+      "path": "/:id/pricing/recalculate"
+    },
+    {
+      "file": "pricing.ts",
+      "method": "POST",
+      "path": "/:id/override-price"
+    },
+    {
+      "file": "publications.ts",
+      "method": "POST",
+      "path": "/:id/publications"
+    },
+    {
+      "file": "publications.ts",
+      "method": "GET",
+      "path": "/:id/publications"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/confirm-location"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/verify"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/dm-polish"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/dm-verify-as-is"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/md-approve"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/resubmit"
+    }
+  ],
+  "frontend_calls": [
+    "/reports/all",
+    "/leads/*/properties",
+    "/projects/*/units",
+    "/projects/*/units/preview-price",
+    "/attendance/live",
+    "/properties/*/pricing/preview",
+    "/md/employees/*/attendance-requirement",
+    "/attendance/proposals/*/*",
+    "/employees/branches",
+    "/employees/me",
+    "/roles",
+    "/properties/*/images",
+    "/projects/*/units/*/status",
+    "/targets/all",
+    "/auth/app-lock/status",
+    "/leads/*/tasks",
+    "/projects/*/layout-images/*/regions",
+    "/bookings/*/md-reject",
+    "/performance/my-score",
+    "/properties/*/images/*",
+    "/properties/*/override-price",
+    "/employees/*/reset-password",
+    "/projects/layout-regions/*",
+    "/notifications/*/read",
+    "/expense-refunds/*/md-review",
+    "/bookings/initiate",
+    "/expense-refunds",
+    "/md/employees",
+    "/projects/*/pricing-rules/*",
+    "/attendance/history",
+    "/customers",
+    "/reports/my-history",
+    "/projects/*/units/*",
+    "/tasks/my-tasks",
+    "/employees/*",
+    "/analytics/sales-manager",
+    "/projects/*/units/*/features",
+    "/projects/*/media/*",
+    "/bookings",
+    "/targets/my-target",
+    "/employees/*/resign",
+    "/targets/presets",
+    "/attendance/early-logout-proposal",
+    "/performance/reset-score-history",
+    "/expense-refunds/*/accountant-review",
+    "/attendance/late-proposal",
+    "/properties${qs",
+    "/site-visits/*/hold",
+    "/projects/*/units/*/override-price",
+    "/leads/*/status",
+    "/tasks/*/status",
+    "/leads/*/matches",
+    "/kiosk-auth/*",
+    "/leads/*/convert-to-customer",
+    "/projects/*/amenities/*",
+    "/attendance/proposals/history",
+    "/opportunities",
+    "/push/subscribe",
+    "/projects/*/units/summary",
+    "/projects*",
+    "/admin/system-metrics",
+    "/expense-refunds/my",
+    "/leads",
+    "/leads/*/qualification",
+    "/leads/*/assign",
+    "/expense-refunds/queue",
+    "/projects/*/documents/*",
+    "/projects/*/units/*/features/*",
+    "/leads/*/whatsapp-proposal/*",
+    "/amenities",
+    "/targets",
+    "*",
+    "/employees/me/photo",
+    "/employees/*/promote",
+    "/leads/*/recover-*",
+    "/properties/*/pricing/recalculate",
+    "/site-visits/*/reassign",
+    "/employees/managers",
+    "/properties/*/dm-verify-as-is",
+    "/tasks",
+    "/projects/*/units/*/activity",
+    "/properties*",
+    "/leads/*",
+    "/properties/*/confirm-location",
+    "/bookings/*/status",
+    "/attendance/employee-qr/*",
+    "/md/recent-activity",
+    "/reports/today-status",
+    "/site-visits/*/accept",
+    "/employees/*/roles",
+    "/projects/*/pricing/recalculate-preview",
+    "/feedback/team",
+    "/auth/change-password",
+    "/attendance/proposals/my",
+    "/projects/*/verify",
+    "/notifications",
+    "/employees",
+    "/attendance/scan",
+    "/projects/*/pricing-rules",
+    "/attendance/proposals/queue",
+    "/pm-routing",
+    "/auth/app-lock/register-options",
+    "/attendance/leave-proposal",
+    "/attendance/holidays/*",
+    "/employees/*/convert-employment-type",
+    "/site-visits",
+    "/projects/*/units${qs",
+    "/payments",
+    "/admin/audit-logs",
+    "/attendance/my-qr",
+    "/analytics/kpis",
+    "/attendance/holidays",
+    "/md/executive-metrics",
+    "/performance/team",
+    "/kiosk-auth",
+    "/tasks/all-team-tasks",
+    "/expense-refunds/*/mark-refunded",
+    "/leads/*/properties/*",
+    "/attendance/calendar",
+    "/projects/*/pricing/recalculate",
+    "/pm-routing/*",
+    "/properties",
+    "/properties/*/resubmit",
+    "/reports/*",
+    "/projects",
+    "/properties/*/pricing-rules",
+    "/bookings/*",
+    "/push/unsubscribe",
+    "/properties/*",
+    "/admin/security-alerts",
+    "/properties/*/pricing-rules/*",
+    "/auth/app-lock/credentials/*",
+    "/performance/history",
+    "/properties/*/publications",
+    "/projects/*/media",
+    "/employees/demo-assignees",
+    "/projects/*/amenities",
+    "/analytics/hr-overview",
+    "/api/employees",
+    "/projects/*/activity",
+    "/customers/*",
+    "/reports/daily",
+    "/auth/app-lock/register-verify",
+    "/bookings/*/md-approve",
+    "/admin/emergency/lockdown",
+    "/leads/distribution-monitor",
+    "/amenities/*",
+    "/projects/*",
+    "/projects/*/units/generate",
+    "/projects/*/documents",
+    "/bookings/*/handoff-status",
+    "/md/dashboard",
+    "/leads/bulk-upload",
+    "/site-visits/*/initiate-cancel",
+    "/projects/*/submit-for-review"
+  ],
+  "unimplemented": [
+    {
+      "file": "admin.ts",
+      "method": "POST",
+      "path": "/cache/clear"
+    },
+    {
+      "file": "aiSearch.ts",
+      "method": "POST",
+      "path": "/search"
+    },
+    {
+      "file": "aiSearch.ts",
+      "method": "POST",
+      "path": "/chat"
+    },
+    {
+      "file": "announcement.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "announcement.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "auth.ts",
+      "method": "POST",
+      "path": "/login"
+    },
+    {
+      "file": "auth.ts",
+      "method": "POST",
+      "path": "/refresh"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/pending-md-approval"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "booking.routes.ts",
+      "method": "POST",
+      "path": "/:id/submit-form"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id/resolve"
+    },
+    {
+      "file": "complaint.routes.ts",
+      "method": "PATCH",
+      "path": "/:id/close"
+    },
+    {
+      "file": "customers.ts",
+      "method": "PUT",
+      "path": "/:id/kyc"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "expenseRefunds.ts",
+      "method": "GET",
+      "path": "/:id/proof"
+    },
+    {
+      "file": "health.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "installment.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "installment.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/portal/callback"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/portal/kyc-callback"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/portal/payment-callback"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "GET",
+      "path": "/portal/customer-notifications"
+    },
+    {
+      "file": "integration.routes.ts",
+      "method": "POST",
+      "path": "/customer-portal/provision"
+    },
+    {
+      "file": "kiosk-auth.ts",
+      "method": "POST",
+      "path": "/login"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/recover-manual"
+    },
+    {
+      "file": "leads.ts",
+      "method": "POST",
+      "path": "/:id/recover-fresh"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "GET",
+      "path": "/:key/resolve"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "messageTemplates.ts",
+      "method": "PATCH",
+      "path": "/:key/active"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "GET",
+      "path": "/pipeline-metrics"
+    },
+    {
+      "file": "opportunities.ts",
+      "method": "POST",
+      "path": "/:id/convert-to-booking"
+    },
+    {
+      "file": "payment.routes.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "payment.routes.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/telecaller-metrics"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/pm-metrics"
+    },
+    {
+      "file": "performance.ts",
+      "method": "GET",
+      "path": "/achievements"
+    },
+    {
+      "file": "public.ts",
+      "method": "GET",
+      "path": "/companies"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/account/register"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/account/login"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "GET",
+      "path": "/:brand/account/me"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "GET",
+      "path": "/:brand/account/${kind}"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/account/${kind}"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "DELETE",
+      "path": "/:brand/account/${kind}"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/activity/track"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "POST",
+      "path": "/:brand/search/parse"
+    },
+    {
+      "file": "publicWebsite.ts",
+      "method": "GET",
+      "path": "/:brand/search"
+    },
+    {
+      "file": "pushSubscriptions.ts",
+      "method": "GET",
+      "path": "/vapid-public-key"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/escalate"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reconfirm-customer"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reschedule"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/pm-reconfirm"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/start"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/complete"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/reject-cancel"
+    },
+    {
+      "file": "siteVisits.ts",
+      "method": "POST",
+      "path": "/:id/confirm-cancel"
+    },
+    {
+      "file": "tasks.ts",
+      "method": "GET",
+      "path": "/:id/sla"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "POST",
+      "path": "/unlock-options"
+    },
+    {
+      "file": "webauthn.ts",
+      "method": "POST",
+      "path": "/unlock-verify"
+    },
+    {
+      "file": "whatsapp.ts",
+      "method": "POST",
+      "path": "/resolve"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/proposals/:id/approve"
+    },
+    {
+      "file": "proposals.ts",
+      "method": "POST",
+      "path": "/proposals/:id/reject"
+    },
+    {
+      "file": "qr.ts",
+      "method": "GET",
+      "path": "/my-status"
+    },
+    {
+      "file": "qr.ts",
+      "method": "POST",
+      "path": "/checkout"
+    },
+    {
+      "file": "create.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "list.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "update.ts",
+      "method": "PATCH",
+      "path": "/:id"
+    },
+    {
+      "file": "crud.ts",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "file": "crud.ts",
+      "method": "GET",
+      "path": "/:id"
+    },
+    {
+      "file": "crud.ts",
+      "method": "POST",
+      "path": "/"
+    },
+    {
+      "file": "crud.ts",
+      "method": "PUT",
+      "path": "/:id"
+    },
+    {
+      "file": "crud.ts",
+      "method": "DELETE",
+      "path": "/:id"
+    },
+    {
+      "file": "images.ts",
+      "method": "POST",
+      "path": "/:id/images/:imageId/approve"
+    },
+    {
+      "file": "images.ts",
+      "method": "POST",
+      "path": "/:id/images/:imageId/reject"
+    },
+    {
+      "file": "workflow.ts",
+      "method": "POST",
+      "path": "/:id/dm-polish"
+    }
+  ]
+}

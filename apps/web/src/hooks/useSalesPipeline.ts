@@ -1,15 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
-import {
-  SalesOpportunity,
-  PipelineMetricsData,
-  ConversionMetricsData,
-} from '../types';
+import { SalesOpportunity, PipelineMetricsData, ConversionMetricsData } from '../types';
 
 export function useSalesPipeline() {
   const { fetchWithAuth } = useAuth();
-  
+
   const [opportunities, setOpportunities] = useState<SalesOpportunity[]>([]);
   const [totalOpportunities, setTotalOpportunities] = useState(0);
   const [pipelineMetrics, setPipelineMetrics] = useState<PipelineMetricsData | null>(null);
@@ -17,29 +13,32 @@ export function useSalesPipeline() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOpportunities = useCallback(async (filters: Record<string, string | number> = {}) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const queryParams = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') queryParams.append(key, String(value));
-      });
+  const fetchOpportunities = useCallback(
+    async (filters: Record<string, string | number> = {}) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const queryParams = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== '') queryParams.append(key, String(value));
+        });
 
-      const res = await fetchWithAuth(`${API_BASE_URL}/opportunities?${queryParams.toString()}`);
-      const data = await res.json();
+        const res = await fetchWithAuth(`${API_BASE_URL}/opportunities?${queryParams.toString()}`);
+        const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch sales opportunities');
+        if (!res.ok) throw new Error(data.error || 'Failed to fetch sales opportunities');
 
-      setOpportunities(data.opportunities || []);
-      setTotalOpportunities(data.total || 0);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchWithAuth]);
+        setOpportunities(data.opportunities || []);
+        setTotalOpportunities(data.total || 0);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchWithAuth],
+  );
 
   const fetchPipelineMetrics = useCallback(async () => {
     try {
@@ -66,7 +65,7 @@ export function useSalesPipeline() {
   }, [fetchWithAuth]);
 
   const updateSalesStage = async (id: number, newStage: string, dropReason?: string) => {
-    const opp = opportunities.find(o => o.id === id);
+    const opp = opportunities.find((o) => o.id === id);
     if (!opp || !opp.lead_id) {
       throw new Error('Associated lead not found for this opportunity');
     }
@@ -79,12 +78,12 @@ export function useSalesPipeline() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    
+
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.error || 'Failed to update sales stage');
     }
-    
+
     return data.lead;
   };
 
@@ -92,6 +91,23 @@ export function useSalesPipeline() {
     const res = await fetchWithAuth(`${API_BASE_URL}/opportunities/${id}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch sales details');
+    return data.opportunity;
+  };
+
+  // Sets the target property + deal value on an Opportunity. The workflow
+  // engine requires both before a lead can move to BOOKING_INITIATED (see
+  // lead.workflow.ts §1 row 9) — most Opportunities get these auto-filled
+  // from the customer's saved property interest on SITE_VISIT_COMPLETED→
+  // NEGOTIATION, but this lets a sales exec set or correct them by hand when
+  // that auto-fill didn't have a saved interest to work from.
+  const finalizeOpportunity = async (id: number, propertyId: number, expectedValue: number) => {
+    const res = await fetchWithAuth(`${API_BASE_URL}/opportunities/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ property_id: propertyId, expected_value: expectedValue }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to finalize opportunity');
     return data.opportunity;
   };
 
@@ -106,6 +122,7 @@ export function useSalesPipeline() {
     fetchPipelineMetrics,
     fetchConversionMetrics,
     updateSalesStage,
-    getSalesOpportunityDetails
+    getSalesOpportunityDetails,
+    finalizeOpportunity,
   };
 }

@@ -12,12 +12,7 @@ export type ISODateTime = string;
 
 /** Minimal JSON value type (no `any`). */
 export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
@@ -39,7 +34,12 @@ export interface EmployeeListItem {
   attendanceRequired?: boolean;
   role?: { name?: string | null } | null;
   company_id?: number;
-  company?: { id?: number; name?: string } | null;
+  // POST /auth/login flattens this to a plain string (see apps/api/src/routes/auth.ts);
+  // some other endpoints return the nested object shape — kept as a union
+  // rather than picking one, since this type is shared across both.
+  company?: string | { id?: number; name?: string } | null;
+  // Only actually populated on the /auth/login response's `user` object.
+  permissions?: string[];
   firstLoginDone?: boolean;
   activeLeadCount?: number;
   closureRate?: number;
@@ -48,6 +48,13 @@ export interface EmployeeListItem {
 }
 
 /** Project as returned by GET /projects (list + detail). */
+export type ProjectType = 'PLOTTED' | 'APARTMENT' | 'VILLA' | 'MIXED' | 'COMMERCIAL';
+export type ProjectAreaUnit =
+  'SQFT' | 'SQYD' | 'SQM' | 'ACRE' | 'GUNTA' | 'CENT' | 'ANKANAM' | 'HECTARE';
+export type ProjectPriceBasis = 'CARPET' | 'BUILT_UP' | 'SUPER_BUILT_UP' | 'PLOT_AREA' | 'LUMPSUM';
+export type ReraStatus = 'NOT_APPLICABLE' | 'APPLIED' | 'APPROVED';
+export type ApprovalAuthority = 'RERA' | 'DTCP' | 'HMDA' | 'PANCHAYAT';
+
 export interface ProjectListItem {
   id: number;
   project_code: string;
@@ -55,7 +62,10 @@ export interface ProjectListItem {
   description?: string | null;
   location: string;
   total_area?: string | null;
+  total_units?: number | null;
   launch_date?: ISODateTime | null;
+  project_phase?: string | null;
+  rera_number?: string | null;
   status: string;
   slug?: string;
   assigned_pm_id?: number | null;
@@ -64,6 +74,37 @@ export interface ProjectListItem {
   branch_id?: number | null;
   created_at?: ISODateTime;
   updated_at?: ISODateTime;
+
+  // Common-data fields (Rebuild Phase 2)
+  project_type?: ProjectType | null;
+  developer_name?: string | null;
+  state?: string | null;
+  district?: string | null;
+  city?: string | null;
+  mandal?: string | null;
+  village?: string | null;
+  locality?: string | null;
+  address?: string | null;
+  pincode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  maps_link?: string | null;
+  total_area_value?: number | null;
+  total_area_unit?: ProjectAreaUnit | null;
+  towers_count?: number | null;
+  blocks_count?: number | null;
+  floors_count?: number | null;
+  completion_date?: ISODateTime | null;
+  rera_status?: ReraStatus | null;
+  /** @deprecated superseded by approval_authorities (#13) */
+  approval_authority?: ApprovalAuthority | null;
+  approval_authorities?: string[] | null;
+  approval_number?: string | null;
+  lp_number?: string | null;
+  default_price_basis?: ProjectPriceBasis | null;
+  default_area_unit?: ProjectAreaUnit | null;
+  cover_image_url?: string | null;
+  is_published?: boolean;
 }
 
 /** Project detail DTO — extends the list item with nested properties + counts. */
@@ -80,7 +121,9 @@ export interface PropertyListItem {
   description?: string | null;
   brand_type?: string;
   category?: string;
-  price: number;
+  // § Phase 3: Property.price (manually-typed) was removed — final_price is
+  // the pricing engine's authoritative output.
+  final_price?: number;
   area_sqft?: number;
   location: string;
   address?: string | null;
@@ -90,7 +133,12 @@ export interface PropertyListItem {
   details?: JsonValue | null;
   status?: string;
   assigned_pm_id?: number | null;
-  assigned_pm?: { id: number; employee_code: string; full_name?: string | null; phone?: string | null } | null;
+  assigned_pm?: {
+    id: number;
+    employee_code: string;
+    full_name?: string | null;
+    phone?: string | null;
+  } | null;
   created_by?: { id: number; employee_code: string; full_name?: string | null } | null;
   project?: { id: number; name: string };
   images?: PropertyImage[];
@@ -131,14 +179,6 @@ export interface PropertyVerificationLog {
   notes?: string | null;
   actor?: { id: number; employee_code?: string; full_name?: string | null } | null;
   created_at?: ISODateTime;
-}
-
-/** Editable subset of a property passed to EditPropertyModal. */
-export interface EditableProperty extends PropertyListItem {
-  carpet_area?: number;
-  builtup_area?: number;
-  amenities?: string[];
-  furnishing?: string | null;
 }
 
 export interface LocalImageItem extends PropertyImage {}
@@ -220,6 +260,9 @@ export interface ProjectFormPayload {
   location: string;
   description?: string | null;
   total_area?: string | null;
+  total_units?: number | null;
+  project_phase?: string | null;
+  rera_number?: string | null;
   launch_date?: ISODateTime | null;
   assigned_pm_id?: number | null;
   status?: string;
@@ -237,6 +280,9 @@ export interface LeadListItem {
   assignment_type?: string | null;
   property_type_preference?: string | null;
   preferred_location?: string | null;
+  // Full multi-location list (§ Phase 2) — preferred_location above stays as
+  // the primary/first entry for backward compatibility.
+  preferred_locations?: { id: number; location: string; sort_order: number }[];
   budget_min?: number | null;
   budget_max?: number | null;
   assigned_to?: { id: number; employee_code: string; full_name: string; phone: string } | null;
@@ -301,6 +347,16 @@ export interface LeadVisitItem {
   feedback_notes?: string | null;
   rating?: string | null;
   property?: { id: number; title?: string; property_code?: string } | null;
+}
+
+/** Demo scheduled for a lead (GET /demos?leadId=). */
+export interface LeadDemoItem {
+  id: number;
+  lead_id?: number;
+  scheduled_at: ISODateTime;
+  accepted_at?: ISODateTime | null;
+  status: string;
+  handler?: { id: number; full_name: string; employee_code: string } | null;
 }
 
 /** Follow-up task for a lead (GET /leads/:id/tasks). */
@@ -492,13 +548,16 @@ export interface TaskItem {
   title: string;
   description?: string | null;
   assignee_id: number;
-  target_date?: ISODateTime;
+  // The real Task field (matches Prisma's `Task.target_date` and every API
+  // response) — "deadline" is only ever the CREATE request body's field
+  // name, never present on a returned task, and reading it here always
+  // produced `undefined`/Invalid Date until this was caught.
+  target_date: ISODateTime;
   status?: string;
   created_by?: number;
   completed_at?: ISODateTime | null;
   lead_id?: number | null;
   opportunity_id?: number | null;
-  deadline: ISODateTime;
   priority?: string;
   lead?: { id: number; customer_name?: string } | null;
   assignee?: { id: number; full_name?: string | null; employee_code?: string } | null;
@@ -528,8 +587,6 @@ export interface SiteVisitListItem {
   telecaller?: { id: number; full_name?: string | null; employee_code?: string } | null;
   project_manager?: { id: number; full_name?: string | null; employee_code?: string } | null;
 }
-
-
 
 /** Target list item (GET /targets). */
 export interface TargetListItem {
@@ -698,11 +755,23 @@ export interface ExecMetricsData {
   totalLeadsCount?: number;
   totalClosedDeals?: number;
   siteVisitsScheduled?: number;
+  totalPropertiesCount?: number;
   livePropertiesCount?: number;
   pendingVerificationPropertiesCount?: number;
   pendingApprovalPropertiesCount?: number;
+  totalEmployeesCount?: number;
   attendanceExceptionsCount?: number;
   pendingLeaveRequestsCount?: number;
+  newLeadsCount?: number;
+  contactedLeadsCount?: number;
+  qualifiedLeadsCount?: number;
+  siteVisitsCompletedCount?: number;
+  bookingInitiatedCount?: number;
+  activeCustomersCount?: number;
+  salesValue?: number;
+  duePayments?: number;
+  /** (totalClosedDeals / totalLeadsCount) * 100, rounded to 1 decimal; 0 when there are no leads. */
+  leadConversionRate?: number;
 }
 export interface ProposalItem {
   id: number;

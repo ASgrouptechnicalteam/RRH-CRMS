@@ -23,10 +23,10 @@ export const Roles = {
   AGENT: 'Agent',
   DIGITAL_MARKETING_EXECUTIVE: 'digital marketing executive',
   SALES_MANAGER: 'Sales manager',
-  CHANNEL_PARTNER_MANAGER: 'Channel partner manager'
+  CHANNEL_PARTNER_MANAGER: 'Channel partner manager',
 } as const;
 
-export type RoleName = typeof Roles[keyof typeof Roles];
+export type RoleName = (typeof Roles)[keyof typeof Roles];
 
 // Permanent 2-Letter Department Codes for Employee IDs: RRH-{DEPT_2DIGIT}-{NUMBER_3DIGIT}
 // Employee IDs remain static and permanent for life even when promoted!
@@ -55,7 +55,7 @@ export const Permissions = {
   EMPLOYEES_VIEW_SENSITIVE: 'employees.view_sensitive',
   EMPLOYEES_MANAGE_DEFAULT_ALL: 'employees.manage_default:all',
   EMPLOYEES_RESET_PASSWORD: 'employees.reset_password',
-  
+
   LEADS_CREATE: 'leads.create',
   LEADS_READ: 'leads.read',
   LEADS_UPDATE: 'leads.update',
@@ -64,14 +64,14 @@ export const Permissions = {
   LEADS_BULK_UPLOAD: 'leads.bulk_upload',
   LEADS_DISTRIBUTION_MONITOR: 'leads.distribution_monitor',
   LEADS_WHATSAPP_PROPOSAL: 'leads.whatsapp_proposal',
-  
+
   CUSTOMERS_CREATE: 'customers.create',
   CUSTOMERS_READ: 'customers.read',
   CUSTOMERS_UPDATE: 'customers.update',
   CUSTOMERS_DELETE: 'customers.delete',
   CUSTOMERS_CONVERT: 'customers.convert',
   CUSTOMERS_KYC_WRITE: 'customers.kyc_write',
-  
+
   PROPERTIES_CREATE: 'properties.create',
   PROPERTIES_READ: 'properties.read',
   PROPERTIES_UPDATE: 'properties.update',
@@ -79,67 +79,67 @@ export const Permissions = {
   PROPERTIES_VERIFY: 'properties.verify',
   PROPERTIES_DM_POLISH: 'properties.dm_polish',
   PROPERTIES_MD_APPROVE: 'properties.md_approve',
-  
+
   SITE_VISITS_CREATE: 'site_visits.create',
   SITE_VISITS_READ: 'site_visits.read',
   SITE_VISITS_VERIFY: 'site_visits.verify',
   SITE_VISITS_ASSIGN_AGENT: 'site_visits.assign_agent',
   SITE_VISITS_COMPLETE: 'site_visits.complete',
-  
+
   PROJECTS_CREATE: 'projects.create',
   PROJECTS_READ: 'projects.read',
   PROJECTS_UPDATE: 'projects.update',
   PROJECTS_DELETE: 'projects.delete',
-  
+
   BOOKINGS_CREATE: 'bookings.create',
   BOOKINGS_READ: 'bookings.read',
   BOOKINGS_UPDATE: 'bookings.update',
   BOOKINGS_CANCEL: 'bookings.cancel',
   BOOKINGS_CONFIRM: 'bookings.confirm',
-  
+
   PAYMENTS_CREATE: 'payments.create',
   PAYMENTS_READ: 'payments.read',
   PAYMENTS_UPDATE: 'payments.update',
   PAYMENTS_CANCEL: 'payments.cancel',
-  
+
   TASKS_CREATE: 'tasks.create',
   TASKS_READ: 'tasks.read',
   TASKS_UPDATE: 'tasks.update',
   TASKS_ASSIGN: 'tasks.assign',
-  
+
   ATTENDANCE_READ_OWN: 'attendance.read_own',
   ATTENDANCE_SCAN: 'attendance.scan',
   ATTENDANCE_LATE_PROPOSAL: 'attendance.late_proposal',
   ATTENDANCE_LEAVE_PROPOSAL: 'attendance.leave_proposal',
   ATTENDANCE_PROPOSALS_QUEUE: 'attendance.proposals_queue',
   ATTENDANCE_LIVE_MONITOR: 'attendance.live_monitor',
-  
+
   REPORTS_CREATE: 'reports.create',
   REPORTS_READ_OWN: 'reports.read_own',
   REPORTS_READ_TEAM: 'reports.read_team',
   REPORTS_TARGETS_CONFIGURE: 'reports.targets.configure',
-  
+
   EXPENSES_CREATE: 'expenses.create',
   EXPENSES_READ_OWN: 'expenses.read_own',
   EXPENSES_REVIEW: 'expenses.review',
   EXPENSES_MD_APPROVE: 'expenses.md_approve',
   EXPENSES_MARK_REFUNDED: 'expenses.mark_refunded',
-  
+
   PERFORMANCE_READ_OWN: 'performance.read_own',
   PERFORMANCE_READ_TEAM: 'performance.read_team',
   PERFORMANCE_HISTORY: 'performance.history',
-  
+
   ADMIN_SYSTEM_METRICS: 'admin.system_metrics',
   ADMIN_AUDIT_LOGS: 'admin.audit_logs',
   ADMIN_SECURITY_ALERTS: 'admin.security_alerts',
   ADMIN_EMERGENCY_LOCKDOWN: 'admin.emergency_lockdown',
   MESSAGE_TEMPLATES_MANAGE: 'message_templates.manage', // §5 admin template editor
-  
+
   PUBLIC_PROPERTIES_READ: 'public.properties.read',
   PUBLIC_LEADS_CREATE: 'public.leads.create',
 
   AI_SEARCH: 'ai.search',
-  
+
   DOCUMENTS_CREATE: 'documents.create',
   DOCUMENTS_READ: 'documents.read',
   DOCUMENTS_VERIFY: 'documents.verify',
@@ -152,61 +152,16 @@ export const Permissions = {
   COMPLAINTS_CLOSE: 'complaints.close',
 } as const;
 
-export type Permission = typeof Permissions[keyof typeof Permissions];
+export type Permission = (typeof Permissions)[keyof typeof Permissions];
 
 const ALL_PERMISSIONS = Object.values(Permissions);
 
 // Role -> Permission Matrix (Phase 1 - Stage 2 Blueprint Section 8)
 export const RolePermissionsMatrix: Record<RoleName, string[]> = {
   [Roles.MD]: ALL_PERMISSIONS, // MD gets all permissions
-  
-  [Roles.ADMIN]: [
-    Permissions.ADMIN_SYSTEM_METRICS,
-    Permissions.ADMIN_AUDIT_LOGS,
-    Permissions.ADMIN_SECURITY_ALERTS,
-    Permissions.ADMIN_EMERGENCY_LOCKDOWN,
-    Permissions.EMPLOYEES_CREATE,
-    Permissions.EMPLOYEES_READ,
-    Permissions.EMPLOYEES_UPDATE,
-    Permissions.EMPLOYEES_RESET_PASSWORD,
-    Permissions.CUSTOMERS_CREATE,
-    Permissions.CUSTOMERS_READ,
-    Permissions.CUSTOMERS_UPDATE,
-    Permissions.CUSTOMERS_DELETE,
-    Permissions.CUSTOMERS_CONVERT,
-    Permissions.CUSTOMERS_KYC_WRITE,
-    Permissions.PROJECTS_CREATE,
-    Permissions.PROJECTS_READ,
-    Permissions.PROJECTS_UPDATE,
-    Permissions.PROJECTS_DELETE,
-    Permissions.BOOKINGS_CREATE,
-    Permissions.BOOKINGS_READ,
-    Permissions.BOOKINGS_UPDATE,
-    Permissions.PAYMENTS_CREATE,
-    Permissions.PAYMENTS_READ,
-    Permissions.PAYMENTS_UPDATE,
-    Permissions.PAYMENTS_CANCEL,
-    Permissions.DOCUMENTS_CREATE,
-    Permissions.DOCUMENTS_READ,
-    Permissions.DOCUMENTS_VERIFY,
-    Permissions.DOCUMENTS_DELETE,
-    Permissions.COMPLAINTS_CREATE,
-    Permissions.COMPLAINTS_READ,
-    Permissions.COMPLAINTS_UPDATE,
-    Permissions.COMPLAINTS_ASSIGN,
-    Permissions.COMPLAINTS_RESOLVE,
-    Permissions.COMPLAINTS_CLOSE,
-    Permissions.PROPERTIES_CREATE,
-    Permissions.PROPERTIES_READ,
-    Permissions.PROPERTIES_UPDATE,
-    Permissions.PROPERTIES_DELETE,
-    Permissions.PROPERTIES_VERIFY,
-    Permissions.PROPERTIES_DM_POLISH,
-    Permissions.PROPERTIES_MD_APPROVE,
-    Permissions.AI_SEARCH,
-    // Explicitly NO EMPLOYEES_VIEW_SENSITIVE for ADMIN
-  ],
-  
+
+  [Roles.ADMIN]: ALL_PERMISSIONS, // Admin is a second fully-privileged account alongside MD (2026-09-07 -- previously a curated list that excluded EMPLOYEES_VIEW_SENSITIVE and all LEADS_* permissions, which blocked real Admin usage; product decision was to match MD instead of narrowing the gaps one by one).
+
   [Roles.HR_MANAGER]: [
     Permissions.EMPLOYEES_CREATE,
     Permissions.EMPLOYEES_READ,
@@ -225,7 +180,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.DOCUMENTS_READ,
     Permissions.CUSTOMERS_KYC_WRITE,
   ],
-  
+
   [Roles.FINANCE]: [
     Permissions.EXPENSES_REVIEW,
     Permissions.EXPENSES_MARK_REFUNDED,
@@ -241,9 +196,12 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.DOCUMENTS_VERIFY,
     Permissions.CUSTOMERS_KYC_WRITE,
     Permissions.COMPLAINTS_READ,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_READ_OWN,
+    Permissions.LEADS_READ,
   ],
-  
-[Roles.MARKETING_DIRECTOR]: [
+
+  [Roles.MARKETING_DIRECTOR]: [
     Permissions.TASKS_CREATE,
     Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
@@ -256,6 +214,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.CUSTOMERS_UPDATE,
     Permissions.CUSTOMERS_DELETE,
     Permissions.CUSTOMERS_CONVERT,
+    // EMPLOYEES_READ is required so this role can see the employee list when
+    // assigning a property to a Digital Marketing Executive for DM Polish
+    // (PropertyManagement.tsx's "Assign to Digital Marketing Executive"
+    // dropdown queries GET /employees, which 403s without this).
+    Permissions.EMPLOYEES_READ,
     Permissions.PROPERTIES_DM_POLISH,
     Permissions.PROPERTIES_MD_APPROVE, // Per Section 8 participation
     Permissions.SITE_VISITS_READ,
@@ -267,7 +230,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_READ,
   ],
-  
+
   [Roles.PROJECT_MANAGER]: [
     Permissions.PROJECTS_CREATE,
     Permissions.PROJECTS_READ,
@@ -297,8 +260,10 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.COMPLAINTS_ASSIGN,
     Permissions.COMPLAINTS_RESOLVE,
     Permissions.COMPLAINTS_CLOSE,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_READ_OWN,
   ],
-  
+
   [Roles.DIGITAL_LEAD_OPERATOR]: [
     Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
@@ -323,8 +288,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.DOCUMENTS_READ,
     Permissions.COMPLAINTS_READ,
     Permissions.COMPLAINTS_UPDATE,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_READ_OWN,
+    Permissions.EMPLOYEES_READ,
   ],
-  
+
   [Roles.TELECALLER]: [
     Permissions.PROJECTS_READ,
     Permissions.LEADS_CREATE,
@@ -348,16 +316,21 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
     Permissions.DOCUMENTS_READ,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_READ_OWN,
   ],
-  
+
   [Roles.DIGITAL_MARKETING_HEAD]: [
     Permissions.PROPERTIES_DM_POLISH,
     Permissions.PROPERTIES_READ,
     Permissions.LEADS_READ,
     Permissions.REPORTS_TARGETS_CONFIGURE,
     Permissions.PERFORMANCE_READ_TEAM,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_READ_OWN,
+    Permissions.EMPLOYEES_READ,
   ],
-  
+
   [Roles.AGENT]: [
     Permissions.SITE_VISITS_READ,
     Permissions.SITE_VISITS_COMPLETE,
@@ -381,10 +354,15 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.COMPLAINTS_RESOLVE,
     Permissions.COMPLAINTS_CLOSE,
   ],
-  
+
   [Roles.DIGITAL_MARKETING_EXECUTIVE]: [
     Permissions.LEADS_READ,
     Permissions.LEADS_UPDATE,
+    // PROPERTIES_READ is required alongside PROPERTIES_DM_POLISH -- GET
+    // /properties 403s without it, which blocks this role from ever seeing
+    // the properties assigned to them for content polish (found while
+    // verifying the new dedicated DM Executive dashboard, Phase-19 #8/#11).
+    Permissions.PROPERTIES_READ,
     Permissions.SITE_VISITS_READ,
     Permissions.TASKS_READ,
     Permissions.TASKS_UPDATE,
@@ -394,7 +372,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.ATTENDANCE_SCAN,
     Permissions.PERFORMANCE_READ_OWN,
   ],
-  
+
   [Roles.SALES_MANAGER]: [
     Permissions.TASKS_CREATE,
     Permissions.LEADS_READ,
@@ -413,8 +391,10 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.REPORTS_TARGETS_CONFIGURE,
     Permissions.PERFORMANCE_READ_TEAM,
     Permissions.BOOKINGS_READ,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_READ_OWN,
   ],
-  
+
   [Roles.CHANNEL_PARTNER_MANAGER]: [
     Permissions.LEADS_CREATE,
     Permissions.LEADS_READ,
@@ -432,12 +412,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.PERFORMANCE_READ_OWN,
     Permissions.TASKS_READ,
     Permissions.TASKS_UPDATE,
-  ]
+  ],
 };
 
 // Employee Code Regex: e.g. RRH-EX-001 (MD), RRH-EX-002 (Admin), RRH-HR-001 (HR), RRH-SL-001 (Sales/Telecaller), DEV-SM-001
 export const EMPLOYEE_CODE_REGEX = /^(RRH|DEV|SON)-[A-Z]{2,5}-\d{3,5}$/;
-
 
 // Login Request Schema
 export const LoginSchema = z.object({
@@ -446,10 +425,7 @@ export const LoginSchema = z.object({
     .trim()
     .toUpperCase()
     .min(1, 'Employee ID is required')
-    .regex(
-      EMPLOYEE_CODE_REGEX,
-      'Invalid Employee ID format. Expected format: RRH-XX-000'
-    ),
+    .regex(EMPLOYEE_CODE_REGEX, 'Invalid Employee ID format. Expected format: RRH-XX-000'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -466,7 +442,7 @@ export const AttendanceStatus = {
   LEAVE: 'LEAVE',
 } as const;
 
-export type AttendanceStatusType = typeof AttendanceStatus[keyof typeof AttendanceStatus];
+export type AttendanceStatusType = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 
 // Password Change Schema (Forced first login)
 export const ChangePasswordSchema = z.object({
@@ -506,7 +482,7 @@ export const TaskPriority = {
   URGENT: 'URGENT',
 } as const;
 
-export type TaskPriorityType = typeof TaskPriority[keyof typeof TaskPriority];
+export type TaskPriorityType = (typeof TaskPriority)[keyof typeof TaskPriority];
 
 export const TaskStatus = {
   PENDING: 'PENDING',
@@ -515,7 +491,7 @@ export const TaskStatus = {
   OVERDUE: 'OVERDUE',
 } as const;
 
-export type TaskStatusType = typeof TaskStatus[keyof typeof TaskStatus];
+export type TaskStatusType = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 // Daily Report Schema (with 15-character minimum below_target_reason check)
 export const DailyReportSchema = z.object({
@@ -584,7 +560,52 @@ export const LeadStatus = {
   RECOVERED_TO_POOL: 'RECOVERED_TO_POOL',
 } as const;
 
-export type LeadStatusType = typeof LeadStatus[keyof typeof LeadStatus];
+export type LeadStatusType = (typeof LeadStatus)[keyof typeof LeadStatus];
+
+// Mirrors the Prisma `LeadExitReason` enum (apps/api/prisma/schema.prisma)
+// and apps/api/src/shared/lead.ts — kept in sync by hand, same as every
+// other constant in this file.
+export const LeadExitReason = {
+  NO_MATCHING_INVENTORY: 'NO_MATCHING_INVENTORY',
+  CHOSE_COMPETITOR: 'CHOSE_COMPETITOR',
+  BUDGET_MISMATCH: 'BUDGET_MISMATCH',
+  NOT_READY: 'NOT_READY',
+  DO_NOT_CONTACT: 'DO_NOT_CONTACT',
+  UNRESPONSIVE: 'UNRESPONSIVE',
+  INVALID_CONTACT: 'INVALID_CONTACT',
+  DUPLICATE_LEAD: 'DUPLICATE_LEAD',
+  FINANCING_ISSUE: 'FINANCING_ISSUE',
+  LOCATION_MISMATCH: 'LOCATION_MISMATCH',
+  ALREADY_PURCHASED: 'ALREADY_PURCHASED',
+  JUST_ENQUIRING: 'JUST_ENQUIRING',
+  SITE_VISIT_NO_SHOW: 'SITE_VISIT_NO_SHOW',
+  NEGOTIATION_FAILED: 'NEGOTIATION_FAILED',
+  OUT_OF_SERVICE_AREA: 'OUT_OF_SERVICE_AREA',
+  OTHER: 'OTHER',
+} as const;
+
+export type LeadExitReasonType = (typeof LeadExitReason)[keyof typeof LeadExitReason];
+
+export const LEAD_EXIT_REASON_VALUES = Object.values(LeadExitReason) as [string, ...string[]];
+
+export const LEAD_EXIT_REASON_LABELS: Record<LeadExitReasonType, string> = {
+  NO_MATCHING_INVENTORY: 'No matching property available',
+  CHOSE_COMPETITOR: 'Chose a competitor / another builder',
+  BUDGET_MISMATCH: "Budget doesn't match available options",
+  NOT_READY: 'Not ready to buy right now',
+  DO_NOT_CONTACT: 'Requested not to be contacted',
+  UNRESPONSIVE: 'Not responding to calls or messages',
+  INVALID_CONTACT: 'Wrong number / invalid contact',
+  DUPLICATE_LEAD: 'Duplicate of an existing lead',
+  FINANCING_ISSUE: 'Home loan / financing fell through',
+  LOCATION_MISMATCH: 'Preferred location not available',
+  ALREADY_PURCHASED: 'Already purchased elsewhere',
+  JUST_ENQUIRING: 'Casual enquiry, no purchase intent',
+  SITE_VISIT_NO_SHOW: 'Missed scheduled site visit(s)',
+  NEGOTIATION_FAILED: 'Could not agree on price or terms',
+  OUT_OF_SERVICE_AREA: 'Out of station / unable to visit',
+  OTHER: 'Other (please specify)',
+};
 
 export const LeadSource = {
   MANUAL_ENTRY: 'MANUAL_ENTRY',
@@ -608,6 +629,7 @@ export const LeadCreateSchema = z.object({
   budget_min: z.number().optional().nullable(),
   budget_max: z.number().optional().nullable(),
   preferred_location: z.string().optional(),
+  preferred_locations: z.array(z.string().trim().min(1)).max(10).optional(),
   notes: z.string().optional(),
   campaign: z.string().optional().nullable(),
   utm_source: z.string().optional().nullable(),
@@ -628,8 +650,13 @@ export const PublicLeadCreateSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   property_type_preference: z.string().optional(),
   preferred_location: z.string().optional(),
-  enquiry_type: z.enum(['appraisal', 'call', 'project', 'property', 'consultation', 'other']).optional(),
-  preferred_contact_time: z.enum(['immediate', 'business_hours', 'after_hours', 'anytime']).optional(),
+  preferred_locations: z.array(z.string().trim().min(1)).max(10).optional(),
+  enquiry_type: z
+    .enum(['appraisal', 'call', 'project', 'property', 'consultation', 'other'])
+    .optional(),
+  preferred_contact_time: z
+    .enum(['immediate', 'business_hours', 'after_hours', 'anytime'])
+    .optional(),
   property_ids: z.array(z.number().int().positive()).max(10).optional(),
   project_id: z.number().int().positive().optional().nullable(),
   budget_max: z.number().positive('Budget must be a positive number').optional().nullable(),
@@ -638,36 +665,57 @@ export const PublicLeadCreateSchema = z.object({
 
 export type PublicLeadCreateInput = z.infer<typeof PublicLeadCreateSchema>;
 
-export const LeadStatusUpdateSchema = z.object({
-  status: z.enum([
-    'NEW',
-    'ASSIGNED',
-    'CONTACTED',
-    'QUALIFICATION_PENDING',
-    'QUALIFIED',
-    'DEMO_SCHEDULED',
-    'DEMO_COMPLETED',
-    'SITE_VISIT_SCHEDULED',
-    'SITE_VISIT_COMPLETED',
-    'NEGOTIATION',
-    'BOOKING_INITIATED',
-    'BOOKED',
-    'DROPPED',
-    'RECOVERED_TO_POOL',
-  ]),
-  notes: z.string().optional(),
-  // §1 guard fields — required for specific transitions (enforced in service)
-  exit_reason: z.string().optional(), // required when status -> DROPPED
-  demo_scheduled_at: z.string().datetime().optional(), // required when status -> DEMO_SCHEDULED
-  demo_handler_id: z.number().int().positive().optional(), // required when status -> DEMO_SCHEDULED
-  qualification: z.object({
-    budget_min: z.number().nonnegative().optional(),
-    budget_max: z.number().nonnegative().optional(),
-    property_type_preference: z.string().optional(),
-    preferred_location: z.string().optional(),
-  }).partial().optional(),
-});
-
+export const LeadStatusUpdateSchema = z
+  .object({
+    status: z.enum([
+      'NEW',
+      'ASSIGNED',
+      'CONTACTED',
+      'QUALIFICATION_PENDING',
+      'QUALIFIED',
+      'DEMO_SCHEDULED',
+      'DEMO_COMPLETED',
+      'SITE_VISIT_SCHEDULED',
+      'SITE_VISIT_COMPLETED',
+      'NEGOTIATION',
+      'BOOKING_INITIATED',
+      'BOOKED',
+      'DROPPED',
+      'RECOVERED_TO_POOL',
+    ]),
+    notes: z.string().optional(),
+    // §1 guard fields — required for specific transitions (enforced in service)
+    exit_reason: z.enum(LEAD_EXIT_REASON_VALUES).optional(), // required when status -> DROPPED
+    exit_reason_detail: z.string().trim().min(1).max(500).optional(), // required when exit_reason === 'OTHER'
+    demo_scheduled_at: z.string().datetime().optional(), // required when status -> DEMO_SCHEDULED
+    demo_handler_id: z.number().int().positive().optional(), // required when status -> DEMO_SCHEDULED
+    qualification: z
+      .object({
+        budget_min: z.number().nonnegative().optional(),
+        budget_max: z.number().nonnegative().optional(),
+        property_type_preference: z.string().optional(),
+        preferred_location: z.string().optional(),
+        preferred_locations: z.array(z.string().trim().min(1)).max(10).optional(),
+      })
+      .partial()
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.exit_reason === 'OTHER' && !data.exit_reason_detail) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['exit_reason_detail'],
+        message: 'Please specify the reason when "Other" is selected',
+      });
+    }
+    if (data.status === 'DEMO_SCHEDULED' && !data.demo_handler_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['demo_handler_id'],
+        message: 'Please select who will handle this demo',
+      });
+    }
+  });
 
 export type LeadStatusUpdateInput = z.infer<typeof LeadStatusUpdateSchema>;
 
@@ -719,7 +767,7 @@ export const PropertyStatus = {
   SOLD: 'SOLD',
 } as const;
 
-export type PropertyStatusType = typeof PropertyStatus[keyof typeof PropertyStatus];
+export type PropertyStatusType = (typeof PropertyStatus)[keyof typeof PropertyStatus];
 
 export const PropertyAvailability = {
   AVAILABLE: 'AVAILABLE',
@@ -728,7 +776,8 @@ export const PropertyAvailability = {
   UNAVAILABLE: 'UNAVAILABLE',
 } as const;
 
-export type PropertyAvailabilityType = typeof PropertyAvailability[keyof typeof PropertyAvailability];
+export type PropertyAvailabilityType =
+  (typeof PropertyAvailability)[keyof typeof PropertyAvailability];
 
 export const PropertyBrand = {
   SONTHILLU: 'SONTHILLU', // Residential Villas & Apartments
@@ -740,8 +789,16 @@ export const PropertyCreateSchema = z.object({
   description: z.string().optional(),
   brand_type: z.enum(['SONTHILLU', 'RADHA_REAL_HOMES']),
   category: z.enum([
-    'APARTMENT', 'INDEPENDENT_HOUSE', 'DUPLEX', 'INDEPENDENT_FLOOR', 
-    'VILLA', 'PENTHOUSE', 'STUDIO', 'PLOT', 'FARM_HOUSE', 'AGRICULTURAL_LAND'
+    'APARTMENT',
+    'INDEPENDENT_HOUSE',
+    'DUPLEX',
+    'INDEPENDENT_FLOOR',
+    'VILLA',
+    'PENTHOUSE',
+    'STUDIO',
+    'PLOT',
+    'FARM_HOUSE',
+    'AGRICULTURAL_LAND',
   ]),
   price: z.number().positive('Price must be greater than 0'),
   area_sqft: z.number().positive('Area in sqft is required'),
@@ -776,7 +833,10 @@ export const PropertyVerificationSchema = z.object({
 export type PropertyVerificationInput = z.infer<typeof PropertyVerificationSchema>;
 
 export const PropertyDMUpdateSchema = z.object({
-  digital_marketing_executive_id: z.number().int().positive('Must select a Digital Marketing Executive'),
+  digital_marketing_executive_id: z
+    .number()
+    .int()
+    .positive('Must select a Digital Marketing Executive'),
   seo_title: z.string().optional(),
   seo_keywords: z.string().optional(),
   description: z.string().optional(),
@@ -808,7 +868,18 @@ export const PropertyUpdateSchema = z.object({
   facing: z.string().optional(),
   amenities: z.any().optional(),
   project_id: z.number().int().positive().nullable().optional(),
-  status: z.enum(['PENDING_VERIFICATION', 'PENDING_DM_POLISH', 'PENDING_MD_APPROVAL', 'LIVE', 'REJECTED', 'LOCKED', 'BOOKED', 'SOLD']).optional(),
+  status: z
+    .enum([
+      'PENDING_VERIFICATION',
+      'PENDING_DM_POLISH',
+      'PENDING_MD_APPROVAL',
+      'LIVE',
+      'REJECTED',
+      'LOCKED',
+      'BOOKED',
+      'SOLD',
+    ])
+    .optional(),
   // WR-2: Structured location fields
   state: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
@@ -839,7 +910,8 @@ export const ExpenseRefundStatus = {
   REJECTED_BY_MD: 'REJECTED_BY_MD',
 } as const;
 
-export type ExpenseRefundStatusType = typeof ExpenseRefundStatus[keyof typeof ExpenseRefundStatus];
+export type ExpenseRefundStatusType =
+  (typeof ExpenseRefundStatus)[keyof typeof ExpenseRefundStatus];
 
 export const ExpenseRefundCreateSchema = z.object({
   purpose: z.string().min(3, 'Purpose is required'),
@@ -853,7 +925,9 @@ export const ExpenseRefundAccountantReviewSchema = z.object({
   note: z.string().optional(),
 });
 
-export type ExpenseRefundAccountantReviewInput = z.infer<typeof ExpenseRefundAccountantReviewSchema>;
+export type ExpenseRefundAccountantReviewInput = z.infer<
+  typeof ExpenseRefundAccountantReviewSchema
+>;
 
 export const ExpenseRefundMDReviewSchema = z.object({
   decision: z.enum(['APPROVE', 'REJECT']),
@@ -865,8 +939,6 @@ export type ExpenseRefundMDReviewInput = z.infer<typeof ExpenseRefundMDReviewSch
 export const ExpenseRefundMarkRefundedSchema = z.object({});
 
 export type ExpenseRefundMarkRefundedInput = z.infer<typeof ExpenseRefundMarkRefundedSchema>;
-
-
 
 // ─────────────────────────────────────────────────────────────
 // CUSTOMER SCHEMAS
@@ -907,14 +979,14 @@ export const DocumentType = {
   OTHER: 'OTHER',
 } as const;
 
-export type DocumentTypeValue = typeof DocumentType[keyof typeof DocumentType];
+export type DocumentTypeValue = (typeof DocumentType)[keyof typeof DocumentType];
 
 export const DocumentStatus = {
   ACTIVE: 'ACTIVE',
   ARCHIVED: 'ARCHIVED',
 } as const;
 
-export type DocumentStatusValue = typeof DocumentStatus[keyof typeof DocumentStatus];
+export type DocumentStatusValue = (typeof DocumentStatus)[keyof typeof DocumentStatus];
 
 export const DocumentVerificationStatus = {
   PENDING: 'PENDING',
@@ -922,10 +994,14 @@ export const DocumentVerificationStatus = {
   REJECTED: 'REJECTED',
 } as const;
 
-export type DocumentVerificationStatusValue = typeof DocumentVerificationStatus[keyof typeof DocumentVerificationStatus];
+export type DocumentVerificationStatusValue =
+  (typeof DocumentVerificationStatus)[keyof typeof DocumentVerificationStatus];
 
 // Document type -> required entity FK mapping
-export const DOCUMENT_TYPE_ENTITY_REQUIREMENTS: Record<string, { required: string[]; optional: string[] }> = {
+export const DOCUMENT_TYPE_ENTITY_REQUIREMENTS: Record<
+  string,
+  { required: string[]; optional: string[] }
+> = {
   [DocumentType.KYC_PAN]: { required: ['customer_id'], optional: [] },
   [DocumentType.KYC_AADHAAR]: { required: ['customer_id'], optional: [] },
   [DocumentType.BOOKING_AGREEMENT]: { required: ['booking_id'], optional: ['customer_id'] },
@@ -935,14 +1011,32 @@ export const DOCUMENT_TYPE_ENTITY_REQUIREMENTS: Record<string, { required: strin
   [DocumentType.PROPERTY_TITLE]: { required: ['property_id'], optional: ['project_id'] },
   [DocumentType.PROPERTY_PLAN]: { required: ['property_id'], optional: ['project_id'] },
   [DocumentType.PROPOSAL]: { required: ['lead_id'], optional: ['opportunity_id'] },
-  [DocumentType.OTHER]: { required: [], optional: ['customer_id', 'lead_id', 'opportunity_id', 'booking_id', 'property_id', 'project_id', 'payment_id'] },
+  [DocumentType.OTHER]: {
+    required: [],
+    optional: [
+      'customer_id',
+      'lead_id',
+      'opportunity_id',
+      'booking_id',
+      'property_id',
+      'project_id',
+      'payment_id',
+    ],
+  },
 };
 
 export const DocumentUploadSchema = z.object({
   document_type: z.enum([
-    'KYC_PAN', 'KYC_AADHAAR', 'BOOKING_AGREEMENT', 'PAYMENT_RECEIPT',
-    'BOOKING_RECEIPT', 'SALE_DEED', 'PROPERTY_TITLE', 'PROPERTY_PLAN',
-    'PROPOSAL', 'OTHER',
+    'KYC_PAN',
+    'KYC_AADHAAR',
+    'BOOKING_AGREEMENT',
+    'PAYMENT_RECEIPT',
+    'BOOKING_RECEIPT',
+    'SALE_DEED',
+    'PROPERTY_TITLE',
+    'PROPERTY_PLAN',
+    'PROPOSAL',
+    'OTHER',
   ]),
   title: z.string().min(1, 'Title is required').max(255),
   customer_id: z.coerce.number().int().positive().optional().nullable(),
@@ -979,7 +1073,8 @@ export const PortalCallbackStatus = {
   FAILED: 'failed',
 } as const;
 
-export type PortalCallbackStatusValue = typeof PortalCallbackStatus[keyof typeof PortalCallbackStatus];
+export type PortalCallbackStatusValue =
+  (typeof PortalCallbackStatus)[keyof typeof PortalCallbackStatus];
 
 export const PortalCallbackSchema = z.object({
   idempotency_key: z.string().min(1),
@@ -1005,7 +1100,7 @@ export const KycStatus = {
   REJECTED: 'REJECTED',
 } as const;
 
-export type KycStatusValue = typeof KycStatus[keyof typeof KycStatus];
+export type KycStatusValue = (typeof KycStatus)[keyof typeof KycStatus];
 
 export const KYC_STATUSES = Object.values(KycStatus) as string[];
 
@@ -1014,8 +1109,14 @@ export const KYC_STATUSES = Object.values(KycStatus) as string[];
  * Raw PAN/Aadhaar NEVER cross the CRM ↔ Portal boundary (Packet 3C §3.4).
  */
 export const CustomerKycWriteSchema = z.object({
-  pan_number: z.string().regex(/^[A-Z0-9]{10}$/, 'PAN must be 10 alphanumeric characters').optional(),
-  aadhaar_number: z.string().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional(),
+  pan_number: z
+    .string()
+    .regex(/^[A-Z0-9]{10}$/, 'PAN must be 10 alphanumeric characters')
+    .optional(),
+  aadhaar_number: z
+    .string()
+    .regex(/^\d{12}$/, 'Aadhaar must be 12 digits')
+    .optional(),
 });
 
 export type CustomerKycWriteInput = z.infer<typeof CustomerKycWriteSchema>;
@@ -1046,15 +1147,17 @@ export type KycStatusChangedInput = z.infer<typeof KycStatusChangedSchema>;
  * exclusively in CRM. Raw PAN/Aadhaar/bank/document data is NEVER part of
  * this contract (Packet 3C §3.4 / §4.2).
  */
-export const KycCallbackSchema = z.object({
-  idempotency_key: z.string().min(1),
-  event_type: z.literal('CUSTOMER_KYC_STATUS_CHANGED'),
-  status: z.literal('submitted'),
-  portal_customer_id: z.string().optional().nullable(),
-  company_id: z.number().int().positive(),
-  crms_customer_id: z.number().int().positive(),
-  crms_booking_id: z.number().int().positive().optional().nullable(),
-}).strict();
+export const KycCallbackSchema = z
+  .object({
+    idempotency_key: z.string().min(1),
+    event_type: z.literal('CUSTOMER_KYC_STATUS_CHANGED'),
+    status: z.literal('submitted'),
+    portal_customer_id: z.string().optional().nullable(),
+    company_id: z.number().int().positive(),
+    crms_customer_id: z.number().int().positive(),
+    crms_booking_id: z.number().int().positive().optional().nullable(),
+  })
+  .strict();
 
 export type KycCallbackInput = z.infer<typeof KycCallbackSchema>;
 
@@ -1092,17 +1195,19 @@ export type PaymentStatusChangedInput = z.infer<typeof PaymentStatusChangedSchem
  * References the outbound PAYMENT_STATUS_CHANGED IntegrationEvent via its
  * idempotency key; it NEVER creates a new IntegrationEvent.
  */
-export const PaymentCallbackSchema = z.object({
-  idempotency_key: z.string().min(1),
-  event_type: z.literal(PAYMENT_EVENT_TYPE),
-  status: z.enum(['completed', 'failed']),
-  company_id: z.number().int().positive(),
-  crms_customer_id: z.number().int().positive(),
-  crms_booking_id: z.number().int().positive(),
-  payment_id: z.number().int().positive(),
-  portal_payment_id: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-}).strict();
+export const PaymentCallbackSchema = z
+  .object({
+    idempotency_key: z.string().min(1),
+    event_type: z.literal(PAYMENT_EVENT_TYPE),
+    status: z.enum(['completed', 'failed']),
+    company_id: z.number().int().positive(),
+    crms_customer_id: z.number().int().positive(),
+    crms_booking_id: z.number().int().positive(),
+    payment_id: z.number().int().positive(),
+    portal_payment_id: z.string().optional().nullable(),
+    message: z.string().optional().nullable(),
+  })
+  .strict();
 
 export type PaymentCallbackInput = z.infer<typeof PaymentCallbackSchema>;
 
@@ -1152,19 +1257,22 @@ export const CustomerNotificationType = {
   PAYMENT_STATUS_UPDATED: 'PAYMENT_STATUS_UPDATED', // Phase 11 Packet 3F
 } as const;
 
-export type CustomerNotificationTypeValue = typeof CustomerNotificationType[keyof typeof CustomerNotificationType];
+export type CustomerNotificationTypeValue =
+  (typeof CustomerNotificationType)[keyof typeof CustomerNotificationType];
 
 /**
  * Read-only query for the Portal-facing customer-notifications API (Packet 3E).
  * The Portal may only READ; it can never create/update/delete notifications.
  * company_id + crms_customer_id are tenant/customer-scoped (both required).
  */
-export const CustomerNotificationReadSchema = z.object({
-  company_id: z.number().int().positive(),
-  crms_customer_id: z.number().int().positive(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(20),
-}).strict();
+export const CustomerNotificationReadSchema = z
+  .object({
+    company_id: z.number().int().positive(),
+    crms_customer_id: z.number().int().positive(),
+    page: z.number().int().positive().default(1),
+    limit: z.number().int().positive().max(100).default(20),
+  })
+  .strict();
 
 export type CustomerNotificationReadInput = z.infer<typeof CustomerNotificationReadSchema>;
 
@@ -1172,15 +1280,17 @@ export type CustomerNotificationReadInput = z.infer<typeof CustomerNotificationR
  * Single customer-notification item returned by the read API (Packet 3E).
  * Carries ONLY low-sensitivity fields — never raw PAN/Aadhaar/bank/salary.
  */
-export const CustomerNotificationResponseSchema = z.object({
-  id: z.number().int().positive(),
-  type: z.string().min(1),
-  title: z.string().min(1),
-  message: z.string().min(1),
-  is_read: z.boolean(),
-  booking_id: z.number().int().positive().nullable(),
-  created_at: z.string().datetime(),
-}).strict();
+export const CustomerNotificationResponseSchema = z
+  .object({
+    id: z.number().int().positive(),
+    type: z.string().min(1),
+    title: z.string().min(1),
+    message: z.string().min(1),
+    is_read: z.boolean(),
+    booking_id: z.number().int().positive().nullable(),
+    created_at: z.string().datetime(),
+  })
+  .strict();
 
 export type CustomerNotificationResponse = z.infer<typeof CustomerNotificationResponseSchema>;
 
@@ -1199,11 +1309,19 @@ export type CustomerNotificationResponse = z.infer<typeof CustomerNotificationRe
  * - Authenticated via a user JWT + ADMIN_SYSTEM_METRICS — NEVER the Portal
  *   service token (the Portal must not read cross-tenant aggregate data).
  */
-export const IntegrationMetricsQuerySchema = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'from must be YYYY-MM-DD (IST)').optional(),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'to must be YYYY-MM-DD (IST)').optional(),
-  includeTimeseries: z.enum(['true', 'false']).optional(),
-}).strict();
+export const IntegrationMetricsQuerySchema = z
+  .object({
+    from: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'from must be YYYY-MM-DD (IST)')
+      .optional(),
+    to: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'to must be YYYY-MM-DD (IST)')
+      .optional(),
+    includeTimeseries: z.enum(['true', 'false']).optional(),
+  })
+  .strict();
 
 export type IntegrationMetricsQueryInput = z.infer<typeof IntegrationMetricsQuerySchema>;
 
@@ -1212,43 +1330,53 @@ export type IntegrationMetricsQueryInput = z.infer<typeof IntegrationMetricsQuer
  * IntegrationEvent payloads, PAN/Aadhaar, bank data, or other sensitive
  * information ever crosses this contract (3A–3G sensitive-data policy).
  */
-export const IntegrationMetricsResponseSchema = z.object({
-  generated_at: z.string().datetime(),
-  company_id: z.number().int().positive(),
-  range: z.object({
-    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-  }),
-  handoffs: z.object({
-    total: z.number().int().nonnegative(),
-    byStatus: z.record(z.number().int().nonnegative()),
-    activationRate: z.number().min(0).max(100).nullable(),
-  }),
-  outbox: z.object({
-    total: z.number().int().nonnegative(),
-    byEventType: z.record(z.number().int().nonnegative()),
-    byStatus: z.record(z.number().int().nonnegative()),
-    retried: z.number().int().nonnegative(),
-    terminalFailures: z.number().int().nonnegative(),
-  }),
-  payments: z.object({
-    total: z.number().int().nonnegative(),
-    bySyncStatus: z.record(z.number().int().nonnegative()),
-    bySource: z.record(z.number().int().nonnegative()),
-  }),
-  kyc: z.object({
-    total: z.number().int().nonnegative(),
-    byStatus: z.record(z.number().int().nonnegative()),
-    submissions: z.number().int().nonnegative(),
-  }),
-  notifications: z.object({
-    total: z.number().int().nonnegative(),
-    byType: z.record(z.number().int().nonnegative()),
-  }),
-  timeseries: z.object({
-    days: z.array(z.record(z.any())),
-  }).optional(),
-}).strict();
+export const IntegrationMetricsResponseSchema = z
+  .object({
+    generated_at: z.string().datetime(),
+    company_id: z.number().int().positive(),
+    range: z.object({
+      from: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable(),
+      to: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable(),
+    }),
+    handoffs: z.object({
+      total: z.number().int().nonnegative(),
+      byStatus: z.record(z.number().int().nonnegative()),
+      activationRate: z.number().min(0).max(100).nullable(),
+    }),
+    outbox: z.object({
+      total: z.number().int().nonnegative(),
+      byEventType: z.record(z.number().int().nonnegative()),
+      byStatus: z.record(z.number().int().nonnegative()),
+      retried: z.number().int().nonnegative(),
+      terminalFailures: z.number().int().nonnegative(),
+    }),
+    payments: z.object({
+      total: z.number().int().nonnegative(),
+      bySyncStatus: z.record(z.number().int().nonnegative()),
+      bySource: z.record(z.number().int().nonnegative()),
+    }),
+    kyc: z.object({
+      total: z.number().int().nonnegative(),
+      byStatus: z.record(z.number().int().nonnegative()),
+      submissions: z.number().int().nonnegative(),
+    }),
+    notifications: z.object({
+      total: z.number().int().nonnegative(),
+      byType: z.record(z.number().int().nonnegative()),
+    }),
+    timeseries: z
+      .object({
+        days: z.array(z.record(z.any())),
+      })
+      .optional(),
+  })
+  .strict();
 
 export type IntegrationMetricsResponse = z.infer<typeof IntegrationMetricsResponseSchema>;
 
@@ -1295,13 +1423,13 @@ export const SiteVisitStatus = {
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
 } as const;
-export type SiteVisitStatusType = typeof SiteVisitStatus[keyof typeof SiteVisitStatus];
+export type SiteVisitStatusType = (typeof SiteVisitStatus)[keyof typeof SiteVisitStatus];
 
 export const SiteVisitOutcome = {
   INTERESTED: 'INTERESTED',
   NOT_INTERESTED: 'NOT_INTERESTED',
 } as const;
-export type SiteVisitOutcomeType = typeof SiteVisitOutcome[keyof typeof SiteVisitOutcome];
+export type SiteVisitOutcomeType = (typeof SiteVisitOutcome)[keyof typeof SiteVisitOutcome];
 
 export const SiteVisitCreateSchema = z.object({
   lead_id: z.number().int().positive(),
@@ -1363,7 +1491,7 @@ export const SiteVisitCompleteSchema = z.object({
 export type SiteVisitCompleteInput = z.infer<typeof SiteVisitCompleteSchema>;
 
 export const SiteVisitCancelConfirmSchema = z.object({
-  reason: z.string().min(1, "A cancellation reason is required"),
+  reason: z.string().min(1, 'A cancellation reason is required'),
 });
 export type SiteVisitCancelConfirmInput = z.infer<typeof SiteVisitCancelConfirmSchema>;
 
@@ -1408,8 +1536,7 @@ export const MessageTemplateKey = {
   POST_VISIT_INTERESTED: 'POST_VISIT_INTERESTED', // thank-you + next steps toward booking
   BOOKING_CONFIRMED: 'BOOKING_CONFIRMED', // welcome + portal credentials
 } as const;
-export type MessageTemplateKeyType = typeof MessageTemplateKey[keyof typeof MessageTemplateKey];
-
+export type MessageTemplateKeyType = (typeof MessageTemplateKey)[keyof typeof MessageTemplateKey];
 
 export const PropertyTogglePublicationBodySchema = z.object({
   company_id: z.number().int().positive(),
@@ -1418,11 +1545,18 @@ export const PropertyTogglePublicationBodySchema = z.object({
 
 export const PropertyImageMetadataSchema = z.object({
   alt_text: z.string().optional(),
-  sort_order: z.union([z.string().regex(/^\d+$/).transform(Number), z.number().int().nonnegative()]).optional(),
-  is_primary: z.union([
-    z.string().toLowerCase().transform(v => v === 'true'),
-    z.boolean()
-  ]).optional(),
+  sort_order: z
+    .union([z.string().regex(/^\d+$/).transform(Number), z.number().int().nonnegative()])
+    .optional(),
+  is_primary: z
+    .union([
+      z
+        .string()
+        .toLowerCase()
+        .transform((v) => v === 'true'),
+      z.boolean(),
+    ])
+    .optional(),
 });
 
 export const EmptyBodySchema = z.object({}).strict();
@@ -1439,11 +1573,23 @@ export const EmployeeSelfUpdateSchema = z.object({
   emergency_contact_phone: z.string().optional().nullable(),
   blood_group: z.string().optional().nullable(),
   social_links: z.string().optional().nullable(),
-  pan_number: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format').optional().nullable(),
-  aadhaar_number: z.string().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional().nullable(),
+  pan_number: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format')
+    .optional()
+    .nullable(),
+  aadhaar_number: z
+    .string()
+    .regex(/^\d{12}$/, 'Aadhaar must be 12 digits')
+    .optional()
+    .nullable(),
   bank_name: z.string().optional().nullable(),
   bank_account_number: z.string().optional().nullable(),
-  bank_ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC format').optional().nullable(),
+  bank_ifsc: z
+    .string()
+    .regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC format')
+    .optional()
+    .nullable(),
   bank_branch: z.string().optional().nullable(),
 });
 
@@ -1462,11 +1608,23 @@ export const EmployeeCreateSchema = z.object({
   emergency_contact_name: z.string().optional().nullable(),
   emergency_contact_relation: z.string().optional().nullable(),
   emergency_contact_phone: z.string().optional().nullable(),
-  pan_number: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format').optional().nullable(),
-  aadhaar_number: z.string().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional().nullable(),
+  pan_number: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format')
+    .optional()
+    .nullable(),
+  aadhaar_number: z
+    .string()
+    .regex(/^\d{12}$/, 'Aadhaar must be 12 digits')
+    .optional()
+    .nullable(),
   bank_name: z.string().optional().nullable(),
   bank_account_number: z.string().optional().nullable(),
-  bank_ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC format').optional().nullable(),
+  bank_ifsc: z
+    .string()
+    .regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC format')
+    .optional()
+    .nullable(),
   bank_branch: z.string().optional().nullable(),
   job_title: z.string().optional().nullable(),
   department: z.string().optional().nullable(),
@@ -1476,13 +1634,15 @@ export const EmployeeCreateSchema = z.object({
   salary_ctc: z.union([z.string(), z.number()]).optional().nullable(),
   background_education: z.string().optional().nullable(),
   additional_branch_ids: z.array(z.union([z.string(), z.number()])).optional(),
-  initial_password: z.string()
+  initial_password: z
+    .string()
     .min(8, 'Password must be at least 8 characters long')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
-    .optional().nullable(),
+    .optional()
+    .nullable(),
   company_id: z.union([z.string(), z.number()]).optional().nullable(),
 });
 
@@ -1503,6 +1663,5 @@ export const EmployeeUpdateSchema = EmployeeSelfUpdateSchema.extend({
 });
 
 export const EmployeeRolesUpdateSchema = z.object({
-  role_names: z.array(z.string()).min(1, 'At least one role is required')
+  role_names: z.array(z.string()).min(1, 'At least one role is required'),
 });
-

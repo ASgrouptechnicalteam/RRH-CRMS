@@ -59,8 +59,10 @@ function generatePngBuffer(width: number, height: number, r: number, g: number, 
     rawData[rowOffset] = 0;
     for (let x = 0; x < width; x++) {
       const pxOffset = rowOffset + 1 + x * 4;
-      const isInnerGold = (x >= width * 0.35 && x <= width * 0.65 && y >= height * 0.35 && y <= height * 0.65);
-      const isInnerWhite = (x >= width * 0.42 && x <= width * 0.58 && y >= height * 0.42 && y <= height * 0.58);
+      const isInnerGold =
+        x >= width * 0.35 && x <= width * 0.65 && y >= height * 0.35 && y <= height * 0.65;
+      const isInnerWhite =
+        x >= width * 0.42 && x <= width * 0.58 && y >= height * 0.42 && y <= height * 0.58;
 
       if (isInnerWhite) {
         rawData[pxOffset] = 255;
@@ -109,7 +111,7 @@ function pwaIconsPlugin(): Plugin {
           fs.writeFileSync(filePath, buf);
         }
       }
-    }
+    },
   };
 }
 
@@ -119,7 +121,15 @@ export default defineConfig({
     pwaIconsPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'icon-192.png', 'icon-512.png'],
+      includeAssets: [
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'masked-icon.svg',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
+        'icon-192.png',
+        'icon-512.png',
+      ],
       manifest: {
         name: 'RS CRM',
         short_name: 'RS CRM',
@@ -129,29 +139,33 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
+            type: 'image/png',
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
   },
   server: {
-    port: 5173,
+    port: process.env.PORT ? Number(process.env.PORT) : 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 });

@@ -1,8 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Users, Award, TrendingUp, TrendingDown, AlertTriangle,
-  CheckCircle, Clock, RefreshCw, Search, ChevronDown, ChevronUp,
-  Star, ShieldAlert, Activity, Calendar, ChevronLeft, ChevronRight
+  Users,
+  Award,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  RefreshCw,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  ShieldAlert,
+  Activity,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
@@ -30,8 +44,18 @@ interface EmployeeScore {
 }
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const ZONE_CONFIG = {
@@ -85,7 +109,6 @@ export const TeamPerformanceDashboard: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showMatrix, setShowMatrix] = useState(false);
 
-
   const currentDate = new Date();
   const [year, setYear] = useState(currentDate.getFullYear());
   const [month, setMonth] = useState(currentDate.getMonth() + 1);
@@ -94,7 +117,9 @@ export const TeamPerformanceDashboard: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/performance/team?year=${year}&month=${month}`);
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/performance/team?year=${year}&month=${month}`,
+      );
       const data = await res.json();
       if (res.ok) {
         setTeam(data.team || []);
@@ -115,18 +140,18 @@ export const TeamPerformanceDashboard: React.FC = () => {
   const handlePrevMonth = () => {
     if (month === 1) {
       setMonth(12);
-      setYear(y => y - 1);
+      setYear((y) => y - 1);
     } else {
-      setMonth(m => m - 1);
+      setMonth((m) => m - 1);
     }
   };
 
   const handleNextMonth = () => {
     if (month === 12) {
       setMonth(1);
-      setYear(y => y + 1);
+      setYear((y) => y + 1);
     } else {
-      setMonth(m => m + 1);
+      setMonth((m) => m + 1);
     }
   };
 
@@ -164,9 +189,11 @@ export const TeamPerformanceDashboard: React.FC = () => {
 
   const toggleSort = (field: 'score' | 'name' | 'zone') => {
     if (sortBy === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortBy(field); setSortDir('desc'); }
+    else {
+      setSortBy(field);
+      setSortDir('desc');
+    }
   };
-
 
   if (isLoading) {
     return (
@@ -207,14 +234,22 @@ export const TeamPerformanceDashboard: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-            <button onClick={handlePrevMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+            <button
+              onClick={handlePrevMonth}
+              className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-2 font-bold text-slate-700 min-w-[100px] justify-center text-sm">
               <Calendar className="w-4 h-4 text-slate-400" />
-              <span>{MONTHS[month - 1]} {year}</span>
+              <span>
+                {MONTHS[month - 1]} {year}
+              </span>
             </div>
-            <button onClick={handleNextMonth} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+            <button
+              onClick={handleNextMonth}
+              className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -231,7 +266,9 @@ export const TeamPerformanceDashboard: React.FC = () => {
       {/* Stats Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="sm:col-span-1 bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-2xl p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Team Avg Score</span>
+          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">
+            Team Avg Score
+          </span>
           <span className="text-3xl font-extrabold font-mono mt-1">{avgScore}</span>
           <span className="text-[10px] text-slate-400">/ 100+ pts</span>
         </div>
@@ -245,10 +282,14 @@ export const TeamPerformanceDashboard: React.FC = () => {
               className={`rounded-2xl p-3 border text-left transition-all ${cfg.bg} ${cfg.border} ${zoneFilter === zone ? 'ring-2 ring-offset-1 ring-navy-500' : ''}`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className={`text-[10px] font-bold uppercase tracking-wide ${cfg.text}`}>{cfg.label}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide ${cfg.text}`}>
+                  {cfg.label}
+                </span>
                 <Icon className={`w-3.5 h-3.5 ${cfg.text}`} />
               </div>
-              <span className={`text-2xl font-extrabold font-mono ${cfg.text}`}>{counts[zone]}</span>
+              <span className={`text-2xl font-extrabold font-mono ${cfg.text}`}>
+                {counts[zone]}
+              </span>
             </button>
           );
         })}
@@ -281,19 +322,49 @@ export const TeamPerformanceDashboard: React.FC = () => {
       {/* Sort Header */}
       <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         <div className="col-span-4">
-          <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-navy-700">
-            Employee {sortBy === 'name' ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />) : null}
+          <button
+            onClick={() => toggleSort('name')}
+            className="flex items-center gap-1 hover:text-navy-700"
+          >
+            Employee{' '}
+            {sortBy === 'name' ? (
+              sortDir === 'desc' ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronUp className="w-3 h-3" />
+              )
+            ) : null}
           </button>
         </div>
         <div className="col-span-2">
-          <button onClick={() => toggleSort('zone')} className="flex items-center gap-1 hover:text-navy-700">
-            Zone {sortBy === 'zone' ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />) : null}
+          <button
+            onClick={() => toggleSort('zone')}
+            className="flex items-center gap-1 hover:text-navy-700"
+          >
+            Zone{' '}
+            {sortBy === 'zone' ? (
+              sortDir === 'desc' ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronUp className="w-3 h-3" />
+              )
+            ) : null}
           </button>
         </div>
         <div className="col-span-4">Score Bar</div>
         <div className="col-span-2 text-right">
-          <button onClick={() => toggleSort('score')} className="flex items-center gap-1 hover:text-navy-700 ml-auto">
-            Score {sortBy === 'score' ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />) : null}
+          <button
+            onClick={() => toggleSort('score')}
+            className="flex items-center gap-1 hover:text-navy-700 ml-auto"
+          >
+            Score{' '}
+            {sortBy === 'score' ? (
+              sortDir === 'desc' ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronUp className="w-3 h-3" />
+              )
+            ) : null}
           </button>
         </div>
       </div>
@@ -301,7 +372,9 @@ export const TeamPerformanceDashboard: React.FC = () => {
       {/* Employee Cards */}
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-slate-400 text-sm">No employees match the filter.</div>
+          <div className="text-center py-12 text-slate-400 text-sm">
+            No employees match the filter.
+          </div>
         )}
         {filtered.map((emp, idx) => {
           const cfg = ZONE_CONFIG[emp.zone];
@@ -320,24 +393,39 @@ export const TeamPerformanceDashboard: React.FC = () => {
                 className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-slate-50 transition-colors"
               >
                 {/* Rank */}
-                <span className="text-[10px] font-mono font-bold text-slate-400 w-5 shrink-0">#{idx + 1}</span>
+                <span className="text-[10px] font-mono font-bold text-slate-400 w-5 shrink-0">
+                  #{idx + 1}
+                </span>
 
                 {/* Avatar */}
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${cfg.bg} ${cfg.text}`}>
-                  {emp.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${cfg.bg} ${cfg.text}`}
+                >
+                  {emp.fullName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase()}
                 </div>
 
                 {/* Name & Role */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm font-bold text-slate-800 truncate">{emp.fullName}</span>
+                    <span className="text-sm font-bold text-slate-800 truncate">
+                      {emp.fullName}
+                    </span>
                     <span className="text-[10px] font-mono text-slate-400">{emp.employeeCode}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 truncate">{emp.roles[0] || '—'} · {emp.branch}</p>
+                  <p className="text-[10px] text-slate-500 truncate">
+                    {emp.roles[0] || '—'} · {emp.branch}
+                  </p>
                 </div>
 
                 {/* Zone Badge */}
-                <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${cfg.badge}`}>
+                <span
+                  className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${cfg.badge}`}
+                >
                   <Icon className="w-2.5 h-2.5" />
                   {cfg.label}
                 </span>
@@ -353,7 +441,9 @@ export const TeamPerformanceDashboard: React.FC = () => {
                 </div>
 
                 <div className="text-right shrink-0 w-16">
-                  <span className={`text-lg font-extrabold font-mono ${cfg.text}`}>{emp.score}</span>
+                  <span className={`text-lg font-extrabold font-mono ${cfg.text}`}>
+                    {emp.score}
+                  </span>
                   <span className="text-[10px] text-slate-400 block">pts</span>
                 </div>
 
@@ -372,20 +462,75 @@ export const TeamPerformanceDashboard: React.FC = () => {
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { label: 'Tasks Done', value: `+${emp.breakdown.tasksDone}`, color: 'text-emerald-700', hint: '+2.0 each' },
-                      { label: 'Reports Filed', value: `+${emp.breakdown.reportsDone}`, color: 'text-emerald-700', hint: '+0.5 each' },
-                      { label: 'Exceeded Target', value: `+${emp.breakdown.targetExceededEvents || 0}`, color: 'text-emerald-700', hint: '+0.5 each' },
-                      { label: 'On-Time Days', value: `+${emp.breakdown.presentCount}`, color: 'text-navy-700', hint: '+0.5 each' },
-                      { label: 'Property Booked', value: `+${emp.breakdown.propertyBookingContributions}`, color: 'text-indigo-700', hint: '+10.0 each' },
-                      { label: 'Late Check-ins', value: `-${emp.breakdown.lateCount}`, color: 'text-amber-700', hint: '-1.0 each' },
-                      { label: 'Overdue Tasks', value: `-${emp.breakdown.tasksOverdue}`, color: 'text-orange-700', hint: '-1.0 each' },
-                      { label: 'Sub-Target Logs', value: `-${emp.breakdown.belowTargetCount}`, color: 'text-red-700', hint: '-1.0 each' },
-                      { label: 'Half Days', value: `-${emp.breakdown.halfDayCount}`, color: 'text-red-600', hint: '-1.0 each' },
-                      { label: 'Unplanned Absences', value: `-${emp.breakdown.uninformedAbsent}`, color: 'text-red-800', hint: '-2.0 each' },
+                      {
+                        label: 'Tasks Done',
+                        value: `+${emp.breakdown.tasksDone}`,
+                        color: 'text-emerald-700',
+                        hint: '+2.0 each',
+                      },
+                      {
+                        label: 'Reports Filed',
+                        value: `+${emp.breakdown.reportsDone}`,
+                        color: 'text-emerald-700',
+                        hint: '+0.5 each',
+                      },
+                      {
+                        label: 'Exceeded Target',
+                        value: `+${emp.breakdown.targetExceededEvents || 0}`,
+                        color: 'text-emerald-700',
+                        hint: '+0.5 each',
+                      },
+                      {
+                        label: 'On-Time Days',
+                        value: `+${emp.breakdown.presentCount}`,
+                        color: 'text-navy-700',
+                        hint: 'up to +1.0 each',
+                      },
+                      {
+                        label: 'Property Booked',
+                        value: `+${emp.breakdown.propertyBookingContributions}`,
+                        color: 'text-indigo-700',
+                        hint: '+10.0 each',
+                      },
+                      {
+                        label: 'Late Check-ins',
+                        value: `-${emp.breakdown.lateCount}`,
+                        color: 'text-amber-700',
+                        hint: '-1.0 each',
+                      },
+                      {
+                        label: 'Overdue Tasks',
+                        value: `-${emp.breakdown.tasksOverdue}`,
+                        color: 'text-orange-700',
+                        hint: '-1.0 each',
+                      },
+                      {
+                        label: 'Sub-Target Logs',
+                        value: `-${emp.breakdown.belowTargetCount}`,
+                        color: 'text-red-700',
+                        hint: '-1.0 each',
+                      },
+                      {
+                        label: 'Half Days',
+                        value: `-${emp.breakdown.halfDayCount}`,
+                        color: 'text-red-600',
+                        hint: '-1.0 each',
+                      },
+                      {
+                        label: 'Unplanned Absences',
+                        value: `-${emp.breakdown.uninformedAbsent}`,
+                        color: 'text-red-800',
+                        hint: '-2.0 each',
+                      },
                     ].map((item) => (
-                      <div key={item.label} className="bg-white rounded-xl p-2.5 border border-white/60 shadow-sm">
+                      <div
+                        key={item.label}
+                        className="bg-white rounded-xl p-2.5 border border-white/60 shadow-sm"
+                      >
                         <span className="text-[9px] text-slate-500 block">{item.label}</span>
-                        <span className={`text-sm font-extrabold font-mono ${item.color}`}>{item.value}</span>
+                        <span className={`text-sm font-extrabold font-mono ${item.color}`}>
+                          {item.value}
+                        </span>
                         <span className="text-[9px] text-slate-400 block">{item.hint}</span>
                       </div>
                     ))}
@@ -405,82 +550,88 @@ export const TeamPerformanceDashboard: React.FC = () => {
 
       {/* Performance Matrix Guide */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <button 
+        <button
           onClick={() => setShowMatrix(!showMatrix)}
           className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors focus:outline-none"
         >
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
             <Award className="w-4 h-4 text-navy-600" /> Scoring Guide & Matrix
           </h3>
-          {showMatrix ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+          {showMatrix ? (
+            <ChevronUp className="w-5 h-5 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-400" />
+          )}
         </button>
-        
+
         {showMatrix && (
           <div className="p-6 pt-0 border-t border-slate-100">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-          {/* Boosts */}
-          <div>
-            <h4 className="text-xs font-bold text-emerald-700 mb-3 uppercase flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" /> Boosts (Points Earned)
-            </h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
-                <span>Task Completed</span>
-                <span className="font-bold text-emerald-600">+2.0</span>
-              </li>
-              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
-                <span>Daily EOD Report Submitted</span>
-                <span className="font-bold text-emerald-600">+0.5</span>
-              </li>
-              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
-                <span>Exceeded Daily Target</span>
-                <span className="font-bold text-emerald-600">+0.5</span>
-              </li>
-              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
-                <span>Daily Check-in (Present)</span>
-                <span className="font-bold text-emerald-600">+0.5</span>
-              </li>
-              <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
-                <span>Property Booked (All Contributors)</span>
-                <span className="font-bold text-emerald-600">+10.0</span>
-              </li>
-            </ul>
-          </div>
+              {/* Boosts */}
+              <div>
+                <h4 className="text-xs font-bold text-emerald-700 mb-3 uppercase flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" /> Boosts (Points Earned)
+                </h4>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                    <span>Task Completed</span>
+                    <span className="font-bold text-emerald-600">+2.0</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                    <span>Daily EOD Report Submitted</span>
+                    <span className="font-bold text-emerald-600">+0.5</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                    <span>Exceeded Daily Target</span>
+                    <span className="font-bold text-emerald-600">+0.5</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                    <span>Daily Check-in (Present)</span>
+                    <span className="font-bold text-emerald-600">+0.5</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50">
+                    <span>Property Booked (All Contributors)</span>
+                    <span className="font-bold text-emerald-600">+10.0</span>
+                  </li>
+                </ul>
+              </div>
 
-          {/* Penalties */}
-          <div>
-            <h4 className="text-xs font-bold text-rose-700 mb-3 uppercase flex items-center gap-1">
-              <AlertTriangle className="w-4 h-4" /> Penalties (Points Deducted)
-            </h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
-                <span>Late Check-in</span>
-                <span className="font-bold text-rose-600">-1.0</span>
-              </li>
-              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
-                <span>Half Day</span>
-                <span className="font-bold text-rose-600">-1.0</span>
-              </li>
-              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
-                <span>Sub-Target Activity Log</span>
-                <span className="font-bold text-rose-600">-1.0</span>
-              </li>
-              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
-                <span>Task Overdue</span>
-                <span className="font-bold text-rose-600">-1.0</span>
-              </li>
-              <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
-                <span>Uninformed Absence</span>
-                <span className="font-bold text-rose-600">-2.0</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <p className="text-xs text-slate-500">
-            <strong>Note:</strong> Employees' base scores are reset to <strong>50.0</strong> at the start of every month. The maximum possible score is uncapped, but negative scores will flag a Danger Zone rating.
-          </p>
-        </div>
+              {/* Penalties */}
+              <div>
+                <h4 className="text-xs font-bold text-rose-700 mb-3 uppercase flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" /> Penalties (Points Deducted)
+                </h4>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                    <span>Late Check-in</span>
+                    <span className="font-bold text-rose-600">-1.0</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                    <span>Half Day</span>
+                    <span className="font-bold text-rose-600">-1.0</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                    <span>Sub-Target Activity Log</span>
+                    <span className="font-bold text-rose-600">-1.0</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                    <span>Task Overdue</span>
+                    <span className="font-bold text-rose-600">-1.0</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                    <span>Uninformed Absence</span>
+                    <span className="font-bold text-rose-600">-2.0</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-xs text-slate-500">
+                <strong>Note:</strong> Employees' base scores are reset to <strong>50.0</strong> at
+                the start of every month. The maximum possible score is uncapped, but negative
+                scores will flag a Danger Zone rating.
+              </p>
+            </div>
           </div>
         )}
       </div>

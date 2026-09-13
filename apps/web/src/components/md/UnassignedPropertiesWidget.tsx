@@ -20,7 +20,7 @@ export const UnassignedPropertiesWidget: React.FC = () => {
     try {
       const [propRes, pmRes] = await Promise.all([
         fetchWithAuth(`${API_BASE_URL}/properties?unassigned=true&limit=10`),
-        fetchWithAuth(`${API_BASE_URL}/employees?role=Project%20manager`)
+        fetchWithAuth(`${API_BASE_URL}/employees?role=PROJECT_MANAGER`),
       ]);
       if (propRes.ok) {
         const propData = await propRes.json();
@@ -42,11 +42,12 @@ export const UnassignedPropertiesWidget: React.FC = () => {
     setAssigningId(propertyId);
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/properties/${propertyId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ assigned_pm_id: parseInt(pmId, 10) })
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_pm_id: parseInt(pmId, 10) }),
       });
       if (res.ok) {
-        setProperties(prev => prev.filter(p => p.id !== propertyId));
+        setProperties((prev) => prev.filter((p) => p.id !== propertyId));
       }
     } catch (e) {
       console.error(e);
@@ -55,34 +56,38 @@ export const UnassignedPropertiesWidget: React.FC = () => {
     }
   };
 
-  const listItems: ListItem[] = properties.map(p => ({
+  const listItems: ListItem[] = properties.map((p) => ({
     id: p.id,
     title: `${p.title} (${p.property_code})`,
     subtitle: `Location: ${p.city || p.location || 'Unknown'}`,
     icon: Building,
     meta: (
       <div className="flex items-center gap-2">
-        <select 
+        <select
           className="text-sm border border-slate-200 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-navy-500 disabled:opacity-50"
           onChange={(e) => handleAssign(p.id, e.target.value)}
           defaultValue=""
           disabled={assigningId === p.id}
         >
-          <option value="" disabled>Assign PM...</option>
-          {pms.map(pm => (
-            <option key={pm.id} value={pm.id}>{pm.full_name || pm.employee_code}</option>
+          <option value="" disabled>
+            Assign PM...
+          </option>
+          {pms.map((pm) => (
+            <option key={pm.id} value={pm.id}>
+              {pm.full_name || pm.employee_code}
+            </option>
           ))}
         </select>
         {assigningId === p.id && <AlertCircle className="w-4 h-4 text-slate-400 animate-pulse" />}
       </div>
-    )
+    ),
   }));
 
   return (
-    <ListWidget 
+    <ListWidget
       title="Unassigned Properties"
       items={listItems}
-      emptyStateMessage={loading ? "Loading..." : "All properties have an assigned PM."}
+      emptyStateMessage={loading ? 'Loading...' : 'All properties have an assigned PM.'}
     />
   );
 };

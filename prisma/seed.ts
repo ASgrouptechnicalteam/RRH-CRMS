@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { Roles } from '@rrh-ems/shared';
-
+import { Roles } from '../src/shared';
 
 // PrismaClient instance shared across seed fixtures
 const prisma = new PrismaClient();
@@ -15,10 +14,7 @@ const COMPANY_CONFIG = {
   property_type_group: 'RADHA_REAL_HOMES',
 };
 
-const INITIAL_BRANCHES = [
-  { name: 'Miyapur (Main Branch)' },
-  { name: 'Tarnaka Branch' },
-];
+const INITIAL_BRANCHES = [{ name: 'Miyapur (Main Branch)' }, { name: 'Tarnaka Branch' }];
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD;
 
@@ -83,7 +79,7 @@ async function main() {
 
   console.log('🔒 Seeding canonical RBAC permissions...');
   // Import dynamically to avoid top-level issues if shared isn't built yet, though seed.ts already imports from it
-  const sharedModule = await import('@rrh-ems/shared');
+  const sharedModule = await import('../src/shared');
   const Permissions = sharedModule.Permissions || {};
   const RolePermissionsMatrix = sharedModule.RolePermissionsMatrix || {};
 
@@ -93,14 +89,14 @@ async function main() {
       await prisma.permission.upsert({
         where: { name: permName },
         update: {},
-        create: { name: permName }
+        create: { name: permName },
       });
     }
   }
 
   // Clear existing role permissions to ensure exact sync
   await prisma.rolePermission.deleteMany({});
-  
+
   for (const [roleName, permissions] of Object.entries(RolePermissionsMatrix)) {
     const roleRecord = roleMap[roleName];
     if (roleRecord && Array.isArray(permissions)) {
@@ -110,8 +106,8 @@ async function main() {
           await prisma.rolePermission.create({
             data: {
               role_id: roleRecord.id,
-              permission_id: permRecord.id
-            }
+              permission_id: permRecord.id,
+            },
           });
         }
       }
@@ -133,7 +129,7 @@ async function main() {
       employeeCode: 'RRH-ADMIN-001',
       branchId: createdBranches[0]?.id,
       attendanceRequired: false,
-    }
+    },
   ];
 
   for (const empData of initialEmployees) {
@@ -171,7 +167,7 @@ async function main() {
     }
   }
 
-    console.log('✅ Core RRH seed completed successfully.');
+  console.log('✅ Core RRH seed completed successfully.');
 
   // Step 5: Conditionally run Sonthillu E2E local fixtures (development only).
   if (process.env.NODE_ENV !== 'production') {

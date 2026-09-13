@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { Roles } from '@rrh-ems/shared';
+import { Roles } from '../../src/shared';
 
 export async function runDevelopmentFixtures(prisma: PrismaClient) {
   console.log('🌱 Seeding Realistic Development Dataset...');
@@ -33,10 +33,34 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
 
   // 1. Employees
   const employeeData = [
-    { code: 'RRH-EMP-001', name: 'Alice Salesmgr', email: 'alice@example.com', role: Roles.SALES_MANAGER, phone: '9876543210' },
-    { code: 'RRH-EMP-002', name: 'Bob Salesexec', email: 'bob@example.com', role: Roles.AGENT, phone: '9876543211' },
-    { code: 'RRH-EMP-003', name: 'Carol Telecaller', email: 'carol@example.com', role: Roles.TELECALLER, phone: '9876543212' },
-    { code: 'RRH-EMP-004', name: 'Dave Projmgr', email: 'dave@example.com', role: Roles.PROJECT_MANAGER, phone: '9876543213' },
+    {
+      code: 'RRH-EMP-001',
+      name: 'Alice Salesmgr',
+      email: 'alice@example.com',
+      role: Roles.SALES_MANAGER,
+      phone: '9876543210',
+    },
+    {
+      code: 'RRH-EMP-002',
+      name: 'Bob Salesexec',
+      email: 'bob@example.com',
+      role: Roles.AGENT,
+      phone: '9876543211',
+    },
+    {
+      code: 'RRH-EMP-003',
+      name: 'Carol Telecaller',
+      email: 'carol@example.com',
+      role: Roles.TELECALLER,
+      phone: '9876543212',
+    },
+    {
+      code: 'RRH-EMP-004',
+      name: 'Dave Projmgr',
+      email: 'dave@example.com',
+      role: Roles.PROJECT_MANAGER,
+      phone: '9876543213',
+    },
   ];
 
   const createdEmployees: Record<string, any> = {};
@@ -75,7 +99,12 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
 
   // 2. Projects
   const projectData = [
-    { code: 'PRJ-LAKE-01', name: 'Lakeside Villas', location: 'Kompally', status: 'UNDER_CONSTRUCTION' },
+    {
+      code: 'PRJ-LAKE-01',
+      name: 'Lakeside Villas',
+      location: 'Kompally',
+      status: 'UNDER_CONSTRUCTION',
+    },
     { code: 'PRJ-TWR-01', name: 'Skyline Towers', location: 'Gachibowli', status: 'PLANNING' },
   ];
 
@@ -106,19 +135,96 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
   // 3. Properties
   const propertyData = [
     // Project 1
-    { code: 'PROP-LK-101', title: 'Villa 101 Lakeview', projIndex: 0, price: 15000000, area: 2500, type: 'VILLA' },
-    { code: 'PROP-LK-102', title: 'Villa 102 Lakeview', projIndex: 0, price: 15500000, area: 2600, type: 'VILLA' },
-    { code: 'PROP-LK-103', title: 'Villa 103 Standard', projIndex: 0, price: 14000000, area: 2400, type: 'VILLA' },
-    { code: 'PROP-LK-104', title: 'Villa 104 Standard', projIndex: 0, price: 14000000, area: 2400, type: 'VILLA' },
-    { code: 'PROP-LK-105', title: 'Villa 105 Corner', projIndex: 0, price: 16000000, area: 2800, type: 'VILLA' },
-    
+    {
+      code: 'PROP-LK-101',
+      title: 'Villa 101 Lakeview',
+      projIndex: 0,
+      price: 15000000,
+      area: 2500,
+      type: 'VILLA',
+    },
+    {
+      code: 'PROP-LK-102',
+      title: 'Villa 102 Lakeview',
+      projIndex: 0,
+      price: 15500000,
+      area: 2600,
+      type: 'VILLA',
+    },
+    {
+      code: 'PROP-LK-103',
+      title: 'Villa 103 Standard',
+      projIndex: 0,
+      price: 14000000,
+      area: 2400,
+      type: 'VILLA',
+    },
+    {
+      code: 'PROP-LK-104',
+      title: 'Villa 104 Standard',
+      projIndex: 0,
+      price: 14000000,
+      area: 2400,
+      type: 'VILLA',
+    },
+    {
+      code: 'PROP-LK-105',
+      title: 'Villa 105 Corner',
+      projIndex: 0,
+      price: 16000000,
+      area: 2800,
+      type: 'VILLA',
+    },
+
     // Project 2
-    { code: 'PROP-SK-101', title: 'Apt 101 Skyline', projIndex: 1, price: 8000000, area: 1200, type: 'APARTMENT' },
-    { code: 'PROP-SK-102', title: 'Apt 102 Skyline', projIndex: 1, price: 8500000, area: 1300, type: 'APARTMENT' },
-    { code: 'PROP-SK-103', title: 'Apt 103 Skyline', projIndex: 1, price: 8500000, area: 1300, type: 'APARTMENT' },
-    { code: 'PROP-SK-201', title: 'Apt 201 Skyline', projIndex: 1, price: 9000000, area: 1400, type: 'APARTMENT' },
-    { code: 'PROP-SK-202', title: 'Apt 202 Skyline', projIndex: 1, price: 9200000, area: 1450, type: 'APARTMENT' },
-    { code: 'PROP-SK-PH1', title: 'Penthouse Skyline', projIndex: 1, price: 18000000, area: 3000, type: 'PENTHOUSE' },
+    {
+      code: 'PROP-SK-101',
+      title: 'Apt 101 Skyline',
+      projIndex: 1,
+      price: 8000000,
+      area: 1200,
+      type: 'APARTMENT',
+    },
+    {
+      code: 'PROP-SK-102',
+      title: 'Apt 102 Skyline',
+      projIndex: 1,
+      price: 8500000,
+      area: 1300,
+      type: 'APARTMENT',
+    },
+    {
+      code: 'PROP-SK-103',
+      title: 'Apt 103 Skyline',
+      projIndex: 1,
+      price: 8500000,
+      area: 1300,
+      type: 'APARTMENT',
+    },
+    {
+      code: 'PROP-SK-201',
+      title: 'Apt 201 Skyline',
+      projIndex: 1,
+      price: 9000000,
+      area: 1400,
+      type: 'APARTMENT',
+    },
+    {
+      code: 'PROP-SK-202',
+      title: 'Apt 202 Skyline',
+      projIndex: 1,
+      price: 9200000,
+      area: 1450,
+      type: 'APARTMENT',
+    },
+    {
+      code: 'PROP-SK-PH1',
+      title: 'Penthouse Skyline',
+      projIndex: 1,
+      price: 18000000,
+      area: 3000,
+      type: 'PENTHOUSE',
+    },
   ];
 
   const createdProperties: any[] = [];
@@ -203,7 +309,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
         project_id: createdProjects[ld.projIndex]?.id,
         assigned_to_id: createdEmployees['RRH-EMP-003']?.id,
       },
-      select: { id: true, lead_code: true }
+      select: { id: true, lead_code: true },
     });
     createdLeads.push(l);
     console.log(`✅ Lead upserted: ${ld.code}`);
@@ -291,18 +397,43 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
   // 9. Notifications (Customer Notification)
   const notifData = [
     { custIdx: 0, title: 'Welcome to RRH', message: 'Your account is created', is_read: false },
-    { custIdx: 1, title: 'Booking Confirmed', message: 'Your booking BKG-DEV-02 is confirmed', is_read: true },
-    { custIdx: 2, title: 'Registration Due', message: 'Please complete registration', is_read: false },
+    {
+      custIdx: 1,
+      title: 'Booking Confirmed',
+      message: 'Your booking BKG-DEV-02 is confirmed',
+      is_read: true,
+    },
+    {
+      custIdx: 2,
+      title: 'Registration Due',
+      message: 'Please complete registration',
+      is_read: false,
+    },
     { custIdx: 0, title: 'Payment Received', message: 'Token amount received', is_read: true },
-    { custIdx: 3, title: 'Booking Cancelled', message: 'Your booking was cancelled', is_read: true },
+    {
+      custIdx: 3,
+      title: 'Booking Cancelled',
+      message: 'Your booking was cancelled',
+      is_read: true,
+    },
     { custIdx: 4, title: 'Site Visit Reminder', message: 'Site visit tomorrow', is_read: false },
-    { custIdx: 5, title: 'New Project Launch', message: 'Check out our new project', is_read: false },
-    { custIdx: 6, title: 'KYC Verification Required', message: 'Please upload KYC documents', is_read: false },
+    {
+      custIdx: 5,
+      title: 'New Project Launch',
+      message: 'Check out our new project',
+      is_read: false,
+    },
+    {
+      custIdx: 6,
+      title: 'KYC Verification Required',
+      message: 'Please upload KYC documents',
+      is_read: false,
+    },
   ];
 
   // We can't upsert without a unique field on notifications. We will just delete development notifications and recreate them to stay idempotent.
   await prisma.customerNotification.deleteMany({
-    where: { title: { in: notifData.map(n => n.title) } }
+    where: { title: { in: notifData.map((n) => n.title) } },
   });
 
   for (const notif of notifData) {
@@ -314,7 +445,7 @@ export async function runDevelopmentFixtures(prisma: PrismaClient) {
         message: notif.message,
         is_read: notif.is_read,
         type: 'SYSTEM',
-      }
+      },
     });
   }
   console.log(`✅ ${notifData.length} Notifications recreated.`);

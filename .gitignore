@@ -24,6 +24,8 @@ _hygiene_archive/
 .agent/
 .claude/
 .agents/
+.cursor/
+.devin/
 .vscode/
 
 # Test artifacts (logs, snapshots, cache)
@@ -31,6 +33,25 @@ test-output.txt
 /coverage/
 /jest-cache/
 *.test-output
+
+# Phase 4.3 (2026-09-07): patterns that produced ~110MB of committed-nowhere
+# scratch/debug clutter at the repo root over time — see Phase 4.1's cleanup.
+# Reusable one-off scripts belong in scripts/adhoc/ (itself ignored below),
+# not loose at the repo root.
+*.diff.txt
+*_output.txt
+*_output.log
+scratch/
+scratch*.js
+scratch*.ts
+test-*.js
+test-*.ts
+!tests/**
+test-results*.txt
+test-results*.json
+test_output.log
+git_history.txt
+scripts/adhoc/
 
 # Documentation (authoritative docs — not tracked in source tree)
 # Uncomment the next line to ignore ALL docs content:

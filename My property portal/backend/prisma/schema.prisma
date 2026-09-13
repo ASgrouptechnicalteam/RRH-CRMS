@@ -1,0 +1,490 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// Core Hierarchy
+// ---------------------------------------------------------
+
+model Company {
+  id          String    @id @default(uuid())
+  // Consolidation plan Decision 1: the portal no longer originates catalog
+  // data — Company/Project/Property rows are synced in from the CRM
+  // (apps/api) at booking-confirmation time. crmCompanyId is the join key
+  // back to the CRM's own Company.id; null only for pre-integration/seed rows.
+  crmCompanyId String?   @unique
+  name        String
+  code        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projects    Project[]
+}
+
+model Project {
+  id                 String    @id @default(uuid())
+  crmProjectId       Int?      @unique
+  companyId          String
+  name               String
+  code               String    @unique
+  location           String?
+  address            String?
+  gps                String?
+  propertyType       String?
+  totalArea          Float?
+  totalUnits         Int?
+  startingPrice      Float?
+  currentPrice       Float?
+  developmentStatus  String?
+  constructionStatus String?
+  status             String?
+  launchDate         DateTime?
+  expectedCompletion DateTime?
+  description        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company            Company   @relation(fields: [companyId], references: [id])
+  properties         Property[]
+  assignments        Assignment[]
+  projectUpdates     ProjectUpdate[]
+  constructionUpdates ConstructionUpdate[]
+  locationUpdates    LocationUpdate[]
+
+  @@index([companyId])
+}
+
+model Property {
+  id                 String    @id @default(uuid())
+  // Composite of the CRM's inventory kind + id (e.g. "PROPERTY:481" or
+  // "UNIT:92") since the CRM has two separate saleable-item tables
+  // (Property and ProjectUnit) that this single local model represents.
+  crmInventoryRef    String?   @unique
+  projectId          String
+  customerId         String?
+  propertyNumber     String
+  type               String    // Plot or Flat
+  area               Float?
+  facing             String?
+  price              Float
+  currentMarketValue Float?
+  status             String    // Available, Reserved, Booked, Sold, Registered, Cancelled, Resale, Blocked
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  project            Project   @relation(fields: [projectId], references: [id])
+  customer           Customer? @relation(fields: [customerId], references: [id])
+  bookings           Booking[]
+  emiSchedules       EMISchedule[]
+  propertyUpdates    PropertyUpdate[]
+  marketValueHistory MarketValueHistory[]
+  resaleRequests     ResaleRequest[]
+
+  @@index([projectId])
+  @@index([customerId])
+  @@index([status])
+}
+
+model Customer {
+  id               String    @id @default(uuid())
+  crmCustomerId    Int?      @unique
+  phone            String    @unique
+  name             String
+  email            String?
+  address          String?
+  status           String    @default("Active")
+  passwordHash     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  properties       Property[]
+  bookings         Booking[]
+  policyAcceptances PolicyAcceptance[]
+}
+
+model Booking {
+  id          String    @id @default(uuid())
+  crmBookingId Int?     @unique
+  propertyId  String
+  customerId  String
+  date        DateTime  @default(now())
+  status      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  property    Property  @relation(fields: [propertyId], references: [id])
+  customer    Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([propertyId])
+  @@index([customerId])
+}
+
+// ---------------------------------------------------------
+// Financial Hierarchy
+// ---------------------------------------------------------
+
+model EMISchedule {
+  id          String    @id @default(uuid())
+  propertyId  String
+  totalAmount Float
+  startDate   DateTime
+  endDate     DateTime
+  status      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  property    Property  @relation(fields: [propertyId], references: [id])
+  installments Installment[]
+
+  @@index([propertyId])
+}
+
+model Installment {
+  id            String    @id @default(uuid())
+  emiScheduleId String
+  amountDue     Float
+  dueDate       DateTime
+  status        String    // Pending, Paid, Partially Paid, Late
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  emiSchedule   EMISchedule @relation(fields: [emiScheduleId], references: [id])
+  payments      Payment[]
+
+  @@index([emiScheduleId])
+}
+
+model Payment {
+  id                 String    @id @default(uuid())
+  installmentId      String
+  amount             Float
+  paymentMethod      String    // Bank transfer, UPI, etc.
+  referenceNumber    String?
+  verificationStatus String    // Pending Verification, Approved, Rejected
+  rejectionReason    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  installment        Installment @relation(fields: [installmentId], references: [id])
+  paymentProof       PaymentProof?
+
+  @@index([installmentId])
+  @@index([verificationStatus])
+}
+
+model PaymentProof {
+  id           String    @id @default(uuid())
+  paymentId    String    @unique
+  documentUrl  String
+  uploadedBy   String    // DEM ID
+  uploadedAt       DateTime  @default(now())
+  verifiedBy       String?   // Employee ID
+  verifiedAt       DateTime?
+  version          Int       @default(1)
+  originalFilename String?
+  safeFilename     String?
+  mimeType         String?
+  size             Int?
+
+  payment      Payment   @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+}
+
+// ---------------------------------------------------------
+// Operations & Management
+// ---------------------------------------------------------
+
+model Role {
+  id          String    @id @default(uuid())
+  name        String    @unique // MD, PM, FM, DEM
+  description String?
+
+  employees   Employee[]
+}
+
+model Employee {
+  id           String    @id @default(uuid())
+  employeeId   String    @unique
+  roleId       String
+  name         String
+  phone        String?
+  email        String?
+  passwordHash String
+  status       String    @default("Active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  role         Role      @relation(fields: [roleId], references: [id])
+  assignments  Assignment[]
+
+  @@index([roleId])
+}
+
+model Assignment {
+  id          String    @id @default(uuid())
+  employeeId  String
+  projectId   String
+  assignedAt  DateTime  @default(now())
+
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  project     Project   @relation(fields: [projectId], references: [id])
+
+  @@index([employeeId])
+  @@index([projectId])
+}
+
+model Document {
+  id                 String    @id @default(uuid())
+  referenceType      String    // Property, Customer
+  referenceId        String
+  documentType       String
+  url                String
+  uploadedBy         String
+  verificationStatus String
+  verifiedBy         String?
+  verifiedAt         DateTime?
+  version            Int       @default(1)
+  remarks            String?
+  originalFilename   String?
+  safeFilename       String?
+  mimeType           String?
+  size               Int?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([referenceType, referenceId])
+}
+
+// ---------------------------------------------------------
+// Updates
+// ---------------------------------------------------------
+
+model ProjectUpdate {
+  id          String    @id @default(uuid())
+  projectId   String
+  content     String
+  mediaUrl    String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  project     Project   @relation(fields: [projectId], references: [id])
+}
+
+model PropertyUpdate {
+  id          String    @id @default(uuid())
+  propertyId  String
+  stage       String
+  details     String?
+  mediaUrl    String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  property    Property  @relation(fields: [propertyId], references: [id])
+}
+
+model ConstructionUpdate {
+  id             String    @id @default(uuid())
+  projectId      String
+  stage          String
+  percentage     Float
+  completedWork  String?
+  currentWork    String?
+  upcomingWork   String?
+  delays         String?
+  mediaUrl       String?
+  remarks        String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+
+  project        Project   @relation(fields: [projectId], references: [id])
+}
+
+model LocationUpdate {
+  id             String    @id @default(uuid())
+  projectId      String
+  gps            String?
+  infrastructure String?
+  mediaUrl       String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+
+  project        Project   @relation(fields: [projectId], references: [id])
+}
+
+model MarketValueHistory {
+  id          String    @id @default(uuid())
+  propertyId  String
+  value       Float
+  reason      String?
+  updatedBy   String
+  createdAt   DateTime  @default(now())
+
+  property    Property  @relation(fields: [propertyId], references: [id])
+}
+
+model ResaleRequest {
+  id          String    @id @default(uuid())
+  propertyId  String
+  expectedPrice Float
+  reason      String?
+  status      String    // Under Review, Approved, Rejected, Processing, Completed
+  message     String?
+  reviewedBy  String?   // Employee ID (PM/MD) who approved/rejected
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  property    Property  @relation(fields: [propertyId], references: [id])
+}
+
+// ---------------------------------------------------------
+// Communication & Content
+// ---------------------------------------------------------
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String    // Can be Customer ID or Employee ID
+  userType    String    // Customer, Employee
+  type        String
+  title       String
+  message     String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Carousel {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  actionUrl   String?
+  priority    Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String    // Draft, Pending Verification, Approved, Rejected, Expired
+  rejectionReason String?
+  targetCompanyId String?
+  targetProjectId String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Popup {
+  id          String    @id @default(uuid())
+  title       String
+  message     String
+  imageUrl    String?
+  actionUrl   String?
+  priority    Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String    // Draft, Pending Verification, Approved, Rejected, Expired, Published
+  rejectionReason String?
+  targetCompanyId String?
+  targetProjectId String?
+  
+  // Analytics Tracking
+  displayedCount  Int       @default(0)
+  viewedCount     Int       @default(0)
+  dismissedCount  Int       @default(0)
+  clickCount      Int       @default(0)
+
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Offer {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  offerType   String
+  value       Float?
+  terms       String?
+  imageUrl    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String    // Draft, Pending Verification, Approved, Rejected, Expired
+  rejectionReason String?
+  targetCompanyId String?
+  targetProjectId String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  status      String    // Draft, Pending Verification, Approved, Rejected, Expired
+  rejectionReason String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------
+// Policies & Audit
+// ---------------------------------------------------------
+
+model Policy {
+  id          String    @id @default(uuid())
+  version     String    @unique
+  content     String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+model PolicyAcceptance {
+  id          String    @id @default(uuid())
+  customerId  String
+  version     String
+  acceptedAt  DateTime  @default(now())
+
+  customer    Customer  @relation(fields: [customerId], references: [id])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  userId      String
+  actionType  String
+  entity      String
+  entityId    String?
+  oldValue    String?   @db.Text
+  newValue    String?   @db.Text
+  reason      String?
+  timestamp   DateTime  @default(now())
+}
+
+// ---------------------------------------------------------
+// Security & Authentication
+// ---------------------------------------------------------
+
+model LoginHistory {
+  id          String    @id @default(uuid())
+  userId      String    // Customer ID or Employee ID
+  userType    String    // Customer or Employee
+  ipAddress   String?
+  userAgent   String?
+  status      String    // Success, Failed
+  timestamp   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model FailedLoginAttempt {
+  id          String    @id @default(uuid())
+  identifier  String    @unique // Phone number or Employee ID
+  ipAddress   String?
+  count       Int       @default(1)
+  lockedUntil DateTime?
+  lastAttempt DateTime  @default(now())
+}

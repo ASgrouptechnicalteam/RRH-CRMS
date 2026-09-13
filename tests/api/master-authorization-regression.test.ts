@@ -1,6 +1,10 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 import { PrismaClient } from '@prisma/client';
 import { Roles, Permissions } from '@rrh-ems/shared';
 import { can } from '../../apps/api/src/authz/authorization';
@@ -40,20 +44,41 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
     // Get tokens
     const login = async (code: string) => {
-      const res = await request(app).post('/api/v1/auth/login').send({ employee_code: code, password: 'Password@123' });
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ employee_code: code, password: 'Password@123' });
       return res.body.accessToken;
     };
 
-    compATelecallerToken = await login(deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!.employee_code);
-    compAMdToken = await login(deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code);
-    compAFinanceToken = await login(deterministicUsers.find(u => u.roles[0] === Roles.FINANCE)!.employee_code);
-    compAHrToken = await login(deterministicUsers.find(u => u.roles[0] === Roles.HR_MANAGER)!.employee_code);
-    compAAdminToken = await login(deterministicUsers.find(u => u.roles[0] === Roles.ADMIN)!.employee_code);
+    compATelecallerToken = await login(
+      deterministicUsers.find((u) => u.roles[0] === Roles.TELECALLER)!.employee_code,
+    );
+    compAMdToken = await login(
+      deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code,
+    );
+    compAFinanceToken = await login(
+      deterministicUsers.find((u) => u.roles[0] === Roles.FINANCE)!.employee_code,
+    );
+    compAHrToken = await login(
+      deterministicUsers.find((u) => u.roles[0] === Roles.HR_MANAGER)!.employee_code,
+    );
+    compAAdminToken = await login(
+      deterministicUsers.find((u) => u.roles[0] === Roles.ADMIN)!.employee_code,
+    );
     compBTelecallerToken = await login(crossOrgUsers[0].employee_code);
 
-    compAUser = await prisma.employee.findUnique({ where: { employee_code: deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!.employee_code } });
-    compBUser = await prisma.employee.findUnique({ where: { employee_code: crossOrgUsers[0].employee_code } });
-    const compBBranch = await prisma.branch.findFirst({ where: { company_id: compBUser!.company_id } });
+    compAUser = await prisma.employee.findUnique({
+      where: {
+        employee_code: deterministicUsers.find((u) => u.roles[0] === Roles.TELECALLER)!
+          .employee_code,
+      },
+    });
+    compBUser = await prisma.employee.findUnique({
+      where: { employee_code: crossOrgUsers[0].employee_code },
+    });
+    const compBBranch = await prisma.branch.findFirst({
+      where: { company_id: compBUser!.company_id },
+    });
 
     // Create Company B Resources
     const bLead = await prisma.lead.upsert({
@@ -61,7 +86,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
       update: {
         company_id: compBUser!.company_id,
         created_by_id: compBUser!.id,
-        assigned_to_id: compBUser.id
+        assigned_to_id: compBUser.id,
       },
       create: {
         customer_name: 'Comp B Lead',
@@ -72,15 +97,15 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         branch: { connect: { id: compBBranch!.id } },
         created_by: { connect: { id: compBUser!.id } },
         assigned_to: { connect: { id: compBUser.id } },
-        lead_code: 'LD-999-B'
-      }
+        lead_code: 'LD-999-B',
+      },
     });
     compBLeadId = bLead.id;
 
     const bCustomer = await prisma.customer.upsert({
       where: { customer_code: 'CUST-B-999' },
       update: {
-        company_id: compBUser!.company_id
+        company_id: compBUser!.company_id,
       },
       create: {
         customer_code: 'CUST-B-999',
@@ -88,8 +113,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         last_name: 'Customer',
         phone: '+919999900002',
         email: 'b@example.com',
-        company: { connect: { id: compBUser!.company_id } }
-      }
+        company: { connect: { id: compBUser!.company_id } },
+      },
     });
     compBCustomerId = bCustomer.id;
 
@@ -108,16 +133,16 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
       where: { opportunity_code: 'OPP-B-999' },
       update: {
         company_id: compBUser!.company_id,
-        owner_id: compBUser.id
+        owner_id: compBUser.id,
       },
       create: {
         opportunity_code: 'OPP-B-999',
         lead: { connect: { id: compBLeadId } },
-                expected_value: 5000000,
+        expected_value: 5000000,
         expected_close_date: new Date(),
         company: { connect: { id: compBUser!.company_id } },
-        owner: { connect: { id: compBUser.id } }
-      }
+        owner: { connect: { id: compBUser.id } },
+      },
     });
     compBOppId = bOpp.id;
 
@@ -125,19 +150,19 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
       where: { property_code: 'PROP-B-1' },
       update: {
         company_id: compBUser!.company_id,
-        created_by_id: compBUser.id
+        created_by_id: compBUser.id,
       },
       create: {
         property_code: 'PROP-B-1',
         title: 'Company B Property',
         category: 'VILLA',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Company B Location',
         status: 'DRAFT',
         company: { connect: { id: compBUser!.company_id } },
-        created_by: { connect: { id: compBUser.id } }
-      }
+        created_by: { connect: { id: compBUser.id } },
+      },
     });
     compBPropertyId = bProp.id;
     compBEmployeeId = compBUser.id;
@@ -147,7 +172,7 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
       where: { project_code: 'PROJ-B-999' },
       update: {
         company_id: compBUser!.company_id,
-        assigned_pm_id: compBUser.id
+        assigned_pm_id: compBUser.id,
       },
       create: {
         project_code: 'PROJ-B-999',
@@ -155,8 +180,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         status: 'ACTIVE',
         location: 'Company B Location',
         company: { connect: { id: compBUser!.company_id } },
-        assigned_pm: { connect: { id: compBUser.id } }
-      }
+        assigned_pm: { connect: { id: compBUser.id } },
+      },
     });
     compBProjectId = bProject.id;
 
@@ -167,8 +192,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         uploaded_by_id: compBUser.id,
         status: 'PENDING',
         is_primary: true,
-        sort_order: 0
-      }
+        sort_order: 0,
+      },
     });
     compBPropertyImageId = bPropertyImage.id;
 
@@ -178,8 +203,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         status: 'PENDING',
         target_date: new Date(Date.now() + 86400000),
         assignee_id: compBUser.id,
-        created_by: compBUser.id
-      }
+        created_by: compBUser.id,
+      },
     });
     compBTaskId = bTask.id;
 
@@ -192,8 +217,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         status: 'OPEN',
         priority: 'MEDIUM',
         customer: { connect: { id: compBCustomerId } },
-        company: { connect: { id: compBUser!.company_id } }
-      }
+        company: { connect: { id: compBUser!.company_id } },
+      },
     });
     compBComplaintId = bComplaint.id;
 
@@ -207,8 +232,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         agreed_price: 5000000,
         booking_amount: 100000,
         balance_amount: 4900000,
-        status: 'INITIATED'
-      }
+        status: 'INITIATED',
+      },
     });
     compBBookingId = bBooking.id;
 
@@ -221,8 +246,8 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
         amount: 50000,
         payment_method: 'CASH',
         status: 'PENDING',
-        recorded_by_id: compBUser.id
-      }
+        recorded_by_id: compBUser.id,
+      },
     });
     compBPaymentId = bPayment.id;
   });
@@ -244,51 +269,89 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
   describe('AUTHORIZATION ENGINE (can() tests)', () => {
     it('1. Unknown permission -> DENY', () => {
-      expect(can({ roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any, 'UNKNOWN_PERM' as any)).toBe(false);
+      expect(
+        can(
+          { roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any,
+          'UNKNOWN_PERM' as any,
+        ),
+      ).toBe(false);
     });
 
     it('2. Unknown permission + same company resource -> DENY', () => {
-      expect(can({ roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any, 'UNKNOWN_PERM' as any, { company_id: 1 })).toBe(false);
+      expect(
+        can(
+          { roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any,
+          'UNKNOWN_PERM' as any,
+          { company_id: 1 },
+        ),
+      ).toBe(false);
     });
 
     it('3. Unknown permission + missing company_id -> DENY', () => {
-      expect(can({ roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any, 'UNKNOWN_PERM' as any, { other_id: 123 })).toBe(false);
+      expect(
+        can(
+          { roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any,
+          'UNKNOWN_PERM' as any,
+          { other_id: 123 },
+        ),
+      ).toBe(false);
     });
 
     it('4. Unknown permission + foreign company resource -> DENY', () => {
-      expect(can({ roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any, 'UNKNOWN_PERM' as any, { company_id: 2 })).toBe(false);
+      expect(
+        can(
+          { roles: [Roles.TELECALLER], permissions: [], companyId: 1 } as any,
+          'UNKNOWN_PERM' as any,
+          { company_id: 2 },
+        ),
+      ).toBe(false);
     });
   });
 
   describe('TENANT ISOLATION', () => {
     it('5. GET foreign lead -> not found', async () => {
-      const res = await request(app).get(`/api/v1/leads/${compBLeadId}`).set('Authorization', `Bearer ${compATelecallerToken}`);
+      const res = await request(app)
+        .get(`/api/v1/leads/${compBLeadId}`)
+        .set('Authorization', `Bearer ${compATelecallerToken}`);
       console.log('TEST 5 RESPONSE:', res.status, res.body);
       expect(res.status).toBe(404);
     });
 
     it('6. PATCH foreign lead -> not found', async () => {
-      const res = await request(app).patch(`/api/v1/leads/${compBLeadId}/status`).set('Authorization', `Bearer ${compATelecallerToken}`).send({ status: 'CONTACTED' });
+      const res = await request(app)
+        .patch(`/api/v1/leads/${compBLeadId}/status`)
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({ status: 'CONTACTED' });
       expect(res.status).toBe(404);
     });
 
     it('7. DELETE foreign lead -> not found (not implemented, but testing any foreign mutation)', async () => {
-      const res = await request(app).post(`/api/v1/leads/${compBLeadId}/convert-to-customer`).set('Authorization', `Bearer ${compATelecallerToken}`);
+      const res = await request(app)
+        .post(`/api/v1/leads/${compBLeadId}/convert-to-customer`)
+        .set('Authorization', `Bearer ${compATelecallerToken}`);
       expect(res.status).toBe(404);
     });
 
     it('8. GET foreign opportunity -> not found', async () => {
-      const res = await request(app).get(`/api/v1/opportunities/${compBOppId}`).set('Authorization', `Bearer ${compATelecallerToken}`);
+      const res = await request(app)
+        .get(`/api/v1/opportunities/${compBOppId}`)
+        .set('Authorization', `Bearer ${compATelecallerToken}`);
       expect(res.status).toBe(404);
     });
 
     it('9. PATCH foreign opportunity -> not found', async () => {
-      const res = await request(app).patch(`/api/v1/opportunities/${compBOppId}`).set('Authorization', `Bearer ${compATelecallerToken}`).send({ value: 6000000 });
+      const res = await request(app)
+        .patch(`/api/v1/opportunities/${compBOppId}`)
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({ value: 6000000 });
       expect(res.status).toBe(404);
     });
 
     it('10. GET/verify foreign document -> not found', async () => {
-      const res = await request(app).patch(`/api/v1/documents/9999/verify`).set('Authorization', `Bearer ${compAFinanceToken}`).send({ status: 'VERIFIED' });
+      const res = await request(app)
+        .patch(`/api/v1/documents/9999/verify`)
+        .set('Authorization', `Bearer ${compAFinanceToken}`)
+        .send({ status: 'VERIFIED' });
       if (res.status === 400) console.log(res.body);
       expect(res.status).toBe(404);
     });
@@ -296,85 +359,111 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
   describe('RELATIONSHIPS', () => {
     it('11. Company A cannot create task against Company B lead', async () => {
-      const res = await request(app).post('/api/v1/tasks').set('Authorization', `Bearer ${compAMdToken}`).send({
-        title: 'Hack Task',
-        task_type: 'FOLLOW_UP',
-        priority: 'HIGH',
-        lead_id: compBLeadId,
-        assignee_id: compAUser!.id,
-        deadline: new Date().toISOString()
-      });
+      const res = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${compAMdToken}`)
+        .send({
+          title: 'Hack Task',
+          task_type: 'FOLLOW_UP',
+          priority: 'HIGH',
+          lead_id: compBLeadId,
+          assignee_id: compAUser!.id,
+          deadline: new Date().toISOString(),
+        });
       console.log('TEST 11 RESPONSE:', res.status, res.body);
-      expect(res.status).toBe(404); 
+      expect(res.status).toBe(404);
     });
 
     it('12. Company A cannot assign task to Company B employee', async () => {
-      const res = await request(app).post('/api/v1/tasks').set('Authorization', `Bearer ${compAMdToken}`).send({
-        title: 'Hack Task',
-        task_type: 'FOLLOW_UP',
-        priority: 'HIGH',
-        assignee_id: compBEmployeeId,
-        deadline: new Date().toISOString()
-      });
+      const res = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${compAMdToken}`)
+        .send({
+          title: 'Hack Task',
+          task_type: 'FOLLOW_UP',
+          priority: 'HIGH',
+          assignee_id: compBEmployeeId,
+          deadline: new Date().toISOString(),
+        });
       expect(res.status).toBe(400);
     });
 
     it('13. Company A cannot attach Company B opportunity', async () => {
-      const res = await request(app).post('/api/v1/tasks').set('Authorization', `Bearer ${compAMdToken}`).send({
-        title: 'Hack Task',
-        task_type: 'FOLLOW_UP',
-        priority: 'HIGH',
-        opportunity_id: compBOppId,
-        assignee_id: compAUser!.id,
-        deadline: new Date().toISOString()
-      });
+      const res = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${compAMdToken}`)
+        .send({
+          title: 'Hack Task',
+          task_type: 'FOLLOW_UP',
+          priority: 'HIGH',
+          opportunity_id: compBOppId,
+          assignee_id: compAUser!.id,
+          deadline: new Date().toISOString(),
+        });
       expect(res.status).toBe(404);
     });
 
     it('14. Company A cannot modify foreign relationships (Site visit against Comp B Lead)', async () => {
-      const res = await request(app).post('/api/v1/siteVisits').set('Authorization', `Bearer ${compATelecallerToken}`).send({
-        lead_id: compBLeadId,
-        property_id: compBPropertyId,
-        scheduled_date: new Date().toISOString()
-      });
+      const res = await request(app)
+        .post('/api/v1/siteVisits')
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({
+          lead_id: compBLeadId,
+          property_id: compBPropertyId,
+          scheduled_date: new Date().toISOString(),
+        });
       expect(res.status).toBe(404);
     });
   });
 
   describe('RBAC', () => {
     it('15. TELECALLER allowed to create leads if permission matrix says so', async () => {
-      const res = await request(app).post('/api/v1/leads/').set('Authorization', `Bearer ${compATelecallerToken}`).send({
-        customer_name: 'Valid Lead',
-        phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
-        source: 'WEBSITE'
-      });
+      const res = await request(app)
+        .post('/api/v1/leads/')
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({
+          customer_name: 'Valid Lead',
+          phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
+          source: 'WEBSITE',
+        });
       expect(res.status).toBe(201);
     });
 
     it('16. MD allowed required lead management operations', async () => {
-      const res = await request(app).get('/api/v1/leads/').set('Authorization', `Bearer ${compAMdToken}`);
+      const res = await request(app)
+        .get('/api/v1/leads/')
+        .set('Authorization', `Bearer ${compAMdToken}`);
       expect(res.status).toBe(200);
     });
 
     it('17. FINANCE-only endpoint denied to TELECALLER', async () => {
-      const res = await request(app).get('/api/v1/expense-refunds/queue').set('Authorization', `Bearer ${compATelecallerToken}`);
+      const res = await request(app)
+        .get('/api/v1/expense-refunds/queue')
+        .set('Authorization', `Bearer ${compATelecallerToken}`);
       expect(res.status).toBe(403);
     });
 
     it('18. HR-sensitive endpoint denied to TELECALLER', async () => {
-      const res = await request(app).get('/api/v1/md/employees').set('Authorization', `Bearer ${compATelecallerToken}`);
+      const res = await request(app)
+        .get('/api/v1/md/employees')
+        .set('Authorization', `Bearer ${compATelecallerToken}`);
       expect(res.status).toBe(403);
     });
 
     it('19. KYC write denied to unauthorized roles', async () => {
-      const res = await request(app).put(`/api/v1/customers/${compACustomerId}/kyc`).set('Authorization', `Bearer ${compATelecallerToken}`).send({
-        pan_number: 'ABCDE1234F'
-      });
+      const res = await request(app)
+        .put(`/api/v1/customers/${compACustomerId}/kyc`)
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({
+          pan_number: 'ABCDE1234F',
+        });
       expect(res.status).toBe(403);
     });
 
     it('20. ADMIN behavior remains correct (can do admin stuff)', async () => {
-      const res = await request(app).get('/api/v1/integration.routes/metrics').set('Authorization', `Bearer ${compAAdminToken}`);
+      const res = await request(app)
+        .get('/api/v1/integration.routes/metrics')
+        .set('Authorization', `Bearer ${compAAdminToken}`);
       expect(res.status).not.toBe(403);
     });
   });
@@ -401,35 +490,44 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
 
   describe('ATTRIBUTION', () => {
     it('23. created_by_id cannot be spoofed', async () => {
-      const res = await request(app).post('/api/v1/leads/').set('Authorization', `Bearer ${compATelecallerToken}`).send({
-        customer_name: 'Spoof Lead',
-        phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
-        source: 'WEBSITE',
-        created_by_id: 999
-      });
+      const res = await request(app)
+        .post('/api/v1/leads/')
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({
+          customer_name: 'Spoof Lead',
+          phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
+          source: 'WEBSITE',
+          created_by_id: 999,
+        });
       console.log('TEST 21:', res.status, res.body);
       expect(res.status).toBe(201);
       expect(res.body.lead.created_by_id).not.toBe(999); // Must be actual user ID
     });
 
     it('24. company_id cannot be spoofed', async () => {
-      const res = await request(app).post('/api/v1/leads/').set('Authorization', `Bearer ${compATelecallerToken}`).send({
-        customer_name: 'Spoof Company',
-        phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
-        source: 'WEBSITE',
-        company_id: 2
-      });
+      const res = await request(app)
+        .post('/api/v1/leads/')
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({
+          customer_name: 'Spoof Company',
+          phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
+          source: 'WEBSITE',
+          company_id: 2,
+        });
       expect(res.status).toBe(201);
       expect(res.body.lead.company_id).toBe(compAUser.company_id); // Must be forced to company A
     });
 
     it('25. assignee/company boundaries cannot be bypassed', async () => {
-      const res = await request(app).post('/api/v1/leads/').set('Authorization', `Bearer ${compATelecallerToken}`).send({
-        customer_name: 'Spoof Assignee',
-        phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
-        source: 'WEBSITE',
-        assigned_to_id: compBEmployeeId
-      });
+      const res = await request(app)
+        .post('/api/v1/leads/')
+        .set('Authorization', `Bearer ${compATelecallerToken}`)
+        .send({
+          customer_name: 'Spoof Assignee',
+          phone: `+9199${Math.floor(10000000 + Math.random() * 90000000)}`,
+          source: 'WEBSITE',
+          assigned_to_id: compBEmployeeId,
+        });
       expect(res.status).toBe(201);
       expect(res.body.lead.assigned_to_id).not.toBe(compBEmployeeId);
     });
@@ -568,7 +666,9 @@ describe('MASTER BETA REGRESSION — Tenant Isolation & Authorization', () => {
       const after = await prisma.booking.findUnique({ where: { id: compBBookingId } });
       expect(after).not.toBeNull();
       expect(after!.status).toBe(before!.status);
-      expect(after!.updated_at ?? after!.updatedAt ?? null).toEqual((before as any).updated_at ?? (before as any).updatedAt ?? null);
+      expect(after!.updated_at ?? after!.updatedAt ?? null).toEqual(
+        (before as any).updated_at ?? (before as any).updatedAt ?? null,
+      );
     });
 
     // PAYMENTS

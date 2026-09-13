@@ -9,7 +9,6 @@ import { getISTComponents } from '../../apps/api/src/utils/time';
 
 jest.setTimeout(45000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
@@ -72,7 +71,9 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
 
     const md1Code = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code;
     const adminCode = deterministicUsers.find((u) => u.roles[0] === Roles.ADMIN)!.employee_code;
-    const telecallerCode = deterministicUsers.find((u) => u.roles[0] === Roles.TELECALLER)!.employee_code;
+    const telecallerCode = deterministicUsers.find(
+      (u) => u.roles[0] === Roles.TELECALLER,
+    )!.employee_code;
 
     md1Token = await login(md1Code, 0);
     adminToken = await login(adminCode, 1);
@@ -138,7 +139,7 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
         property_code: `G-C1P-${suffix}`,
         company_id: company1Id,
         title: 'Metrics Company1 Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1200,
         location: 'Test Loc',
         status: 'LIVE',
@@ -209,7 +210,11 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
       p.integrationEvent.create({
         data: {
           event_type: 'BOOKING_PORTAL_HANDOFF',
-          payload: JSON.stringify({ event_type: 'BOOKING_PORTAL_HANDOFF', company_id: company1Id, crms_booking_id: c1BookingId }),
+          payload: JSON.stringify({
+            event_type: 'BOOKING_PORTAL_HANDOFF',
+            company_id: company1Id,
+            crms_booking_id: c1BookingId,
+          }),
           status: 'COMPLETED',
           company_id: company1Id,
           crms_booking_id: c1BookingId,
@@ -219,7 +224,11 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
       p.integrationEvent.create({
         data: {
           event_type: 'CUSTOMER_KYC_STATUS_CHANGED',
-          payload: JSON.stringify({ event_type: 'CUSTOMER_KYC_STATUS_CHANGED', company_id: company1Id, crms_customer_id: c1CustomerId }),
+          payload: JSON.stringify({
+            event_type: 'CUSTOMER_KYC_STATUS_CHANGED',
+            company_id: company1Id,
+            crms_customer_id: c1CustomerId,
+          }),
           status: 'CREATED',
           company_id: company1Id,
           crms_customer_id: c1CustomerId,
@@ -228,7 +237,11 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
       p.integrationEvent.create({
         data: {
           event_type: PAYMENT_EVENT_TYPE,
-          payload: JSON.stringify({ event_type: PAYMENT_EVENT_TYPE, company_id: company1Id, payment_id: c1Payments[0].id }),
+          payload: JSON.stringify({
+            event_type: PAYMENT_EVENT_TYPE,
+            company_id: company1Id,
+            payment_id: c1Payments[0].id,
+          }),
           status: 'FAILED',
           company_id: company1Id,
           crms_booking_id: c1BookingId,
@@ -240,7 +253,11 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
       p.integrationEvent.create({
         data: {
           event_type: PAYMENT_EVENT_TYPE,
-          payload: JSON.stringify({ event_type: PAYMENT_EVENT_TYPE, company_id: company1Id, payment_id: c1Payments[1].id }),
+          payload: JSON.stringify({
+            event_type: PAYMENT_EVENT_TYPE,
+            company_id: company1Id,
+            payment_id: c1Payments[1].id,
+          }),
           status: 'PROCESSING',
           company_id: company1Id,
           crms_booking_id: c1BookingId,
@@ -253,26 +270,62 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
 
     const c1Mappings = await Promise.all([
       p.bookingPortalMapping.create({
-        data: { company_id: company1Id, crms_booking_id: c1BookingId, crms_customer_id: c1CustomerId, handoff_status: 'ACTIVE' },
+        data: {
+          company_id: company1Id,
+          crms_booking_id: c1BookingId,
+          crms_customer_id: c1CustomerId,
+          handoff_status: 'ACTIVE',
+        },
       }),
       p.bookingPortalMapping.create({
-        data: { company_id: company1Id, crms_booking_id: c1BookingId + 100000, crms_customer_id: c1CustomerId, handoff_status: 'WAITING_ACTIVATION' },
+        data: {
+          company_id: company1Id,
+          crms_booking_id: c1BookingId + 100000,
+          crms_customer_id: c1CustomerId,
+          handoff_status: 'WAITING_ACTIVATION',
+        },
       }),
       p.bookingPortalMapping.create({
-        data: { company_id: company1Id, crms_booking_id: c1BookingId + 200000, crms_customer_id: c1CustomerId, handoff_status: 'FAILED' },
+        data: {
+          company_id: company1Id,
+          crms_booking_id: c1BookingId + 200000,
+          crms_customer_id: c1CustomerId,
+          handoff_status: 'FAILED',
+        },
       }),
     ]);
     c1MappingIds.push(...c1Mappings.map((x) => x.id));
 
     const c1Notifications = await Promise.all([
       p.customerNotification.create({
-        data: { company_id: company1Id, customer_id: c1CustomerId, booking_id: c1BookingId, type: 'PORTAL_ACTIVATED', title: 'Activated', message: 'm' },
+        data: {
+          company_id: company1Id,
+          customer_id: c1CustomerId,
+          booking_id: c1BookingId,
+          type: 'PORTAL_ACTIVATED',
+          title: 'Activated',
+          message: 'm',
+        },
       }),
       p.customerNotification.create({
-        data: { company_id: company1Id, customer_id: c1CustomerId, booking_id: c1BookingId, type: 'KYC_STATUS_UPDATED', title: 'KYC', message: 'm' },
+        data: {
+          company_id: company1Id,
+          customer_id: c1CustomerId,
+          booking_id: c1BookingId,
+          type: 'KYC_STATUS_UPDATED',
+          title: 'KYC',
+          message: 'm',
+        },
       }),
       p.customerNotification.create({
-        data: { company_id: company1Id, customer_id: c1CustomerId, booking_id: c1BookingId, type: 'PAYMENT_STATUS_UPDATED', title: 'Payment', message: 'm' },
+        data: {
+          company_id: company1Id,
+          customer_id: c1CustomerId,
+          booking_id: c1BookingId,
+          type: 'PAYMENT_STATUS_UPDATED',
+          title: 'Payment',
+          message: 'm',
+        },
       }),
     ]);
     c1NotificationIds.push(...c1Notifications.map((x) => x.id));
@@ -295,7 +348,7 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
         property_code: `G-C2P-${suffix}`,
         company_id: company2Id,
         title: 'Metrics Company2 Property',
-        price: 4000000,
+        final_price: 4000000,
         area_sqft: 1000,
         location: 'Test Loc',
         status: 'LIVE',
@@ -337,7 +390,11 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     const c2Event = await p.integrationEvent.create({
       data: {
         event_type: PAYMENT_EVENT_TYPE,
-        payload: JSON.stringify({ event_type: PAYMENT_EVENT_TYPE, company_id: company2Id, payment_id: c2Payment.id }),
+        payload: JSON.stringify({
+          event_type: PAYMENT_EVENT_TYPE,
+          company_id: company2Id,
+          payment_id: c2Payment.id,
+        }),
         status: 'COMPLETED',
         company_id: company2Id,
         crms_booking_id: c2BookingId,
@@ -348,33 +405,57 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     c2EventIds.push(c2Event.id);
 
     const c2Mapping = await p.bookingPortalMapping.create({
-      data: { company_id: company2Id, crms_booking_id: c2BookingId, crms_customer_id: c2CustomerId, handoff_status: 'WAITING_ACTIVATION' },
+      data: {
+        company_id: company2Id,
+        crms_booking_id: c2BookingId,
+        crms_customer_id: c2CustomerId,
+        handoff_status: 'WAITING_ACTIVATION',
+      },
     });
     c2MappingIds.push(c2Mapping.id);
 
     const c2Notification = await p.customerNotification.create({
-      data: { company_id: company2Id, customer_id: c2CustomerId, booking_id: c2BookingId, type: 'PORTAL_ACTIVATED', title: 'Activated', message: 'm' },
+      data: {
+        company_id: company2Id,
+        customer_id: c2CustomerId,
+        booking_id: c2BookingId,
+        type: 'PORTAL_ACTIVATED',
+        title: 'Activated',
+        message: 'm',
+      },
     });
     c2NotificationIds.push(c2Notification.id);
   });
 
   afterAll(async () => {
-    await p.customerNotification.deleteMany({ where: { id: { in: [...c1NotificationIds, ...c2NotificationIds].filter(Boolean) } } });
-    await p.integrationEvent.deleteMany({ where: { id: { in: [...c1EventIds, ...c2EventIds].filter(Boolean) } } });
-    await p.bookingPortalMapping.deleteMany({ where: { id: { in: [...c1MappingIds, ...c2MappingIds].filter(Boolean) } } });
-    await p.payment.deleteMany({ where: { id: { in: [...c1PaymentIds, ...c2PaymentIds].filter(Boolean) } } });
-    await p.booking.deleteMany({ where: { id: { in: [c1BookingId, c2BookingId].filter(Boolean) } } });
-    await p.property.deleteMany({ where: { id: { in: [c1PropertyId, c2PropertyId].filter(Boolean) } } });
-    await p.customer.deleteMany({ where: { id: { in: [c1CustomerId, c2CustomerId].filter(Boolean) } } });
+    await p.customerNotification.deleteMany({
+      where: { id: { in: [...c1NotificationIds, ...c2NotificationIds].filter(Boolean) } },
+    });
+    await p.integrationEvent.deleteMany({
+      where: { id: { in: [...c1EventIds, ...c2EventIds].filter(Boolean) } },
+    });
+    await p.bookingPortalMapping.deleteMany({
+      where: { id: { in: [...c1MappingIds, ...c2MappingIds].filter(Boolean) } },
+    });
+    await p.payment.deleteMany({
+      where: { id: { in: [...c1PaymentIds, ...c2PaymentIds].filter(Boolean) } },
+    });
+    await p.booking.deleteMany({
+      where: { id: { in: [c1BookingId, c2BookingId].filter(Boolean) } },
+    });
+    await p.property.deleteMany({
+      where: { id: { in: [c1PropertyId, c2PropertyId].filter(Boolean) } },
+    });
+    await p.customer.deleteMany({
+      where: { id: { in: [c1CustomerId, c2CustomerId].filter(Boolean) } },
+    });
     await p.employeeRole.deleteMany({ where: { employee_id: md2UserId } });
     await p.employee.deleteMany({ where: { id: md2UserId } });
     await prisma.$disconnect();
   });
 
   const getMetrics = (token: string, query: string = '') =>
-    request(app)
-      .get(`/api/v1/integration/metrics${query}`)
-      .set('Authorization', `Bearer ${token}`);
+    request(app).get(`/api/v1/integration/metrics${query}`).set('Authorization', `Bearer ${token}`);
 
   test('1. Requires an authenticated user (401 without token)', async () => {
     const res = await request(app).get('/api/v1/integration/metrics');
@@ -404,15 +485,23 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     // Handoffs: +3 (ACTIVE, WAITING_ACTIVATION, FAILED) over pre-seed baseline
     expect(body.handoffs.total).toBe(base1.handoffs.total + 3);
     expect(body.handoffs.byStatus.ACTIVE).toBe(base1.handoffs.byStatus.ACTIVE + 1);
-    expect(body.handoffs.byStatus.WAITING_ACTIVATION).toBe(base1.handoffs.byStatus.WAITING_ACTIVATION + 1);
+    expect(body.handoffs.byStatus.WAITING_ACTIVATION).toBe(
+      base1.handoffs.byStatus.WAITING_ACTIVATION + 1,
+    );
     expect(body.handoffs.byStatus.FAILED).toBe(base1.handoffs.byStatus.FAILED + 1);
     expect(body.handoffs.byStatus.CREATED).toBe(base1.handoffs.byStatus.CREATED + 0);
 
     // Outbox: +4 events over baseline
     expect(body.outbox.total).toBe(base1.outbox.total + 4);
-    expect(body.outbox.byEventType.BOOKING_PORTAL_HANDOFF).toBe(base1.outbox.byEventType.BOOKING_PORTAL_HANDOFF + 1);
-    expect(body.outbox.byEventType.CUSTOMER_KYC_STATUS_CHANGED).toBe(base1.outbox.byEventType.CUSTOMER_KYC_STATUS_CHANGED + 1);
-    expect(body.outbox.byEventType.PAYMENT_STATUS_CHANGED).toBe(base1.outbox.byEventType.PAYMENT_STATUS_CHANGED + 2);
+    expect(body.outbox.byEventType.BOOKING_PORTAL_HANDOFF).toBe(
+      base1.outbox.byEventType.BOOKING_PORTAL_HANDOFF + 1,
+    );
+    expect(body.outbox.byEventType.CUSTOMER_KYC_STATUS_CHANGED).toBe(
+      base1.outbox.byEventType.CUSTOMER_KYC_STATUS_CHANGED + 1,
+    );
+    expect(body.outbox.byEventType.PAYMENT_STATUS_CHANGED).toBe(
+      base1.outbox.byEventType.PAYMENT_STATUS_CHANGED + 2,
+    );
     expect(body.outbox.byStatus.COMPLETED).toBe(base1.outbox.byStatus.COMPLETED + 1);
     expect(body.outbox.byStatus.CREATED).toBe(base1.outbox.byStatus.CREATED + 1);
     expect(body.outbox.byStatus.FAILED).toBe(base1.outbox.byStatus.FAILED + 1);
@@ -423,7 +512,9 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     // Payments: +3 (SYNCED, PENDING_SYNC, LOCAL / 2 CRM, 1 PORTAL)
     expect(body.payments.total).toBe(base1.payments.total + 3);
     expect(body.payments.bySyncStatus.SYNCED).toBe(base1.payments.bySyncStatus.SYNCED + 1);
-    expect(body.payments.bySyncStatus.PENDING_SYNC).toBe(base1.payments.bySyncStatus.PENDING_SYNC + 1);
+    expect(body.payments.bySyncStatus.PENDING_SYNC).toBe(
+      base1.payments.bySyncStatus.PENDING_SYNC + 1,
+    );
     expect(body.payments.bySyncStatus.LOCAL).toBe(base1.payments.bySyncStatus.LOCAL + 1);
     expect(body.payments.bySource.CRM).toBe(base1.payments.bySource.CRM + 2);
     expect(body.payments.bySource.PORTAL).toBe(base1.payments.bySource.PORTAL + 1);
@@ -436,9 +527,15 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
 
     // Notifications: +3 (one of each type)
     expect(body.notifications.total).toBe(base1.notifications.total + 3);
-    expect(body.notifications.byType.PORTAL_ACTIVATED).toBe(base1.notifications.byType.PORTAL_ACTIVATED + 1);
-    expect(body.notifications.byType.KYC_STATUS_UPDATED).toBe(base1.notifications.byType.KYC_STATUS_UPDATED + 1);
-    expect(body.notifications.byType.PAYMENT_STATUS_UPDATED).toBe(base1.notifications.byType.PAYMENT_STATUS_UPDATED + 1);
+    expect(body.notifications.byType.PORTAL_ACTIVATED).toBe(
+      base1.notifications.byType.PORTAL_ACTIVATED + 1,
+    );
+    expect(body.notifications.byType.KYC_STATUS_UPDATED).toBe(
+      base1.notifications.byType.KYC_STATUS_UPDATED + 1,
+    );
+    expect(body.notifications.byType.PAYMENT_STATUS_UPDATED).toBe(
+      base1.notifications.byType.PAYMENT_STATUS_UPDATED + 1,
+    );
   });
 
   test('5. Tenant isolation — Company-1 MD never sees Company-2 data', async () => {
@@ -462,10 +559,14 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     expect(body.company_id).toBe(company2Id);
     // Company-2 baseline + exactly the Company-2 seeds, never Company-1 rows
     expect(body.handoffs.total).toBe(base2.handoffs.total + 1);
-    expect(body.handoffs.byStatus.WAITING_ACTIVATION).toBe(base2.handoffs.byStatus.WAITING_ACTIVATION + 1);
+    expect(body.handoffs.byStatus.WAITING_ACTIVATION).toBe(
+      base2.handoffs.byStatus.WAITING_ACTIVATION + 1,
+    );
     expect(body.handoffs.byStatus.ACTIVE).toBe(base2.handoffs.byStatus.ACTIVE + 0);
     expect(body.outbox.total).toBe(base2.outbox.total + 1);
-    expect(body.outbox.byEventType.PAYMENT_STATUS_CHANGED).toBe(base2.outbox.byEventType.PAYMENT_STATUS_CHANGED + 1);
+    expect(body.outbox.byEventType.PAYMENT_STATUS_CHANGED).toBe(
+      base2.outbox.byEventType.PAYMENT_STATUS_CHANGED + 1,
+    );
     expect(body.outbox.byStatus.COMPLETED).toBe(base2.outbox.byStatus.COMPLETED + 1);
     expect(body.outbox.retried).toBe(base2.outbox.retried + 0);
     expect(body.outbox.terminalFailures).toBe(base2.outbox.terminalFailures + 0);
@@ -475,7 +576,9 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     expect(body.kyc.total).toBe(base2.kyc.total + 1);
     expect(body.kyc.byStatus.UNKNOWN).toBe(base2.kyc.byStatus.UNKNOWN + 1);
     expect(body.notifications.total).toBe(base2.notifications.total + 1);
-    expect(body.notifications.byType.PORTAL_ACTIVATED).toBe(base2.notifications.byType.PORTAL_ACTIVATED + 1);
+    expect(body.notifications.byType.PORTAL_ACTIVATED).toBe(
+      base2.notifications.byType.PORTAL_ACTIVATED + 1,
+    );
   });
 
   test('7. Admin (Technical) can access the endpoint', async () => {
@@ -513,7 +616,11 @@ describe('Phase 11 Packet 3G - Portal / Integration Metrics', () => {
     const oldEvent = await p.integrationEvent.create({
       data: {
         event_type: 'BOOKING_PORTAL_HANDOFF',
-        payload: JSON.stringify({ event_type: 'BOOKING_PORTAL_HANDOFF', company_id: company1Id, crms_booking_id: c1BookingId }),
+        payload: JSON.stringify({
+          event_type: 'BOOKING_PORTAL_HANDOFF',
+          company_id: company1Id,
+          crms_booking_id: c1BookingId,
+        }),
         status: 'COMPLETED',
         company_id: company1Id,
         crms_booking_id: c1BookingId,

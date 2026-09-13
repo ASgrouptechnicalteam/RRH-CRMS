@@ -71,7 +71,13 @@ class FixedProvider implements AIProvider {
 }
 
 function serviceFor(provider: AIProvider): SearchIntentService {
-  const config = AIConfig.from({ provider: 'mock', enabled: false, timeoutMs: 30000, maxTokens: 1024, maxRetries: 1 });
+  const config = AIConfig.from({
+    provider: 'mock',
+    enabled: false,
+    timeoutMs: 30000,
+    maxTokens: 1024,
+    maxRetries: 1,
+  });
   return new SearchIntentService({ provider, config });
 }
 
@@ -112,7 +118,7 @@ describe('Phase 17-C: translateToPropertyFilters (SearchIntent → CRM filters)'
     const f = translateToPropertyFilters(intent);
     expect(f.category).toBe('APARTMENT');
     expect(f.brand_type).toBe('SONTHILLU');
-    expect(f.price).toEqual({ gte: 3000000, lte: 6000000 });
+    expect(f.final_price).toEqual({ gte: 3000000, lte: 6000000 });
     expect(f.bedrooms).toEqual({ gte: 2 });
     expect(f.bathrooms).toEqual({ gte: 2 });
     expect(f.area_sqft).toEqual({ gte: 1000, lte: 2000 });
@@ -122,13 +128,15 @@ describe('Phase 17-C: translateToPropertyFilters (SearchIntent → CRM filters)'
   });
 
   it('never fabricates a DB column for unsupportedCriteria', () => {
-    const f = translateToPropertyFilters({ unsupportedCriteria: ['gym', 'swimming pool', 'clubhouse'] } as SearchIntent);
+    const f = translateToPropertyFilters({
+      unsupportedCriteria: ['gym', 'swimming pool', 'clubhouse'],
+    } as SearchIntent);
     expect(f).toEqual({});
   });
 
   it('omits budget/area bounds that are not supplied', () => {
     const f = translateToPropertyFilters({ budget: { max: 5000000 } } as SearchIntent);
-    expect(f.price).toEqual({ lte: 5000000 });
+    expect(f.final_price).toEqual({ lte: 5000000 });
     const areaOnly = translateToPropertyFilters({ area: { min: 800 } } as SearchIntent);
     expect(areaOnly.area_sqft).toEqual({ gte: 800 });
   });
@@ -151,7 +159,9 @@ describe('Phase 17-C: buildCrmSearchWhere (tenant isolation + publication + avai
 
   it('requires the property be published to the company feed', () => {
     const where = buildCrmSearchWhere(intent, 7);
-    expect((where.publications as { some: { is_published: boolean } }).some.is_published).toBe(true);
+    expect((where.publications as { some: { is_published: boolean } }).some.is_published).toBe(
+      true,
+    );
   });
 
   it('only allows AVAILABLE statuses — SOLD / BOOKED / active-RESERVED are excluded even if they match', () => {
@@ -201,7 +211,7 @@ describe('Phase 17-C: scoring and ranking (CRM authority over AI)', () => {
       title: 'Pune Flat',
       brand_type: 'SONTHILLU',
       category: 'APARTMENT',
-      price: 5000000,
+      final_price: 5000000,
       area_sqft: 1200,
       location: 'Kothrud, Pune',
       city: 'Pune',
@@ -215,7 +225,7 @@ describe('Phase 17-C: scoring and ranking (CRM authority over AI)', () => {
       title: 'Hyderabad Apt',
       brand_type: 'SONTHILLU',
       category: 'APARTMENT',
-      price: 4000000,
+      final_price: 4000000,
       area_sqft: 1500,
       location: 'Gachibowli, Hyderabad',
       city: 'Hyderabad',
@@ -223,7 +233,11 @@ describe('Phase 17-C: scoring and ranking (CRM authority over AI)', () => {
       status: 'LIVE',
       locked_until: null,
     };
-    const intent: SearchIntent = { location: { city: 'Hyderabad' }, budget: { max: 6000000 }, propertyType: 'APARTMENT' };
+    const intent: SearchIntent = {
+      location: { city: 'Hyderabad' },
+      budget: { max: 6000000 },
+      propertyType: 'APARTMENT',
+    };
     const scored = scoreAndSortPropertyRows([lower, higher], intent);
     expect(scored).toHaveLength(2);
     expect(scored[0].propertyId).toBe(1);
@@ -240,7 +254,11 @@ describe('Phase 17-C: scoring and ranking (CRM authority over AI)', () => {
 describe('Phase 17-C: searchCrmMatches (deterministic authority over AI)', () => {
   it('returns a graceful empty array for a zero-result match', async () => {
     const db = { property: { findMany: async () => [] } };
-    const res = await searchCrmMatches({ location: { city: 'Nowhereville' } } as SearchIntent, 7, db as any);
+    const res = await searchCrmMatches(
+      { location: { city: 'Nowhereville' } } as SearchIntent,
+      7,
+      db as any,
+    );
     expect(res).toEqual([]);
   });
 
@@ -257,7 +275,7 @@ describe('Phase 17-C: searchCrmMatches (deterministic authority over AI)', () =>
               title: 'Live Flat',
               brand_type: 'SONTHILLU',
               category: 'VILLA',
-              price: 4500000,
+              final_price: 4500000,
               area_sqft: 1400,
               location: 'Hyderabad',
               city: 'Hyderabad',

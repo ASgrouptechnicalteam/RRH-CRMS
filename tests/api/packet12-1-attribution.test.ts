@@ -2,8 +2,11 @@ import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
-
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 const p = prisma as any;
 
@@ -39,7 +42,8 @@ describe('Phase 12 Packet 12-1 — Attribution Propagation', () => {
     await setupDeterministicTestUsers();
 
     const getAuth = async (code: string, idx: number) => {
-      const res = await request(app).post('/api/v1/auth/login')
+      const res = await request(app)
+        .post('/api/v1/auth/login')
         .set('X-Forwarded-For', `192.168.10.${idx}`)
         .send({ employee_code: code, password: 'Password@123' });
       if (res.status !== 200) {
@@ -48,7 +52,8 @@ describe('Phase 12 Packet 12-1 — Attribution Propagation', () => {
       return res.body.accessToken;
     };
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
     const tcBCode = crossOrgUsers[0].employee_code;
 
     mdToken = await getAuth(getCode(Roles.MD), 1);
@@ -92,7 +97,7 @@ describe('Phase 12 Packet 12-1 — Attribution Propagation', () => {
       data: {
         property_code: `TEST-PROP-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         title: 'Attribution Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         status: 'LIVE',
@@ -108,7 +113,11 @@ describe('Phase 12 Packet 12-1 — Attribution Propagation', () => {
     const res = await request(app)
       .post('/api/v1/opportunities')
       .set('Authorization', `Bearer ${telecallerAToken}`)
-      .send({ lead_id: leadId, owner_id: telecallerAId, ...(propertyId ? { property_id: propertyId } : {}) });
+      .send({
+        lead_id: leadId,
+        owner_id: telecallerAId,
+        ...(propertyId ? { property_id: propertyId } : {}),
+      });
     expect(res.status).toBe(201);
     expect(res.body.opportunity).toBeDefined();
     oppIds.push(res.body.opportunity.id);
@@ -119,7 +128,7 @@ describe('Phase 12 Packet 12-1 — Attribution Propagation', () => {
     request(app)
       .post(`/api/v1/leads/${leadId}/convert-to-customer`)
       .set('Authorization', `Bearer ${token}`);
-describe('Lead capture', () => {
+  describe('Lead capture', () => {
     it('stores all five attribution fields', async () => {
       const lead = await createLead({
         source: 'WEBSITE',
@@ -207,7 +216,7 @@ describe('Lead capture', () => {
       expect(res.body.booking.utm_campaign).toBe('welcome-series');
     });
   });
-describe('End-to-end attribution chain', () => {
+  describe('End-to-end attribution chain', () => {
     it('full funnel: Lead → Customer → Opportunity → Booking', async () => {
       const lead = await createLead({
         source: 'BULK_UPLOAD',
@@ -241,7 +250,11 @@ describe('End-to-end attribution chain', () => {
       const bookingRes = await request(app)
         .post(`/api/v1/opportunities/${opp.id}/convert-to-booking`)
         .set('Authorization', `Bearer ${telecallerAToken}`)
-        .send({ agreed_price: 4900000, booking_amount: 100000, notes: 'Full funnel attribution test' });
+        .send({
+          agreed_price: 4900000,
+          booking_amount: 100000,
+          notes: 'Full funnel attribution test',
+        });
       expect(bookingRes.status).toBe(201);
       expect(bookingRes.body.booking.source).toBe('BULK_UPLOAD');
       expect(bookingRes.body.booking.campaign).toBe('BULK_IMPORT');

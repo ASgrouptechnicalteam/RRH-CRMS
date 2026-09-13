@@ -4,7 +4,6 @@ import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { Roles } from '@rrh-ems/shared';
 
-
 const p = prisma as any;
 
 describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
@@ -24,20 +23,20 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     await setupDeterministicTestUsers();
 
     const getAuth = async (code: string) => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          employee_code: code,
-          password: 'Password@123',
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        employee_code: code,
+        password: 'Password@123',
+      });
       if (res.status !== 200) throw new Error(`Login failed for ${code}`);
       return res.body.accessToken;
     };
 
-    const adminCode = deterministicUsers.find(u => u.roles[0] === Roles.ADMIN)!.employee_code;
-    const financeCode = deterministicUsers.find(u => u.roles[0] === Roles.FINANCE)!.employee_code;
-    const telecallerCode = deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!.employee_code;
-    const mdCode = deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code;
+    const adminCode = deterministicUsers.find((u) => u.roles[0] === Roles.ADMIN)!.employee_code;
+    const financeCode = deterministicUsers.find((u) => u.roles[0] === Roles.FINANCE)!.employee_code;
+    const telecallerCode = deterministicUsers.find(
+      (u) => u.roles[0] === Roles.TELECALLER,
+    )!.employee_code;
+    const mdCode = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code;
 
     tokenAdmin = await getAuth(adminCode);
     tokenFinance = await getAuth(financeCode);
@@ -81,7 +80,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         customer_code: `C-MD-${Date.now()}`,
         pan_number: hasKYC ? 'ABCDE1234F' : null,
         aadhaar_number: hasKYC ? '123456789012' : null,
-      }
+      },
     });
 
     const property = await p.property.create({
@@ -89,14 +88,14 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         title: 'MD Test Prop',
         company_id: companyId,
         status: 'LOCKED',
-        price: 10000000,
+        final_price: 10000000,
         bedrooms: 3,
         area_sqft: 1000,
         facing: 'EAST',
         property_code: `P-MD-${Date.now()}`,
         location: 'MD Location',
         created_by_id: adminEmployeeId,
-      }
+      },
     });
 
     const booking = await p.booking.create({
@@ -109,12 +108,12 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         booking_amount: 100000,
         balance_amount: 9900000,
         status: 'INITIATED',
-      }
+      },
     });
 
     await p.property.update({
       where: { id: property.id },
-      data: { locked_by_booking_id: booking.id, locked_until: new Date(Date.now() + 86400000) }
+      data: { locked_by_booking_id: booking.id, locked_until: new Date(Date.now() + 86400000) },
     });
 
     const lead = await p.lead.create({
@@ -127,7 +126,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         status: 'BOOKING_INITIATED',
         created_by_id: adminEmployeeId,
         assigned_to_id: adminEmployeeId,
-      }
+      },
     });
 
     const opp = await p.opportunity.create({
@@ -137,8 +136,8 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
         lead_id: lead.id,
         property_id: property.id,
         booking_id: booking.id,
-        owner_id: adminEmployeeId
-      }
+        owner_id: adminEmployeeId,
+      },
     });
 
     return { customer, property, booking, opp, lead };
@@ -152,7 +151,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
       .put(`/api/v1/bookings/${booking.id}/status`)
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ status: 'TOKEN_RECEIVED' });
-    
+
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('TOKEN_RECEIVED');
 
@@ -160,9 +159,9 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     const resConfirm = await request(app)
       .post(`/api/v1/bookings/${booking.id}/confirm`)
       .set('Authorization', `Bearer ${tokenFinance}`);
-    
+
     expect(resConfirm.status).toBe(403);
-    
+
     // Attempt via facade (should also fail 403)
     const resFacade = await request(app)
       .put(`/api/v1/bookings/${booking.id}/status`)
@@ -183,7 +182,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     const res = await request(app)
       .post(`/api/v1/bookings/${booking.id}/confirm`)
       .set('Authorization', `Bearer ${tokenMD}`);
-    
+
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('KYC (PAN and Aadhaar) is required');
   });
@@ -199,7 +198,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     const res = await request(app)
       .post(`/api/v1/bookings/${booking.id}/confirm`)
       .set('Authorization', `Bearer ${tokenMD}`);
-    
+
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('CONFIRMED');
 
@@ -209,7 +208,9 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     const updatedLead = await p.lead.findUnique({ where: { id: lead.id } });
     expect(updatedLead.status).toBe('BOOKED');
 
-    const audits = await p.auditEvent.findMany({ where: { entity_type: 'Booking', entity_id: booking.id } });
+    const audits = await p.auditEvent.findMany({
+      where: { entity_type: 'Booking', entity_id: booking.id },
+    });
     expect(audits.some((a: any) => a.action === 'BOOKING_CONFIRMED')).toBe(true);
   });
 
@@ -219,7 +220,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
     const res = await request(app)
       .post(`/api/v1/bookings/${booking.id}/cancel`)
       .set('Authorization', `Bearer ${tokenMD}`);
-    
+
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('CANCELLED');
 
@@ -244,7 +245,7 @@ describe('Phase 9 Packet 5 - MD Approval & Transaction Authority', () => {
       .put(`/api/v1/bookings/${booking.id}/status`)
       .set('Authorization', `Bearer ${tokenMD}`)
       .send({ status: 'CONFIRMED' });
-    
+
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('CONFIRMED');
   });

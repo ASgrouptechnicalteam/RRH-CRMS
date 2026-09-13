@@ -4,7 +4,6 @@ import app from '../../apps/api/src/server';
 import { generateAccessToken } from '../../apps/api/src/utils/jwt';
 import { Roles, Permissions } from '@rrh-ems/shared';
 
-
 const p = prisma as any;
 
 let companyAId: number;
@@ -81,7 +80,12 @@ beforeAll(async () => {
     companyId: companyAId,
     branchId: null,
     roles: [Roles.PROJECT_MANAGER],
-    permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ, Permissions.SITE_VISITS_CREATE, 'tasks.create'],
+    permissions: [
+      Permissions.LEADS_UPDATE,
+      Permissions.LEADS_READ,
+      Permissions.SITE_VISITS_CREATE,
+      'tasks.create',
+    ],
   });
 
   pmBToken = generateAccessToken({
@@ -90,7 +94,12 @@ beforeAll(async () => {
     companyId: companyBId,
     branchId: null,
     roles: [Roles.PROJECT_MANAGER],
-    permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ, Permissions.SITE_VISITS_CREATE, 'tasks.create'],
+    permissions: [
+      Permissions.LEADS_UPDATE,
+      Permissions.LEADS_READ,
+      Permissions.SITE_VISITS_CREATE,
+      'tasks.create',
+    ],
   });
 
   // Setup Leads
@@ -118,7 +127,12 @@ beforeAll(async () => {
 
   // Project & Property A
   projectA = await p.project.create({
-    data: { name: 'Proj A', company_id: companyAId, location: 'Loc A', project_code: `PRJ-A-${ts}` }
+    data: {
+      name: 'Proj A',
+      company_id: companyAId,
+      location: 'Loc A',
+      project_code: `PRJ-A-${ts}`,
+    },
   });
 
   propertyA = await p.property.create({
@@ -131,11 +145,10 @@ beforeAll(async () => {
       status: 'AVAILABLE',
       category: 'APARTMENT',
       location: 'Loc A',
-      price: 1000,
-      area_sqft: 100
-    }
+      final_price: 1000,
+      area_sqft: 100,
+    },
   });
-
 });
 
 afterAll(async () => {
@@ -143,7 +156,6 @@ afterAll(async () => {
 });
 
 describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
-
   it('1. Create Opportunity from valid Lead (lead stays in pipeline; no OPPORTUNITY_OPEN)', async () => {
     const res = await request(app)
       .post('/api/v1/opportunities')
@@ -151,7 +163,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
       .send({
         lead_id: leadA.id,
         project_id: projectA.id,
-        expected_value: 1000000
+        expected_value: 1000000,
       });
 
     expect(res.status).toBe(201);
@@ -171,7 +183,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
       .send({
         lead_id: leadA.id,
         project_id: projectA.id,
-        expected_value: 2000000
+        expected_value: 2000000,
       });
 
     expect(res.status).toBe(201);
@@ -185,8 +197,8 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         phone: '9999999991',
         company_id: companyAId,
         created_by_id: pmAUser.id,
-        status: 'NEGOTIATION'
-      }
+        status: 'NEGOTIATION',
+      },
     });
 
     const res = await request(app)
@@ -210,8 +222,8 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         phone: '9999999992',
         company_id: companyAId,
         created_by_id: pmAUser.id,
-        status: 'WON'
-      }
+        status: 'WON',
+      },
     });
 
     const res = await request(app)
@@ -227,11 +239,11 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
     expect(leadAfter?.status).toBe('WON');
   });
 
-  it('5. GET /leads/:id/opportunities returns only that Lead\'s Opportunities', async () => {
+  it("5. GET /leads/:id/opportunities returns only that Lead's Opportunities", async () => {
     const res = await request(app)
       .get(`/api/v1/leads/${leadA.id}/opportunities`)
       .set('Authorization', `Bearer ${pmAToken}`);
-    
+
     expect(res.status).toBe(200);
     expect(res.body.opportunities.length).toBeGreaterThanOrEqual(2);
   });
@@ -256,9 +268,9 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         assignee_id: pmAUser.id,
         deadline: new Date(Date.now() + 86400).toISOString(),
         lead_id: leadA.id,
-        opportunity_id: oppA.id
+        opportunity_id: oppA.id,
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.task.opportunity_id).toBe(oppA.id);
   });
@@ -272,15 +284,21 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         assignee_id: pmAUser.id,
         deadline: new Date(Date.now() + 86400).toISOString(),
         lead_id: leadB.id,
-        opportunity_id: oppA.id
+        opportunity_id: oppA.id,
       });
-    
+
     expect(res.status).toBe(404); // Since leadB belongs to Company B, PM A gets 404. Let's try wrong lead same company.
   });
 
   it('8b. Task with mismatched Lead/Opportunity (same company) is rejected', async () => {
     const leadA2 = await p.lead.create({
-      data: { lead_code: `LA-002-${Date.now()}`, customer_name: 'Lead A2', phone: '0000000000', company_id: companyAId, created_by_id: pmAUser.id }
+      data: {
+        lead_code: `LA-002-${Date.now()}`,
+        customer_name: 'Lead A2',
+        phone: '0000000000',
+        company_id: companyAId,
+        created_by_id: pmAUser.id,
+      },
     });
 
     const res = await request(app)
@@ -291,9 +309,9 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         assignee_id: pmAUser.id,
         deadline: new Date(Date.now() + 86400).toISOString(),
         lead_id: leadA2.id,
-        opportunity_id: oppA.id
+        opportunity_id: oppA.id,
       });
-    
+
     expect(res.status).toBe(400); // 400 for Opportunity does not belong to specified lead
   });
 
@@ -304,7 +322,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
       .send({
         lead_id: leadA.id,
         property_id: propertyA.id,
-        scheduled_date: new Date(Date.now() + 86400).toISOString()
+        scheduled_date: new Date(Date.now() + 86400).toISOString(),
       });
     expect(res.status).toBe(201);
   });
@@ -317,14 +335,20 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
         lead_id: leadA.id,
         opportunity_id: oppA.id,
         property_id: propertyA.id,
-        scheduled_date: new Date(Date.now() + 86400).toISOString()
+        scheduled_date: new Date(Date.now() + 86400).toISOString(),
       });
     expect(res.status).toBe(201);
   });
 
   it('11. SiteVisit with mismatched Lead/Opportunity is rejected', async () => {
     const leadA2 = await p.lead.create({
-      data: { lead_code: `LA-003-${Date.now()}`, customer_name: 'Lead A3', phone: '0001000000', company_id: companyAId, created_by_id: pmAUser.id }
+      data: {
+        lead_code: `LA-003-${Date.now()}`,
+        customer_name: 'Lead A3',
+        phone: '0001000000',
+        company_id: companyAId,
+        created_by_id: pmAUser.id,
+      },
     });
 
     const res = await request(app)
@@ -333,7 +357,7 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
       .send({
         lead_id: leadA2.id,
         opportunity_id: oppA.id,
-        scheduled_date: new Date(Date.now() + 86400).toISOString()
+        scheduled_date: new Date(Date.now() + 86400).toISOString(),
       });
     expect(res.status).toBe(400);
   });
@@ -345,9 +369,8 @@ describe('Phase 8 Packet 3 - Lead → Opportunity Integration', () => {
       .send({
         lead_id: leadB.id,
         opportunity_id: oppA.id,
-        scheduled_date: new Date(Date.now() + 86400).toISOString()
+        scheduled_date: new Date(Date.now() + 86400).toISOString(),
       });
     expect(res.status).toBe(404);
   });
-
 });

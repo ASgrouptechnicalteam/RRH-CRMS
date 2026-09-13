@@ -3,8 +3,11 @@ import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import { generateAccessToken } from '../../apps/api/src/utils/jwt';
 import { Roles, Permissions } from '@rrh-ems/shared';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
-
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 
 const p = prisma as any;
 
@@ -26,17 +29,21 @@ describe('Phase 2 Security & Authorization Hardening', () => {
 
     // Clean up specifically for this test
     await p.siteVisitBooking.deleteMany({ where: { booking_code: 'SEC-VISIT-01' } });
-    await p.property.deleteMany({ where: { property_code: { in: ['RRH-PROP-SEC-01', 'RRH-PROP-SEC-02'] } } });
+    await p.property.deleteMany({
+      where: { property_code: { in: ['RRH-PROP-SEC-01', 'RRH-PROP-SEC-02'] } },
+    });
     await p.lead.deleteMany({ where: { lead_code: 'RRH-SEC-LEAD' } });
 
-    const rrhAgentCode = deterministicUsers.find(u => u.roles.includes(Roles.AGENT))?.employee_code;
+    const rrhAgentCode = deterministicUsers.find((u) =>
+      u.roles.includes(Roles.AGENT),
+    )?.employee_code;
     const rrhAgent = await p.employee.findUnique({ where: { employee_code: rrhAgentCode } });
-    
+
     if (!rrhAgent) {
       throw new Error('Deterministic RRH AGENT not found');
     }
 
-    const tcBCode = crossOrgUsers.find(u => u.roles.includes(Roles.TELECALLER))?.employee_code;
+    const tcBCode = crossOrgUsers.find((u) => u.roles.includes(Roles.TELECALLER))?.employee_code;
     const tcB = await p.employee.findUnique({ where: { employee_code: tcBCode } });
 
     if (!tcB) {
@@ -47,15 +54,19 @@ describe('Phase 2 Security & Authorization Hardening', () => {
     const sontAgentCode = 'SONT-SEC-AGENT';
     const sontAgent = await p.employee.upsert({
       where: { employee_code: sontAgentCode },
-      update: { status: 'ACTIVE', company_id: tcB.company_id, password_hash: rrhAgent.password_hash },
+      update: {
+        status: 'ACTIVE',
+        company_id: tcB.company_id,
+        password_hash: rrhAgent.password_hash,
+      },
       create: {
         employee_code: sontAgentCode,
         full_name: 'SONT Security Agent',
         password_hash: rrhAgent.password_hash,
         status: 'ACTIVE',
         company_id: tcB.company_id,
-        roles: { create: { role: { connect: { name: Roles.AGENT } } } }
-      }
+        roles: { create: { role: { connect: { name: Roles.AGENT } } } },
+      },
     });
 
     rrhAgentId = rrhAgent.id;
@@ -67,7 +78,11 @@ describe('Phase 2 Security & Authorization Hardening', () => {
       companyId: rrhAgent.company_id,
       branchId: null as any,
       roles: [Roles.AGENT],
-      permissions: [Permissions.SITE_VISITS_COMPLETE, Permissions.SITE_VISITS_READ, Permissions.EMPLOYEES_READ],
+      permissions: [
+        Permissions.SITE_VISITS_COMPLETE,
+        Permissions.SITE_VISITS_READ,
+        Permissions.EMPLOYEES_READ,
+      ],
     });
 
     sontAgentToken = generateAccessToken({
@@ -85,12 +100,12 @@ describe('Phase 2 Security & Authorization Hardening', () => {
         property_code: 'RRH-PROP-SEC-01',
         company: { connect: { id: rrhAgent.company_id } },
         title: 'Security Test Property RRH',
-        price: 1000000,
+        final_price: 1000000,
         area_sqft: 1000,
         location: 'Hyderabad',
         created_by: { connect: { id: rrhAgentId } },
-        status: 'LIVE'
-      }
+        status: 'LIVE',
+      },
     });
     rrhPropertyId = propRRH.id;
 
@@ -100,12 +115,12 @@ describe('Phase 2 Security & Authorization Hardening', () => {
         property_code: 'RRH-PROP-SEC-02',
         company: { connect: { id: sontAgent.company_id } },
         title: 'Security Test Property SONT',
-        price: 1500000,
+        final_price: 1500000,
         area_sqft: 1200,
         location: 'Bangalore',
         created_by: { connect: { id: sontAgentId } },
-        status: 'LIVE'
-      }
+        status: 'LIVE',
+      },
     });
 
     // Create a Lead and Site Visit for RRH Agent
@@ -117,7 +132,7 @@ describe('Phase 2 Security & Authorization Hardening', () => {
         phone: '9999999999',
         created_by: { connect: { id: rrhAgentId } },
         assigned_to: { connect: { id: rrhAgentId } },
-      }
+      },
     });
     rrhLeadId = lead.id;
 
@@ -130,7 +145,7 @@ describe('Phase 2 Security & Authorization Hardening', () => {
         assigned_agent_id: rrhAgentId,
         status: 'SCHEDULED',
         scheduled_date: new Date(Date.now() + 86400000),
-      }
+      },
     });
     rrhVisitId = visit.id;
   });
@@ -150,12 +165,14 @@ describe('Phase 2 Security & Authorization Hardening', () => {
   describe('Ownership Enforcement', () => {
     it('should deny RRH Agent from completing a visit assigned to someone else', async () => {
       // Reassign visit to a different RRH user
-      const pmCode = deterministicUsers.find(u => u.roles.includes(Roles.PROJECT_MANAGER))?.employee_code;
+      const pmCode = deterministicUsers.find((u) =>
+        u.roles.includes(Roles.PROJECT_MANAGER),
+      )?.employee_code;
       const otherRRHUser = await p.employee.findUnique({ where: { employee_code: pmCode } });
-      
+
       await p.siteVisitBooking.update({
         where: { id: rrhVisitId },
-        data: { assigned_agent_id: otherRRHUser.id } // Removed from rrhAgentId
+        data: { assigned_agent_id: otherRRHUser.id }, // Removed from rrhAgentId
       });
 
       const res = await request(app)
@@ -170,7 +187,7 @@ describe('Phase 2 Security & Authorization Hardening', () => {
       // Revert assignment
       await p.siteVisitBooking.update({
         where: { id: rrhVisitId },
-        data: { assigned_agent_id: rrhAgentId }
+        data: { assigned_agent_id: rrhAgentId },
       });
     });
   });
@@ -184,7 +201,7 @@ describe('Phase 2 Security & Authorization Hardening', () => {
       expect(res.status).toBe(200);
       const employees = res.body.employees;
       expect(employees.length).toBeGreaterThan(0);
-      
+
       // Since rrhAgentToken does not have EMPLOYEES_VIEW_SENSITIVE, PAN should be absent
       employees.forEach((emp: any) => {
         expect(emp.panNumber).toBeUndefined();

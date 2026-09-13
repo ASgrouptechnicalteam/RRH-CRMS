@@ -3,6 +3,7 @@ import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/testUsers';
 import { Roles } from '@rrh-ems/shared';
+import { getISTComponents } from '../../apps/api/src/utils/time';
 
 /**
  * Phase 16 V1 — Packet A: Performance Route Closure Test.
@@ -24,8 +25,6 @@ import { Roles } from '@rrh-ems/shared';
  */
 const EXPECTED_FULL_SCORE = 52.0; // 50 + 2 + 0.5 + 0.5 - 1
 const EXPECTED_LEADERBOARD_SCORE = 52.5; // 50 + 2 + 0.5 (reduced)
-
-
 
 describe('Phase 16 Packet A — /performance route integration', () => {
   let mdToken: string;
@@ -94,13 +93,26 @@ describe('Phase 16 Packet A — /performance route integration', () => {
     });
     created.reportId = report.id;
 
+    // § Phase 4: check_in_at now genuinely affects scoring (a PRESENT log can
+    // earn 1.0/0.5/0.0 depending on time-of-day), where it used to be
+    // irrelevant (flat +0.5 for any PRESENT). Pinning it to 10:05 AM IST
+    // lands deterministically in the 10:00-10:15 "grace" tier (+0.5) either
+    // way — whether this test happens to run before or after the
+    // PERFORMANCE_TIER_CUTOVER date — instead of depending on whatever
+    // wall-clock time the suite happens to run at (the previous `now()`
+    // default was a real flakiness risk once time-of-day started mattering).
+    const todayIST = getISTComponents().dateString;
     const present = await prisma.attendanceLog.create({
-      data: { employee: { connect: { id: mdId } }, status: 'PRESENT' },
+      data: {
+        employee: { connect: { id: mdId } },
+        status: 'PRESENT',
+        check_in_at: new Date(`${todayIST}T10:05:00+05:30`),
+      },
     });
     const late = await prisma.attendanceLog.create({
       data: { employee: { connect: { id: mdId } }, status: 'LATE' },
     });
-        created.attendanceIds = [present.id, late.id];
+    created.attendanceIds = [present.id, late.id];
   });
 
   afterAll(async () => {

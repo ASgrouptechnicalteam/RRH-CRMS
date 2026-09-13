@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Phase 1 — Public Website API Boundary', () => {
@@ -29,7 +28,8 @@ describe('Phase 1 — Public Website API Boundary', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
     const md = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } });
     companyId = md!.company_id;
     mdEmployeeId = md!.id;
@@ -41,16 +41,24 @@ describe('Phase 1 — Public Website API Boundary', () => {
     mdToken = loginRes.body.accessToken;
 
     const testApiKey = `PHASE1-RRH-${Date.now()}`;
-    await p.publicApiKey.create({ data: { api_key: testApiKey, company_id: companyId, is_active: true } });
+    await p.publicApiKey.create({
+      data: { api_key: testApiKey, company_id: companyId, is_active: true },
+    });
     apiKey = testApiKey;
 
     // A second company for brand-isolation checks (its own API key).
     const secondCompany = await p.company.create({
-      data: { name: 'Phase1 Other Company', code: `PH1-OTHER-${Date.now()}`, property_type_group: 'RADHA_REAL_HOMES' },
+      data: {
+        name: 'Phase1 Other Company',
+        code: `PH1-OTHER-${Date.now()}`,
+        property_type_group: 'RADHA_REAL_HOMES',
+      },
     });
     secondCompanyId = secondCompany.id;
     const otherKey = `PHASE1-OTHER-${Date.now()}`;
-    await p.publicApiKey.create({ data: { api_key: otherKey, company_id: secondCompanyId, is_active: true } });
+    await p.publicApiKey.create({
+      data: { api_key: otherKey, company_id: secondCompanyId, is_active: true },
+    });
     secondCompanyKey = otherKey;
   });
 
@@ -64,7 +72,9 @@ describe('Phase 1 — Public Website API Boundary', () => {
     await prisma.$disconnect();
   });
 
-  const createLiveProperty = async (opts: { company?: number; projectId?: number; latitude?: number; longitude?: number } = {}) => {
+  const createLiveProperty = async (
+    opts: { company?: number; projectId?: number; latitude?: number; longitude?: number } = {},
+  ) => {
     const company = opts.company ?? companyId;
     const prop = await p.property.create({
       data: {
@@ -73,7 +83,7 @@ describe('Phase 1 — Public Website API Boundary', () => {
         title: 'Phase1 Detail Test Property',
         brand_type: 'RADHA_REAL_HOMES',
         category: 'PLOT',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Miyapur, Hyderabad',
         state: 'Telangana',
@@ -94,7 +104,12 @@ describe('Phase 1 — Public Website API Boundary', () => {
 
   const publish = async (propertyId: number, company: number = companyId) => {
     const pub = await p.propertyPublication.create({
-      data: { property_id: propertyId, company_id: company, is_published: true, published_at: new Date() },
+      data: {
+        property_id: propertyId,
+        company_id: company,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
     cleanupPublicationIds.push(pub.id);
     return pub;
@@ -104,9 +119,7 @@ describe('Phase 1 — Public Website API Boundary', () => {
     it('1. Response carries a X-Request-Id header', async () => {
       const prop = await createLiveProperty();
       await publish(prop.id);
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
       expect(res.status).toBe(200);
       expect(res.headers['x-request-id']).toBeDefined();
       expect(String(res.headers['x-request-id']).length).toBeGreaterThan(0);
@@ -189,7 +202,10 @@ describe('Phase 1 — Public Website API Boundary', () => {
     it('8. Reserved (active LOCKED) property returns 404', async () => {
       const prop = await createLiveProperty();
       await publish(prop.id);
-      await p.property.update({ where: { id: prop.id }, data: { status: 'LOCKED', locked_until: new Date(Date.now() + 3600000) } });
+      await p.property.update({
+        where: { id: prop.id },
+        data: { status: 'LOCKED', locked_until: new Date(Date.now() + 3600000) },
+      });
       const res = await request(app)
         .get(`/api/v1/public/rrh/properties/${prop.id}`)
         .set('x-api-key', apiKey);
@@ -199,7 +215,10 @@ describe('Phase 1 — Public Website API Boundary', () => {
     it('9. Expired LOCKED property is visible again', async () => {
       const prop = await createLiveProperty();
       await publish(prop.id);
-      await p.property.update({ where: { id: prop.id }, data: { status: 'LOCKED', locked_until: new Date(Date.now() - 3600000) } });
+      await p.property.update({
+        where: { id: prop.id },
+        data: { status: 'LOCKED', locked_until: new Date(Date.now() - 3600000) },
+      });
       const res = await request(app)
         .get(`/api/v1/public/rrh/properties/${prop.id}`)
         .set('x-api-key', apiKey);
@@ -242,9 +261,7 @@ describe('Phase 1 — Public Website API Boundary', () => {
     it('12. Property published to another company is not visible via list', async () => {
       const otherProp = await createLiveProperty({ company: secondCompanyId });
       await publish(otherProp.id, secondCompanyId);
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
       expect(res.status).toBe(200);
       const ids = res.body.map((x: any) => x.id);
       expect(ids).not.toContain(otherProp.id);
@@ -279,10 +296,22 @@ describe('Phase 1 — Public Website API Boundary', () => {
       const prop = await createLiveProperty();
       await publish(prop.id);
       await p.propertyImage.create({
-        data: { property_id: prop.id, image_url: 'https://example.com/approved.jpg', is_primary: true, uploaded_by_id: mdEmployeeId, status: 'APPROVED' },
+        data: {
+          property_id: prop.id,
+          image_url: 'https://example.com/approved.jpg',
+          is_primary: true,
+          uploaded_by_id: mdEmployeeId,
+          status: 'APPROVED',
+        },
       });
       await p.propertyImage.create({
-        data: { property_id: prop.id, image_url: 'https://example.com/pending.jpg', is_primary: false, uploaded_by_id: mdEmployeeId, status: 'PENDING' },
+        data: {
+          property_id: prop.id,
+          image_url: 'https://example.com/pending.jpg',
+          is_primary: false,
+          uploaded_by_id: mdEmployeeId,
+          status: 'PENDING',
+        },
       });
       const res = await request(app)
         .get(`/api/v1/public/rrh/properties/${prop.id}`)
@@ -315,7 +344,9 @@ describe('Phase 1 — Public Website API Boundary', () => {
       expect(status429).toBe(429);
       expect(code).toBe('RATE_LIMIT_EXCEEDED');
       // The 10 successful creates are cleaned up by customer_name prefix match below.
-      const created = await p.lead.findMany({ where: { customer_name: { startsWith: `${name}-` } } });
+      const created = await p.lead.findMany({
+        where: { customer_name: { startsWith: `${name}-` } },
+      });
       for (const lead of created) {
         cleanupLeadNames.push(lead.customer_name);
       }

@@ -1,12 +1,15 @@
 import request from 'supertest';
 import app from '../../apps/api/src/server';
 import { prisma } from '../../apps/api/src/lib/prisma';
-import { setupDeterministicTestUsers, deterministicUsers, crossOrgUsers } from '../fixtures/testUsers';
+import {
+  setupDeterministicTestUsers,
+  deterministicUsers,
+  crossOrgUsers,
+} from '../fixtures/testUsers';
 import { jest } from '@jest/globals';
 import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(45000);
-
 
 const p = prisma as any;
 
@@ -37,7 +40,9 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
       return res.body.accessToken;
     };
 
-    const agentCode = deterministicUsers.find(u => u.roles[0] === Roles.DIGITAL_LEAD_OPERATOR)!.employee_code;
+    const agentCode = deterministicUsers.find(
+      (u) => u.roles[0] === Roles.DIGITAL_LEAD_OPERATOR,
+    )!.employee_code;
     agentToken = await getAuth(agentCode, 1);
 
     const decoded = JSON.parse(Buffer.from(agentToken.split('.')[1], 'base64').toString());
@@ -53,32 +58,41 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
       data: {
         property_code: `TEST-PROP-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         title: 'Integration Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         status,
         company: { connect: { id: companyId } },
         created_by: { connect: { id: agentId } },
-        ...override
-      }
+        ...override,
+      },
     });
   };
 
-  const createTestLead = async (company_id: number = companyId, status: string = 'BOOKING_INITIATED') => {
+  const createTestLead = async (
+    company_id: number = companyId,
+    status: string = 'BOOKING_INITIATED',
+  ) => {
     return await p.lead.create({
       data: {
         lead_code: `TEST-LEAD-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         customer_name: `Test Lead ${Math.floor(Math.random() * 1000)}`,
-        phone: `99${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`,
+        phone: `99${Math.floor(Math.random() * 100000000)
+          .toString()
+          .padStart(8, '0')}`,
         status,
         company: { connect: { id: company_id } },
         assigned_to: { connect: { id: agentId } },
         created_by: { connect: { id: agentId } },
-      }
+      },
     });
   };
 
-  const createTestOpportunity = async (leadId: number, propertyId: number, company_id: number = companyId) => {
+  const createTestOpportunity = async (
+    leadId: number,
+    propertyId: number,
+    company_id: number = companyId,
+  ) => {
     return await p.opportunity.create({
       data: {
         opportunity_code: `TEST-OPP-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
@@ -86,11 +100,15 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
         lead: { connect: { id: leadId } },
         property: { connect: { id: propertyId } },
         owner: { connect: { id: agentId } },
-      }
+      },
     });
   };
 
-  const attemptConversion = async (oppId: number, token: string = agentToken, overrides: any = {}) => {
+  const attemptConversion = async (
+    oppId: number,
+    token: string = agentToken,
+    overrides: any = {},
+  ) => {
     return request(app)
       .post(`/api/v1/opportunities/${oppId}/convert-to-booking`)
       .set('Authorization', `Bearer ${token}`)
@@ -98,7 +116,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
         agreed_price: 4900000,
         booking_amount: 100000,
         notes: 'Conversion Test Booking',
-        ...overrides
+        ...overrides,
       });
   };
 
@@ -173,7 +191,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
   test('F. Existing Customer from Lead is reused', async () => {
     const prop1 = await createTestProperty('LIVE');
     const lead = await createTestLead();
-    
+
     // Convert first opp to create the customer
     const opp1 = await createTestOpportunity(lead.id, prop1.id);
     const res1 = await attemptConversion(opp1.id);
@@ -195,13 +213,10 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
     const lead = await createTestLead();
     const opp = await createTestOpportunity(lead.id, prop.id);
 
-    const [res1, res2] = await Promise.all([
-      attemptConversion(opp.id),
-      attemptConversion(opp.id)
-    ]);
+    const [res1, res2] = await Promise.all([attemptConversion(opp.id), attemptConversion(opp.id)]);
 
-    const successes = [res1, res2].filter(r => r.status === 201);
-    const conflicts = [res1, res2].filter(r => r.status === 409);
+    const successes = [res1, res2].filter((r) => r.status === 201);
+    const conflicts = [res1, res2].filter((r) => r.status === 409);
 
     // One succeeds, one conflicts on optimistic update if they hit exact same window.
     // Or if one wins entirely before the other starts, idempotency returns 201 for both.
@@ -210,7 +225,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
 
     const updatedOpp = await p.opportunity.findUnique({ where: { id: opp.id } });
     expect(updatedOpp.booking_id).not.toBeNull();
-    
+
     // Exactly one booking should exist for this opportunity
     const bookings = await p.booking.findMany({ where: { property_id: prop.id } });
     expect(bookings.length).toBe(1);
@@ -218,7 +233,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
 
   test('H. Two different Opportunities targeting the SAME Property', async () => {
     const prop = await createTestProperty('LIVE');
-    
+
     const lead1 = await createTestLead();
     const lead2 = await createTestLead();
 
@@ -227,11 +242,11 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
 
     const [res1, res2] = await Promise.all([
       attemptConversion(opp1.id),
-      attemptConversion(opp2.id)
+      attemptConversion(opp2.id),
     ]);
 
-    const successes = [res1, res2].filter(r => r.status === 201);
-    const conflicts = [res1, res2].filter(r => r.status === 409 || r.status === 400);
+    const successes = [res1, res2].filter((r) => r.status === 201);
+    const conflicts = [res1, res2].filter((r) => r.status === 409 || r.status === 400);
 
     expect(successes.length).toBe(1);
     expect(conflicts.length).toBe(1);
@@ -244,7 +259,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
   test('I. Different Opportunities targeting different Properties', async () => {
     const prop1 = await createTestProperty('LIVE');
     const prop2 = await createTestProperty('LIVE');
-    
+
     const lead1 = await createTestLead();
     const lead2 = await createTestLead();
 
@@ -253,7 +268,7 @@ describe('Phase 9 Packet 3 - Opportunity -> Booking Integration', () => {
 
     const [res1, res2] = await Promise.all([
       attemptConversion(opp1.id),
-      attemptConversion(opp2.id)
+      attemptConversion(opp2.id),
     ]);
 
     expect(res1.status).toBe(201);

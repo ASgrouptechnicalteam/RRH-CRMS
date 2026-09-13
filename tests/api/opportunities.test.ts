@@ -9,7 +9,6 @@ const app = express();
 app.use(express.json());
 app.use('/api/v1/opportunities', opportunityRoutes);
 
-
 const p = prisma as any;
 
 describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
@@ -34,28 +33,114 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
     const compB = await p.company.create({ data: { name: `Comp B ${ts}`, code: `C-B-${ts}` } });
     companyBId = compB.id;
 
-    const empA = await p.employee.create({ data: { company_id: companyAId, employee_code: `EA1-${ts}`, full_name: 'EA1', password_hash: '123' } });
+    const empA = await p.employee.create({
+      data: {
+        company_id: companyAId,
+        employee_code: `EA1-${ts}`,
+        full_name: 'EA1',
+        password_hash: '123',
+      },
+    });
     empAId = empA.id;
-    const empB = await p.employee.create({ data: { company_id: companyBId, employee_code: `EB1-${ts}`, full_name: 'EB1', password_hash: '123' } });
+    const empB = await p.employee.create({
+      data: {
+        company_id: companyBId,
+        employee_code: `EB1-${ts}`,
+        full_name: 'EB1',
+        password_hash: '123',
+      },
+    });
     empBId = empB.id;
 
-    const leadA = await p.lead.create({ data: { company_id: companyAId, lead_code: `LD-A-${ts}`, customer_name: 'Customer A', phone: '111', created_by_id: empAId, assigned_to_id: empAId, status: 'NEW' } });
+    const leadA = await p.lead.create({
+      data: {
+        company_id: companyAId,
+        lead_code: `LD-A-${ts}`,
+        customer_name: 'Customer A',
+        phone: '111',
+        created_by_id: empAId,
+        assigned_to_id: empAId,
+        status: 'NEW',
+      },
+    });
     leadAId = leadA.id;
-    const leadB = await p.lead.create({ data: { company_id: companyBId, lead_code: `LD-B-${ts}`, customer_name: 'Customer B', phone: '222', created_by_id: empBId, assigned_to_id: empBId, status: 'NEW' } });
+    const leadB = await p.lead.create({
+      data: {
+        company_id: companyBId,
+        lead_code: `LD-B-${ts}`,
+        customer_name: 'Customer B',
+        phone: '222',
+        created_by_id: empBId,
+        assigned_to_id: empBId,
+        status: 'NEW',
+      },
+    });
     leadBId = leadB.id;
 
-    const projA = await p.project.create({ data: { company_id: companyAId, project_code: `PRJ-A-${ts}`, name: 'Proj A', location: 'Loc A', status: 'PLANNING' } });
+    const projA = await p.project.create({
+      data: {
+        company_id: companyAId,
+        project_code: `PRJ-A-${ts}`,
+        name: 'Proj A',
+        location: 'Loc A',
+        status: 'PLANNING',
+      },
+    });
     projectAId = projA.id;
-    const projB = await p.project.create({ data: { company_id: companyBId, project_code: `PRJ-B-${ts}`, name: 'Proj B', location: 'Loc B', status: 'PLANNING' } });
+    const projB = await p.project.create({
+      data: {
+        company_id: companyBId,
+        project_code: `PRJ-B-${ts}`,
+        name: 'Proj B',
+        location: 'Loc B',
+        status: 'PLANNING',
+      },
+    });
     projectBId = projB.id;
 
-    const propA = await p.property.create({ data: { company_id: companyAId, property_code: `PRP-A-${ts}`, project_id: projectAId, title: 'Prop A', status: 'LIVE', category: 'APARTMENT', location: 'Loc A', created_by_id: empAId, price: 1000000, area_sqft: 1000 } });
+    const propA = await p.property.create({
+      data: {
+        company_id: companyAId,
+        property_code: `PRP-A-${ts}`,
+        project_id: projectAId,
+        title: 'Prop A',
+        status: 'LIVE',
+        category: 'APARTMENT',
+        location: 'Loc A',
+        created_by_id: empAId,
+        final_price: 1000000,
+        area_sqft: 1000,
+      },
+    });
     propertyAId = propA.id;
-    const propB = await p.property.create({ data: { company_id: companyBId, property_code: `PRP-B-${ts}`, project_id: projectBId, title: 'Prop B', status: 'LIVE', category: 'APARTMENT', location: 'Loc B', created_by_id: empBId, price: 2000000, area_sqft: 2000 } });
+    const propB = await p.property.create({
+      data: {
+        company_id: companyBId,
+        property_code: `PRP-B-${ts}`,
+        project_id: projectBId,
+        title: 'Prop B',
+        status: 'LIVE',
+        category: 'APARTMENT',
+        location: 'Loc B',
+        created_by_id: empBId,
+        final_price: 2000000,
+        area_sqft: 2000,
+      },
+    });
     propertyBId = propB.id;
 
-    tokenA = generateAccessToken({ employeeId: empAId, companyId: companyAId, roles: [Roles.AGENT], permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ] });
-    tokenB = generateAccessToken({ employeeId: empBId, companyId: companyBId, roles: [Roles.AGENT], permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ] });
+    tokenA = generateAccessToken({
+      employeeId: empAId,
+      companyId: companyAId,
+      roles: [Roles.AGENT],
+      permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ],
+    });
+    tokenB = generateAccessToken({
+      employeeId: empBId,
+      companyId: companyBId,
+      roles: [Roles.AGENT],
+      permissions: [Permissions.LEADS_UPDATE, Permissions.LEADS_READ],
+    });
   });
 
   it('Create Opportunity from valid Lead and check Lead status', async () => {
@@ -109,21 +194,19 @@ describe('Phase 8 Packet 2 - Opportunity Service & Security', () => {
     expect(res.status).toBe(400);
   });
 
-
-
   it('Cross-company Opportunity GET rejection', async () => {
     const oppRes = await request(app)
       .post('/api/v1/opportunities')
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ lead_id: leadAId });
-    
+
     const oppId = oppRes.body.opportunity.id;
 
     // Company B trying to read Company A opportunity
     const res = await request(app)
       .get(`/api/v1/opportunities/${oppId}`)
       .set('Authorization', `Bearer ${tokenB}`);
-    
+
     expect(res.status).toBe(404);
   });
 });

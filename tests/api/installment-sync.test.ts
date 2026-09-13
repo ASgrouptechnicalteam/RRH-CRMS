@@ -9,7 +9,6 @@ import { PortalWorker } from '../../apps/api/src/services/portalWorker';
 
 jest.setTimeout(45000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
@@ -111,7 +110,7 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
         property_code: `H-C1P-${suffix}`,
         company_id: company1Id,
         title: '3H Company1 Property',
-        price: 10000000,
+        final_price: 10000000,
         area_sqft: 1500,
         location: 'Test Loc',
         status: 'LIVE',
@@ -188,7 +187,7 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
         property_code: `H-C2P-${suffix}`,
         company_id: company2Id,
         title: '3H Company2 Property',
-        price: 8000000,
+        final_price: 8000000,
         area_sqft: 1200,
         location: 'Test Loc',
         status: 'LIVE',
@@ -238,12 +237,18 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
       where: { booking_id: { in: allBookings } },
     });
     await p.booking.deleteMany({ where: { id: { in: allBookings } } });
-    await p.property.deleteMany({ where: { id: { in: [c1PropertyId, c2PropertyId].filter(Boolean) } } });
-    await p.customer.deleteMany({ where: { id: { in: [c1CustomerId, c2CustomerId].filter(Boolean) } } });
+    await p.property.deleteMany({
+      where: { id: { in: [c1PropertyId, c2PropertyId].filter(Boolean) } },
+    });
+    await p.customer.deleteMany({
+      where: { id: { in: [c1CustomerId, c2CustomerId].filter(Boolean) } },
+    });
     await p.auditEvent.deleteMany({
       where: {
         entity_id: {
-          in: [c1InstallmentId, negInstallmentId, c2InstallmentId, ...createdPaymentIds].filter(Boolean),
+          in: [c1InstallmentId, negInstallmentId, c2InstallmentId, ...createdPaymentIds].filter(
+            Boolean,
+          ),
         },
         action: { startsWith: 'INSTALLMENT_SYNC' },
       },
@@ -271,12 +276,18 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
     installmentId: number,
     amount: number,
     token: string,
-    reference = 'TXN-3H'
+    reference = 'TXN-3H',
   ): Promise<number> => {
     const res = await request(app)
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${token}`)
-      .send({ booking_id: bookingId, installment_id: installmentId, amount, payment_method: 'BANK_TRANSFER', reference_number: reference });
+      .send({
+        booking_id: bookingId,
+        installment_id: installmentId,
+        amount,
+        payment_method: 'BANK_TRANSFER',
+        reference_number: reference,
+      });
     expect(res.status).toBe(201);
     createdPaymentIds.push(res.body.id);
     return res.body.id;
@@ -296,7 +307,13 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
     });
 
   test('1. PENDING → PARTIALLY_RECEIVED emits INSTALLMENT_STATUS_CHANGED with correct payload', async () => {
-    const paymentId = await recordPayment(c1BookingId, c1InstallmentId, 2000000, financeToken, 'TXN-3H-1');
+    const paymentId = await recordPayment(
+      c1BookingId,
+      c1InstallmentId,
+      2000000,
+      financeToken,
+      'TXN-3H-1',
+    );
     const res = await verifyPayment(paymentId, 'SUCCESS', financeToken);
     expect(res.status).toBe(200);
 
@@ -328,7 +345,13 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
   });
 
   test('2. A second partial payment keeps PARTIALLY_RECEIVED and emits NO duplicate event', async () => {
-    const paymentId = await recordPayment(c1BookingId, c1InstallmentId, 1000000, financeToken, 'TXN-3H-2');
+    const paymentId = await recordPayment(
+      c1BookingId,
+      c1InstallmentId,
+      1000000,
+      financeToken,
+      'TXN-3H-2',
+    );
     const res = await verifyPayment(paymentId, 'SUCCESS', financeToken);
     expect(res.status).toBe(200);
 
@@ -342,7 +365,13 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
   });
 
   test('3. PARTIALLY_RECEIVED → RECEIVED emits cleared state with zero remaining', async () => {
-    const paymentId = await recordPayment(c1BookingId, c1InstallmentId, 2000000, financeToken, 'TXN-3H-3');
+    const paymentId = await recordPayment(
+      c1BookingId,
+      c1InstallmentId,
+      2000000,
+      financeToken,
+      'TXN-3H-3',
+    );
     const res = await verifyPayment(paymentId, 'SUCCESS', financeToken);
     expect(res.status).toBe(200);
 
@@ -357,7 +386,13 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
   });
 
   test('4. FAILED verify does NOT emit an installment event and does not change installment state', async () => {
-    const paymentId = await recordPayment(negBookingId, negInstallmentId, 100000, financeToken, 'TXN-3H-4');
+    const paymentId = await recordPayment(
+      negBookingId,
+      negInstallmentId,
+      100000,
+      financeToken,
+      'TXN-3H-4',
+    );
     const res = await verifyPayment(paymentId, 'FAILED', financeToken);
     expect(res.status).toBe(200);
 
@@ -370,7 +405,13 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
   });
 
   test('5. Duplicate verifyPayment (already SUCCESS) cannot emit a second event', async () => {
-    const paymentId = await recordPayment(negBookingId, negInstallmentId, 500000, financeToken, 'TXN-3H-5');
+    const paymentId = await recordPayment(
+      negBookingId,
+      negInstallmentId,
+      500000,
+      financeToken,
+      'TXN-3H-5',
+    );
     const first = await verifyPayment(paymentId, 'SUCCESS', financeToken);
     expect(first.status).toBe(200);
 
@@ -453,7 +494,18 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
     expect(terminalAudit).toBeTruthy();
 
     await p.integrationEvent.delete({ where: { id: event.id } });
-    await p.auditEvent.deleteMany({ where: { entity_id: c1InstallmentId, action: { in: ['INSTALLMENT_SYNC_INITIATED', 'INSTALLMENT_SYNC_FAILED', 'INSTALLMENT_SYNC_TERMINAL_FAILURE'] } } });
+    await p.auditEvent.deleteMany({
+      where: {
+        entity_id: c1InstallmentId,
+        action: {
+          in: [
+            'INSTALLMENT_SYNC_INITIATED',
+            'INSTALLMENT_SYNC_FAILED',
+            'INSTALLMENT_SYNC_TERMINAL_FAILURE',
+          ],
+        },
+      },
+    });
   });
 
   test('8. Tenant isolation — Company-1 installment event never references Company-2 data', async () => {
@@ -471,7 +523,13 @@ describe('Phase 11 Packet 3H - Installment / Financial Status Sync', () => {
 
   test('9. Company-2 collection is isolated — no Company-2 event leaks into Company-1 query and vice versa', async () => {
     // Verify a Company-2 installment fully in one go (PENDING → RECEIVED).
-    const paymentId = await recordPayment(c2BookingId, c2InstallmentId, 4000000, md2Token, 'TXN-3H-C2-1');
+    const paymentId = await recordPayment(
+      c2BookingId,
+      c2InstallmentId,
+      4000000,
+      md2Token,
+      'TXN-3H-C2-1',
+    );
     const res = await verifyPayment(paymentId, 'SUCCESS', md2Token);
     expect(res.status).toBe(200);
 

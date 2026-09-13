@@ -7,7 +7,6 @@ import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(45000);
 
-
 const p = prisma as any;
 
 describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
@@ -41,9 +40,11 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
       return res.body.accessToken;
     };
 
-    const adminCode = deterministicUsers.find(u => u.roles[0] === Roles.ADMIN)!.employee_code;
-    const financeCode = deterministicUsers.find(u => u.roles[0] === Roles.FINANCE)!.employee_code;
-    const telecallerCode = deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!.employee_code;
+    const adminCode = deterministicUsers.find((u) => u.roles[0] === Roles.ADMIN)!.employee_code;
+    const financeCode = deterministicUsers.find((u) => u.roles[0] === Roles.FINANCE)!.employee_code;
+    const telecallerCode = deterministicUsers.find(
+      (u) => u.roles[0] === Roles.TELECALLER,
+    )!.employee_code;
 
     tokenAdmin = await getAuth(adminCode, 1);
     tokenFinance = await getAuth(financeCode, 2);
@@ -76,7 +77,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         phone: '1111111111',
         status: 'NEW',
         customer_code: 'C-P4-001',
-      }
+      },
     });
     customerId = customer.id;
 
@@ -86,14 +87,14 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         title: 'Packet 4 Title',
         company_id: companyId,
         status: 'BOOKED',
-        price: 10000000,
+        final_price: 10000000,
         bedrooms: 3,
         area_sqft: 1000,
         facing: 'EAST',
         property_code: 'PROP-P4-001',
         location: 'Test Location',
         created_by_id: adminEmployeeId,
-      }
+      },
     });
     propertyId = property.id;
 
@@ -107,7 +108,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         booking_amount: 100000,
         balance_amount: 9900000,
         status: 'INITIATED',
-      }
+      },
     });
     bookingId = booking.id;
   });
@@ -135,7 +136,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         due_date: new Date(Date.now() + 86400000).toISOString(),
         remarks: 'First installment',
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.expected_amount).toBe(500000);
     expect(res.body.status).toBe('PENDING');
@@ -152,7 +153,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         expected_amount: 100000,
         due_date: new Date(Date.now() + 86400000).toISOString(),
       });
-    
+
     // Telecaller lacks BOOKINGS_UPDATE permissions
     expect(res.status).toBe(403);
   });
@@ -161,13 +162,13 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
     // Force due date to past for lazy evaluation check
     await prisma.installment.update({
       where: { id: installmentId },
-      data: { due_date: new Date(Date.now() - 86400000) }
+      data: { due_date: new Date(Date.now() - 86400000) },
     });
 
     const res = await request(app)
       .get(`/api/v1/installments?booking_id=${bookingId}`)
       .set('Authorization', `Bearer ${tokenFinance}`);
-    
+
     expect(res.status).toBe(200);
     expect(res.body.length).toBe(1);
     expect(res.body[0].status).toBe('OVERDUE');
@@ -183,7 +184,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         expected_amount: 200000,
         due_date: new Date(Date.now() + 86400000).toISOString(),
       });
-    
+
     expect(res.status).toBe(409);
   });
 
@@ -201,13 +202,13 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         payment_method: 'BANK_TRANSFER',
         reference_number: 'TXN-123',
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.status).toBe('PENDING');
     paymentId = res.body.id;
 
     // Check installment is unaffected before verification
-    let inst = await prisma.installment.findUnique({ where: { id: installmentId }});
+    let inst = await prisma.installment.findUnique({ where: { id: installmentId } });
     expect(inst?.received_amount).toBe(0);
 
     // 2. Verify
@@ -215,18 +216,18 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
       .put(`/api/v1/payments/${paymentId}/status`)
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ status: 'SUCCESS' });
-    
+
     expect(verifyRes.status).toBe(200);
 
     // Check installment updated
-    inst = await prisma.installment.findUnique({ where: { id: installmentId }});
+    inst = await prisma.installment.findUnique({ where: { id: installmentId } });
     expect(inst?.received_amount).toBe(200000);
     expect(inst?.status).toBe('PARTIALLY_RECEIVED');
 
     // Check booking status not confirmed
-    const bkg = await prisma.booking.findUnique({ where: { id: bookingId }});
+    const bkg = await prisma.booking.findUnique({ where: { id: bookingId } });
     expect(bkg?.status).toBe('INITIATED');
-    
+
     // Check booking balance UNCHANGED (Legacy rule untouched)
     expect(bkg?.balance_amount).toBe(9900000);
   });
@@ -241,17 +242,17 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         amount: 300000,
         payment_method: 'CASH',
       });
-    
+
     const pId = res.body.id;
 
     const verifyRes = await request(app)
       .put(`/api/v1/payments/${pId}/status`)
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ status: 'SUCCESS' });
-    
+
     expect(verifyRes.status).toBe(200);
 
-    const inst = await prisma.installment.findUnique({ where: { id: installmentId }});
+    const inst = await prisma.installment.findUnique({ where: { id: installmentId } });
     expect(inst?.received_amount).toBe(500000);
     expect(inst?.status).toBe('RECEIVED');
     expect(inst?.received_date).not.toBeNull();
@@ -267,7 +268,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
         amount: 1, // Exceeds balance because it's already full
         payment_method: 'CASH',
       });
-    
+
     expect(res.status).toBe(400);
   });
 
@@ -289,16 +290,22 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ booking_id: bookingId, installment_id: iId, amount: 100000, payment_method: 'CASH' });
-    
+
     const p2 = await request(app)
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ booking_id: bookingId, installment_id: iId, amount: 100000, payment_method: 'CASH' });
-    
+
     // Now verify them concurrently
     const [res1, res2] = await Promise.all([
-      request(app).put(`/api/v1/payments/${p1.body.id}/status`).set('Authorization', `Bearer ${tokenFinance}`).send({ status: 'SUCCESS' }),
-      request(app).put(`/api/v1/payments/${p2.body.id}/status`).set('Authorization', `Bearer ${tokenFinance}`).send({ status: 'SUCCESS' }),
+      request(app)
+        .put(`/api/v1/payments/${p1.body.id}/status`)
+        .set('Authorization', `Bearer ${tokenFinance}`)
+        .send({ status: 'SUCCESS' }),
+      request(app)
+        .put(`/api/v1/payments/${p2.body.id}/status`)
+        .set('Authorization', `Bearer ${tokenFinance}`)
+        .send({ status: 'SUCCESS' }),
     ]);
 
     // One must succeed (200), one must fail (409) because it detects optimistic lock failure
@@ -306,7 +313,7 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
     expect(statuses).toEqual([200, 409]);
 
     // Final installment state must be exactly 100000
-    const instCheck = await prisma.installment.findUnique({ where: { id: iId }});
+    const instCheck = await prisma.installment.findUnique({ where: { id: iId } });
     expect(instCheck?.received_amount).toBe(100000);
   });
 
@@ -316,13 +323,13 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send({ booking_id: bookingId, amount: 100, payment_method: 'CASH' }); // Legacy payment
-    
+
     // Admin tries to verify
     const verifyRes = await request(app)
       .put(`/api/v1/payments/${p1.body.id}/status`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send({ status: 'SUCCESS' });
-    
+
     // Forbidden because Admin lacks finance verifier explicitly
     expect(verifyRes.status).toBe(403);
   });
@@ -333,22 +340,22 @@ describe('Phase 9 Packet 4 - Operational Installments & Collections', () => {
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ booking_id: bookingId, amount: 50000, payment_method: 'CASH' });
-    
+
     const verifyRes = await request(app)
       .put(`/api/v1/payments/${p1.body.id}/status`)
       .set('Authorization', `Bearer ${tokenFinance}`)
       .send({ status: 'SUCCESS' });
-    
+
     expect(verifyRes.status).toBe(200);
 
     // This should decrement the booking balance because it's legacy
-    const bkg = await prisma.booking.findUnique({ where: { id: bookingId }});
+    const bkg = await prisma.booking.findUnique({ where: { id: bookingId } });
     expect(bkg?.balance_amount).toBe(9900000 - 50000); // Because first installment didn't touch it
   });
 
   it('K. Audit event is created for collection mutation', async () => {
     const evts = await prisma.auditEvent.findMany({
-      where: { action: 'INSTALLMENT_COLLECTED' }
+      where: { action: 'INSTALLMENT_COLLECTED' },
     });
     expect(evts.length).toBeGreaterThan(0);
   });

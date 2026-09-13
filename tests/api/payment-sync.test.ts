@@ -8,7 +8,6 @@ import { PortalWorker } from '../../apps/api/src/services/portalWorker';
 
 jest.setTimeout(45000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3F - Payment Synchronization', () => {
@@ -47,8 +46,8 @@ describe('Phase 11 Packet 3F - Payment Synchronization', () => {
       return res.body.accessToken;
     };
 
-    const mdCode = deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code;
-    const financeCode = deterministicUsers.find(u => u.roles[0] === Roles.FINANCE)!.employee_code;
+    const mdCode = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code;
+    const financeCode = deterministicUsers.find((u) => u.roles[0] === Roles.FINANCE)!.employee_code;
 
     mdToken = await getAuth(mdCode, 0);
     financeToken = await getAuth(financeCode, 1);
@@ -84,7 +83,7 @@ describe('Phase 11 Packet 3F - Payment Synchronization', () => {
         title: 'Payment Sync Title',
         company_id: companyId,
         status: 'BOOKED',
-        price: 10000000,
+        final_price: 10000000,
         bedrooms: 3,
         area_sqft: 1000,
         facing: 'EAST',
@@ -542,7 +541,7 @@ describe('Phase 11 Packet 3F - Payment Synchronization', () => {
         crms_booking_id: bookingId,
         payment_id: rec,
       },
-      'wrong-secret'
+      'wrong-secret',
     );
     expect(noAuth.status).toBe(401);
   });

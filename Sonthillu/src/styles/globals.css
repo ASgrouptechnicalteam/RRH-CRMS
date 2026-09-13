@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  /* === PRIMARY BRAND — from the house frame in the logo === */
+  --color-brand-navy: #1c2b5a;
+  --color-brand-navy-dark: #111d3e;
+  --color-brand-navy-light: #2a3d72;
+
+  /* === GOLD — from the sun rays & "SONTHILLU" lettering === */
+  --color-brand-gold: #c9a830;
+  --color-brand-gold-dark: #a88820;
+  --color-brand-gold-soft: #e0c050;
+  --color-brand-gold-pale: #fdf6dc;
+
+  /* === BRICK RED — from the brick wall base in the logo === */
+  --color-brand-brick: #b04030;
+  --color-brand-brick-light: #f5e8e5;
+
+  /* === GREEN — from the grass strip in the logo === */
+  --color-brand-green: #3a7c35;
+  --color-brand-green-light: #e8f4e7;
+
+  /* === SKY BLUE — from the family figures in the logo === */
+  --color-brand-sky: #5b8ec4;
+  --color-brand-sky-light: #e8f0f9;
+
+  /* === WARM NEUTRALS — "Own Home" warmth === */
+  --color-cream: #fdf8f0;
+  --color-cream-dark: #f5efe0;
+  --color-warm-white: #fffdf9;
+
+  /* === TEXT === */
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #4a4a6a;
+  --color-text-muted: #8888a8;
+  --color-border: #e4ddd0;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9f6f0;
+
+  /* === STATES === */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+
+  /* === TYPOGRAPHY === */
+  --font-family-display: 'Playfair Display', Georgia, serif;
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  /* === SHADOWS === */
+  --shadow-nav: 0 2px 16px rgba(28, 43, 90, 0.10);
+  --shadow-card: 0 4px 20px rgba(28, 43, 90, 0.08);
+  --shadow-gold: 0 4px 20px rgba(201, 168, 48, 0.25);
+}
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-muted);
+}
+
+/* Utility classes that don't rely on @apply */
+@utility container-page {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+@utility container-narrow {
+  @apply mx-auto max-w-3xl px-4 sm:px-6 lg:px-8;
+}
+
+@utility container-wide {
+  @apply mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8;
+}
+
+@utility section-spacing {
+  @apply py-16 md:py-20 lg:py-24;
+}
+
+@utility text-meta {
+  @apply text-sm text-text-muted;
+}

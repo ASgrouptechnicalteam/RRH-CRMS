@@ -1,0 +1,45 @@
+{
+  "name": "sonthillu-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sonthillu Constructions - Public Website",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "eslint-plugin-next": "^0.0.0",
+    "ioredis": "^6.0.0",
+    "next": "^16.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "^16.3.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "postcss": "^8.5.0",
+    "prettier": "^3.5.0",
+    "prisma": "^6.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.10"
+  }
+}

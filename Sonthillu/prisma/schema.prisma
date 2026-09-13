@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id                  Int                      @id @default(autoincrement())
+  firstName           String
+  lastName            String?
+  email               String                   @unique
+  phone               String?
+  passwordHash        String
+  emailVerifiedAt     DateTime?
+  sellerStatus        String                   @default("NONE")
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  lastLoginAt         DateTime?
+  activities          ActivityEvent[]
+  compareItems        CompareItem[]
+  CustomerPreference  CustomerPreference?
+  verificationTokens  EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  sessions            Session[]
+  shortlistItems      ShortlistItem[]
+
+  @@map("customers")
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  customerId       Int
+  sessionTokenHash String    @unique
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  lastSeenAt       DateTime  @default(now())
+  revokedAt        DateTime?
+  userAgent        String?
+  customer         Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@map("sessions")
+}
+
+model EmailVerificationToken {
+  id         String    @id @default(uuid())
+  customerId Int
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  customerId Int
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@map("password_reset_tokens")
+}
+
+model ShortlistItem {
+  id         String   @id @default(uuid())
+  customerId Int
+  propertyId Int
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, propertyId])
+  @@map("shortlist_items")
+}
+
+model CompareItem {
+  id         String   @id @default(uuid())
+  customerId Int
+  propertyId Int
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, propertyId])
+  @@map("compare_items")
+}
+
+model CustomerPreference {
+  id                 String   @id @default(uuid())
+  customerId         Int      @unique
+  propertyType       String?
+  bhk                String?
+  budget             String?
+  preferredLocations String?
+  communicationPref  String   @default("EMAIL")
+  updatedAt          DateTime @updatedAt
+  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_preferences")
+}
+
+model ActivityEvent {
+  id            String    @id @default(uuid())
+  customerId    Int?
+  anonymousId   String?
+  eventName     String
+  page          String?
+  propertyId    Int?
+  projectId     Int?
+  searchContext String?   @db.LongText
+  metadata      String?   @db.LongText
+  occurredAt    DateTime  @default(now())
+  customer      Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([anonymousId])
+  @@index([occurredAt])
+  @@index([eventName])
+  @@index([propertyId])
+  @@index([projectId])
+  @@map("activity_events")
+}
+
+model Admin {
+  id           Int             @id @default(autoincrement())
+  email        String          @unique
+  passwordHash String
+  name         String
+  role         String          @default("ANALYST")
+  active       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  lastLoginAt  DateTime?
+  auditLogs    AdminAuditLog[]
+  sessions     AdminSession[]
+
+  @@map("admins")
+}
+
+model AdminSession {
+  id               String    @id @default(uuid())
+  adminId          Int
+  sessionTokenHash String    @unique
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  lastSeenAt       DateTime  @default(now())
+  revokedAt        DateTime?
+  userAgent        String?
+  admin            Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("admin_sessions")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    Int
+  action     String
+  target     String?
+  targetId   String?
+  summary    String   @db.Text
+  metadata   String?  @db.LongText
+  occurredAt DateTime @default(now())
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([occurredAt])
+  @@index([action])
+  @@map("admin_audit_logs")
+}
+
+model HeroSlide {
+  id               String   @id @default(uuid())
+  imageUrl         String
+  title            String
+  subtitle         String
+  ctaLabel         String
+  ctaUrl           String
+  displayOrder     Int      @default(0)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdByAdminId Int?
+
+  @@index([active])
+  @@index([displayOrder])
+  @@map("hero_slides")
+}

@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('WR-5: Public Project Publication + Detail', () => {
@@ -34,10 +33,14 @@ describe('WR-5: Public Project Publication + Detail', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!
+      .company_id;
 
-    const employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.id;
+    const employeeId = (await prisma.employee.findFirst({
+      where: { employee_code: getCode(Roles.MD) },
+    }))!.id;
 
     // Create test API key
     const testApiKey = `WR5-PROJECT-${Date.now()}`;
@@ -115,7 +118,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'RRH Commercial Plot',
         brand_type: 'RADHA_REAL_HOMES',
         category: 'PLOT',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 2000,
         location: 'Gachibowli',
         status: 'LIVE',
@@ -134,7 +137,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'Sonthillu Apartment',
         brand_type: 'SONTHILLU',
         category: 'APARTMENT',
-        price: 8000000,
+        final_price: 8000000,
         area_sqft: 1200,
         location: 'Miyapur',
         status: 'LIVE',
@@ -153,7 +156,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'Dual Tower A',
         brand_type: 'SONTHILLU',
         category: 'APARTMENT',
-        price: 9000000,
+        final_price: 9000000,
         area_sqft: 1500,
         location: 'Kondapur',
         status: 'LIVE',
@@ -171,7 +174,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'Dual Tower B',
         brand_type: 'RADHA_REAL_HOMES',
         category: 'PLOT',
-        price: 6000000,
+        final_price: 6000000,
         area_sqft: 1800,
         location: 'Kondapur',
         status: 'LIVE',
@@ -190,7 +193,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'Live Unit',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
-        price: 12000000,
+        final_price: 12000000,
         area_sqft: 2500,
         location: 'Kondapur',
         status: 'LIVE',
@@ -208,7 +211,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'Locked Unit',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
-        price: 11000000,
+        final_price: 11000000,
         area_sqft: 2200,
         location: 'Kondapur',
         status: 'LOCKED',
@@ -227,7 +230,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
         title: 'Booked Unit',
         brand_type: 'SONTHILLU',
         category: 'APARTMENT',
-        price: 7500000,
+        final_price: 7500000,
         area_sqft: 1100,
         location: 'Kondapur',
         status: 'BOOKED',
@@ -241,30 +244,65 @@ describe('WR-5: Public Project Publication + Detail', () => {
 
     // RRH project property → RRH brand only
     await p.propertyPublication.create({
-      data: { property_id: rrhPropertyId, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: rrhPropertyId,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
 
     // Sonthillu project property → Sonthillu brand only
     await p.propertyPublication.create({
-      data: { property_id: sonthilluPropertyId, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: sonthilluPropertyId,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
 
     // Both-brand project → both publications
     await p.propertyPublication.create({
-      data: { property_id: bothPropertyId1, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: bothPropertyId1,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
     await p.propertyPublication.create({
-      data: { property_id: bothPropertyId2, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: bothPropertyId2,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
     // Also publish inventory test properties
     await p.propertyPublication.create({
-      data: { property_id: livePropertyId, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: livePropertyId,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
     await p.propertyPublication.create({
-      data: { property_id: lockedPropertyId, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: lockedPropertyId,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
     await p.propertyPublication.create({
-      data: { property_id: bookedPropertyId, company_id: companyId, is_published: true, published_at: new Date() },
+      data: {
+        property_id: bookedPropertyId,
+        company_id: companyId,
+        is_published: true,
+        published_at: new Date(),
+      },
     });
 
     // Unpublished project has NO publications
@@ -274,17 +312,53 @@ describe('WR-5: Public Project Publication + Detail', () => {
     // Clean up in FK order
     await p.propertyPublication.deleteMany({
       where: {
-        property_id: { in: [rrhPropertyId, sonthilluPropertyId, bothPropertyId1, bothPropertyId2, livePropertyId, lockedPropertyId, bookedPropertyId] },
+        property_id: {
+          in: [
+            rrhPropertyId,
+            sonthilluPropertyId,
+            bothPropertyId1,
+            bothPropertyId2,
+            livePropertyId,
+            lockedPropertyId,
+            bookedPropertyId,
+          ],
+        },
       },
     });
     await p.propertyImage.deleteMany({
-      where: { property_id: { in: [rrhPropertyId, sonthilluPropertyId, bothPropertyId1, bothPropertyId2, livePropertyId, lockedPropertyId, bookedPropertyId] } },
+      where: {
+        property_id: {
+          in: [
+            rrhPropertyId,
+            sonthilluPropertyId,
+            bothPropertyId1,
+            bothPropertyId2,
+            livePropertyId,
+            lockedPropertyId,
+            bookedPropertyId,
+          ],
+        },
+      },
     });
     await p.property.deleteMany({
-      where: { id: { in: [rrhPropertyId, sonthilluPropertyId, bothPropertyId1, bothPropertyId2, livePropertyId, lockedPropertyId, bookedPropertyId] } },
+      where: {
+        id: {
+          in: [
+            rrhPropertyId,
+            sonthilluPropertyId,
+            bothPropertyId1,
+            bothPropertyId2,
+            livePropertyId,
+            lockedPropertyId,
+            bookedPropertyId,
+          ],
+        },
+      },
     });
     await p.project.deleteMany({
-      where: { id: { in: [rrhProjectId, sonthilluProjectId, bothBrandProjectId, unpublishedProjectId] } },
+      where: {
+        id: { in: [rrhProjectId, sonthilluProjectId, bothBrandProjectId, unpublishedProjectId] },
+      },
     });
     await p.publicApiKey.deleteMany({ where: { api_key: apiKey } });
     await prisma.$disconnect();
@@ -294,9 +368,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
 
   describe('Project Visibility — Brand Isolation', () => {
     it('1. RRH-only project visible to RRH request', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/projects')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/projects').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const names = res.body.map((p: any) => p.name);
@@ -324,9 +396,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
     });
 
     it('4. Sonthillu-only project hidden from RRH request', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/projects')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/projects').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const names = res.body.map((p: any) => p.name);
@@ -334,9 +404,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
     });
 
     it('5. Dual-published project visible to both brands', async () => {
-      const rrh = await request(app)
-        .get('/api/v1/public/rrh/projects')
-        .set('x-api-key', apiKey);
+      const rrh = await request(app).get('/api/v1/public/rrh/projects').set('x-api-key', apiKey);
       const son = await request(app)
         .get('/api/v1/public/sonthillu/projects')
         .set('x-api-key', apiKey);
@@ -350,9 +418,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
     });
 
     it('6. Unpublished project hidden from both brands', async () => {
-      const rrh = await request(app)
-        .get('/api/v1/public/rrh/projects')
-        .set('x-api-key', apiKey);
+      const rrh = await request(app).get('/api/v1/public/rrh/projects').set('x-api-key', apiKey);
       const son = await request(app)
         .get('/api/v1/public/sonthillu/projects')
         .set('x-api-key', apiKey);
@@ -427,7 +493,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
       const inv = res.body.inventory_summary;
       // LIVE → available, LOCKED expired → available, BOOKED → sold
       expect(inv.available).toBeGreaterThanOrEqual(2); // bothProp1 + liveProp + lockedProp (expired)
-      expect(inv.sold).toBeGreaterThanOrEqual(1);      // bookedProp
+      expect(inv.sold).toBeGreaterThanOrEqual(1); // bookedProp
     });
 
     it('13. Expired LOCKED property treated as AVAILABLE', async () => {
@@ -514,7 +580,8 @@ describe('WR-5: Public Project Publication + Detail', () => {
           property_id: rrhPropertyId,
           image_url: 'https://example.com/approved.jpg',
           is_primary: true,
-          uploaded_by_id: (await prisma.employee.findFirst({ where: { company_id: companyId } }))!.id,
+          uploaded_by_id: (await prisma.employee.findFirst({ where: { company_id: companyId } }))!
+            .id,
           status: 'APPROVED',
         },
       });
@@ -545,8 +612,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
 
   describe('Error Handling', () => {
     it('20. Missing API key returns 401', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/projects');
+      const res = await request(app).get('/api/v1/public/rrh/projects');
 
       expect(res.status).toBe(401);
     });
@@ -568,9 +634,7 @@ describe('WR-5: Public Project Publication + Detail', () => {
     });
 
     it('23. Negative project ID returns 404', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/projects/-1')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/projects/-1').set('x-api-key', apiKey);
 
       expect(res.status).toBe(404);
     });

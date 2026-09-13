@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('WR-1 P0-2: Public-Safe Property Responses', () => {
@@ -60,8 +59,11 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    const mdEmployee = await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } });
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+    const mdEmployee = await prisma.employee.findFirst({
+      where: { employee_code: getCode(Roles.MD) },
+    });
     companyId = mdEmployee!.company_id;
 
     // Create a test API key
@@ -84,7 +86,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
         title: 'Safety Test Property',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
-        price: 10000000,
+        final_price: 10000000,
         area_sqft: 2000,
         location: 'Test Location',
         status: 'LIVE',
@@ -114,9 +116,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
 
   describe('Field Filtering', () => {
     it('returns only public-safe fields', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -132,9 +132,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
     });
 
     it('does NOT expose internal fields', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const prop = res.body.find((p: any) => p.id === propertyId);
@@ -147,9 +145,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
     });
 
     it('does NOT expose nested Employee objects', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const prop = res.body.find((p: any) => p.id === propertyId);
@@ -173,9 +169,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
         },
       });
 
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const prop = res.body.find((p: any) => p.id === propertyId);
@@ -198,9 +192,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
 
   describe('Broken FAQ Include Removed', () => {
     it('does not crash (faqs include removed)', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       // Should NOT be 500 (which would happen if faqs: true referenced a non-existent model)
       expect(res.status).not.toBe(500);
@@ -210,8 +202,7 @@ describe('WR-1 P0-2: Public-Safe Property Responses', () => {
 
   describe('Authentication', () => {
     it('rejects request without API key', async () => {
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties');
+      const res = await request(app).get('/api/v1/public/rrh/properties');
 
       expect(res.status).toBe(401);
     });

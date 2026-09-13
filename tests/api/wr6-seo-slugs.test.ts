@@ -8,7 +8,6 @@ import { slugify, generateUniqueSlug } from '../../apps/api/src/utils/slugify';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('WR-6: SEO-Friendly Public Identifiers', () => {
@@ -24,9 +23,12 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
-    employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.id;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!
+      .company_id;
+    employeeId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!
+      .id;
 
     const mdLogin = await request(app)
       .post('/api/v1/auth/login')
@@ -54,7 +56,9 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
     afterEach(async () => {
       if (createdPropertyIds.length > 0) {
         await p.propertyImage.deleteMany({ where: { property_id: { in: createdPropertyIds } } });
-        await p.propertyPublication.deleteMany({ where: { property_id: { in: createdPropertyIds } } });
+        await p.propertyPublication.deleteMany({
+          where: { property_id: { in: createdPropertyIds } },
+        });
         await p.property.deleteMany({ where: { id: { in: createdPropertyIds } } });
         createdPropertyIds = [];
       }
@@ -62,14 +66,10 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
 
     it('1. slug generated correctly when created via service layer', async () => {
       const baseSlug = slugify('Green Park Villas Gachibowli VILLA');
-      const slug = await generateUniqueSlug(
-        baseSlug,
-        companyId,
-        async (s: string, cId: number) => {
-          const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
-          return !!existing;
-        }
-      );
+      const slug = await generateUniqueSlug(baseSlug, companyId, async (s: string, cId: number) => {
+        const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
+        return !!existing;
+      });
       const prop = await p.property.create({
         data: {
           property_code: `WR6-PROP-SLUG-${Date.now()}`,
@@ -77,7 +77,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Green Park Villas',
           location: 'Gachibowli',
           category: 'VILLA',
-          price: 10000000,
+          final_price: 10000000,
           area_sqft: 2500,
           brand_type: 'SONTHILLU',
           status: 'LIVE',
@@ -94,14 +94,10 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
 
     it('2. slug normalized correctly (lowercase, hyphens, punctuation removed)', async () => {
       const baseSlug = slugify("O'Connor's Luxury Apartments! Miyapur, Hyderabad APARTMENT");
-      const slug = await generateUniqueSlug(
-        baseSlug,
-        companyId,
-        async (s: string, cId: number) => {
-          const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
-          return !!existing;
-        }
-      );
+      const slug = await generateUniqueSlug(baseSlug, companyId, async (s: string, cId: number) => {
+        const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
+        return !!existing;
+      });
       const prop = await p.property.create({
         data: {
           property_code: `WR6-PROP-NORM-${Date.now()}`,
@@ -109,7 +105,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: "O'Connor's Luxury Apartments!",
           location: 'Miyapur, Hyderabad',
           category: 'APARTMENT',
-          price: 8000000,
+          final_price: 8000000,
           area_sqft: 1200,
           brand_type: 'SONTHILLU',
           status: 'LIVE',
@@ -132,7 +128,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
         async (s: string, cId: number) => {
           const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
           return !!existing;
-        }
+        },
       );
       const prop1 = await p.property.create({
         data: {
@@ -141,7 +137,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Test Property',
           location: 'Test Location',
           category: 'VILLA',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 2000,
           brand_type: 'SONTHILLU',
           status: 'LIVE',
@@ -159,7 +155,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
         async (s: string, cId: number) => {
           const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
           return !!existing;
-        }
+        },
       );
       const prop2 = await p.property.create({
         data: {
@@ -168,7 +164,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Test Property',
           location: 'Test Location',
           category: 'VILLA',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 2000,
           brand_type: 'SONTHILLU',
           status: 'LIVE',
@@ -197,7 +193,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
         async (s: string, cId: number) => {
           const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
           return !!existing;
-        }
+        },
       );
       const prop1 = await p.property.create({
         data: {
@@ -206,7 +202,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Collision Test',
           location: 'Area',
           category: 'PLOT',
-          price: 3000000,
+          final_price: 3000000,
           area_sqft: 1000,
           brand_type: 'RADHA_REAL_HOMES',
           status: 'LIVE',
@@ -224,7 +220,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
         async (s: string, cId: number) => {
           const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
           return !!existing;
-        }
+        },
       );
       const prop2 = await p.property.create({
         data: {
@@ -233,7 +229,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Collision Test',
           location: 'Area',
           category: 'PLOT',
-          price: 3000000,
+          final_price: 3000000,
           area_sqft: 1000,
           brand_type: 'RADHA_REAL_HOMES',
           status: 'LIVE',
@@ -251,7 +247,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
         async (s: string, cId: number) => {
           const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
           return !!existing;
-        }
+        },
       );
       const prop3 = await p.property.create({
         data: {
@@ -260,7 +256,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Collision Test',
           location: 'Area',
           category: 'PLOT',
-          price: 3000000,
+          final_price: 3000000,
           area_sqft: 1000,
           brand_type: 'RADHA_REAL_HOMES',
           status: 'LIVE',
@@ -383,14 +379,10 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
     beforeAll(async () => {
       // Create a property with slug and publish it
       const baseSlug = slugify('Public Test Property Test City VILLA');
-      const slug = await generateUniqueSlug(
-        baseSlug,
-        companyId,
-        async (s: string, cId: number) => {
-          const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
-          return !!existing;
-        }
-      );
+      const slug = await generateUniqueSlug(baseSlug, companyId, async (s: string, cId: number) => {
+        const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
+        return !!existing;
+      });
       const prop = await p.property.create({
         data: {
           property_code: `WR6-PUB-PROP-${Date.now()}`,
@@ -398,7 +390,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Public Test Property',
           location: 'Test City',
           category: 'VILLA',
-          price: 10000000,
+          final_price: 10000000,
           area_sqft: 2500,
           brand_type: 'SONTHILLU',
           status: 'LIVE',
@@ -431,7 +423,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
         async (s: string, cId: number) => {
           const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
           return !!existing;
-        }
+        },
       );
       const linkedProp = await p.property.create({
         data: {
@@ -440,7 +432,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Project-linked Property',
           location: 'Test City',
           category: 'APARTMENT',
-          price: 5000000,
+          final_price: 5000000,
           area_sqft: 1200,
           brand_type: 'SONTHILLU',
           status: 'LIVE',
@@ -453,10 +445,20 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
 
       // Publish both properties
       await p.propertyPublication.create({
-        data: { property_id: testPropertyId, company_id: companyId, is_published: true, published_at: new Date() },
+        data: {
+          property_id: testPropertyId,
+          company_id: companyId,
+          is_published: true,
+          published_at: new Date(),
+        },
       });
       await p.propertyPublication.create({
-        data: { property_id: linkedProp.id, company_id: companyId, is_published: true, published_at: new Date() },
+        data: {
+          property_id: linkedProp.id,
+          company_id: companyId,
+          is_published: true,
+          published_at: new Date(),
+        },
       });
     });
 
@@ -515,14 +517,10 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
 
     it('16. unpublished resource remains hidden', async () => {
       const baseSlug = slugify('Unpublished Property Hidden VILLA');
-      const slug = await generateUniqueSlug(
-        baseSlug,
-        companyId,
-        async (s: string, cId: number) => {
-          const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
-          return !!existing;
-        }
-      );
+      const slug = await generateUniqueSlug(baseSlug, companyId, async (s: string, cId: number) => {
+        const existing = await p.property.findFirst({ where: { slug: s, company_id: cId } });
+        return !!existing;
+      });
       const prop = await p.property.create({
         data: {
           property_code: `WR6-UNPUB-${Date.now()}`,
@@ -530,7 +528,7 @@ describe('WR-6: SEO-Friendly Public Identifiers', () => {
           title: 'Unpublished Property',
           location: 'Hidden',
           category: 'VILLA',
-          price: 1000000,
+          final_price: 1000000,
           area_sqft: 1000,
           brand_type: 'SONTHILLU',
           status: 'LIVE',

@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('WR-1 P0-1: Property Publication (Dual-Brand)', () => {
@@ -35,9 +34,11 @@ describe('WR-1 P0-1: Property Publication (Dual-Brand)', () => {
       return res.body.accessToken;
     };
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
 
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!
+      .company_id;
 
     await prisma.branch.upsert({
       where: { id: 1 },
@@ -59,11 +60,13 @@ describe('WR-1 P0-1: Property Publication (Dual-Brand)', () => {
         title: 'Publication Test Property A',
         brand_type: 'SONTHILLU',
         category: 'VILLA',
-        price: 15000000,
+        final_price: 15000000,
         area_sqft: 2500,
         location: 'Test Location',
         status: 'LIVE',
-        created_by_id: (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.PROJECT_MANAGER) } }))!.id,
+        created_by_id: (await prisma.employee.findFirst({
+          where: { employee_code: getCode(Roles.PROJECT_MANAGER) },
+        }))!.id,
       },
     });
     propertyAId = propA.id;
@@ -75,11 +78,13 @@ describe('WR-1 P0-1: Property Publication (Dual-Brand)', () => {
         title: 'Publication Test Property B',
         brand_type: 'RADHA_REAL_HOMES',
         category: 'PLOT',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1200,
         location: 'Test Location',
         status: 'LIVE',
-        created_by_id: (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.PROJECT_MANAGER) } }))!.id,
+        created_by_id: (await prisma.employee.findFirst({
+          where: { employee_code: getCode(Roles.PROJECT_MANAGER) },
+        }))!.id,
       },
     });
     propertyBId = propB.id;
@@ -87,7 +92,9 @@ describe('WR-1 P0-1: Property Publication (Dual-Brand)', () => {
 
   afterAll(async () => {
     // Clean up test data
-    await p.propertyPublication.deleteMany({ where: { property_id: { in: [propertyAId, propertyBId] } } });
+    await p.propertyPublication.deleteMany({
+      where: { property_id: { in: [propertyAId, propertyBId] } },
+    });
     await p.property.deleteMany({ where: { id: { in: [propertyAId, propertyBId] } } });
     await prisma.$disconnect();
   });

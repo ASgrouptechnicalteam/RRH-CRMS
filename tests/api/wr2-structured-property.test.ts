@@ -7,7 +7,6 @@ import { jest } from '@jest/globals';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('WR-2: Structured Property Data', () => {
@@ -23,8 +22,10 @@ describe('WR-2: Structured Property Data', () => {
 
     await setupDeterministicTestUsers();
 
-    const getCode = (role: string) => deterministicUsers.find(u => u.roles[0] === role)!.employee_code;
-    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!.company_id;
+    const getCode = (role: string) =>
+      deterministicUsers.find((u) => u.roles[0] === role)!.employee_code;
+    companyId = (await prisma.employee.findFirst({ where: { employee_code: getCode(Roles.MD) } }))!
+      .company_id;
 
     // Login as MD
     const loginRes = await request(app)
@@ -64,7 +65,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 Location Test Property',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 15000000,
+          base_rate: 8000,
           area_sqft: 1800,
           location: 'Miyapur, Hyderabad',
           state: 'Telangana',
@@ -135,7 +136,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 New Listing',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 25000000,
+          base_rate: 8000,
           area_sqft: 3000,
           location: 'Gachibowli',
           listing_type: 'NEW',
@@ -155,7 +156,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 Resale Listing',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 8000000,
+          base_rate: 6600,
           area_sqft: 1200,
           location: 'Kukatpally',
           listing_type: 'RESALE',
@@ -175,7 +176,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 Invalid Listing Type',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 10000000,
+          base_rate: 5000,
           area_sqft: 2000,
           location: 'Test',
           listing_type: 'INVALID_TYPE',
@@ -192,7 +193,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 Default Listing Type',
           brand_type: 'SONTHILLU',
           category: 'PLOT',
-          price: 5000000,
+          base_rate: 3300,
           area_sqft: 1500,
           location: 'Test Location',
         });
@@ -214,7 +215,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 Amenities Test',
           brand_type: 'SONTHILLU',
           category: 'APARTMENT',
-          price: 12000000,
+          base_rate: 7500,
           area_sqft: 1600,
           location: 'Madhapur',
           amenities: 'Gymnasium, Swimming Pool, 24/7 Security',
@@ -236,24 +237,31 @@ describe('WR-2: Structured Property Data', () => {
 
       expect(res.status).toBe(200);
       const updated = await p.property.findUnique({ where: { id: amenPropId } });
-      expect(updated.amenities).toBe('Gymnasium, Swimming Pool, 24/7 Security, Clubhouse, Power Backup');
+      expect(updated.amenities).toBe(
+        'Gymnasium, Swimming Pool, 24/7 Security, Clubhouse, Power Backup',
+      );
     });
 
     it('10. Amenities returned in public API response', async () => {
       // Publish the property first
       await p.property.update({ where: { id: amenPropId }, data: { status: 'LIVE' } });
       await p.propertyPublication.create({
-        data: { property_id: amenPropId, company_id: companyId, is_published: true, published_at: new Date() },
+        data: {
+          property_id: amenPropId,
+          company_id: companyId,
+          is_published: true,
+          published_at: new Date(),
+        },
       });
 
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const prop = res.body.find((p: any) => p.id === amenPropId);
       expect(prop).toBeDefined();
-      expect(prop.amenities).toBe('Gymnasium, Swimming Pool, 24/7 Security, Clubhouse, Power Backup');
+      expect(prop.amenities).toBe(
+        'Gymnasium, Swimming Pool, 24/7 Security, Clubhouse, Power Backup',
+      );
     });
   });
 
@@ -268,7 +276,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'WR2 GPS Test',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 30000000,
+          base_rate: 7500,
           area_sqft: 4000,
           location: 'Jubilee Hills',
           latitude: 17.4156,
@@ -286,12 +294,15 @@ describe('WR-2: Structured Property Data', () => {
       // Publish the property
       await p.property.update({ where: { id: gpsPropId }, data: { status: 'LIVE' } });
       await p.propertyPublication.create({
-        data: { property_id: gpsPropId, company_id: companyId, is_published: true, published_at: new Date() },
+        data: {
+          property_id: gpsPropId,
+          company_id: companyId,
+          is_published: true,
+          published_at: new Date(),
+        },
       });
 
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const prop = res.body.find((p: any) => p.id === gpsPropId);
@@ -305,14 +316,14 @@ describe('WR-2: Structured Property Data', () => {
         .put(`/api/v1/properties/${gpsPropId}`)
         .set('Authorization', `Bearer ${mdToken}`)
         .send({
-          latitude: 17.4200,
-          longitude: 78.4400,
+          latitude: 17.42,
+          longitude: 78.44,
         });
 
       expect(res.status).toBe(200);
       const updated = await p.property.findUnique({ where: { id: gpsPropId } });
-      expect(updated.latitude).toBeCloseTo(17.4200, 3);
-      expect(updated.longitude).toBeCloseTo(78.4400, 3);
+      expect(updated.latitude).toBeCloseTo(17.42, 3);
+      expect(updated.longitude).toBeCloseTo(78.44, 3);
     });
   });
 
@@ -322,9 +333,24 @@ describe('WR-2: Structured Property Data', () => {
     beforeAll(async () => {
       // Create properties with different cities and listing types
       const props = [
-        { title: 'Filter Hyderabad NEW', city: 'Hyderabad', locality: 'Miyapur', listing_type: 'NEW' as const },
-        { title: 'Filter Hyderabad RESALE', city: 'Hyderabad', locality: 'Gachibowli', listing_type: 'RESALE' as const },
-        { title: 'Filter Vijayawada NEW', city: 'Vijayawada', locality: 'Governorpet', listing_type: 'NEW' as const },
+        {
+          title: 'Filter Hyderabad NEW',
+          city: 'Hyderabad',
+          locality: 'Miyapur',
+          listing_type: 'NEW' as const,
+        },
+        {
+          title: 'Filter Hyderabad RESALE',
+          city: 'Hyderabad',
+          locality: 'Gachibowli',
+          listing_type: 'RESALE' as const,
+        },
+        {
+          title: 'Filter Vijayawada NEW',
+          city: 'Vijayawada',
+          locality: 'Governorpet',
+          listing_type: 'NEW' as const,
+        },
       ];
 
       for (const data of props) {
@@ -335,7 +361,7 @@ describe('WR-2: Structured Property Data', () => {
             title: data.title,
             brand_type: 'SONTHILLU',
             category: 'APARTMENT',
-            price: 10000000,
+            final_price: 10000000,
             area_sqft: 1500,
             location: 'Test',
             status: 'LIVE',
@@ -349,7 +375,12 @@ describe('WR-2: Structured Property Data', () => {
         propertyIds.push(prop.id);
 
         await p.propertyPublication.create({
-          data: { property_id: prop.id, company_id: companyId, is_published: true, published_at: new Date() },
+          data: {
+            property_id: prop.id,
+            company_id: companyId,
+            is_published: true,
+            published_at: new Date(),
+          },
         });
       }
     });
@@ -419,7 +450,7 @@ describe('WR-2: Structured Property Data', () => {
           title: 'Legacy Property (No WR-2 Fields)',
           brand_type: 'SONTHILLU',
           category: 'VILLA',
-          price: 20000000,
+          final_price: 20000000,
           area_sqft: 2500,
           location: 'Old Location',
           status: 'LIVE',
@@ -431,12 +462,15 @@ describe('WR-2: Structured Property Data', () => {
       propertyIds.push(legacyPropId);
 
       await p.propertyPublication.create({
-        data: { property_id: legacyPropId, company_id: companyId, is_published: true, published_at: new Date() },
+        data: {
+          property_id: legacyPropId,
+          company_id: companyId,
+          is_published: true,
+          published_at: new Date(),
+        },
       });
 
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       const legacyProp = res.body.find((p: any) => p.id === legacyPropId);
@@ -464,9 +498,7 @@ describe('WR-2: Structured Property Data', () => {
     it('21. Company isolation — properties from other companies not visible', async () => {
       // The public API already filters by company via PropertyPublication
       // This test verifies the structured fields are also isolated
-      const res = await request(app)
-        .get('/api/v1/public/rrh/properties')
-        .set('x-api-key', apiKey);
+      const res = await request(app).get('/api/v1/public/rrh/properties').set('x-api-key', apiKey);
 
       expect(res.status).toBe(200);
       // All returned properties should have our companyId's publications

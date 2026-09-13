@@ -99,11 +99,6 @@ const SiteVisitManagement = lazy(() =>
     default: m.SiteVisitManagement,
   })),
 );
-const PMBlindApprovalQueue = lazy(() =>
-  import('./components/siteVisits/PMBlindApprovalQueue').then((m) => ({
-    default: m.PMBlindApprovalQueue,
-  })),
-);
 const DemoManagement = lazy(() =>
   import('./components/demos/DemoManagement').then((m) => ({ default: m.DemoManagement })),
 );
@@ -112,10 +107,8 @@ const ComplaintManagement = lazy(() =>
     default: m.ComplaintManagement,
   })),
 );
-const PMDemoApprovalQueue = lazy(() =>
-  import('./components/demos/PMDemoApprovalQueue').then((m) => ({
-    default: m.PMDemoApprovalQueue,
-  })),
+const PMApprovalsHub = lazy(() =>
+  import('./components/approvals/PMApprovalsHub').then((m) => ({ default: m.PMApprovalsHub })),
 );
 const TaskManager = lazy(() =>
   import('./components/tasks/TaskManager').then((m) => ({ default: m.TaskManager })),
@@ -563,9 +556,10 @@ const AppShell: React.FC = () => {
       <Route path="/projects/:projectId/units/:unitId" element={<UnitDetail />} />
       <Route path="/properties" element={<PropertyManagement />} />
       <Route path="/site-visits" element={<SiteVisitManagement />} />
-      <Route path="/pm/site-visits/approvals" element={<PMBlindApprovalQueue />} />
       <Route path="/demos" element={<DemoManagement />} />
-      <Route path="/pm/demos/approvals" element={<PMDemoApprovalQueue />} />
+      <Route path="/pm/approvals" element={<PMApprovalsHub />} />
+      <Route path="/pm/site-visits/approvals" element={<PMApprovalsHub />} />
+      <Route path="/pm/demos/approvals" element={<PMApprovalsHub />} />
       <Route path="/tasks" element={<TaskManager />} />
       <Route path="/daily-report" element={<DailyReportingPage />} />
       <Route
@@ -730,10 +724,11 @@ const AppShell: React.FC = () => {
     '/system-control': 'System Control',
     '/kiosk-management': 'Kiosk Management',
     '/finance': 'Payments & Refunds',
-    '/pm/site-visits/approvals': 'Visit Approvals',
+    '/pm/approvals': 'PM Approvals',
+    '/pm/site-visits/approvals': 'PM Approvals',
     '/complaints': 'Complaints Management',
     '/demos': 'My Demos',
-    '/pm/demos/approvals': 'Demo Approvals',
+    '/pm/demos/approvals': 'PM Approvals',
     '/achievements': 'Achievements',
   };
   const pageTitle = PAGE_TITLES[location.pathname] || 'RRH-CRMS';

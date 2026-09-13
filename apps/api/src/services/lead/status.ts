@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { TokenPayload } from '../../utils/jwt';
 import { can } from '../../authz/authorization';
+import { getAccessibleCompanyIds } from '../../authz/dataScope';
 import { Permissions, Roles } from '../../shared';
 import { WorkflowEngine } from '../../workflows/workflowEngine';
 import { OpportunityService } from '../opportunity.service';
@@ -12,6 +13,67 @@ import { notifyEmployee } from '../../utils/notifyEmployee';
 import { logger } from '../../utils/logger';
 
 const p = prisma;
+
+/**
+ * Self-claim from the unclaimed-leads safety net (see query.ts's
+ * getUnclaimedLeads) — a telecaller/agent picking up a lead that fell
+ * through auto-distribution. Deliberately gated on LEADS_UPDATE, not
+ * LEADS_ASSIGN: this only ever assigns the lead to the caller themselves,
+ * never to a third party, so it doesn't need the higher-privilege
+ * reassign-to-anyone permission reassignLead requires above.
+ */
+export async function claimLead(user: TokenPayload, leadId: number) {
+  const lead = await p.lead.findFirst({ where: { id: leadId } });
+  if (!lead) throw new AppError(404, 'Lead not found');
+
+  // Deliberately NOT LeadPolicy.canMutate — that requires assigned_to_id to
+  // already equal the caller, which by definition is never true for an
+  // unclaimed lead (see its own comment on why that's intentional). Claiming
+  // is its own capability: hold the base permission, and the lead must be in
+  // an accessible company. ADMIN bypasses the company check the same way
+  // getUnclaimedLeads does, so an admin never sees a lead in that list they
+  // then can't actually claim.
+  const hasBasePermission = (user.permissions || []).includes(Permissions.LEADS_UPDATE);
+  const isAdmin = user.roles.includes(Roles.ADMIN);
+  const accessibleCompanyIds = isAdmin ? null : await getAccessibleCompanyIds(user);
+  if (
+    !hasBasePermission ||
+    (accessibleCompanyIds && !accessibleCompanyIds.includes(lead.company_id))
+  ) {
+    throw new AppError(403, 'Forbidden: Insufficient privileges');
+  }
+  if (lead.assigned_to_id !== null) {
+    throw new AppError(409, 'This lead has already been claimed by someone else');
+  }
+  if (lead.status !== 'NEW') {
+    throw new AppError(409, `Cannot claim a lead in status ${lead.status}`);
+  }
+
+  return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
+    const updated = await WorkflowEngine.transitionLead(
+      tx,
+      leadId,
+      'ASSIGNED',
+      { actor: user, entity: lead },
+      {
+        assigned_to_id: user.employeeId,
+        assigned_at: new Date(),
+        assignment_type: 'SELF_CLAIMED',
+      },
+    );
+
+    await tx.leadActivity.create({
+      data: {
+        lead_id: leadId,
+        actor_id: user.employeeId,
+        activity_type: 'ASSIGNED_TO_AGENT',
+        notes: `Self-claimed from the unclaimed leads pool.`,
+      },
+    });
+
+    return updated;
+  });
+}
 
 export async function reassignLead(
   user: TokenPayload,

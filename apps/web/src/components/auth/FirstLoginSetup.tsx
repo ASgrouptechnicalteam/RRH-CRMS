@@ -7,7 +7,7 @@ import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const FirstLoginSetup: React.FC = () => {
   const { user, fetchWithAuth, setFirstLoginDone, login } = useAuth();
-  const { showToast , showError } = useToast();
+  const { showToast, showError } = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,8 +19,17 @@ export const FirstLoginSetup: React.FC = () => {
       showError({ message: 'New passwords do not match' });
       return;
     }
-    if (newPassword.length < 8) {
-      showError({ message: 'Password must be at least 8 characters long' });
+    if (
+      newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) ||
+      !/[a-z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword) ||
+      !/[^A-Za-z0-9]/.test(newPassword)
+    ) {
+      showError({
+        message:
+          'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.',
+      });
       return;
     }
 
@@ -41,10 +50,13 @@ export const FirstLoginSetup: React.FC = () => {
           setFirstLoginDone(true);
         }
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (e) {
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -56,15 +68,20 @@ export const FirstLoginSetup: React.FC = () => {
           <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-3">
             <ShieldCheck className="w-8 h-8 text-navy-700" />
           </div>
-          <h2 className="text-2xl font-black text-slate-800 text-center">Security Setup Required</h2>
+          <h2 className="text-2xl font-black text-slate-800 text-center">
+            Security Setup Required
+          </h2>
           <p className="text-sm text-slate-500 text-center mt-2 px-4">
-            Hi {user?.fullName || 'User'}, for your account's security, please update your default password before accessing the dashboard.
+            Hi {user?.fullName || 'User'}, for your account's security, please update your default
+            password before accessing the dashboard.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Current (Default) Password</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+              Current (Default) Password
+            </label>
             <div className="relative">
               <Key className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
               <input
@@ -79,7 +96,9 @@ export const FirstLoginSetup: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">New Password</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+              New Password
+            </label>
             <div className="relative">
               <Lock className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
               <input
@@ -88,14 +107,20 @@ export const FirstLoginSetup: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
-                placeholder="At least 8 characters"
+                placeholder="8+ chars, upper, lower, number, symbol"
                 minLength={8}
               />
             </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Must include an uppercase letter, a lowercase letter, a number, and a special
+              character.
+            </p>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Confirm New Password</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+              Confirm New Password
+            </label>
             <div className="relative">
               <CheckCircle2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
               <input

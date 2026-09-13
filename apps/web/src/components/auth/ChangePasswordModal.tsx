@@ -30,8 +30,18 @@ export const ChangePasswordModal: React.FC = () => {
       return;
     }
 
+    if (!/[a-z]/.test(newPassword)) {
+      setErrorMessage('Password must contain at least one lowercase letter');
+      return;
+    }
+
     if (!/[0-9]/.test(newPassword)) {
       setErrorMessage('Password must contain at least one number');
+      return;
+    }
+
+    if (!/[^A-Za-z0-9]/.test(newPassword)) {
+      setErrorMessage('Password must contain at least one special character');
       return;
     }
 
@@ -88,7 +98,7 @@ export const ChangePasswordModal: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
-              Current Password (Default: Password@123)
+              Current Password
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -113,7 +123,7 @@ export const ChangePasswordModal: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                placeholder="Min 8 chars, 1 uppercase, 1 number"
+                placeholder="8+ chars, upper, lower, number, symbol"
                 className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
               />
             </div>

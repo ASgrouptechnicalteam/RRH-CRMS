@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { PerformanceScoreResponse } from '../../types';
-import { Award, TrendingUp, ShieldAlert, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
+import {
+  Award,
+  TrendingUp,
+  ShieldAlert,
+  CheckCircle,
+  Clock,
+  Sparkles,
+  RefreshCw,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
@@ -50,7 +58,11 @@ export const PerformanceScoreWidget: React.FC = () => {
 
   const breakdown = scoreData?.breakdown || {};
 
-  // Mathematically derived live score for 100% consistency with breakdown cards
+  // Trust the backend's authoritative score — it's the only place that
+  // applies every boost/penalty category plus the tier multiplier
+  // consistently; recomputing a subset of the formula here previously drifted
+  // from the real score whenever a category (e.g. tier bonus, property
+  // booking, midnight auto-checkout) wasn't included in this local copy.
   const baseScore = breakdown.baseScore !== undefined ? breakdown.baseScore : 50.0;
   const taskBoost = breakdown.taskBoost || 0;
   const reportBoost = breakdown.reportBoost || 0;
@@ -60,19 +72,11 @@ export const PerformanceScoreWidget: React.FC = () => {
   const belowTargetPenalty = breakdown.belowTargetPenalty || 0;
   const overduePenalty = breakdown.overduePenalty || 0;
   const uninformedAbsentPenalty = breakdown.uninformedAbsentPenalty || 0;
+  const tier = breakdown.tier;
+  const tierBoostBonus = breakdown.tierBoostBonus || 0;
+  const tierPenaltyExtra = breakdown.tierPenaltyExtra || 0;
 
-  const rawComputedScore =
-    baseScore +
-    taskBoost +
-    reportBoost +
-    presentBoost -
-    latePenalty -
-    halfDayPenalty -
-    belowTargetPenalty -
-    overduePenalty -
-    uninformedAbsentPenalty;
-
-  const displayScore = Math.max(0, Math.round(rawComputedScore * 10) / 10);
+  const displayScore = scoreData?.score !== undefined ? scoreData.score : 50.0;
 
   // Calculate Credit-Card Gauge Position (0-100%)
   const percentage = Math.min(100, Math.max(0, (displayScore / 100) * 100));
@@ -116,7 +120,9 @@ export const PerformanceScoreWidget: React.FC = () => {
           <h3 className="text-base font-bold text-slate-800">Performance Credit Score</h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${statusZone.color}`}>
+          <span
+            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${statusZone.color}`}
+          >
             {statusZone.label}
           </span>
           <button
@@ -156,9 +162,18 @@ export const PerformanceScoreWidget: React.FC = () => {
           </div>
 
           <div className="relative w-full h-3.5 bg-slate-700/80 rounded-full overflow-hidden flex shadow-inner">
-            <div className="w-[40%] bg-red-500/80 h-full border-r border-slate-900" title="Danger Zone (0-40)" />
-            <div className="w-[25%] bg-amber-500/80 h-full border-r border-slate-900" title="Satisfactory Zone (41-65)" />
-            <div className="w-[20%] bg-emerald-500/80 h-full border-r border-slate-900" title="Safe Zone (66-85)" />
+            <div
+              className="w-[40%] bg-red-500/80 h-full border-r border-slate-900"
+              title="Danger Zone (0-40)"
+            />
+            <div
+              className="w-[25%] bg-amber-500/80 h-full border-r border-slate-900"
+              title="Satisfactory Zone (41-65)"
+            />
+            <div
+              className="w-[20%] bg-emerald-500/80 h-full border-r border-slate-900"
+              title="Safe Zone (66-85)"
+            />
             <div className="w-[15%] bg-purple-500/80 h-full" title="Excellent Zone (86-100+)" />
 
             {/* Dynamic Needle Position Indicator */}
@@ -174,7 +189,9 @@ export const PerformanceScoreWidget: React.FC = () => {
 
       {/* Points Breakdown */}
       <div className="space-y-2">
-        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Calibrated Points Breakdown</h4>
+        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          Calibrated Points Breakdown
+        </h4>
         <div className="grid grid-cols-2 gap-2 text-xs font-medium">
           <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200/60 flex items-center justify-between">
             <span>Starting Base Score</span>
@@ -182,7 +199,7 @@ export const PerformanceScoreWidget: React.FC = () => {
           </div>
 
           <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200/60 flex items-center justify-between">
-            <span>Tasks Completed (+1.0)</span>
+            <span>Tasks Completed (+2.0)</span>
             <span className="font-mono font-bold text-emerald-700">+{taskBoost}</span>
           </div>
 
@@ -192,11 +209,35 @@ export const PerformanceScoreWidget: React.FC = () => {
           </div>
 
           <div className="p-2.5 rounded-xl bg-red-50 text-red-900 border border-red-200/60 flex items-center justify-between">
-            <span>Sub-Target Logs (-2.0)</span>
+            <span>Sub-Target Logs (-1.0)</span>
             <span className="font-mono font-bold text-red-700">-{belowTargetPenalty}</span>
           </div>
         </div>
       </div>
+
+      {/* Tier — last month's zone escalates this month's points: Excellent
+          earns boosts at a 10% premium, Danger takes penalties at 25% extra,
+          Safe/Satisfactory are the neutral baseline. */}
+      {tier && (tierBoostBonus > 0 || tierPenaltyExtra > 0) && (
+        <div
+          className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+            tier === 'EXCELLENT'
+              ? 'bg-purple-50 border-purple-200 text-purple-900'
+              : 'bg-red-50 border-red-200 text-red-900'
+          }`}
+        >
+          <span className="font-semibold">
+            {tier === 'EXCELLENT'
+              ? 'Excellent tier bonus (+10% on boosts, from last month)'
+              : 'Danger tier penalty (+25% on penalties, from last month)'}
+          </span>
+          <span className="font-mono font-bold">
+            {tierBoostBonus > 0
+              ? `+${tierBoostBonus.toFixed(1)}`
+              : `-${tierPenaltyExtra.toFixed(1)}`}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

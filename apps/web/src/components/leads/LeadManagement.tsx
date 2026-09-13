@@ -22,6 +22,7 @@ import { getLeadStatusLabel, getLeadSourceLabel, getRelativeAge } from '../../co
 import { getPropertyTypeLabel } from '../../constants/propertyTypes';
 import { Roles, Permissions } from '../../shared';
 import { QuickAddLeadModal } from './QuickAddLeadModal';
+import { UnclaimedLeadsBanner } from './UnclaimedLeadsBanner';
 import { LeadDetailModal } from './LeadDetailModal';
 import { DropLeadModal } from './DropLeadModal';
 import { MonitorData, EmployeeListItem, ParsedBulkLeadRow } from '../../types';
@@ -655,6 +656,8 @@ export const LeadManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      <UnclaimedLeadsBanner onClaimed={fetchLeads} />
 
       {hasError && (
         <div className="text-sm text-danger-700 bg-danger-50 border border-danger-200 rounded-lg px-4 py-3 flex items-center gap-2">

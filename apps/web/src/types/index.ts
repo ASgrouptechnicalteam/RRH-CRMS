@@ -834,10 +834,20 @@ export interface PerformanceScoreResponse {
     taskBoost?: number;
     reportBoost?: number;
     presentBoost?: number;
+    propertyBookingBoost?: number;
+    targetExceededBoost?: number;
+    completedAllWorkBoost?: number;
     latePenalty?: number;
     halfDayPenalty?: number;
     belowTargetPenalty?: number;
     overduePenalty?: number;
     uninformedAbsentPenalty?: number;
+    midnightAutoCheckoutPenalty?: number;
+    missingDailyReportPenalty?: number;
+    tier?: 'DANGER' | 'SATISFACTORY' | 'SAFE' | 'EXCELLENT';
+    tierBoostMultiplier?: number;
+    tierPenaltyMultiplier?: number;
+    tierBoostBonus?: number;
+    tierPenaltyExtra?: number;
   } | null;
 }

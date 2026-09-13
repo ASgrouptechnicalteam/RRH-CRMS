@@ -47,6 +47,40 @@ router.get(
   },
 );
 
+// GET /api/v1/leads/unclaimed - Leads that fell through auto-distribution
+// entirely (no eligible telecaller existed at creation/recovery time) and so
+// were never assigned to anyone. A safety net, not the primary intake path —
+// most leads are auto-assigned instantly and never appear here.
+router.get(
+  '/unclaimed',
+  authenticateToken,
+  requireAuthz(Permissions.LEADS_READ),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const leads = await LeadService.getUnclaimedLeads(req.user!);
+      return res.status(200).json({ leads });
+    } catch (error: any) {
+      return handleServiceError(error, res);
+    }
+  },
+);
+
+// POST /api/v1/leads/:id/claim - Self-claim an unclaimed lead
+router.post(
+  '/:id/claim',
+  authenticateToken,
+  requireAuthz(Permissions.LEADS_UPDATE),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const leadId = parseInt(req.params.id, 10);
+      const lead = await LeadService.claimLead(req.user!, leadId);
+      return res.status(200).json({ lead });
+    } catch (error: any) {
+      return handleServiceError(error, res);
+    }
+  },
+);
+
 // GET /api/v1/leads/distribution-monitor - Telecaller load & intake monitor
 router.get(
   '/distribution-monitor',

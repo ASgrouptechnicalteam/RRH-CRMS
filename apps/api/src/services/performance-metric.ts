@@ -22,6 +22,36 @@
 
 export const PERFORMANCE_BASE_SCORE = 50.0;
 
+/**
+ * Performance tiers — the same 4 zones already shown in the UI (Danger/
+ * Satisfactory/Safe/Excellent), reused here as the basis for escalating
+ * point multipliers rather than inventing a second taxonomy. Boundaries
+ * must stay in sync with PerformanceScoreWidget.tsx's statusZone logic.
+ */
+export type PerformanceTier = 'DANGER' | 'SATISFACTORY' | 'SAFE' | 'EXCELLENT';
+
+export function getPerformanceTier(score: number): PerformanceTier {
+  if (score <= 40) return 'DANGER';
+  if (score <= 65) return 'SATISFACTORY';
+  if (score <= 85) return 'SAFE';
+  return 'EXCELLENT';
+}
+
+/**
+ * Escalating incentive curve: staying in Excellent pays out boosts at a
+ * premium; staying in Danger makes penalties sting more. Satisfactory/Safe
+ * are the neutral baseline (1.0/1.0) — most employees most of the time.
+ */
+export const PERFORMANCE_TIER_MULTIPLIERS: Record<
+  PerformanceTier,
+  { boost: number; penalty: number }
+> = {
+  EXCELLENT: { boost: 1.1, penalty: 1.0 },
+  SAFE: { boost: 1.0, penalty: 1.0 },
+  SATISFACTORY: { boost: 1.0, penalty: 1.0 },
+  DANGER: { boost: 1.0, penalty: 1.25 },
+};
+
 export const PERFORMANCE_WEIGHTS = {
   completedTaskBoost: 2.0,
   dailyReportBoost: 0.5,
@@ -88,6 +118,11 @@ export interface PerformanceScoreBreakdown {
   missingDailyReportPenalty: number;
   completedAllWorkEvents: number;
   completedAllWorkBoost: number;
+  tier: PerformanceTier;
+  tierBoostMultiplier: number;
+  tierPenaltyMultiplier: number;
+  tierBoostBonus: number;
+  tierPenaltyExtra: number;
 }
 
 export interface PerformanceScoreResult {
@@ -123,6 +158,11 @@ const ZERO_BREAKDOWN: PerformanceScoreBreakdown = {
   missingDailyReportPenalty: 0,
   completedAllWorkEvents: 0,
   completedAllWorkBoost: 0,
+  tier: 'SATISFACTORY',
+  tierBoostMultiplier: 1.0,
+  tierPenaltyMultiplier: 1.0,
+  tierBoostBonus: 0,
+  tierPenaltyExtra: 0,
 };
 
 /** Round a raw score to one decimal place and clamp to 0 (lower bound). */
@@ -133,8 +173,22 @@ export function roundPerformanceScore(rawScore: number): number {
 /**
  * Full performance score — shared by /performance/my-score and /performance/team.
  * Pure: does not mutate the input and performs no database access.
+ *
+ * `tierBasisScore` is the employee's score from BEFORE this period (e.g. last
+ * month's final score) — it decides which tier's multiplier applies to THIS
+ * period's points. It must never be this same period's own (in-progress)
+ * score, or the tier would shift mid-calculation as points are added.
+ * Omitting it (e.g. when computing that prior-period score itself) applies
+ * no multiplier, which is exactly the neutral SATISFACTORY/SAFE baseline.
  */
-export function calculatePerformanceScore(inputs: PerformanceScoreInputs): PerformanceScoreResult {
+export function calculatePerformanceScore(
+  inputs: PerformanceScoreInputs,
+  tierBasisScore?: number,
+): PerformanceScoreResult {
+  const tier = getPerformanceTier(tierBasisScore ?? PERFORMANCE_BASE_SCORE);
+  const { boost: tierBoostMultiplier, penalty: tierPenaltyMultiplier } =
+    PERFORMANCE_TIER_MULTIPLIERS[tier];
+
   const breakdown: PerformanceScoreBreakdown = {
     ...ZERO_BREAKDOWN,
     completedTasks: inputs.completedTasks,
@@ -168,23 +222,35 @@ export function calculatePerformanceScore(inputs: PerformanceScoreInputs): Perfo
     completedAllWorkEvents: inputs.completedAllWorkEvents,
     completedAllWorkBoost:
       inputs.completedAllWorkEvents * PERFORMANCE_WEIGHTS.completedAllWorkBoost,
+    tier,
+    tierBoostMultiplier,
+    tierPenaltyMultiplier,
+    tierBoostBonus: 0,
+    tierPenaltyExtra: 0,
   };
 
-  const rawScore =
-    PERFORMANCE_BASE_SCORE +
+  const totalBoosts =
     breakdown.taskBoost +
     breakdown.reportBoost +
     breakdown.presentBoost +
     breakdown.propertyBookingBoost +
     breakdown.targetExceededBoost +
-    breakdown.completedAllWorkBoost -
-    breakdown.latePenalty -
-    breakdown.halfDayPenalty -
-    breakdown.belowTargetPenalty -
-    breakdown.overduePenalty -
-    breakdown.uninformedAbsentPenalty -
-    breakdown.midnightAutoCheckoutPenalty -
+    breakdown.completedAllWorkBoost;
+  const totalPenalties =
+    breakdown.latePenalty +
+    breakdown.halfDayPenalty +
+    breakdown.belowTargetPenalty +
+    breakdown.overduePenalty +
+    breakdown.uninformedAbsentPenalty +
+    breakdown.midnightAutoCheckoutPenalty +
     breakdown.missingDailyReportPenalty;
+
+  const adjustedBoosts = totalBoosts * tierBoostMultiplier;
+  const adjustedPenalties = totalPenalties * tierPenaltyMultiplier;
+  breakdown.tierBoostBonus = roundPerformanceScore(adjustedBoosts - totalBoosts);
+  breakdown.tierPenaltyExtra = roundPerformanceScore(adjustedPenalties - totalPenalties);
+
+  const rawScore = PERFORMANCE_BASE_SCORE + adjustedBoosts - adjustedPenalties;
 
   return {
     score: roundPerformanceScore(rawScore),

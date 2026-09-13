@@ -38,6 +38,20 @@ const getPasswordRuleError = (pwd: string): string | null => {
   return null;
 };
 
+// A fresh random suggestion per employee — never a fixed, guessable default
+// that every admin would otherwise leave unchanged for every new hire.
+const generateSuggestedPassword = (): string => {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const special = '!@#$%&*';
+  const all = upper + lower + digits + special;
+  const pick = (charset: string) => charset[Math.floor(Math.random() * charset.length)];
+  const required = [pick(upper), pick(lower), pick(digits), pick(special)];
+  const rest = Array.from({ length: 8 }, () => pick(all));
+  return [...required, ...rest].sort(() => Math.random() - 0.5).join('');
+};
+
 interface AddEmployeeWizardProps {
   onClose: () => void;
   onSuccess: () => void;
@@ -64,7 +78,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
   const [addRole, setAddRole] = useState('telecallers');
   const [addBranchId, setAddBranchId] = useState<string>('');
   const [additionalBranchIds, setAdditionalBranchIds] = useState<string[]>([]);
-  const [initialPassword, setInitialPassword] = useState('Password@123');
+  const [initialPassword, setInitialPassword] = useState(generateSuggestedPassword);
 
   // Step 2: Personal Details
   const [currentAddress, setCurrentAddress] = useState('');
@@ -332,16 +346,25 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
                   <p className="text-xs text-navy-700 mb-2">
                     The employee will be forced to change this upon their first login.
                   </p>
-                  <input
-                    type="text"
-                    value={initialPassword}
-                    onChange={(e) => setInitialPassword(e.target.value)}
-                    className={`p-2 border rounded-lg w-full max-w-xs text-sm ${
-                      initialPassword && getPasswordRuleError(initialPassword)
-                        ? 'border-red-400'
-                        : 'border-navy-200'
-                    }`}
-                  />
+                  <div className="flex items-center gap-2 max-w-xs">
+                    <input
+                      type="text"
+                      value={initialPassword}
+                      onChange={(e) => setInitialPassword(e.target.value)}
+                      className={`p-2 border rounded-lg w-full text-sm ${
+                        initialPassword && getPasswordRuleError(initialPassword)
+                          ? 'border-red-400'
+                          : 'border-navy-200'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setInitialPassword(generateSuggestedPassword())}
+                      className="shrink-0 px-2.5 py-2 text-xs font-semibold text-navy-700 border border-navy-200 rounded-lg hover:bg-navy-100"
+                    >
+                      Regenerate
+                    </button>
+                  </div>
                   {initialPassword && getPasswordRuleError(initialPassword) ? (
                     <p className="text-[11px] text-red-600 mt-1">
                       Password {getPasswordRuleError(initialPassword)}.

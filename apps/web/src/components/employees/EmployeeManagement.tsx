@@ -179,7 +179,7 @@ export const EmployeeManagement: React.FC = () => {
   const [dateOfJoining, setDateOfJoining] = useState(new Date().toISOString().split('T')[0]);
   const [salaryCtc, setSalaryCtc] = useState('35000');
   const [backgroundEducation, setBackgroundEducation] = useState('');
-  const [initialPassword, setInitialPassword] = useState('Password@123');
+  const [initialPassword, setInitialPassword] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
@@ -261,7 +261,7 @@ export const EmployeeManagement: React.FC = () => {
     setDateOfJoining(new Date().toISOString().split('T')[0]);
     setSalaryCtc('35000');
     setBackgroundEducation('');
-    setInitialPassword('Password@123');
+    setInitialPassword('');
     setModalError(null);
   };
 
@@ -342,10 +342,12 @@ export const EmployeeManagement: React.FC = () => {
           method: 'POST',
         },
       );
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setSuccessMessage(`Password for ${resetPwdEmp.fullName} reset to default (Password@123)!`);
+        setSuccessMessage(
+          `Password for ${resetPwdEmp.fullName} reset. Temporary password: ${data.temporaryPassword} — share this with them directly, it won't be shown again.`,
+        );
         setResetPwdEmp(null);
-        setTimeout(() => setSuccessMessage(null), 4000);
       }
     } catch (e) {
       alert('Failed to reset password');
@@ -1254,7 +1256,8 @@ export const EmployeeManagement: React.FC = () => {
             <h3 className="font-bold text-slate-800 text-base">Reset Password?</h3>
             <p className="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
               Reset password for <strong>{resetPwdEmp.fullName}</strong> ({resetPwdEmp.employeeCode}
-              ) back to default (<code>Password@123</code>)?
+              )? A new random temporary password will be generated and shown to you once — share it
+              with them directly.
             </p>
 
             <div className="flex gap-2">

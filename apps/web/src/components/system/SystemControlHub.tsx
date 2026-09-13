@@ -12,12 +12,14 @@ import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 export const SystemControlHub: React.FC = () => {
   const { user, fetchWithAuth, activeRole } = useAuth();
-  const { showToast , showError } = useToast();
-  
+  const { showToast, showError } = useToast();
+
   const isMD = activeRole === Roles.MD;
   const isAdmin = activeRole === Roles.ADMIN;
 
-  const [activeTab, setActiveTab] = useState<'roles' | 'webhooks' | 'integrations' | 'advanced'>('integrations');
+  const [activeTab, setActiveTab] = useState<'roles' | 'webhooks' | 'integrations' | 'advanced'>(
+    'integrations',
+  );
 
   // Simulate Lead state
   const [simName, setSimName] = useState('Jane Doe');
@@ -53,19 +55,26 @@ export const SystemControlHub: React.FC = () => {
         showError({ message: 'Failed to simulate lead.' });
       }
     } catch (e) {
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    } finally {
       setIsSimulating(false);
     }
   };
 
   const getPayloadPreview = () => {
-    return JSON.stringify({
-      name: simName,
-      phone: simPhone,
-      source: simSource,
-      email: `${simName.toLowerCase().replace(' ', '.')}@example.com`,
-      budget: 5000000,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        name: simName,
+        phone: simPhone,
+        source: simSource,
+        email: `${simName.toLowerCase().replace(' ', '.')}@example.com`,
+        budget: 5000000,
+      },
+      null,
+      2,
+    );
   };
 
   return (
@@ -78,7 +87,7 @@ export const SystemControlHub: React.FC = () => {
             <h1 className="text-xl font-extrabold tracking-tight">System Control Center</h1>
           </div>
           <p className="text-xs text-navy-200/80">
-            High-security administration portal for roles, webhooks, and integrations.
+            High-security administration portal for roles, connections, and integrations.
           </p>
         </div>
       </div>
@@ -89,32 +98,38 @@ export const SystemControlHub: React.FC = () => {
           <button
             onClick={() => setActiveTab('roles')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'roles' 
-                ? 'bg-white text-navy-700 shadow-sm border border-slate-200' 
+              activeTab === 'roles'
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
             <Users className="w-4 h-4" />
             Roles & Permissions
+            <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">
+              Soon
+            </span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('webhooks')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'webhooks' 
-                ? 'bg-white text-navy-700 shadow-sm border border-slate-200' 
+              activeTab === 'webhooks'
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
             <Webhook className="w-4 h-4" />
-            Webhooks
+            Connections
+            <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">
+              Soon
+            </span>
           </button>
 
           <button
             onClick={() => setActiveTab('integrations')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'integrations' 
-                ? 'bg-white text-navy-700 shadow-sm border border-slate-200' 
+              activeTab === 'integrations'
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
@@ -125,8 +140,8 @@ export const SystemControlHub: React.FC = () => {
           <button
             onClick={() => setActiveTab('advanced')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'advanced' 
-                ? 'bg-rose-50 text-rose-700 shadow-sm border border-rose-200' 
+              activeTab === 'advanced'
+                ? 'bg-rose-50 text-rose-700 shadow-sm border border-rose-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
@@ -141,15 +156,19 @@ export const SystemControlHub: React.FC = () => {
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 className="text-lg font-bold text-slate-700">Roles Management</h3>
-              <p className="text-sm text-slate-500">Fine-grained RBAC configuration coming soon.</p>
+              <p className="text-sm text-slate-500">
+                Detailed role & permission controls coming soon.
+              </p>
             </div>
           )}
 
           {activeTab === 'webhooks' && (
             <div className="text-center py-12">
               <Webhook className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-slate-700">Webhook Subscriptions</h3>
-              <p className="text-sm text-slate-500">Configure outbound webhooks to third-party services.</p>
+              <h3 className="text-lg font-bold text-slate-700">Lead Source Connections</h3>
+              <p className="text-sm text-slate-500">
+                Send updates to other apps automatically — coming soon.
+              </p>
             </div>
           )}
 
@@ -157,7 +176,9 @@ export const SystemControlHub: React.FC = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-800">Lead Integrations</h3>
-                <p className="text-sm text-slate-500">Manage incoming lead sources (Facebook, Housing.com, 99acres).</p>
+                <p className="text-sm text-slate-500">
+                  Manage incoming lead sources (Facebook, Housing.com, 99acres).
+                </p>
               </div>
 
               {/* Simulate Lead Tool */}
@@ -165,36 +186,42 @@ export const SystemControlHub: React.FC = () => {
                 <div className="bg-slate-100 border-b border-slate-200 p-4">
                   <h4 className="font-bold text-navy-800 flex items-center gap-2">
                     <ServerCrash className="w-4 h-4" />
-                    Simulate Lead (Debug Tool)
+                    Test Lead Import
                   </h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Fire a mock webhook to test the CRM lead parsing pipeline.
+                    Send a sample lead to check it comes into the CRM correctly.
                   </p>
                 </div>
-                
+
                 <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Form */}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Name</label>
-                      <input 
-                        type="text" 
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Customer Name
+                      </label>
+                      <input
+                        type="text"
                         value={simName}
                         onChange={(e) => setSimName(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-navy-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
-                      <input 
-                        type="text" 
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="text"
                         value={simPhone}
                         onChange={(e) => setSimPhone(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-navy-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">Source</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Source
+                      </label>
                       <select
                         value={simSource}
                         onChange={(e) => setSimSource(e.target.value)}
@@ -212,13 +239,15 @@ export const SystemControlHub: React.FC = () => {
                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-navy-700 text-white rounded-xl text-sm font-bold hover:bg-navy-800 transition-colors shadow-sm disabled:opacity-50"
                     >
                       <Send className="w-4 h-4" />
-                      {isSimulating ? 'Firing Webhook...' : 'Fire Webhook'}
+                      {isSimulating ? 'Sending Test Lead...' : 'Send Test Lead'}
                     </button>
                   </div>
 
                   {/* Payload Preview */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Generated JSON Payload</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Preview of Lead Data Sent
+                    </label>
                     <pre className="bg-slate-900 text-emerald-400 p-4 rounded-xl text-xs overflow-x-auto font-mono h-48 border border-slate-800">
                       {getPayloadPreview()}
                     </pre>

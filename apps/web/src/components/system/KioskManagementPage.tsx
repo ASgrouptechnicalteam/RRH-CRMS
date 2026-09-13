@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../config';
 import { ShieldCheck, Plus, MonitorSmartphone, Power, PowerOff } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { CreateKioskModal } from './CreateKioskModal';
+import { DataTable } from '../ui/DataTable';
 
 interface KioskCredential {
   id: number;
@@ -107,9 +108,13 @@ export const KioskManagementPage: React.FC = () => {
                       <td className="p-4 font-mono text-xs text-slate-600">{kiosk.username}</td>
                       <td className="p-4 text-slate-600">{kiosk.branch_name}</td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          kiosk.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            kiosk.is_active
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
                           {kiosk.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -117,11 +122,17 @@ export const KioskManagementPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleActive(kiosk.id, kiosk.is_active)}
                           className={`p-2 rounded-lg transition-colors ${
-                            kiosk.is_active ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'
+                            kiosk.is_active
+                              ? 'text-rose-600 hover:bg-rose-50'
+                              : 'text-emerald-600 hover:bg-emerald-50'
                           }`}
                           title={kiosk.is_active ? 'Deactivate' : 'Activate'}
                         >
-                          {kiosk.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                          {kiosk.is_active ? (
+                            <PowerOff className="w-4 h-4" />
+                          ) : (
+                            <Power className="w-4 h-4" />
+                          )}
                         </button>
                       </td>
                     </tr>

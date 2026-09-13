@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Sparkles, Plus, Save, Calendar, User, ShieldCheck, AlertCircle, Bookmark, Trash2, GripVertical, CheckSquare, Type, Hash, AlignLeft } from 'lucide-react';
+import {
+  Target,
+  Sparkles,
+  Plus,
+  Save,
+  Calendar,
+  User,
+  ShieldCheck,
+  AlertCircle,
+  Bookmark,
+  Trash2,
+  GripVertical,
+  CheckSquare,
+  Type,
+  Hash,
+  AlignLeft,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '../../shared';
@@ -45,7 +61,7 @@ export const TargetConfigurator: React.FC = () => {
 
       let loadedTargets: TargetListItem[] = [];
       let loadedPresets: Record<string, DailyReportPreset> = {};
-      
+
       if (targetRes.ok) {
         const d = await targetRes.json();
         loadedTargets = d.targets || [];
@@ -63,7 +79,6 @@ export const TargetConfigurator: React.FC = () => {
 
       // Initialize the schema for the current role
       loadSchemaForRole(Roles.TELECALLER, loadedTargets, loadedPresets);
-
     } catch (e) {
       console.error('Failed to load configurator data');
     } finally {
@@ -75,14 +90,18 @@ export const TargetConfigurator: React.FC = () => {
     fetchData();
   }, []);
 
-  const loadSchemaForRole = (role: string, currentTargets: TargetListItem[] = targetsList, currentPresets: Record<string, DailyReportPreset> = presets) => {
+  const loadSchemaForRole = (
+    role: string,
+    currentTargets: TargetListItem[] = targetsList,
+    currentPresets: Record<string, DailyReportPreset> = presets,
+  ) => {
     // 1. Try to load from active target first
-    const activeTarget = currentTargets.find(t => t.role_name === role && !t.employee_id);
+    const activeTarget = currentTargets.find((t) => t.role_name === role && !t.employee_id);
     if (activeTarget && activeTarget.form_schema_json && activeTarget.form_schema_json.length > 0) {
       setFormSchema(activeTarget.form_schema_json);
       return;
     }
-    
+
     // 2. Try to load from presets
     const preset = currentPresets[role];
     if (preset && preset.form_schema_json) {
@@ -108,11 +127,11 @@ export const TargetConfigurator: React.FC = () => {
       label: 'New Question',
       required: true,
     };
-    setFormSchema(prev => [...prev, newField]);
+    setFormSchema((prev) => [...prev, newField]);
   };
 
   const handleUpdateField = (index: number, updates: Partial<FormField>) => {
-    setFormSchema(prev => {
+    setFormSchema((prev) => {
       const clone = [...prev];
       clone[index] = { ...clone[index], ...updates };
       return clone;
@@ -120,14 +139,14 @@ export const TargetConfigurator: React.FC = () => {
   };
 
   const handleRemoveField = (index: number) => {
-    setFormSchema(prev => prev.filter((_, i) => i !== index));
+    setFormSchema((prev) => prev.filter((_, i) => i !== index));
   };
 
   const moveField = (index: number, direction: 'UP' | 'DOWN') => {
     if (direction === 'UP' && index === 0) return;
     if (direction === 'DOWN' && index === formSchema.length - 1) return;
 
-    setFormSchema(prev => {
+    setFormSchema((prev) => {
       const clone = [...prev];
       const swapIndex = direction === 'UP' ? index - 1 : index + 1;
       const temp = clone[index];
@@ -139,19 +158,27 @@ export const TargetConfigurator: React.FC = () => {
 
   const getFieldIcon = (type: FieldType) => {
     switch (type) {
-      case 'SHORT_TEXT': return <Type className="w-4 h-4 text-slate-500" />;
-      case 'LONG_TEXT': return <AlignLeft className="w-4 h-4 text-slate-500" />;
-      case 'COUNT': return <Hash className="w-4 h-4 text-slate-500" />;
-      case 'CHECKLIST': return <CheckSquare className="w-4 h-4 text-slate-500" />;
+      case 'SHORT_TEXT':
+        return <Type className="w-4 h-4 text-slate-500" />;
+      case 'LONG_TEXT':
+        return <AlignLeft className="w-4 h-4 text-slate-500" />;
+      case 'COUNT':
+        return <Hash className="w-4 h-4 text-slate-500" />;
+      case 'CHECKLIST':
+        return <CheckSquare className="w-4 h-4 text-slate-500" />;
     }
   };
 
   const getFieldLabel = (type: FieldType) => {
     switch (type) {
-      case 'SHORT_TEXT': return 'Short Answer';
-      case 'LONG_TEXT': return 'Paragraph';
-      case 'COUNT': return 'Number / Count';
-      case 'CHECKLIST': return 'Checklist Item';
+      case 'SHORT_TEXT':
+        return 'Short Answer';
+      case 'LONG_TEXT':
+        return 'Paragraph';
+      case 'COUNT':
+        return 'Number / Count';
+      case 'CHECKLIST':
+        return 'Checklist Item';
     }
   };
 
@@ -163,10 +190,10 @@ export const TargetConfigurator: React.FC = () => {
     try {
       // Re-map the targets_json for legacy compatibility (if form has them)
       const targets_json: Record<string, number> = {};
-      formSchema.forEach(field => {
+      formSchema.forEach((field) => {
         if (field.type === 'COUNT') {
           // Find standard metric keys if they match label roughly (best effort fallback)
-          if (field.label.toLowerCase().includes('call')) targets_json.callsMade = 50; 
+          if (field.label.toLowerCase().includes('call')) targets_json.callsMade = 50;
         }
       });
 
@@ -209,8 +236,10 @@ export const TargetConfigurator: React.FC = () => {
               <Target className="w-6 h-6 text-navy-700" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-800">Dynamic Daily Log & Target Configurator</h3>
-              <p className="text-sm text-slate-500">Google-Form style builder for employee daily submissions</p>
+              <h3 className="text-xl font-bold text-slate-800">Daily Report & Target Setup</h3>
+              <p className="text-sm text-slate-500">
+                Google-Form style builder for employee daily submissions
+              </p>
             </div>
           </div>
         </div>
@@ -225,7 +254,9 @@ export const TargetConfigurator: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-slate-50/80 rounded-2xl border border-slate-200">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Target Role</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                Target Role
+              </label>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -277,18 +308,32 @@ export const TargetConfigurator: React.FC = () => {
                     <Type className="w-8 h-8 text-slate-300" />
                   </div>
                   <p className="text-slate-500 font-medium">No fields defined for this role yet.</p>
-                  <p className="text-xs text-slate-400 mt-1">Add fields below to build the submission form.</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Add fields below to build the submission form.
+                  </p>
                 </div>
               ) : (
                 formSchema.map((field, index) => (
-                  <div key={field.id} className="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-navy-300 transition-colors">
-                    
+                  <div
+                    key={field.id}
+                    className="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-navy-300 transition-colors"
+                  >
                     {/* Left Drag Handle */}
                     <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-50 rounded-l-2xl border-r border-slate-100">
-                      <button type="button" onClick={() => moveField(index, 'UP')} disabled={index === 0} className="p-1 text-slate-400 hover:text-navy-600 disabled:opacity-30">
+                      <button
+                        type="button"
+                        onClick={() => moveField(index, 'UP')}
+                        disabled={index === 0}
+                        className="p-1 text-slate-400 hover:text-navy-600 disabled:opacity-30"
+                      >
                         ▲
                       </button>
-                      <button type="button" onClick={() => moveField(index, 'DOWN')} disabled={index === formSchema.length - 1} className="p-1 text-slate-400 hover:text-navy-600 disabled:opacity-30">
+                      <button
+                        type="button"
+                        onClick={() => moveField(index, 'DOWN')}
+                        disabled={index === formSchema.length - 1}
+                        className="p-1 text-slate-400 hover:text-navy-600 disabled:opacity-30"
+                      >
                         ▼
                       </button>
                     </div>
@@ -302,24 +347,57 @@ export const TargetConfigurator: React.FC = () => {
                           className="w-full text-lg font-bold text-slate-800 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-navy-600 focus:outline-none py-1 mb-2 transition-colors"
                           placeholder="Question Label"
                         />
-                        
+
                         {/* Field Preview rendering */}
                         <div className="mt-2 flex gap-4">
                           <div className="opacity-60 pointer-events-none flex-1">
-                            {field.type === 'SHORT_TEXT' && <input type="text" placeholder="Short answer text" className="w-1/2 p-2 border-b border-dashed border-slate-300 bg-transparent" disabled />}
-                            {field.type === 'LONG_TEXT' && <textarea placeholder="Long answer text" className="w-full p-2 border-b border-dashed border-slate-300 bg-transparent resize-none h-10" disabled />}
-                            {field.type === 'COUNT' && <div className="flex items-center gap-2"><input type="number" placeholder="0" className="w-24 p-2 border border-slate-200 rounded bg-slate-50 text-right" disabled /> <span className="text-xs">Count</span></div>}
-                            {field.type === 'CHECKLIST' && <div className="flex items-center gap-2 text-sm"><input type="checkbox" disabled /> Yes / Done</div>}
+                            {field.type === 'SHORT_TEXT' && (
+                              <input
+                                type="text"
+                                placeholder="Short answer text"
+                                className="w-1/2 p-2 border-b border-dashed border-slate-300 bg-transparent"
+                                disabled
+                              />
+                            )}
+                            {field.type === 'LONG_TEXT' && (
+                              <textarea
+                                placeholder="Long answer text"
+                                className="w-full p-2 border-b border-dashed border-slate-300 bg-transparent resize-none h-10"
+                                disabled
+                              />
+                            )}
+                            {field.type === 'COUNT' && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  placeholder="0"
+                                  className="w-24 p-2 border border-slate-200 rounded bg-slate-50 text-right"
+                                  disabled
+                                />{' '}
+                                <span className="text-xs">Count</span>
+                              </div>
+                            )}
+                            {field.type === 'CHECKLIST' && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <input type="checkbox" disabled /> Yes / Done
+                              </div>
+                            )}
                           </div>
                           {field.type === 'COUNT' && (
                             <div className="flex-none">
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Target to achieve</label>
-                              <input 
-                                type="number" 
-                                min="0" 
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                Target to achieve
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
                                 placeholder="Target"
                                 value={field.targetValue || 0}
-                                onChange={(e) => handleUpdateField(index, { targetValue: parseInt(e.target.value, 10) || 0 })}
+                                onChange={(e) =>
+                                  handleUpdateField(index, {
+                                    targetValue: parseInt(e.target.value, 10) || 0,
+                                  })
+                                }
                                 className="w-24 p-1.5 text-sm border border-slate-200 rounded bg-white"
                               />
                             </div>
@@ -332,19 +410,26 @@ export const TargetConfigurator: React.FC = () => {
                           {getFieldIcon(field.type)}
                           <span className="text-slate-600 ml-2">{getFieldLabel(field.type)}</span>
                         </div>
-                        
+
                         <div className="flex items-center gap-4 w-full justify-end mt-2">
                           <label className="flex items-center gap-2 text-sm text-slate-600 font-medium cursor-pointer">
                             <span>Required</span>
                             <div className="relative inline-block w-10 align-middle select-none">
-                              <input 
-                                type="checkbox" 
-                                checked={field.required} 
-                                onChange={(e) => handleUpdateField(index, { required: e.target.checked })}
+                              <input
+                                type="checkbox"
+                                checked={field.required}
+                                onChange={(e) =>
+                                  handleUpdateField(index, { required: e.target.checked })
+                                }
                                 className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                                style={{ right: field.required ? '0' : 'auto', borderColor: field.required ? '#4f46e5' : '#cbd5e1' }}
+                                style={{
+                                  right: field.required ? '0' : 'auto',
+                                  borderColor: field.required ? '#4f46e5' : '#cbd5e1',
+                                }}
                               />
-                              <label className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${field.required ? 'bg-navy-600' : 'bg-slate-300'}`}></label>
+                              <label
+                                className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${field.required ? 'bg-navy-600' : 'bg-slate-300'}`}
+                              ></label>
                             </div>
                           </label>
                           <div className="w-px h-6 bg-slate-200"></div>
@@ -367,16 +452,32 @@ export const TargetConfigurator: React.FC = () => {
             <div className="p-4 bg-slate-100 border-t border-slate-200">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <span className="text-sm font-bold text-slate-500 mr-2">Add Field:</span>
-                <button type="button" onClick={() => handleAddField('SHORT_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button
+                  type="button"
+                  onClick={() => handleAddField('SHORT_TEXT')}
+                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all"
+                >
                   <Type className="w-4 h-4" /> Short Text
                 </button>
-                <button type="button" onClick={() => handleAddField('LONG_TEXT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button
+                  type="button"
+                  onClick={() => handleAddField('LONG_TEXT')}
+                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all"
+                >
                   <AlignLeft className="w-4 h-4" /> Paragraph
                 </button>
-                <button type="button" onClick={() => handleAddField('COUNT')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button
+                  type="button"
+                  onClick={() => handleAddField('COUNT')}
+                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all"
+                >
                   <Hash className="w-4 h-4" /> Number Count
                 </button>
-                <button type="button" onClick={() => handleAddField('CHECKLIST')} className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all">
+                <button
+                  type="button"
+                  onClick={() => handleAddField('CHECKLIST')}
+                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:border-navy-500 hover:text-navy-700 text-sm font-medium flex items-center gap-1.5 shadow-sm transition-all"
+                >
                   <CheckSquare className="w-4 h-4" /> Checklist
                 </button>
               </div>
@@ -395,7 +496,9 @@ export const TargetConfigurator: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Expires On (Optional)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Expires On (Optional)
+              </label>
               <input
                 type="date"
                 value={endDate}

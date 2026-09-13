@@ -13,13 +13,25 @@ import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 export const SalesPipelineManagement: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<number | null>(null);
-  const [transitionState, setTransitionState] = useState<{ isOpen: boolean; oppId: number | null; targetStage: string }>({
+  const [transitionState, setTransitionState] = useState<{
+    isOpen: boolean;
+    oppId: number | null;
+    targetStage: string;
+  }>({
     isOpen: false,
     oppId: null,
-    targetStage: ''
+    targetStage: '',
   });
-  const { opportunities, pipelineMetrics, fetchOpportunities, fetchPipelineMetrics, updateSalesStage, isLoading, error } = useSalesPipeline();
-  const { showToast , showError } = useToast();
+  const {
+    opportunities,
+    pipelineMetrics,
+    fetchOpportunities,
+    fetchPipelineMetrics,
+    updateSalesStage,
+    isLoading,
+    error,
+  } = useSalesPipeline();
+  const { showToast, showError } = useToast();
 
   useEffect(() => {
     fetchOpportunities();
@@ -50,7 +62,10 @@ export const SalesPipelineManagement: React.FC = () => {
       fetchPipelineMetrics();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    }
   };
 
   const handleModalSubmit = async (reason: string) => {
@@ -62,7 +77,10 @@ export const SalesPipelineManagement: React.FC = () => {
       fetchPipelineMetrics();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
       setTransitionState({ isOpen: false, oppId: null, targetStage: '' });
     }
   };
@@ -80,40 +98,51 @@ export const SalesPipelineManagement: React.FC = () => {
             <LayoutGrid className="w-5 h-5 text-navy-500" />
             Property Sales Pipeline
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Manage and track property sales opportunities across stages.</p>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage and track property sales opportunities across stages.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+          <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 w-full sm:w-auto">
             <button
               onClick={() => setViewMode('kanban')}
               aria-label="Kanban view"
               aria-pressed={viewMode === 'kanban'}
-              className={`p-1.5 rounded-md flex items-center transition-all ${
-                viewMode === 'kanban' ? 'bg-white shadow-sm text-navy-600' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 sm:flex-none px-3 py-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+                viewMode === 'kanban'
+                  ? 'bg-white shadow-sm text-navy-600'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
               title="Kanban View"
             >
               <Kanban className="w-4 h-4" />
+              <span className="text-xs font-bold sm:hidden">Board</span>
             </button>
             <button
               onClick={() => setViewMode('list')}
               aria-label="List view"
               aria-pressed={viewMode === 'list'}
-              className={`p-1.5 rounded-md flex items-center transition-all ${
-                viewMode === 'list' ? 'bg-white shadow-sm text-navy-600' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 sm:flex-none px-3 py-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+                viewMode === 'list'
+                  ? 'bg-white shadow-sm text-navy-600'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
               title="List View"
             >
               <List className="w-4 h-4" />
+              <span className="text-xs font-bold sm:hidden">List</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Metrics Banner */}
-      <SalesPipelineMetrics metrics={pipelineMetrics ?? {}} isLoading={isLoading && !pipelineMetrics} />
+      <SalesPipelineMetrics
+        metrics={pipelineMetrics ?? {}}
+        isLoading={isLoading && !pipelineMetrics}
+      />
 
       {/* Pipeline Content Area */}
       <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
@@ -131,54 +160,114 @@ export const SalesPipelineManagement: React.FC = () => {
             onStageChange={handleStageChange}
           />
         ) : opportunities.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+          <div className="flex items-center justify-center h-full text-slate-400 text-sm p-8 text-center">
             No sales opportunities found.
           </div>
         ) : (
-          <div className="p-4 max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                  <th scope="col" className="py-2 px-3">Prospect</th>
-                  <th scope="col" className="py-2 px-3">Stage</th>
-                  <th scope="col" className="py-2 px-3">Project</th>
-                  <th scope="col" className="py-2 px-3">Property</th>
-                  <th scope="col" className="py-2 px-3 text-right">Expected Value</th>
-                  <th scope="col" className="py-2 px-3 text-right">Probability</th>
-                </tr>
-              </thead>
-              <tbody>
-                {opportunities.map((opp) => (
-                  <tr
-                    key={opp.id}
-                    onClick={() => handleOpportunityClick(opp)}
-                    className="border-b border-slate-100 hover:bg-navy-50/40 cursor-pointer transition-colors"
-                  >
-                    <td className="py-2.5 px-3 font-semibold text-slate-800">
+          <div className="p-3 sm:p-4 max-h-[70vh] overflow-y-auto overscroll-contain">
+            {/* Mobile: stacked cards (a wide table forces horizontal scrolling
+                to read a single row, which is awkward on a phone) */}
+            <div className="md:hidden space-y-3">
+              {opportunities.map((opp) => (
+                <div
+                  key={opp.id}
+                  onClick={() => handleOpportunityClick(opp)}
+                  className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm active:bg-slate-50 cursor-pointer space-y-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-bold text-sm text-slate-800">
                       {opp.lead?.customer_name || 'Unknown Prospect'}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${SALES_STAGE_COLORS[opp.lead?.status || 'UNKNOWN'] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                        {SALES_STAGE_LABELS[opp.lead?.status || 'UNKNOWN'] || opp.lead?.status || 'UNKNOWN'}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600">{opp.project?.name || '—'}</td>
-                    <td className="py-2.5 px-3 text-slate-600">{opp.property?.title || '—'}</td>
-                    <td className="py-2.5 px-3 text-right font-bold text-slate-700">
+                    </span>
+                    <span
+                      className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border ${SALES_STAGE_COLORS[opp.lead?.status || 'UNKNOWN'] || 'bg-slate-100 text-slate-700 border-slate-200'}`}
+                    >
+                      {SALES_STAGE_LABELS[opp.lead?.status || 'UNKNOWN'] ||
+                        opp.lead?.status ||
+                        'UNKNOWN'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 space-y-0.5">
+                    <div>
+                      {opp.project?.name || 'No Project'}
+                      {opp.property?.title ? ` · ${opp.property.title}` : ''}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <span className="font-bold text-slate-700 text-sm">
                       ₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-slate-600">
-                      {Number(opp.probability || 0) > 0 ? `${opp.probability}%` : '—'}
-                    </td>
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {Number(opp.probability || 0) > 0
+                        ? `${opp.probability}% probability`
+                        : 'No probability set'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop / tablet: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                    <th scope="col" className="py-2 px-3">
+                      Prospect
+                    </th>
+                    <th scope="col" className="py-2 px-3">
+                      Stage
+                    </th>
+                    <th scope="col" className="py-2 px-3">
+                      Project
+                    </th>
+                    <th scope="col" className="py-2 px-3">
+                      Property
+                    </th>
+                    <th scope="col" className="py-2 px-3 text-right">
+                      Expected Value
+                    </th>
+                    <th scope="col" className="py-2 px-3 text-right">
+                      Probability
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {opportunities.map((opp) => (
+                    <tr
+                      key={opp.id}
+                      onClick={() => handleOpportunityClick(opp)}
+                      className="border-b border-slate-100 hover:bg-navy-50/40 cursor-pointer transition-colors"
+                    >
+                      <td className="py-2.5 px-3 font-semibold text-slate-800">
+                        {opp.lead?.customer_name || 'Unknown Prospect'}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded border ${SALES_STAGE_COLORS[opp.lead?.status || 'UNKNOWN'] || 'bg-slate-100 text-slate-700 border-slate-200'}`}
+                        >
+                          {SALES_STAGE_LABELS[opp.lead?.status || 'UNKNOWN'] ||
+                            opp.lead?.status ||
+                            'UNKNOWN'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-600">{opp.project?.name || '—'}</td>
+                      <td className="py-2.5 px-3 text-slate-600">{opp.property?.title || '—'}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-700">
+                        ₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-600">
+                        {Number(opp.probability || 0) > 0 ? `${opp.probability}%` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
-      <SalesStageTransitionModal 
+      <SalesStageTransitionModal
         isOpen={transitionState.isOpen}
         targetStage={transitionState.targetStage}
         onClose={() => setTransitionState({ isOpen: false, oppId: null, targetStage: '' })}
@@ -186,9 +275,9 @@ export const SalesPipelineManagement: React.FC = () => {
       />
 
       {selectedOpportunityId && (
-        <SalesOpportunityDetails 
-          opportunityId={selectedOpportunityId} 
-          onClose={() => setSelectedOpportunityId(null)} 
+        <SalesOpportunityDetails
+          opportunityId={selectedOpportunityId}
+          onClose={() => setSelectedOpportunityId(null)}
         />
       )}
     </div>

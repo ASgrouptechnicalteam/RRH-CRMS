@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle2, Clock, AlertTriangle, Plus, Sparkles, X, Send, Users, Briefcase, ListTodo, CheckSquare, Calendar, Building2
+import {
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  AlertCircle,
+  Plus,
+  Sparkles,
+  X,
+  Send,
+  Users,
+  Briefcase,
+  ListTodo,
+  CheckSquare,
+  Calendar,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Roles } from '../../shared';
@@ -18,6 +31,7 @@ export const TaskManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'my_tasks' | 'team_tasks'>('my_tasks');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [cheerUpToast, setCheerUpToast] = useState<string | null>(null);
 
   // New task form modal state
@@ -29,16 +43,38 @@ export const TaskManager: React.FC = () => {
   const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canViewTeam = ([Roles.MD, Roles.MARKETING_DIRECTOR, Roles.ADMIN, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.SALES_MANAGER] as string[]).includes(activeRole);
-  const canCreateTask = ([Roles.MD, Roles.HR_MANAGER, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.SALES_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_LEAD_OPERATOR] as string[]).includes(activeRole);
+  const canViewTeam = (
+    [
+      Roles.MD,
+      Roles.MARKETING_DIRECTOR,
+      Roles.ADMIN,
+      Roles.HR_MANAGER,
+      Roles.PROJECT_MANAGER,
+      Roles.SALES_MANAGER,
+    ] as string[]
+  ).includes(activeRole);
+  const canCreateTask = (
+    [
+      Roles.MD,
+      Roles.HR_MANAGER,
+      Roles.ADMIN,
+      Roles.MARKETING_DIRECTOR,
+      Roles.SALES_MANAGER,
+      Roles.PROJECT_MANAGER,
+      Roles.DIGITAL_LEAD_OPERATOR,
+    ] as string[]
+  ).includes(activeRole);
 
   const fetchTasks = async () => {
     setIsLoading(true);
+    setHasError(false);
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`);
       const data = await res.json();
       if (res.ok) {
         setTasks(data.tasks || []);
+      } else {
+        setHasError(true);
       }
 
       if (canViewTeam) {
@@ -50,6 +86,7 @@ export const TaskManager: React.FC = () => {
       }
     } catch (e) {
       console.error('Failed to load tasks');
+      setHasError(true);
     } finally {
       setIsLoading(false);
     }
@@ -85,9 +122,13 @@ export const TaskManager: React.FC = () => {
 
       if (res.ok) {
         setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
-        setTeamTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
+        setTeamTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
+        );
         if (data.cheerUp) {
-          setCheerUpToast(`🎉 Fantastic work! Task completed! +1.0 Performance Boost added to your score!`);
+          setCheerUpToast(
+            `🎉 Fantastic work! Task completed! +1.0 Performance Boost added to your score!`,
+          );
           setTimeout(() => setCheerUpToast(null), 5000);
         }
       }
@@ -146,7 +187,9 @@ export const TaskManager: React.FC = () => {
       return (
         <span className="bg-red-100 text-red-800 font-mono font-bold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 border border-red-200 animate-pulse w-max">
           <AlertTriangle className="w-3 h-3 text-red-600" />
-          <span>Overdue {hoursOverdue > 0 ? `${hoursOverdue}h ${remMins}m` : `${minsOverdue}m`}</span>
+          <span>
+            Overdue {hoursOverdue > 0 ? `${hoursOverdue}h ${remMins}m` : `${minsOverdue}m`}
+          </span>
         </span>
       );
     }
@@ -160,7 +203,9 @@ export const TaskManager: React.FC = () => {
     return (
       <span
         className={`font-mono font-bold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 border w-max ${
-          isUrgentWindow ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse' : 'bg-slate-100 text-slate-700 border-slate-200'
+          isUrgentWindow
+            ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+            : 'bg-slate-100 text-slate-700 border-slate-200'
         }`}
       >
         <Clock className="w-3 h-3 text-slate-500" />
@@ -172,28 +217,48 @@ export const TaskManager: React.FC = () => {
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case 'URGENT':
-        return <span className="bg-danger-100 text-danger-800 text-[10px] font-bold px-2 py-0.5 rounded border border-danger-200">URGENT</span>;
+        return (
+          <span className="bg-danger-100 text-danger-800 text-[10px] font-bold px-2 py-0.5 rounded border border-danger-200">
+            URGENT
+          </span>
+        );
       case 'HIGH':
-        return <span className="bg-warning-100 text-warning-800 text-[10px] font-bold px-2 py-0.5 rounded border border-warning-200">HIGH</span>;
+        return (
+          <span className="bg-warning-100 text-warning-800 text-[10px] font-bold px-2 py-0.5 rounded border border-warning-200">
+            HIGH
+          </span>
+        );
       case 'MEDIUM':
-        return <span className="bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 rounded border border-navy-200">MEDIUM</span>;
+        return (
+          <span className="bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 rounded border border-navy-200">
+            MEDIUM
+          </span>
+        );
       default:
-        return <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">LOW</span>;
+        return (
+          <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
+            LOW
+          </span>
+        );
     }
   };
 
   const currentTaskList = activeTab === 'my_tasks' ? tasks : teamTasks;
-  const filteredTasks = currentTaskList.filter((t) => filterStatus === 'ALL' || t.status === filterStatus);
+  const filteredTasks = currentTaskList.filter(
+    (t) => filterStatus === 'ALL' || t.status === filterStatus,
+  );
 
   // Quick Metrics Calcs
   const now = new Date().getTime();
-  const pendingCount = currentTaskList.filter(t => t.status !== 'COMPLETED').length;
-  const overdueCount = currentTaskList.filter(t => t.status !== 'COMPLETED' && new Date(t.deadline).getTime() < now).length;
-  
+  const pendingCount = currentTaskList.filter((t) => t.status !== 'COMPLETED').length;
+  const overdueCount = currentTaskList.filter(
+    (t) => t.status !== 'COMPLETED' && new Date(t.target_date).getTime() < now,
+  ).length;
+
   // Tasks completed today
   const startOfToday = new Date();
-  startOfToday.setHours(0,0,0,0);
-  const completedTodayCount = currentTaskList.filter(t => {
+  startOfToday.setHours(0, 0, 0, 0);
+  const completedTodayCount = currentTaskList.filter((t) => {
     if (t.status !== 'COMPLETED' || !t.completed_at) return false;
     return new Date(t.completed_at) >= startOfToday;
   }).length;
@@ -206,21 +271,21 @@ export const TaskManager: React.FC = () => {
       render: (t) => (
         <div className="space-y-1 max-w-[300px]">
           <div className="flex items-center gap-2">
-            <span className={`font-bold text-sm ${t.status === 'COMPLETED' ? 'text-slate-400 line-through' : 'text-slate-800'} truncate`}>
+            <span
+              className={`font-bold text-sm ${t.status === 'COMPLETED' ? 'text-slate-400 line-through' : 'text-slate-800'} truncate`}
+            >
               {t.title}
             </span>
             {t.status !== 'COMPLETED' && getPriorityBadge(t.priority || 'MEDIUM')}
           </div>
-          {t.description && (
-            <p className="text-xs text-slate-500 line-clamp-1">{t.description}</p>
-          )}
+          {t.description && <p className="text-xs text-slate-500 line-clamp-1">{t.description}</p>}
         </div>
-      )
+      ),
     },
     {
       key: 'lead',
       header: 'CRM Link',
-      render: (t) => (
+      render: (t) =>
         t.lead ? (
           <div className="flex items-center gap-1.5 text-xs">
             <Building2 className="w-3.5 h-3.5 text-gold-600" />
@@ -228,8 +293,7 @@ export const TaskManager: React.FC = () => {
           </div>
         ) : (
           <span className="text-slate-400 text-xs italic">General Task</span>
-        )
-      )
+        ),
     },
     {
       key: 'deadline',
@@ -239,36 +303,44 @@ export const TaskManager: React.FC = () => {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono">
             <Calendar className="w-3.5 h-3.5" />
-            {new Date(t.deadline || '').toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+            {new Date(t.target_date || '').toLocaleString([], {
+              dateStyle: 'short',
+              timeStyle: 'short',
+            })}
           </div>
-          {getCountdownBadge(t.deadline || '', t.status || 'PENDING')}
+          {getCountdownBadge(t.target_date || '', t.status || 'PENDING')}
         </div>
-      )
+      ),
     },
     {
       key: 'assignee',
       header: 'Assignee',
-      render: (t) => (
+      render: (t) =>
         t.assignee ? (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-navy-100 text-navy-800 flex items-center justify-center font-bold text-[10px] shrink-0">
               {(t.assignee.employee_code || '').slice(-3)}
             </div>
-            <span className="text-xs font-semibold text-slate-700">{t.assignee.full_name || t.assignee.employee_code}</span>
+            <span className="text-xs font-semibold text-slate-700">
+              {t.assignee.full_name || t.assignee.employee_code}
+            </span>
           </div>
-        ) : <span className="text-xs text-slate-400">Unassigned</span>
-      )
+        ) : (
+          <span className="text-xs text-slate-400">Unassigned</span>
+        ),
     },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
       render: (t) => (
-        <StatusPill 
-          status={t.status || 'PENDING'} 
-          type={t.status === 'COMPLETED' ? 'success' : t.status === 'OVERDUE' ? 'danger' : 'pending'} 
+        <StatusPill
+          status={t.status || 'PENDING'}
+          type={
+            t.status === 'COMPLETED' ? 'success' : t.status === 'OVERDUE' ? 'danger' : 'pending'
+          }
         />
-      )
+      ),
     },
     {
       key: 'actions',
@@ -299,8 +371,8 @@ export const TaskManager: React.FC = () => {
             </>
           )}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -324,7 +396,8 @@ export const TaskManager: React.FC = () => {
             <h2 className="text-xl font-extrabold tracking-tight">Task Management</h2>
           </div>
           <p className="text-xs text-navy-200/80">
-            Log calls, accept visits, and manage follow-ups. Every task drives the CRM funnel forward.
+            Log calls, accept visits, and manage follow-ups. Every task drives the CRM funnel
+            forward.
           </p>
         </div>
 
@@ -339,23 +412,26 @@ export const TaskManager: React.FC = () => {
         )}
       </div>
 
+      {hasError && (
+        <div className="text-sm text-danger-700 bg-danger-50 border border-danger-200 rounded-lg px-4 py-3 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-danger-600" />
+          Unable to load tasks. Please try again later.
+        </div>
+      )}
+
       {/* Quick Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard 
-          label="Pending Tasks" 
-          value={pendingCount} 
-          icon={Briefcase} 
-        />
-        <StatCard 
-          label="Overdue Tasks" 
-          value={overdueCount} 
-          icon={AlertTriangle} 
+        <StatCard label="Pending Tasks" value={pendingCount} icon={Briefcase} />
+        <StatCard
+          label="Overdue Tasks"
+          value={overdueCount}
+          icon={AlertTriangle}
           trend={{ direction: 'down', value: String(overdueCount), label: 'Requires Attention' }}
         />
-        <StatCard 
-          label="Completed Today" 
-          value={completedTodayCount} 
-          icon={CheckSquare} 
+        <StatCard
+          label="Completed Today"
+          value={completedTodayCount}
+          icon={CheckSquare}
           trend={{ direction: 'up', value: 'Great job!', label: 'Performance Boost' }}
         />
       </div>
@@ -363,12 +439,13 @@ export const TaskManager: React.FC = () => {
       {/* Main Content Area */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-2">
-          
           <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setActiveTab('my_tasks')}
               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'my_tasks' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                activeTab === 'my_tasks'
+                  ? 'bg-white text-navy-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               My Tasks ({tasks.length})
@@ -377,7 +454,9 @@ export const TaskManager: React.FC = () => {
               <button
                 onClick={() => setActiveTab('team_tasks')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'team_tasks' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  activeTab === 'team_tasks'
+                    ? 'bg-white text-navy-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
@@ -405,7 +484,7 @@ export const TaskManager: React.FC = () => {
         {isLoading ? (
           <div className="py-12 text-center text-slate-500">Loading tasks...</div>
         ) : (
-          <DataTable 
+          <DataTable
             columns={columns}
             data={filteredTasks}
             searchable={true}
@@ -418,7 +497,6 @@ export const TaskManager: React.FC = () => {
       {isCreating && (
         <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 animate-scaleUp">
-            
             <div className="bg-navy-900 p-5 flex items-center justify-between text-white">
               <div className="flex items-center gap-2">
                 <ListTodo className="w-5 h-5 text-gold-500" />
@@ -434,7 +512,9 @@ export const TaskManager: React.FC = () => {
 
             <form onSubmit={handleCreateTask} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Task Title *</label>
+                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">
+                  Task Title *
+                </label>
                 <input
                   type="text"
                   required
@@ -446,7 +526,9 @@ export const TaskManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Description (Optional)</label>
+                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">
+                  Description (Optional)
+                </label>
                 <textarea
                   rows={2}
                   placeholder="Provide task scope, instructions, or specific criteria..."
@@ -458,7 +540,9 @@ export const TaskManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Assignee</label>
+                  <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">
+                    Assignee
+                  </label>
                   <select
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
@@ -474,7 +558,9 @@ export const TaskManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Priority</label>
+                  <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">
+                    Priority
+                  </label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
@@ -489,7 +575,9 @@ export const TaskManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">Deadline Date/Time *</label>
+                <label className="block font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[10px]">
+                  Deadline Date/Time *
+                </label>
                 <input
                   type="datetime-local"
                   required

@@ -16,12 +16,12 @@ interface DataTableProps<T> {
   searchable?: boolean;
 }
 
-export function DataTable<T extends Record<string, any>>({ 
-  columns, 
-  data, 
-  onRowClick, 
-  emptyMessage = 'No records found',
-  searchable = true
+export function DataTable<T extends Record<string, any>>({
+  columns,
+  data,
+  onRowClick,
+  emptyMessage = 'Nothing to show here yet',
+  searchable = true,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDesc, setSortDesc] = useState(false);
@@ -45,7 +45,7 @@ export function DataTable<T extends Record<string, any>>({
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return Object.values(row).some(
-      (val) => val !== null && val !== undefined && String(val).toLowerCase().includes(query)
+      (val) => val !== null && val !== undefined && String(val).toLowerCase().includes(query),
     );
   });
 
@@ -56,20 +56,20 @@ export function DataTable<T extends Record<string, any>>({
     if (aVal === bVal) return 0;
     if (aVal === null || aVal === undefined) return 1;
     if (bVal === null || bVal === undefined) return -1;
-    
+
     const comparison = aVal > bVal ? 1 : -1;
     return sortDesc ? -comparison : comparison;
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-card flex flex-col h-full overflow-hidden">
       {searchable && (
         <div className="p-4 border-b border-slate-100 bg-surface/50">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search records..." 
+            <input
+              type="text"
+              placeholder="Search records..."
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 transition-shadow"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -77,7 +77,7 @@ export function DataTable<T extends Record<string, any>>({
           </div>
         </div>
       )}
-      
+
       <div className="overflow-y-auto flex-1 bg-slate-50 md:bg-white p-4 md:p-0">
         {sortedData.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-slate-500 text-sm">
@@ -88,10 +88,12 @@ export function DataTable<T extends Record<string, any>>({
             {/* Mobile View: Cards */}
             <div className="md:hidden space-y-4">
               {sortedData.map((row, i) => (
-                <div 
+                <div
                   key={i}
-                  className={`bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm ${
-                    onRowClick ? 'cursor-pointer active:bg-slate-50 hover:bg-slate-50 transition-colors' : ''
+                  className={`bg-white border border-slate-200 rounded-xl p-5 space-y-4 shadow-card transition-shadow ${
+                    onRowClick
+                      ? 'cursor-pointer active:bg-slate-50 hover:bg-slate-50 hover:shadow-card-hover'
+                      : ''
                   }`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
@@ -100,7 +102,9 @@ export function DataTable<T extends Record<string, any>>({
                       <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                         {col.header}
                       </span>
-                      <div className={`text-sm text-slate-800 break-words ${colIndex === 0 ? 'font-medium' : ''}`}>
+                      <div
+                        className={`text-sm text-slate-800 break-words ${colIndex === 0 ? 'font-medium' : ''}`}
+                      >
                         {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
                       </div>
                     </div>
@@ -115,16 +119,20 @@ export function DataTable<T extends Record<string, any>>({
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     {columns.map((col) => (
-                      <th 
-                        key={col.key} 
-                        className={`px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${col.sortable ? 'cursor-pointer hover:bg-slate-100 select-none transition-colors' : ''}`}
+                      <th
+                        key={col.key}
+                        className={`px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${col.sortable ? 'cursor-pointer hover:bg-slate-100 select-none transition-colors' : ''}`}
                         onClick={() => col.sortable && handleSort(col.key)}
                       >
                         <div className="flex items-center">
                           {col.header}
                           {col.sortable && sortKey === col.key && (
                             <span className="ml-1 text-navy-500">
-                              {sortDesc ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                              {sortDesc ? (
+                                <ChevronDown className="w-3 h-3" />
+                              ) : (
+                                <ChevronUp className="w-3 h-3" />
+                              )}
                             </span>
                           )}
                           {col.sortable && sortKey !== col.key && (
@@ -139,13 +147,16 @@ export function DataTable<T extends Record<string, any>>({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {sortedData.map((row, i) => (
-                    <tr 
-                      key={i} 
+                    <tr
+                      key={i}
                       className={`group ${onRowClick ? 'cursor-pointer hover:bg-surface/50 transition-colors' : ''}`}
                       onClick={() => onRowClick && onRowClick(row)}
                     >
                       {columns.map((col) => (
-                        <td key={col.key} className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
+                        <td
+                          key={col.key}
+                          className="px-5 py-3.5 text-sm text-slate-700 whitespace-nowrap"
+                        >
                           {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
                         </td>
                       ))}

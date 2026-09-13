@@ -20,7 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useWhatsApp } from '../../hooks/useWhatsApp';
 import { API_BASE_URL } from '../../config';
-import { Roles } from '../../shared';
+import { Roles, Permissions } from '../../shared';
 import { EmployeeListItem } from '../../types';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
@@ -29,12 +29,36 @@ interface SiteVisit {
   booking_code: string;
   lead_id: number;
   scheduled_date: string;
-  status: 'PENDING_VERIFICATION' | 'CONFIRMED' | 'ASSIGNED_TO_AGENT' | 'COMPLETED' | 'RESCHEDULED' | 'CANCELLED';
+  status:
+    | 'REQUESTED'
+    | 'PENDING_ACCEPTANCE'
+    | 'REASSIGNED'
+    | 'ESCALATED_TO_MARKETING_DIRECTOR'
+    | 'ACCEPTED'
+    | 'PENDING_CUSTOMER_RECONFIRMATION'
+    | 'RESCHEDULE_REQUESTED'
+    | 'PENDING_PM_RECONFIRMATION'
+    | 'CONFIRMED'
+    | 'ACTIVE'
+    | 'COMPLETED'
+    | 'CANCELLED'
+    | 'ON_HOLD'
+    | 'CANCELLATION_PENDING_PM_CONFIRMATION'
+    // Legacy values kept for backward-compat with any still-cached data
+    | 'PENDING_VERIFICATION'
+    | 'ASSIGNED_TO_AGENT'
+    | 'RESCHEDULED';
   verification_call_notes?: string;
   feedback_notes?: string;
   rating?: string;
   proof_photo_url?: string;
-  lead: { id: number; lead_code: string; customer_name: string; phone: string; preferred_location?: string };
+  lead: {
+    id: number;
+    lead_code: string;
+    customer_name: string;
+    phone: string;
+    preferred_location?: string;
+  };
   telecaller: { id: number; employee_code: string; full_name: string; phone: string };
   project_manager?: { id: number; employee_code: string; full_name: string; phone: string };
   assigned_agent?: { id: number; employee_code: string; full_name: string; phone: string };
@@ -87,8 +111,8 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
                 isCurrent
                   ? 'bg-navy-600 text-white shadow-sm ring-1 ring-navy-400'
                   : isPassed
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                  : 'bg-slate-200/70 text-slate-500'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : 'bg-slate-200/70 text-slate-500'
               }`}
             >
               <div className="truncate">{stg.label}</div>
@@ -102,46 +126,68 @@ const SiteVisitStepper: React.FC<{ status: SiteVisit['status'] }> = ({ status })
 
 export const SiteVisitManagement: React.FC = () => {
   const { user, fetchWithAuth, activeRole } = useAuth();
-  const { showToast , showError } = useToast();
+  const { showToast, showError } = useToast();
   const { sendWhatsAppMessage } = useWhatsApp();
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   // Modals
   const [selectedVisit, setSelectedVisit] = useState<SiteVisit | null>(null);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleSuccess, setRescheduleSuccess] = useState(false);
 
   // Form states
-  const [verificationNotes, setVerificationNotes] = useState('');
   const [assignedAgentId, setAssignedAgentId] = useState('');
   const [dispatchNotes, setDispatchNotes] = useState('');
-  const [rescheduleDate, setRescheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
+  const [rescheduleDate, setRescheduleDate] = useState(
+    new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+  );
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [rating, setRating] = useState('HOT_INTERESTED');
   const [proofPhotoUrl, setProofPhotoUrl] = useState('');
+  const [propertyOutcome, setPropertyOutcome] = useState<'INTERESTED' | 'NOT_INTERESTED'>(
+    'INTERESTED',
+  );
+  const [propertyOutcomeReason, setPropertyOutcomeReason] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isPMOrMD = ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
+  const isPMOrMD = ([Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN] as string[]).includes(
+    activeRole,
+  );
+  // site_visits.verify gates both /reconfirm-customer and /confirm server-side
+  // (routes/siteVisits.ts) — real holders per RolePermissionsMatrix are
+  // Digital Lead Operator and MD/Admin, NOT the Project Manager who accepted
+  // the visit. Gating the buttons the same way avoids offering an action that
+  // always 403s.
+  const canVerify = !!user?.permissions?.includes(Permissions.SITE_VISITS_VERIFY);
+  // site_visits.complete (POST /complete) — held by Agent/Channel Partner
+  // Manager/MD/Admin, NOT the Project Manager, who only has assign_agent.
+  const canComplete = !!user?.permissions?.includes(Permissions.SITE_VISITS_COMPLETE);
 
   const fetchVisitsData = async () => {
     setIsLoading(true);
+    setHasError(false);
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/site-visits`);
       const data = await res.json();
       if (res.ok) setVisits(data.visits || []);
+      else setHasError(true);
 
       const empRes = await fetchWithAuth(`${API_BASE_URL}/employees`);
       const empData = await empRes.json();
       if (empRes.ok) setEmployees(empData.employees || []);
     } catch (e) {
       console.error('Fetch site visits error:', e);
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
+      setHasError(true);
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -150,31 +196,74 @@ export const SiteVisitManagement: React.FC = () => {
     fetchVisitsData();
   }, []);
 
-  const handleVerifyCall = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedVisit) return;
-
+  const handleReconfirmCustomer = async (visitId: number) => {
     setIsSubmitting(true);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${selectedVisit.id}/verify`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${visitId}/reconfirm-customer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          confirmed: true,
-          verification_notes: verificationNotes,
-        }),
+        body: JSON.stringify({}),
       });
-
       const data = await res.json();
       if (res.ok) {
         showToast(data.message, 'success');
-        setShowVerifyModal(false);
         fetchVisitsData();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmVisit = async (visitId: number) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${visitId}/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, 'success');
+        fetchVisitsData();
+      } else {
+        await handleApiError(res, showError, data);
+      }
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartVisit = async (visitId: number) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${visitId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, 'success');
+        fetchVisitsData();
+      } else {
+        await handleApiError(res, showError, data);
+      }
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -185,14 +274,17 @@ export const SiteVisitManagement: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${selectedVisit.id}/assign-agent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agent_id: parseInt(assignedAgentId, 10),
-          notes: dispatchNotes,
-        }),
-      });
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/site-visits/${selectedVisit.id}/assign-agent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agent_id: parseInt(assignedAgentId, 10),
+            notes: dispatchNotes,
+          }),
+        },
+      );
 
       const data = await res.json();
       if (res.ok) {
@@ -200,10 +292,13 @@ export const SiteVisitManagement: React.FC = () => {
         setShowAssignModal(false);
         fetchVisitsData();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -230,10 +325,13 @@ export const SiteVisitManagement: React.FC = () => {
         setShowCompleteModal(false);
         fetchVisitsData();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -241,16 +339,19 @@ export const SiteVisitManagement: React.FC = () => {
   const handleReschedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVisit) return;
-    
+
     setIsSubmitting(true);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${selectedVisit.id}/reschedule`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          scheduled_date: new Date(rescheduleDate).toISOString(),
-        }),
-      });
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/site-visits/${selectedVisit.id}/reschedule`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scheduled_date: new Date(rescheduleDate).toISOString(),
+          }),
+        },
+      );
 
       const data = await res.json();
       if (res.ok) {
@@ -258,10 +359,13 @@ export const SiteVisitManagement: React.FC = () => {
         setRescheduleSuccess(true);
         fetchVisitsData();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -288,43 +392,65 @@ export const SiteVisitManagement: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <MapPin className="w-5 h-5 text-navy-400" />
-            <h2 className="text-xl font-extrabold tracking-tight">On-Site Visit & Field Agent Dispatch Workflow</h2>
+            <h2 className="text-xl font-extrabold tracking-tight">
+              On-Site Visit & Field Agent Dispatch Workflow
+            </h2>
           </div>
           <p className="text-xs text-navy-200/80">
-            Real-time pipeline: Telecaller Booking $\rightarrow$ Verification Call Confirmation $\rightarrow$ PM Agent Dispatch $\rightarrow$ Field Visit Completion & On-Site Feedback Upload.
+            Real-time pipeline: Telecaller Booking → Verification Call Confirmation → PM Agent
+            Dispatch → Field Visit Completion & On-Site Feedback Upload.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 bg-white/10 rounded-2xl border border-white/10 text-center">
-            <span className="text-[10px] uppercase font-bold text-navy-300 block">Total Site Visits</span>
+            <span className="text-[10px] uppercase font-bold text-navy-300 block">
+              Total Site Visits
+            </span>
             <span className="text-lg font-black text-white">{visits.length} Scheduled</span>
           </div>
         </div>
       </div>
 
+      {hasError && (
+        <div className="text-sm text-danger-700 bg-danger-50 border border-danger-200 rounded-lg px-4 py-3 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-danger-600" />
+          Unable to load site visits. Please try again later.
+        </div>
+      )}
+
       {/* Visits Grid */}
       {isLoading ? (
-        <div className="py-12 text-center text-xs text-slate-400">Loading site visit bookings...</div>
+        <div className="py-12 text-center text-xs text-slate-400">
+          Loading site visit bookings...
+        </div>
       ) : visits.length === 0 ? (
-        <div className="py-12 text-center text-xs text-slate-400">No site visits currently scheduled. Book site visits directly inside Lead Details</div>
+        <div className="py-12 text-center text-xs text-slate-400">
+          No site visits currently scheduled. Book site visits directly inside Lead Details
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {visits.map((visit) => (
             <div
               key={visit.id}
-              className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all p-5 space-y-4 flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-200 shadow-card hover:shadow-card-hover transition-shadow p-5 space-y-4 flex flex-col justify-between"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-navy-900 text-xs">{visit.booking_code}</span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${getStatusBadge(visit.status)}`}>
+                  <span className="font-mono font-bold text-navy-900 text-xs">
+                    {visit.booking_code}
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${getStatusBadge(visit.status)}`}
+                  >
                     {visit.status.replace(/_/g, ' ')}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="font-extrabold text-slate-900 text-base leading-snug">{visit.lead?.customer_name}</h3>
+                  <h3 className="font-extrabold text-slate-900 text-base leading-snug">
+                    {visit.lead?.customer_name}
+                  </h3>
                   <p className="text-xs text-slate-600 flex items-center gap-1 mt-0.5 font-mono">
                     <PhoneCall className="w-3.5 h-3.5 text-slate-400" />
                     {visit.lead?.phone} ({visit.lead?.preferred_location || 'Hyderabad'})
@@ -338,31 +464,37 @@ export const SiteVisitManagement: React.FC = () => {
                   </div>
 
                   <div className="text-[11px] text-slate-500">
-                    <span className="font-bold text-slate-700">Telecaller:</span> {visit.telecaller?.full_name}
+                    <span className="font-bold text-slate-700">Telecaller:</span>{' '}
+                    {visit.telecaller?.full_name}
                   </div>
 
                   {visit.property && (
                     <div className="text-[11px] text-slate-500">
-                      <span className="font-bold text-slate-700">Property:</span> {visit.property.title} ({visit.property.property_code})
+                      <span className="font-bold text-slate-700">Property:</span>{' '}
+                      {visit.property.title} ({visit.property.property_code})
                     </div>
                   )}
 
                   {visit.project_manager && (
                     <div className="text-[11px] text-slate-500">
-                      <span className="font-bold text-slate-700">PM Oversight:</span> {visit.project_manager?.full_name}
+                      <span className="font-bold text-slate-700">PM Oversight:</span>{' '}
+                      {visit.project_manager?.full_name}
                     </div>
                   )}
 
                   {visit.assigned_agent && (
                     <div className="text-[11px] text-slate-700 font-bold bg-purple-50 p-1.5 rounded-xl border border-purple-200">
-                      Field Agent Dispatched: {visit.assigned_agent?.full_name} ({visit.assigned_agent?.phone})
+                      Field Agent Dispatched: {visit.assigned_agent?.full_name} (
+                      {visit.assigned_agent?.phone})
                     </div>
                   )}
                 </div>
 
                 {visit.feedback_notes && (
                   <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200/60 text-xs space-y-1">
-                    <span className="font-extrabold text-emerald-900 block">Customer Feedback ({visit.rating}):</span>
+                    <span className="font-extrabold text-emerald-900 block">
+                      Customer Feedback ({visit.rating}):
+                    </span>
                     <p className="text-slate-700 text-[11px] italic">"{visit.feedback_notes}"</p>
                   </div>
                 )}
@@ -370,16 +502,25 @@ export const SiteVisitManagement: React.FC = () => {
 
               {/* Action Buttons based on Workflow Stage */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                {visit.status === 'PENDING_VERIFICATION' && (
+                {visit.status === 'ACCEPTED' && canVerify && (
                   <button
-                    onClick={() => {
-                      setSelectedVisit(visit);
-                      setShowVerifyModal(true);
-                    }}
-                    className="w-full py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                    onClick={() => handleReconfirmCustomer(visit.id)}
+                    disabled={isSubmitting}
+                    className="w-full py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <PhoneCall className="w-3.5 h-3.5" />
-                    <span>Call & Confirm Schedule</span>
+                    <span>Reconfirm With Customer</span>
+                  </button>
+                )}
+
+                {visit.status === 'PENDING_CUSTOMER_RECONFIRMATION' && canVerify && (
+                  <button
+                    onClick={() => handleConfirmVisit(visit.id)}
+                    disabled={isSubmitting}
+                    className="w-full py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirm Visit</span>
                   </button>
                 )}
 
@@ -396,8 +537,8 @@ export const SiteVisitManagement: React.FC = () => {
                   </button>
                 )}
 
-                {/* Reschedule Button */}
-                {(visit.status === 'PENDING_VERIFICATION' || visit.status === 'CONFIRMED' || visit.status === 'ASSIGNED_TO_AGENT') && (
+                {/* Reschedule Button — POST /reschedule also requires site_visits.verify */}
+                {visit.status === 'CONFIRMED' && canVerify && (
                   <button
                     onClick={() => {
                       setSelectedVisit(visit);
@@ -411,7 +552,21 @@ export const SiteVisitManagement: React.FC = () => {
                   </button>
                 )}
 
-                {(visit.status === 'ASSIGNED_TO_AGENT' || visit.status === 'CONFIRMED') && (
+                {/* COMPLETE is only valid from ACTIVE (siteVisit.workflow.ts),
+                    never directly from CONFIRMED — START is the missing step
+                    between them. Both share site_visits.complete. */}
+                {visit.status === 'CONFIRMED' && canComplete && (
+                  <button
+                    onClick={() => handleStartVisit(visit.id)}
+                    disabled={isSubmitting}
+                    className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Start Visit</span>
+                  </button>
+                )}
+
+                {visit.status === 'ACTIVE' && canComplete && (
                   <button
                     onClick={() => {
                       setSelectedVisit(visit);
@@ -428,11 +583,16 @@ export const SiteVisitManagement: React.FC = () => {
                 <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
                   {visit.status === 'CONFIRMED' && (
                     <button
-                      onClick={() => sendWhatsAppMessage('SITE_VISIT_ACCEPTED', visit.lead.phone, {
-                        customer_name: visit.lead.customer_name,
-                        visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
-                        visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      })}
+                      onClick={() =>
+                        sendWhatsAppMessage('SITE_VISIT_ACCEPTED', visit.lead.phone, {
+                          customer_name: visit.lead.customer_name,
+                          visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
+                          visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                        })
+                      }
                       className="w-full py-2 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
                     >
                       <Send className="w-3 h-3" />
@@ -440,14 +600,19 @@ export const SiteVisitManagement: React.FC = () => {
                     </button>
                   )}
 
-                  {(visit.status === 'CONFIRMED' || visit.status === 'ASSIGNED_TO_AGENT') && (
+                  {visit.status === 'CONFIRMED' && (
                     <button
-                      onClick={() => sendWhatsAppMessage('DAY_BEFORE_RECONFIRMATION', visit.lead.phone, {
-                        customer_name: visit.lead.customer_name,
-                        visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
-                        visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        pm_name: visit.project_manager?.full_name || 'Your Project Manager',
-                      })}
+                      onClick={() =>
+                        sendWhatsAppMessage('DAY_BEFORE_RECONFIRMATION', visit.lead.phone, {
+                          customer_name: visit.lead.customer_name,
+                          visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
+                          visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                          pm_name: visit.project_manager?.full_name || 'Your Project Manager',
+                        })
+                      }
                       className="w-full py-2 bg-white border border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
                     >
                       <Send className="w-3 h-3" />
@@ -457,13 +622,18 @@ export const SiteVisitManagement: React.FC = () => {
 
                   {visit.status === 'COMPLETED' && (
                     <button
-                      onClick={() => sendWhatsAppMessage('POST_VISIT_INTERESTED', visit.lead.phone, {
-                        customer_name: visit.lead.customer_name,
-                        visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
-                        visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        pm_name: visit.project_manager?.full_name || 'Your Project Manager',
-                        property_name: visit.property?.title || 'the property',
-                      })}
+                      onClick={() =>
+                        sendWhatsAppMessage('POST_VISIT_INTERESTED', visit.lead.phone, {
+                          customer_name: visit.lead.customer_name,
+                          visit_date: new Date(visit.scheduled_date).toLocaleDateString(),
+                          visit_time: new Date(visit.scheduled_date).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                          pm_name: visit.project_manager?.full_name || 'Your Project Manager',
+                          property_name: visit.property?.title || 'the property',
+                        })
+                      }
                       className="w-full py-2 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-[10px] uppercase tracking-wide rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
                     >
                       <Send className="w-3 h-3" />
@@ -477,60 +647,10 @@ export const SiteVisitManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Modal 1: Telecaller Call & Confirm Schedule */}
-      {showVerifyModal && selectedVisit && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative">
-            <button
-              onClick={() => setShowVerifyModal(false)}
-              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-slate-800 text-lg mb-1">Verify Site Visit Call Schedule</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Telecaller verification call for client <strong className="text-slate-800">{selectedVisit.lead?.customer_name}</strong>
-            </p>
-
-            <form onSubmit={handleVerifyCall} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Verification Call Notes *</label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="e.g. Client confirmed availability for tomorrow 11 AM at Gachibowli site..."
-                  value={verificationNotes}
-                  onChange={(e) => setVerificationNotes(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowVerifyModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-navy-700 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow-md"
-                >
-                  {isSubmitting ? 'Confirming...' : 'Confirm & Transfer to PM'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Modal 2: PM Assign Field Agent */}
       {showAssignModal && selectedVisit && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative">
+        <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4">
+          <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowAssignModal(false)}
               className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
@@ -538,14 +658,19 @@ export const SiteVisitManagement: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-bold text-slate-800 text-lg mb-1">Assign Field Agent for Site Visit</h3>
+            <h3 className="font-bold text-slate-800 text-lg mb-1">
+              Assign Field Agent for Site Visit
+            </h3>
             <p className="text-xs text-slate-500 mb-4">
-              Dispatch an on-site field agent for visit <strong className="text-slate-800">{selectedVisit.booking_code}</strong>
+              Dispatch an on-site field agent for visit{' '}
+              <strong className="text-slate-800">{selectedVisit.booking_code}</strong>
             </p>
 
             <form onSubmit={handleAssignAgent} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Select Field Agent *</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                  Select Field Agent *
+                </label>
                 <select
                   required
                   value={assignedAgentId}
@@ -562,7 +687,9 @@ export const SiteVisitManagement: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Dispatch Instructions</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                  Dispatch Instructions
+                </label>
                 <textarea
                   rows={2}
                   placeholder="e.g. Pickup key from site office, show 3BHK Villa #4..."
@@ -595,8 +722,8 @@ export const SiteVisitManagement: React.FC = () => {
 
       {/* Modal 3: Complete Visit, Upload Feedback & Photo */}
       {showCompleteModal && selectedVisit && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative">
+        <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4">
+          <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowCompleteModal(false)}
               className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
@@ -606,26 +733,61 @@ export const SiteVisitManagement: React.FC = () => {
 
             <h3 className="font-bold text-slate-800 text-lg mb-1">Record Site Visit Completion</h3>
             <p className="text-xs text-slate-500 mb-4">
-              Enter customer feedback and proof photo for <strong className="text-slate-800">{selectedVisit.lead?.customer_name}</strong>
+              Enter customer feedback and proof photo for{' '}
+              <strong className="text-slate-800">{selectedVisit.lead?.customer_name}</strong>
             </p>
 
             <form onSubmit={handleCompleteVisit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Customer Interest Rating *</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                  Customer Interest Rating *
+                </label>
                 <select
                   value={rating}
                   onChange={(e) => setRating(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-extrabold text-slate-800"
                 >
-                  <option value="HOT_INTERESTED">🔥 Hot - Highly Interested (Move to Qualified)</option>
+                  <option value="HOT_INTERESTED">
+                    🔥 Hot - Highly Interested (Move to Qualified)
+                  </option>
                   <option value="WARM">☀️ Warm - Interested (Move to Negotiation)</option>
                   <option value="COLD">❄️ Cold - Low Interest</option>
                   <option value="NOT_INTERESTED">❌ Not Interested</option>
                 </select>
               </div>
 
+              {selectedVisit.property && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                    Outcome for {selectedVisit.property.title} *
+                  </label>
+                  <select
+                    value={propertyOutcome}
+                    onChange={(e) =>
+                      setPropertyOutcome(e.target.value as 'INTERESTED' | 'NOT_INTERESTED')
+                    }
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-bold text-slate-800"
+                  >
+                    <option value="INTERESTED">✅ Interested</option>
+                    <option value="NOT_INTERESTED">❌ Not Interested</option>
+                  </select>
+                  {propertyOutcome === 'NOT_INTERESTED' && (
+                    <textarea
+                      required
+                      rows={2}
+                      placeholder="Reason customer is not interested in this property..."
+                      value={propertyOutcomeReason}
+                      onChange={(e) => setPropertyOutcomeReason(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    />
+                  )}
+                </div>
+              )}
+
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">On-Site Customer Feedback *</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                  On-Site Customer Feedback *
+                </label>
                 <textarea
                   required
                   rows={3}
@@ -637,7 +799,9 @@ export const SiteVisitManagement: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">On-Site Proof Photo URL</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                  On-Site Proof Photo URL
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. https://images.unsplash.com/photo-1600585154340-be6161a56a0c"
@@ -670,8 +834,8 @@ export const SiteVisitManagement: React.FC = () => {
 
       {/* Modal 4: Reschedule Visit */}
       {showRescheduleModal && selectedVisit && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative">
+        <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4">
+          <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => {
                 setShowRescheduleModal(false);
@@ -688,13 +852,18 @@ export const SiteVisitManagement: React.FC = () => {
                   <CheckCircle2 className="w-8 h-8 text-amber-600" />
                 </div>
                 <h4 className="text-xl font-bold text-navy-900">Visit Rescheduled!</h4>
-                <p className="text-sm text-slate-500">The site visit has been updated and a reconfirmation is pending.</p>
+                <p className="text-sm text-slate-500">
+                  The site visit has been updated and a reconfirmation is pending.
+                </p>
                 <button
                   onClick={() => {
                     sendWhatsAppMessage('RESCHEDULE_CONFIRMED', selectedVisit.lead.phone, {
                       customer_name: selectedVisit.lead.customer_name,
                       visit_date: new Date(rescheduleDate).toLocaleDateString(),
-                      visit_time: new Date(rescheduleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      visit_time: new Date(rescheduleDate).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
                     });
                   }}
                   className="mt-4 px-6 py-3 w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
@@ -716,12 +885,15 @@ export const SiteVisitManagement: React.FC = () => {
               <>
                 <h3 className="font-bold text-slate-800 text-lg mb-1">Reschedule Site Visit</h3>
                 <p className="text-xs text-slate-500 mb-4">
-                  Select a new date and time for <strong className="text-slate-800">{selectedVisit.lead?.customer_name}</strong>
+                  Select a new date and time for{' '}
+                  <strong className="text-slate-800">{selectedVisit.lead?.customer_name}</strong>
                 </p>
 
                 <form onSubmit={handleReschedule} className="space-y-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">New Date & Time *</label>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                      New Date & Time *
+                    </label>
                     <input
                       type="datetime-local"
                       required

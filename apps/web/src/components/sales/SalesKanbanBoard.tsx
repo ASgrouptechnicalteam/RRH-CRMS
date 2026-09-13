@@ -11,7 +11,11 @@ interface SalesKanbanBoardProps {
   onStageChange: (opportunityId: number, newStage: string) => void;
 }
 
-export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({ opportunities, onOpportunityClick, onStageChange }) => {
+export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({
+  opportunities,
+  onOpportunityClick,
+  onStageChange,
+}) => {
   const { user } = useAuth();
   const canUpdate = user?.permissions?.includes(Permissions.LEADS_UPDATE);
 
@@ -22,7 +26,7 @@ export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({ opportunitie
   const handleDrop = (e: React.DragEvent, targetStage: string) => {
     e.preventDefault();
     if (!canUpdate) return;
-    
+
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       if (data.stage !== targetStage) {
@@ -34,29 +38,38 @@ export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({ opportunitie
   };
 
   // Group by stage
-  const grouped = SALES_STAGES_ORDER.reduce((acc, stage) => {
-    acc[stage] = opportunities.filter(o => (o.lead?.status || 'UNKNOWN') === stage);
-    return acc;
-  }, {} as Record<string, any[]>);
+  const grouped = SALES_STAGES_ORDER.reduce(
+    (acc, stage) => {
+      acc[stage] = opportunities.filter((o) => (o.lead?.status || 'UNKNOWN') === stage);
+      return acc;
+    },
+    {} as Record<string, any[]>,
+  );
 
   return (
-    <div className="flex h-[calc(100vh-220px)] overflow-x-auto overflow-y-hidden bg-slate-50 rounded-2xl border border-slate-200 p-4 gap-4 no-scrollbar">
-      {SALES_STAGES_ORDER.map(stage => {
+    <div className="flex h-[calc(100vh-220px)] min-h-[420px] overflow-x-auto overflow-y-hidden bg-slate-50 rounded-2xl border border-slate-200 p-3 sm:p-4 gap-3 sm:gap-4 snap-x snap-mandatory sm:snap-none no-scrollbar">
+      {SALES_STAGES_ORDER.map((stage) => {
         const columnOpps = grouped[stage] || [];
-        const stageColorClass = SALES_STAGE_COLORS[stage] || 'bg-slate-100 text-slate-700 border-slate-200';
-        
+        const stageColorClass =
+          SALES_STAGE_COLORS[stage] || 'bg-slate-100 text-slate-700 border-slate-200';
+
         // Calculate total column expected value
-        const columnValue = columnOpps.reduce((sum, opp) => sum + Number(opp.expected_value || 0), 0);
+        const columnValue = columnOpps.reduce(
+          (sum, opp) => sum + Number(opp.expected_value || 0),
+          0,
+        );
 
         return (
-          <div 
+          <div
             key={stage}
-            className="flex-shrink-0 w-80 flex flex-col bg-slate-100/50 rounded-2xl border border-slate-200 overflow-hidden"
+            className="flex-shrink-0 w-[85vw] sm:w-80 snap-center sm:snap-align-none flex flex-col bg-slate-100/50 rounded-2xl border border-slate-200 overflow-hidden"
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, stage)}
           >
             {/* Column Header */}
-            <div className={`p-3 border-b flex flex-col gap-1.5 ${stageColorClass.replace('text-', 'text-opacity-90 text-')}`}>
+            <div
+              className={`p-3 border-b flex flex-col gap-1.5 ${stageColorClass.replace('text-', 'text-opacity-90 text-')}`}
+            >
               <div className="flex justify-between items-center">
                 <h2 className="font-bold text-sm">{SALES_STAGE_LABELS[stage] || stage}</h2>
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-white/50 backdrop-blur-sm">
@@ -70,16 +83,20 @@ export const SalesKanbanBoard: React.FC<SalesKanbanBoardProps> = ({ opportunitie
 
             {/* Column Body */}
             <div className="flex-1 p-2 overflow-y-auto space-y-2 no-scrollbar">
-              {columnOpps.map(opp => (
-                <SalesOpportunityCard 
-                  key={opp.id} 
-                  opportunity={opp} 
-                  onClick={onOpportunityClick} 
+              {columnOpps.map((opp) => (
+                <SalesOpportunityCard
+                  key={opp.id}
+                  opportunity={opp}
+                  onClick={onOpportunityClick}
+                  onStageChange={onStageChange}
+                  canUpdate={canUpdate}
                 />
               ))}
               {columnOpps.length === 0 && (
-                <div className="h-20 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-medium italic">
-                  Drag deals here
+                <div className="h-20 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-medium italic text-center px-2">
+                  {canUpdate
+                    ? 'Drag deals here, or use "Move to stage" on a card'
+                    : 'No deals in this stage'}
                 </div>
               )}
             </div>

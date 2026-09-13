@@ -34,8 +34,8 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
           const data = await res.json();
           // Filter for today's visits if they aren't already filtered on the backend
           const today = new Date().toISOString().split('T')[0];
-          const todayVisits = (data.visits || []).filter((v: SiteVisit) => 
-            v.scheduled_date && v.scheduled_date.startsWith(today)
+          const todayVisits = (data.visits || []).filter(
+            (v: SiteVisit) => v.scheduled_date && v.scheduled_date.startsWith(today),
           );
           setActiveVisits(todayVisits);
         }
@@ -45,7 +45,7 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchActiveVisits();
     // Poll every 5 minutes to keep it fresh
     const interval = setInterval(fetchActiveVisits, 5 * 60 * 1000);
@@ -62,28 +62,26 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
     meta: (
       <div className="flex flex-col items-end gap-2">
         <StatusPill status="ACTIVE TODAY" type="success" />
-        <button 
+        <button
           className="px-3 py-1 bg-action text-white text-xs font-bold rounded shadow-sm hover:bg-action-600 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/site-visits/${visit.id}`);
+            // No dedicated /site-visits/:id detail route exists — this list
+            // page is the correct, working destination.
+            navigate('/site-visits');
           }}
         >
           View Details
         </button>
       </div>
-    )
+    ),
   }));
 
   return (
     <div className="mb-6 rounded-2xl border-2 border-action shadow-md shadow-action/10 relative overflow-hidden bg-white">
       {/* Visual distinct top border highlight */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-action to-blue-400"></div>
-      <ListWidget 
-        title="⚠️ URGENT: Active Site Visits Today"
-        items={items}
-        emptyStateMessage=""
-      />
+      <ListWidget title="⚠️ URGENT: Active Site Visits Today" items={items} emptyStateMessage="" />
     </div>
   );
 };

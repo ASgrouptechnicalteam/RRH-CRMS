@@ -25,10 +25,10 @@ export function StatCard({ label, value, icon: Icon, link, trend }: StatCardProp
   return (
     <div
       onClick={link ? handleClick : undefined}
-      className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between transition-all h-full ${
+      className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-card flex flex-col justify-between transition-all h-full ${
         link
-          ? 'cursor-pointer hover:shadow-md hover:border-navy-300 hover:-translate-y-0.5 active:scale-[0.99]'
-          : 'hover:shadow-md'
+          ? 'cursor-pointer hover:shadow-card-hover hover:border-navy-300 hover:-translate-y-0.5 active:scale-[0.99]'
+          : 'hover:shadow-card-hover'
       }`}
     >
       <div className="flex items-start justify-between">
@@ -36,23 +36,37 @@ export function StatCard({ label, value, icon: Icon, link, trend }: StatCardProp
           <p className="text-sm font-medium text-navy-600 mb-1">{label}</p>
           <h3 className="text-3xl font-bold text-navy-900">{value}</h3>
         </div>
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-          link ? 'bg-gold-100 group-hover:bg-gold-200' : 'bg-gold-100'
-        }`}>
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+            link ? 'bg-gold-100 group-hover:bg-gold-200' : 'bg-gold-100'
+          }`}
+        >
           <Icon className="w-5 h-5 text-gold-600" />
         </div>
       </div>
 
       {trend && (
         <div className="mt-4 flex items-center text-sm">
-          <span className={`font-semibold flex items-center ${trend.direction === 'up' ? 'text-success-700' : 'text-danger-700'}`}>
+          <span
+            className={`font-semibold flex items-center ${trend.direction === 'up' ? 'text-success-700' : 'text-danger-700'}`}
+          >
             {trend.direction === 'up' ? (
               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
               </svg>
             ) : (
               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                />
               </svg>
             )}
             {trend.value}

@@ -12,9 +12,13 @@ interface CreateBookingModalProps {
   onSuccess: () => void;
 }
 
-export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customerId, onClose, onSuccess }) => {
+export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
+  customerId,
+  onClose,
+  onSuccess,
+}) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast , showError } = useToast();
+  const { showToast, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [formData, setFormData] = useState({
@@ -54,7 +58,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
           agreed_price: parseFloat(formData.agreed_price),
           booking_amount: parseFloat(formData.booking_amount),
           notes: formData.notes,
-        })
+        }),
       });
 
       if (res.ok) {
@@ -67,36 +71,50 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
       }
     } catch (e) {
       console.error(e);
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <Building className="w-4 h-4 text-navy-600" />
             Create Booking
           </h3>
-          <button onClick={onClose} aria-label="Close create booking dialog" className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+          <button
+            onClick={onClose}
+            aria-label="Close create booking dialog"
+            className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-left">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-4 text-left max-h-[70vh] overflow-y-auto"
+        >
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">Select Property</label>
             <select
               required
               value={formData.property_id}
-              onChange={e => setFormData({...formData, property_id: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, property_id: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white"
             >
-              <option value="" disabled>-- Select a LIVE property --</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{p.title} (₹{p.price?.toLocaleString() || 'N/A'})</option>
+              <option value="" disabled>
+                -- Select a LIVE property --
+              </option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title} (₹{p.final_price?.toLocaleString() || 'N/A'})
+                </option>
               ))}
             </select>
           </div>
@@ -108,19 +126,21 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
               required
               min="1"
               value={formData.agreed_price}
-              onChange={e => setFormData({...formData, agreed_price: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, agreed_price: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Token/Booking Amount (₹)</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Token/Booking Amount (₹)
+            </label>
             <input
               type="number"
               required
               min="1"
               value={formData.booking_amount}
-              onChange={e => setFormData({...formData, booking_amount: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, booking_amount: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
             />
           </div>
@@ -129,15 +149,25 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ customer
             <label className="block text-xs font-bold text-slate-700 mb-1">Notes (Optional)</label>
             <textarea
               value={formData.notes}
-              onChange={e => setFormData({...formData, notes: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
               rows={2}
             ></textarea>
           </div>
 
           <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-            <button type="submit" disabled={loading || !formData.property_id} className="px-4 py-2 text-sm font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg disabled:opacity-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !formData.property_id}
+              className="px-4 py-2 text-sm font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg disabled:opacity-50"
+            >
               {loading ? 'Creating...' : 'Confirm Booking'}
             </button>
           </div>

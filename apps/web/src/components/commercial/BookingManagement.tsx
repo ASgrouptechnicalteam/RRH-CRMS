@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { FileText, CheckCircle2, IndianRupee, Users, Building, AlertTriangle, Send } from 'lucide-react';
+import {
+  FileText,
+  CheckCircle2,
+  IndianRupee,
+  Users,
+  Building,
+  AlertTriangle,
+  AlertCircle,
+  Send,
+  Plus,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BookingItem } from '../../types';
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatCard } from '../ui/StatCard';
 import { StatusPill } from '../ui/StatusPill';
 import { useWhatsApp } from '../../hooks/useWhatsApp';
+import { BookingInitiationWizard } from './BookingInitiationWizard';
 
 export const BookingManagement: React.FC = () => {
   const { fetchWithAuth, user } = useAuth();
@@ -15,7 +26,9 @@ export const BookingManagement: React.FC = () => {
   const { sendWhatsAppMessage } = useWhatsApp();
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [showBookingWizard, setShowBookingWizard] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -27,20 +40,32 @@ export const BookingManagement: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setBookings(data);
+        setHasError(false);
+      } else {
+        setHasError(true);
       }
     } catch (e) {
       console.error(e);
+      setHasError(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredBookings = bookings.filter((b) => filterStatus === 'ALL' || b.status === filterStatus);
+  const filteredBookings = bookings.filter(
+    (b) => filterStatus === 'ALL' || b.status === filterStatus,
+  );
 
   // Quick Stats
-  const activeBookings = bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PENDING').length;
-  const pendingPayments = bookings.filter(b => b.balance_amount > 0 && b.status !== 'CANCELLED').length;
-  const totalRevenue = bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'COMPLETED').reduce((sum, b) => sum + (b.agreed_price - b.balance_amount), 0);
+  const activeBookings = bookings.filter(
+    (b) => b.status === 'CONFIRMED' || b.status === 'PENDING',
+  ).length;
+  const pendingPayments = bookings.filter(
+    (b) => b.balance_amount > 0 && b.status !== 'CANCELLED',
+  ).length;
+  const totalRevenue = bookings
+    .filter((b) => b.status === 'CONFIRMED' || b.status === 'COMPLETED')
+    .reduce((sum, b) => sum + (b.agreed_price - b.balance_amount), 0);
 
   const columns: ColumnDef<BookingItem>[] = [
     {
@@ -49,10 +74,12 @@ export const BookingManagement: React.FC = () => {
       sortable: true,
       render: (b) => (
         <div>
-          <div className="font-mono font-bold text-navy-800 text-[11px] mb-0.5">{b.booking_code}</div>
+          <div className="font-mono font-bold text-navy-800 text-[11px] mb-0.5">
+            {b.booking_code}
+          </div>
           <div className="text-xs font-semibold text-slate-500">#{b.id}</div>
         </div>
-      )
+      ),
     },
     {
       key: 'crm_linkage',
@@ -61,14 +88,16 @@ export const BookingManagement: React.FC = () => {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-sm">
             <Users className="w-3.5 h-3.5 text-navy-500" />
-            <span className="font-bold text-navy-900">{b.customer?.first_name} {b.customer?.last_name}</span>
+            <span className="font-bold text-navy-900">
+              {b.customer?.first_name} {b.customer?.last_name}
+            </span>
           </div>
           <div className="text-[10px] text-slate-500 flex items-center gap-1">
             <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Assigned To:</span>
             <span className="font-semibold">{b.assigned_employee?.full_name || 'System'}</span>
           </div>
         </div>
-      )
+      ),
     },
     {
       key: 'property',
@@ -81,7 +110,7 @@ export const BookingManagement: React.FC = () => {
           </div>
           <div className="text-[10px] font-mono text-slate-400">Unit ID: {b.property?.id}</div>
         </div>
-      )
+      ),
     },
     {
       key: 'financials',
@@ -89,8 +118,7 @@ export const BookingManagement: React.FC = () => {
       render: (b) => (
         <div className="flex flex-col gap-1">
           <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
-            <span className="text-slate-400">Total:</span> 
-            ₹{b.agreed_price.toLocaleString()}
+            <span className="text-slate-400">Total:</span>₹{b.agreed_price.toLocaleString()}
           </div>
           {b.balance_amount > 0 ? (
             <div className="text-[10px] font-bold text-rose-600 flex items-center gap-1 bg-rose-50 w-max px-1.5 py-0.5 rounded border border-rose-100">
@@ -103,7 +131,7 @@ export const BookingManagement: React.FC = () => {
             </div>
           )}
         </div>
-      )
+      ),
     },
     {
       key: 'status',
@@ -136,8 +164,8 @@ export const BookingManagement: React.FC = () => {
             )}
           </div>
         );
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -153,25 +181,45 @@ export const BookingManagement: React.FC = () => {
             Manage active unit reservations, payment collections, and CRM booking pipelines.
           </p>
         </div>
+        <button
+          onClick={() => setShowBookingWizard(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 text-navy-950 font-bold text-sm rounded-xl shadow-md transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          New Booking
+        </button>
       </div>
+
+      {showBookingWizard && (
+        <BookingInitiationWizard
+          onClose={() => setShowBookingWizard(false)}
+          onSuccess={() => {
+            setShowBookingWizard(false);
+            fetchBookings();
+          }}
+        />
+      )}
+
+      {hasError && (
+        <div className="text-sm text-danger-700 bg-danger-50 border border-danger-200 rounded-lg px-4 py-3 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-danger-600" />
+          Unable to load bookings. Please try again later.
+        </div>
+      )}
 
       {/* Quick Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard 
-          label="Active Bookings" 
-          value={activeBookings} 
-          icon={FileText} 
-        />
-        <StatCard 
-          label="Accounts with Balance" 
-          value={pendingPayments} 
-          icon={AlertTriangle} 
+        <StatCard label="Active Bookings" value={activeBookings} icon={FileText} />
+        <StatCard
+          label="Accounts with Balance"
+          value={pendingPayments}
+          icon={AlertTriangle}
           trend={{ direction: 'down', value: 'Requires follow up', label: 'CRM task' }}
         />
-        <StatCard 
-          label="Collected Revenue" 
-          value={`₹${(totalRevenue / 100000).toFixed(1)}L`} 
-          icon={IndianRupee} 
+        <StatCard
+          label="Collected Revenue"
+          value={`₹${(totalRevenue / 100000).toFixed(1)}L`}
+          icon={IndianRupee}
           trend={{ direction: 'up', value: 'Healthy', label: 'Cashflow' }}
         />
       </div>
@@ -198,7 +246,7 @@ export const BookingManagement: React.FC = () => {
         {loading ? (
           <div className="py-12 text-center text-slate-500">Loading bookings pipeline...</div>
         ) : (
-          <DataTable 
+          <DataTable
             columns={columns}
             data={filteredBookings}
             searchable={true}

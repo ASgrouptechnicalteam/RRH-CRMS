@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { mediaUrl } from '../../utils/imageUtils';
 
 export const BannerControlWidget: React.FC = () => {
-  const { accessToken } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [imageUrl, setImageUrl] = useState('');
   const [active, setActive] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -25,12 +25,9 @@ export const BannerControlWidget: React.FC = () => {
     setIsSaving(true);
     setSaveSuccess(false);
     try {
-      const res = await fetch(`${API_BASE_URL}/announcement`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/announcement`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, active }),
       });
       if (res.ok) {
@@ -51,7 +48,9 @@ export const BannerControlWidget: React.FC = () => {
         <h3 className="font-extrabold text-slate-900 text-lg">Global Announcement Banner</h3>
       </div>
       <p className="text-xs text-slate-500 mb-6">
-        Configure the image banner that appears at the top of every dashboard. Recommended dimensions: <strong>1200x200 pixels</strong> (or similar wide aspect ratio without compression).
+        Configure the image banner that appears at the top of every dashboard. Recommended
+        dimensions: <strong>1200x200 pixels</strong> (or similar wide aspect ratio without
+        compression).
       </p>
 
       <div className="space-y-4">
@@ -81,8 +80,14 @@ export const BannerControlWidget: React.FC = () => {
 
         {imageUrl && active && (
           <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-500 border-b border-slate-200">Preview</div>
-            <img src={mediaUrl(imageUrl)} alt="Preview" className="w-full h-auto max-h-[150px] object-cover" />
+            <div className="bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-500 border-b border-slate-200">
+              Preview
+            </div>
+            <img
+              src={mediaUrl(imageUrl)}
+              alt="Preview"
+              className="w-full h-auto max-h-[150px] object-cover"
+            />
           </div>
         )}
 
@@ -92,7 +97,15 @@ export const BannerControlWidget: React.FC = () => {
             disabled={isSaving}
             className="w-full py-2.5 bg-navy-600 hover:bg-navy-700 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
           >
-            {isSaving ? 'Saving...' : saveSuccess ? <><Check className="w-4 h-4" /> Saved Successfully</> : 'Save Banner Settings'}
+            {isSaving ? (
+              'Saving...'
+            ) : saveSuccess ? (
+              <>
+                <Check className="w-4 h-4" /> Saved Successfully
+              </>
+            ) : (
+              'Save Banner Settings'
+            )}
           </button>
         </div>
       </div>

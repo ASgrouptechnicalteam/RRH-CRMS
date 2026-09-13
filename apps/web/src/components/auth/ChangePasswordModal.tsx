@@ -3,7 +3,6 @@ import { Lock, ShieldAlert, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
-
 export const ChangePasswordModal: React.FC = () => {
   const { fetchWithAuth, setFirstLoginDone, login } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
@@ -26,6 +25,16 @@ export const ChangePasswordModal: React.FC = () => {
       return;
     }
 
+    if (!/[A-Z]/.test(newPassword)) {
+      setErrorMessage('Password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      setErrorMessage('Password must contain at least one number');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -37,7 +46,6 @@ export const ChangePasswordModal: React.FC = () => {
           new_password: newPassword,
         }),
       });
-
 
       const data = await res.json();
 
@@ -60,7 +68,7 @@ export const ChangePasswordModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl border border-slate-100 animate-scaleUp">
+      <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl border border-slate-100 animate-scaleUp max-h-[90vh] overflow-y-auto">
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
             <ShieldAlert className="w-8 h-8" />

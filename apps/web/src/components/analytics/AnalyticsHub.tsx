@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Target, Award, BarChart3, RefreshCw, AlertTriangle, Users, Building2,
-  CalendarCheck, TrendingUp, Inbox, PhoneCall, FileText,
+  Target,
+  Award,
+  BarChart3,
+  RefreshCw,
+  AlertTriangle,
+  Users,
+  Building2,
+  CalendarCheck,
+  TrendingUp,
+  Inbox,
+  PhoneCall,
+  FileText,
 } from 'lucide-react';
 import { TargetConfigurator } from '../targets/TargetConfigurator';
 import { useAuth } from '../../context/AuthContext';
@@ -9,8 +19,15 @@ import { Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '../../shared';
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
-  BarChart, Bar, XAxis, YAxis,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
 } from 'recharts';
 
 /**
@@ -28,12 +45,27 @@ import {
 interface AnalyticsKpis {
   companyId: number;
   generatedAt: string;
-  crm: { totalLeads: number; wonLeads: number; siteVisitsScheduled: number };
+  crm: {
+    totalLeads: number;
+    wonLeads: number;
+    siteVisitsScheduled: number;
+    dropOffByStage: { stage: string; dropoffs: number }[];
+  };
   property: { total: number; live: number; pendingMD: number; pendingPM: number };
-  opportunity: { pipelineMetrics: Record<string, unknown>; conversionMetrics: Record<string, unknown> };
+  opportunity: {
+    pipelineMetrics: Record<string, unknown>;
+    conversionMetrics: Record<string, unknown>;
+  };
   booking: { totalBookings: number };
   hr: { activeEmployees: number; attendanceExceptionsToday: number };
-  performance: { teamPerformance: { averageScore: number; totalEmployees: number; minScore: number; maxScore: number } };
+  performance: {
+    teamPerformance: {
+      averageScore: number;
+      totalEmployees: number;
+      minScore: number;
+      maxScore: number;
+    };
+  };
   targets: { targetAttainment: { met: number; total: number; rate: number } };
   marketing: {
     company_id: number;
@@ -50,11 +82,21 @@ const nf = new Intl.NumberFormat('en-IN');
 const PROPERTY_COLORS = ['#0d9488', '#f59e0b', '#6366f1', '#cbd5e1'];
 
 function KpiCard({
-  icon, label, value, accent,
-}: { icon: React.ReactNode; label: string; value: React.ReactNode; accent: string }) {
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  accent: string;
+}) {
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-start gap-3">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>{icon}</div>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>
+        {icon}
+      </div>
       <div className="min-w-0">
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</p>
         <p className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight mt-0.5">{value}</p>
@@ -64,8 +106,14 @@ function KpiCard({
 }
 
 function SectionCard({
-  title, subtitle, children,
-}: { title: string; subtitle?: string; children: React.ReactNode }) {
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
       <h2 className="text-base sm:text-lg font-bold text-slate-800">{title}</h2>
@@ -79,10 +127,12 @@ export const AnalyticsHub: React.FC = () => {
   const { user, fetchWithAuth, activeRole } = useAuth();
 
   const canManageTargets = ([Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
-    // The KPI overview is permission-gated on the SAME permission the backend enforces.
+  // The KPI overview is permission-gated on the SAME permission the backend enforces.
   const canViewKpis = (user?.permissions ?? []).includes('admin.system_metrics');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'targets'>(canViewKpis ? 'overview' : 'targets');
+  const [activeTab, setActiveTab] = useState<'overview' | 'targets'>(
+    canViewKpis ? 'overview' : 'targets',
+  );
 
   // KPI fetch state
   const [kpis, setKpis] = useState<AnalyticsKpis | null>(null);
@@ -130,17 +180,17 @@ export const AnalyticsHub: React.FC = () => {
   const targetData = kpis
     ? [
         { name: 'Met', value: kpis.targets.targetAttainment.met },
-        { name: 'Missed', value: Math.max(0, kpis.targets.targetAttainment.total - kpis.targets.targetAttainment.met) },
+        {
+          name: 'Missed',
+          value: Math.max(
+            0,
+            kpis.targets.targetAttainment.total - kpis.targets.targetAttainment.met,
+          ),
+        },
       ]
     : [];
 
-  const mockDropOffData = [
-    { stage: 'NEW', dropoffs: 210 },
-    { stage: 'CONTACTED', dropoffs: 145 },
-    { stage: 'QUALIFIED', dropoffs: 85 },
-    { stage: 'SITE_VISIT', dropoffs: 42 },
-    { stage: 'NEGOTIATION', dropoffs: 12 },
-  ];
+  const dropOffData = kpis?.crm.dropOffByStage ?? [];
 
   return (
     <div className="space-y-6">
@@ -150,7 +200,7 @@ export const AnalyticsHub: React.FC = () => {
           Analytics & Goals
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Monitor KPI overview and monthly targets.
+          Track your team's performance and monthly targets.
         </p>
 
         {/* Tab Navigation */}
@@ -165,11 +215,9 @@ export const AnalyticsHub: React.FC = () => {
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              KPI Overview
+              Performance Overview
             </button>
           )}
-
-          
 
           {canManageTargets && (
             <button
@@ -218,40 +266,91 @@ export const AnalyticsHub: React.FC = () => {
               <>
                 {/* Top-level summary cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <KpiCard icon={<Users className="w-5 h-5 text-navy-600" />} label="Total Leads" value={nf.format(kpis.crm.totalLeads)} accent="bg-navy-50" />
-                  <KpiCard icon={<TrendingUp className="w-5 h-5 text-emerald-600" />} label="Won Leads" value={nf.format(kpis.crm.wonLeads)} accent="bg-emerald-50" />
-                  <KpiCard icon={<Building2 className="w-5 h-5 text-navy-600" />} label="Total Bookings" value={nf.format(kpis.booking.totalBookings)} accent="bg-navy-50" />
-                  <KpiCard icon={<Users className="w-5 h-5 text-violet-600" />} label="Active Employees" value={nf.format(kpis.hr.activeEmployees)} accent="bg-violet-50" />
+                  <KpiCard
+                    icon={<Users className="w-5 h-5 text-navy-600" />}
+                    label="Total Leads"
+                    value={nf.format(kpis.crm.totalLeads)}
+                    accent="bg-navy-50"
+                  />
+                  <KpiCard
+                    icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
+                    label="Won Leads"
+                    value={nf.format(kpis.crm.wonLeads)}
+                    accent="bg-emerald-50"
+                  />
+                  <KpiCard
+                    icon={<Building2 className="w-5 h-5 text-navy-600" />}
+                    label="Total Bookings"
+                    value={nf.format(kpis.booking.totalBookings)}
+                    accent="bg-navy-50"
+                  />
+                  <KpiCard
+                    icon={<Users className="w-5 h-5 text-violet-600" />}
+                    label="Active Employees"
+                    value={nf.format(kpis.hr.activeEmployees)}
+                    accent="bg-violet-50"
+                  />
                 </div>
 
                 {/* CRM */}
                 <SectionCard title="CRM Overview" subtitle="Lead pipeline health">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <KpiCard icon={<PhoneCall className="w-5 h-5 text-navy-600" />} label="Total Leads" value={nf.format(kpis.crm.totalLeads)} accent="bg-navy-50" />
-                    <KpiCard icon={<TrendingUp className="w-5 h-5 text-emerald-600" />} label="Won Leads" value={nf.format(kpis.crm.wonLeads)} accent="bg-emerald-50" />
-                    <KpiCard icon={<CalendarCheck className="w-5 h-5 text-amber-600" />} label="Site Visits Scheduled" value={nf.format(kpis.crm.siteVisitsScheduled)} accent="bg-amber-50" />
+                    <KpiCard
+                      icon={<PhoneCall className="w-5 h-5 text-navy-600" />}
+                      label="Total Leads"
+                      value={nf.format(kpis.crm.totalLeads)}
+                      accent="bg-navy-50"
+                    />
+                    <KpiCard
+                      icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
+                      label="Won Leads"
+                      value={nf.format(kpis.crm.wonLeads)}
+                      accent="bg-emerald-50"
+                    />
+                    <KpiCard
+                      icon={<CalendarCheck className="w-5 h-5 text-amber-600" />}
+                      label="Site Visits Scheduled"
+                      value={nf.format(kpis.crm.siteVisitsScheduled)}
+                      accent="bg-amber-50"
+                    />
                   </div>
                 </SectionCard>
 
                 {/* Pipeline Drop-off Analysis */}
-                <SectionCard title="Pipeline Drop-off Analysis" subtitle="Leads lost by exit stage (exited_from_status)">
-                  <div className="h-64 mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={mockDropOffData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="stage" type="category" axisLine={false} tickLine={false} style={{ fontSize: '11px', fontWeight: 'bold', fill: '#64748b' }} />
-                        <RechartsTooltip cursor={{ fill: '#f1f5f9' }} />
-                        <Bar dataKey="dropoffs" name="Lost Leads" radius={[0, 4, 4, 0]}>
-                          {mockDropOffData.map((_, idx) => (
-                            <Cell key={`cell-${idx}`} fill={idx > 2 ? '#f43f5e' : '#f59e0b'} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-2 text-center">
-                    * Note: Data mocked visually for UX demo until backend exposes `exited_from_status` distribution.
-                  </p>
+                <SectionCard
+                  title="Pipeline Drop-off Analysis"
+                  subtitle="Leads lost by exit stage (exited_from_status)"
+                >
+                  {dropOffData.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-8">
+                      No dropped leads recorded yet.
+                    </p>
+                  ) : (
+                    <div className="h-64 mt-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={dropOffData}
+                          layout="vertical"
+                          margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                        >
+                          <XAxis type="number" hide />
+                          <YAxis
+                            dataKey="stage"
+                            type="category"
+                            axisLine={false}
+                            tickLine={false}
+                            style={{ fontSize: '11px', fontWeight: 'bold', fill: '#64748b' }}
+                          />
+                          <RechartsTooltip cursor={{ fill: '#f1f5f9' }} />
+                          <Bar dataKey="dropoffs" name="Lost Leads" radius={[0, 4, 4, 0]}>
+                            {dropOffData.map((_, idx) => (
+                              <Cell key={`cell-${idx}`} fill={idx > 2 ? '#f43f5e' : '#f59e0b'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
                 </SectionCard>
 
                 {/* Property + Targets side by side */}
@@ -263,9 +362,18 @@ export const AnalyticsHub: React.FC = () => {
                       <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
-                            <Pie data={propertyData} dataKey="value" nameKey="name" outerRadius={80} label>
+                            <Pie
+                              data={propertyData}
+                              dataKey="value"
+                              nameKey="name"
+                              outerRadius={80}
+                              label
+                            >
                               {propertyData.map((_, idx) => (
-                                <Cell key={`cell-${idx}`} fill={PROPERTY_COLORS[idx % PROPERTY_COLORS.length]} />
+                                <Cell
+                                  key={`cell-${idx}`}
+                                  fill={PROPERTY_COLORS[idx % PROPERTY_COLORS.length]}
+                                />
                               ))}
                             </Pie>
                             <RechartsTooltip />
@@ -274,10 +382,22 @@ export const AnalyticsHub: React.FC = () => {
                       </div>
                     )}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-center text-sm">
-                      <div><p className="text-slate-500">Total</p><p className="font-semibold">{nf.format(kpis.property.total)}</p></div>
-                      <div><p className="text-slate-500">Live</p><p className="font-semibold">{nf.format(kpis.property.live)}</p></div>
-                      <div><p className="text-slate-500">Pending MD</p><p className="font-semibold">{nf.format(kpis.property.pendingMD)}</p></div>
-                      <div><p className="text-slate-500">Pending PM</p><p className="font-semibold">{nf.format(kpis.property.pendingPM)}</p></div>
+                      <div>
+                        <p className="text-slate-500">Total</p>
+                        <p className="font-semibold">{nf.format(kpis.property.total)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Live</p>
+                        <p className="font-semibold">{nf.format(kpis.property.live)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Pending MD</p>
+                        <p className="font-semibold">{nf.format(kpis.property.pendingMD)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Pending PM</p>
+                        <p className="font-semibold">{nf.format(kpis.property.pendingPM)}</p>
+                      </div>
                     </div>
                   </SectionCard>
 
@@ -300,9 +420,24 @@ export const AnalyticsHub: React.FC = () => {
                       </div>
                     )}
                     <div className="grid grid-cols-3 gap-2 mt-2 text-center text-sm">
-                      <div><p className="text-slate-500">Met</p><p className="font-semibold">{nf.format(kpis.targets.targetAttainment.met)}</p></div>
-                      <div><p className="text-slate-500">Total</p><p className="font-semibold">{nf.format(kpis.targets.targetAttainment.total)}</p></div>
-                      <div><p className="text-slate-500">Rate</p><p className="font-semibold">{nf.format(kpis.targets.targetAttainment.rate)}%</p></div>
+                      <div>
+                        <p className="text-slate-500">Met</p>
+                        <p className="font-semibold">
+                          {nf.format(kpis.targets.targetAttainment.met)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Total</p>
+                        <p className="font-semibold">
+                          {nf.format(kpis.targets.targetAttainment.total)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Rate</p>
+                        <p className="font-semibold">
+                          {nf.format(kpis.targets.targetAttainment.rate)}%
+                        </p>
+                      </div>
                     </div>
                   </SectionCard>
                 </div>
@@ -310,43 +445,104 @@ export const AnalyticsHub: React.FC = () => {
                 {/* HR */}
                 <SectionCard title="HR Overview" subtitle="Employee & attendance">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <KpiCard icon={<Users className="w-5 h-5 text-violet-600" />} label="Active Employees" value={nf.format(kpis.hr.activeEmployees)} accent="bg-violet-50" />
-                    <KpiCard icon={<CalendarCheck className="w-5 h-5 text-rose-600" />} label="Attendance Exceptions Today" value={nf.format(kpis.hr.attendanceExceptionsToday)} accent="bg-rose-50" />
+                    <KpiCard
+                      icon={<Users className="w-5 h-5 text-violet-600" />}
+                      label="Active Employees"
+                      value={nf.format(kpis.hr.activeEmployees)}
+                      accent="bg-violet-50"
+                    />
+                    <KpiCard
+                      icon={<CalendarCheck className="w-5 h-5 text-rose-600" />}
+                      label="Attendance Exceptions Today"
+                      value={nf.format(kpis.hr.attendanceExceptionsToday)}
+                      accent="bg-rose-50"
+                    />
                   </div>
                 </SectionCard>
 
                 {/* Performance */}
-                <SectionCard title="Performance Overview" subtitle="Aggregate team performance (from Packet A metric service)">
+                <SectionCard
+                  title="Performance Overview"
+                  subtitle="Aggregate team performance (from Packet A metric service)"
+                >
                   {kpis.performance.teamPerformance.totalEmployees === 0 ? (
                     <p className="text-sm text-slate-400">No team performance data.</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                      <div className="p-4 rounded-xl bg-slate-50"><p className="text-slate-500 text-sm">Avg Score</p><p className="text-xl font-bold text-slate-800">{kpis.performance.teamPerformance.averageScore}</p></div>
-                      <div className="p-4 rounded-xl bg-slate-50"><p className="text-slate-500 text-sm">Employees</p><p className="text-xl font-bold text-slate-800">{nf.format(kpis.performance.teamPerformance.totalEmployees)}</p></div>
-                      <div className="p-4 rounded-xl bg-slate-50"><p className="text-slate-500 text-sm">Min</p><p className="text-xl font-bold text-slate-800">{kpis.performance.teamPerformance.minScore}</p></div>
-                      <div className="p-4 rounded-xl bg-slate-50"><p className="text-slate-500 text-sm">Max</p><p className="text-xl font-bold text-slate-800">{kpis.performance.teamPerformance.maxScore}</p></div>
+                      <div className="p-4 rounded-xl bg-slate-50">
+                        <p className="text-slate-500 text-sm">Avg Score</p>
+                        <p className="text-xl font-bold text-slate-800">
+                          {kpis.performance.teamPerformance.averageScore}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-50">
+                        <p className="text-slate-500 text-sm">Employees</p>
+                        <p className="text-xl font-bold text-slate-800">
+                          {nf.format(kpis.performance.teamPerformance.totalEmployees)}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-50">
+                        <p className="text-slate-500 text-sm">Min</p>
+                        <p className="text-xl font-bold text-slate-800">
+                          {kpis.performance.teamPerformance.minScore}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-50">
+                        <p className="text-slate-500 text-sm">Max</p>
+                        <p className="text-xl font-bold text-slate-800">
+                          {kpis.performance.teamPerformance.maxScore}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </SectionCard>
 
                 {/* Portal / Integration */}
-                <SectionCard title="Portal / Integration Overview" subtitle="Customer portal & integration events">
+                <SectionCard
+                  title="Portal / Integration Overview"
+                  subtitle="Customer portal & integration events"
+                >
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <KpiCard icon={<Inbox className="w-5 h-5 text-navy-600" />} label="Handoffs" value={nf.format(kpis.marketing?.handoffs.total ?? 0)} accent="bg-navy-50" />
-                    <KpiCard icon={<FileText className="w-5 h-5 text-navy-600" />} label="Outbox" value={nf.format(kpis.marketing?.outbox.total ?? 0)} accent="bg-navy-50" />
-                    <KpiCard icon={<FileText className="w-5 h-5 text-emerald-600" />} label="KYC" value={nf.format(kpis.marketing?.kyc.total ?? 0)} accent="bg-emerald-50" />
-                    <KpiCard icon={<Users className="w-5 h-5 text-amber-600" />} label="Notifications" value={nf.format(kpis.marketing?.notifications.total ?? 0)} accent="bg-amber-50" />
-                    <KpiCard icon={<Building2 className="w-5 h-5 text-violet-600" />} label="Payments Synced" value={nf.format(kpis.marketing?.payments.total ?? 0)} accent="bg-violet-50" />
+                    <KpiCard
+                      icon={<Inbox className="w-5 h-5 text-navy-600" />}
+                      label="Handoffs"
+                      value={nf.format(kpis.marketing?.handoffs.total ?? 0)}
+                      accent="bg-navy-50"
+                    />
+                    <KpiCard
+                      icon={<FileText className="w-5 h-5 text-navy-600" />}
+                      label="Outbox"
+                      value={nf.format(kpis.marketing?.outbox.total ?? 0)}
+                      accent="bg-navy-50"
+                    />
+                    <KpiCard
+                      icon={<FileText className="w-5 h-5 text-emerald-600" />}
+                      label="KYC"
+                      value={nf.format(kpis.marketing?.kyc.total ?? 0)}
+                      accent="bg-emerald-50"
+                    />
+                    <KpiCard
+                      icon={<Users className="w-5 h-5 text-amber-600" />}
+                      label="Notifications"
+                      value={nf.format(kpis.marketing?.notifications.total ?? 0)}
+                      accent="bg-amber-50"
+                    />
+                    <KpiCard
+                      icon={<Building2 className="w-5 h-5 text-violet-600" />}
+                      label="Payments Synced"
+                      value={nf.format(kpis.marketing?.payments.total ?? 0)}
+                      accent="bg-violet-50"
+                    />
                   </div>
                   <p className="text-xs text-slate-400 mt-3">
-                    Portal sync totals reflect integration events, not cash collections. Collection totals are not part of this analytics view.
+                    Portal sync totals reflect integration events, not cash collections. Collection
+                    totals are not part of this analytics view.
                   </p>
                 </SectionCard>
               </>
             )}
           </div>
         )}
-
 
         {activeTab === 'targets' && canManageTargets && <TargetConfigurator />}
       </div>

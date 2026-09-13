@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { Lock, User, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle, Sparkles, Bug } from 'lucide-react';
+import {
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  ArrowRight,
+  AlertCircle,
+  Sparkles,
+  Bug,
+} from 'lucide-react';
 import { EMPLOYEE_CODE_REGEX } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
@@ -18,14 +28,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [debugDetails, setDebugDetails] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
-  const [isVisitingPurpose, setIsVisitingPurpose] = useState(false);
 
   const handleCodeChange = (val: string) => {
     const formatted = val.toUpperCase().trim();
     setEmployeeCode(formatted);
 
     if (formatted && !EMPLOYEE_CODE_REGEX.test(formatted)) {
-      setCodeError('Format must be RRH-<DEPT>-000 (e.g. RRH-ADMIN-001)');
+      setCodeError('Format must be RRH-<DEPT>-000 (e.g. RRH-SL-001)');
     } else {
       setCodeError(null);
     }
@@ -42,7 +51,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     }
 
     if (!EMPLOYEE_CODE_REGEX.test(employeeCode)) {
-      setCodeError('Invalid format. Expected: RRH-<DEPT>-000 (e.g. RRH-ADMIN-001)');
+      setCodeError('Invalid format. Expected: RRH-<DEPT>-000 (e.g. RRH-SL-001)');
       return;
     }
 
@@ -83,7 +92,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         if (res.status === 404) {
           setErrorMessage('System authentication is temporarily unavailable.');
         } else {
-          setErrorMessage(errorText || 'Authentication failed. Please check your credentials and try again.');
+          setErrorMessage(
+            errorText || 'Authentication failed. Please check your credentials and try again.',
+          );
         }
         return;
       }
@@ -92,27 +103,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
       // Authenticate inside AuthContext!
       if (responseJson.accessToken && responseJson.user) {
-        if (isVisitingPurpose) {
-          localStorage.setItem('rrh_visiting_purpose', 'true');
-        } else {
-          localStorage.removeItem('rrh_visiting_purpose');
-        }
         const u = responseJson.user;
         const userProfile = {
           id: u.id,
           employeeCode: u.employeeCode || u.employee_code || '',
           fullName: u.fullName || u.full_name || '',
           department: u.department || '',
-          company: u.company?.name || 'RS CRM',
+          company: (typeof u.company === 'string' ? u.company : u.company?.name) || 'RS CRM',
           branch: u.branch || 'HO',
           roles: u.roles || [],
-          permissions: responseJson.permissions || [],
+          // Was reading responseJson.permissions, which doesn't exist at that level —
+          // the API nests permissions inside the `user` object — so user.permissions
+          // was always [], silently breaking every permission-gated UI element
+          // (Edit Project, Add Units, etc.) app-wide regardless of the user's role.
+          permissions: u.permissions || [],
           attendanceRequired: u.attendanceRequired ?? true,
           firstLoginDone: u.firstLoginDone ?? false,
         };
         login(userProfile, responseJson.accessToken, responseJson.refreshToken);
       }
-
 
       if (onSuccess) {
         onSuccess(responseJson);
@@ -126,17 +135,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     }
   };
 
-
-
   return (
-    <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl p-8 border border-slate-100 relative">
+    <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl p-8 pt-10 border border-slate-100 relative overflow-hidden">
       {/* Brand Header */}
-      <div className="text-center mb-6">
-        <img src="/logo.svg" alt="RS CRM Logo" className="w-14 h-14 rounded-2xl shadow-md mx-auto mb-3 object-contain" />
+      <div className="text-center mb-7">
+        <div className="w-16 h-16 rounded-2xl shadow-lg mx-auto mb-4 bg-gradient-to-br from-navy-50 to-white border border-navy-100 flex items-center justify-center">
+          <img src="/logo.svg" alt="RS CRM Logo" className="w-11 h-11 object-contain" />
+        </div>
         <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Welcome Back</h2>
-        <p className="text-xs text-slate-500 mt-1">
-          RS CRM
-        </p>
+        <p className="text-xs text-slate-500 mt-1.5">Sign in to RS CRM</p>
       </div>
 
       {/* Global Error Banner */}
@@ -146,7 +153,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
-
         </div>
       )}
 
@@ -165,10 +171,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               type="text"
               value={employeeCode}
               onChange={(e) => handleCodeChange(e.target.value)}
-              placeholder="e.g. RRH-ADMIN-001"
+              placeholder="e.g. RRH-SL-001"
               maxLength={15}
               className={`w-full pl-10 pr-4 py-3 bg-slate-50 border ${
-                codeError ? 'border-red-400 focus:ring-red-400' : 'border-slate-200 focus:ring-navy-600'
+                codeError
+                  ? 'border-red-400 focus:ring-red-400'
+                  : 'border-slate-200 focus:ring-navy-600'
               } rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all font-mono tracking-wide placeholder:font-sans placeholder:tracking-normal text-slate-800 font-bold`}
             />
           </div>
@@ -176,7 +184,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             <p className="text-xs text-red-600 mt-1.5 font-medium">{codeError}</p>
           ) : (
             <p className="text-[11px] text-slate-400 mt-1">
-              Format: <span className="font-mono text-slate-600">RRH-&lt;DEPT&gt;-&lt;3-DIGITS&gt;</span>
+              Format:{' '}
+              <span className="font-mono text-slate-600">RRH-&lt;DEPT&gt;-&lt;3-DIGITS&gt;</span>
             </p>
           )}
         </div>
@@ -207,25 +216,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           </div>
         </div>
 
-        {/* Visiting Purpose Checkbox */}
-        <div className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
-            id="visitingPurpose"
-            checked={isVisitingPurpose}
-            onChange={(e) => setIsVisitingPurpose(e.target.checked)}
-            className="w-4 h-4 text-navy-600 rounded border-slate-300 focus:ring-navy-500"
-          />
-          <label htmlFor="visitingPurpose" className="text-xs text-slate-600 font-medium">
-            I am logging in just for visiting/viewing purpose
-          </label>
-        </div>
-
         {/* Submit Button */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full mt-2 bg-navy-700 hover:bg-navy-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full mt-6 bg-gradient-to-r from-navy-700 to-navy-900 hover:from-navy-800 hover:to-navy-950 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -238,6 +233,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         </button>
       </form>
 
+      <p className="text-center text-[11px] text-slate-400 mt-5">
+        Forgot your password? Contact HR and they'll help you reset it.
+      </p>
     </div>
   );
 };

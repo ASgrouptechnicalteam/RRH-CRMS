@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../../config';
 import { ShieldCheck, ScrollText, ShieldAlert, Users, Lock, Eye } from 'lucide-react';
 import { ListWidget, ListItem } from '../ui';
 import { RoleChangePage } from './RoleChangePage';
+import { PermissionsPage } from './PermissionsPage';
 
 interface AuditLog {
   id: number;
@@ -45,14 +46,16 @@ const ENTITY_LABELS: Record<string, string> = {
 };
 
 const formatEntityType = (type?: string): string =>
-  type ? ENTITY_LABELS[type] ?? 'Record' : 'Record';
+  type ? (ENTITY_LABELS[type] ?? 'Record') : 'Record';
 
 export const AdminSuperHub: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
   const { showError } = useToast();
-  
-  const [activeTab, setActiveTab] = useState<'roles' | 'audit' | 'security'>('roles');
-  
+
+  const [activeTab, setActiveTab] = useState<'roles' | 'permissions' | 'audit' | 'security'>(
+    'roles',
+  );
+
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditError, setAuditError] = useState(false);
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([]);
@@ -86,7 +89,7 @@ export const AdminSuperHub: React.FC = () => {
       }
     } catch (e: unknown) {
       console.error('[AdminSuperHub] fetch failed:', e);
-      showError({ message: 'Failed to connect to secure admin endpoints' });
+      showError({ message: "Couldn't load admin data. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -98,24 +101,25 @@ export const AdminSuperHub: React.FC = () => {
     }
   }, [activeTab, fetchLogs]);
 
-  const securityItems: ListItem[] = securityAlerts.map(alert => ({
+  const securityItems: ListItem[] = securityAlerts.map((alert) => ({
     id: alert.id,
     title: alert.new_value || alert.action,
     subtitle: `${new Date(alert.created_at).toLocaleString()} · Actor #${alert.actor_id} ${alert.entity_type ? `· ${alert.entity_type} #${alert.entity_id}` : ''}`,
     icon: ShieldAlert,
   }));
 
-  const auditItems: ListItem[] = auditLogs.map(log => ({
+  const auditItems: ListItem[] = auditLogs.map((log) => ({
     id: log.id,
     title: `${log.action} ${formatEntityType(log.entity_type)} #${log.entity_id}`,
     subtitle: `Actor: ${log.actor_code} (${log.actor_role}) · ${new Date(log.created_at).toLocaleString()}`,
-    meta: (log.old_value || log.new_value) ? (
-      <div className="text-[10px] font-mono bg-slate-50 border border-slate-100 rounded px-1 max-w-[150px] truncate text-slate-500">
-        {log.old_value && <span className="line-through mr-1">{log.old_value}</span>}
-        {log.new_value && <span>{log.new_value}</span>}
-      </div>
-    ) : undefined,
-    icon: Eye
+    meta:
+      log.old_value || log.new_value ? (
+        <div className="text-[10px] font-mono bg-slate-50 border border-slate-100 rounded px-1 max-w-[150px] truncate text-slate-500">
+          {log.old_value && <span className="line-through mr-1">{log.old_value}</span>}
+          {log.new_value && <span>{log.new_value}</span>}
+        </div>
+      ) : undefined,
+    icon: Eye,
   }));
 
   return (
@@ -128,7 +132,8 @@ export const AdminSuperHub: React.FC = () => {
             <h1 className="text-xl font-extrabold tracking-tight">Super Admin Hub</h1>
           </div>
           <p className="text-xs text-navy-200/80">
-            Exclusive Technical Admin Portal for Roles, Audit Trails, and Security Logs.
+            Exclusive Technical Admin Portal for Roles, Permissions, Audit Trails, and Security
+            Logs.
           </p>
         </div>
       </div>
@@ -139,20 +144,32 @@ export const AdminSuperHub: React.FC = () => {
           <button
             onClick={() => setActiveTab('roles')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'roles' 
-                ? 'bg-white text-navy-700 shadow-sm border border-slate-200' 
+              activeTab === 'roles'
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
             <Users className="w-4 h-4" />
             Role Assignment
           </button>
-          
+
+          <button
+            onClick={() => setActiveTab('permissions')}
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
+              activeTab === 'permissions'
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200'
+                : 'text-slate-600 hover:bg-slate-100 border border-transparent'
+            }`}
+          >
+            <Lock className="w-4 h-4" />
+            Permissions
+          </button>
+
           <button
             onClick={() => setActiveTab('audit')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'audit' 
-                ? 'bg-white text-navy-700 shadow-sm border border-slate-200' 
+              activeTab === 'audit'
+                ? 'bg-white text-navy-700 shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
@@ -163,8 +180,8 @@ export const AdminSuperHub: React.FC = () => {
           <button
             onClick={() => setActiveTab('security')}
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shrink-0 transition-colors ${
-              activeTab === 'security' 
-                ? 'bg-rose-50 text-rose-700 shadow-sm border border-rose-200' 
+              activeTab === 'security'
+                ? 'bg-rose-50 text-rose-700 shadow-sm border border-rose-200'
                 : 'text-slate-600 hover:bg-slate-100 border border-transparent'
             }`}
           >
@@ -181,24 +198,36 @@ export const AdminSuperHub: React.FC = () => {
             </div>
           )}
 
+          {activeTab === 'permissions' && (
+            <div className="max-w-7xl mx-auto">
+              <PermissionsPage />
+            </div>
+          )}
+
           {activeTab === 'audit' && (
             <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-               <ListWidget
-                  title="System Audit Activity"
-                  items={auditError ? [] : auditItems}
-                  emptyStateMessage={auditError ? 'Audit trail is currently unavailable.' : 'No audit events recorded.'}
-               />
+              <ListWidget
+                title="System Audit Activity"
+                items={auditError ? [] : auditItems}
+                emptyStateMessage={
+                  auditError ? 'Audit trail is currently unavailable.' : 'No audit events recorded.'
+                }
+              />
             </div>
           )}
 
           {activeTab === 'security' && (
-             <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-               <ListWidget
-                  title="Security & Anomalies"
-                  items={alertsError ? [] : securityItems}
-                  emptyStateMessage={alertsError ? 'Security alerts feed unavailable.' : 'System secure — no critical security anomalies detected.'}
-               />
-             </div>
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+              <ListWidget
+                title="Security & Anomalies"
+                items={alertsError ? [] : securityItems}
+                emptyStateMessage={
+                  alertsError
+                    ? 'Security alerts feed unavailable.'
+                    : 'System secure — no critical security anomalies detected.'
+                }
+              />
+            </div>
           )}
         </div>
       </div>

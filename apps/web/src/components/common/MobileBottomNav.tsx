@@ -15,17 +15,25 @@ export const MobileBottomNav: React.FC = () => {
     (!item.requiredPermission || userPermissions.includes(item.requiredPermission)) &&
     (!item.requiredAnyRole || item.requiredAnyRole.includes(activeRole));
 
-  // Drawer grouping logic
+  // Drawer grouping logic — mirrors AppLayout's SidebarNav exactly, including
+  // its fallback for items that appear before the first `group: true` marker
+  // (Dashboard, Leads, Customers, Site Visits, Properties, Projects, Bookings,
+  // etc.) so they render as standalone links instead of being silently dropped.
   type NavGroup = { groupItem: SidebarNavItem; children: SidebarNavItem[] };
   const groups: NavGroup[] = [];
+  const ungroupedItems: SidebarNavItem[] = [];
   let currentGroup: NavGroup | null = null;
-  
+
   for (const entry of SIDEBAR_NAV_ITEMS) {
     if (entry.group) {
       if (currentGroup && currentGroup.children.length > 0) groups.push(currentGroup);
       currentGroup = { groupItem: entry, children: [] };
     } else if (isVisible(entry)) {
-      if (currentGroup) currentGroup.children.push(entry);
+      if (currentGroup) {
+        currentGroup.children.push(entry);
+      } else {
+        ungroupedItems.push(entry);
+      }
     }
   }
   if (currentGroup && currentGroup.children.length > 0) groups.push(currentGroup);
@@ -43,7 +51,7 @@ export const MobileBottomNav: React.FC = () => {
     let shouldUpdate = false;
     const newExpanded = { ...expandedGroups };
     for (const g of groups) {
-      if (g.children.some(child => child.path && location.pathname.startsWith(child.path))) {
+      if (g.children.some((child) => child.path && location.pathname.startsWith(child.path))) {
         if (!newExpanded[g.groupItem.id]) {
           newExpanded[g.groupItem.id] = true;
           shouldUpdate = true;
@@ -52,7 +60,8 @@ export const MobileBottomNav: React.FC = () => {
     }
     if (shouldUpdate) {
       setExpandedGroups(newExpanded);
-      const persistenceOff = localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
+      const persistenceOff =
+        localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
       if (!persistenceOff) {
         localStorage.setItem(storageKey, JSON.stringify(newExpanded));
       }
@@ -62,7 +71,8 @@ export const MobileBottomNav: React.FC = () => {
   const toggleGroup = (groupId: string) => {
     const newExpanded = { ...expandedGroups, [groupId]: !expandedGroups[groupId] };
     setExpandedGroups(newExpanded);
-    const persistenceOff = localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
+    const persistenceOff =
+      localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
     if (!persistenceOff) {
       localStorage.setItem(storageKey, JSON.stringify(newExpanded));
     }
@@ -74,17 +84,30 @@ export const MobileBottomNav: React.FC = () => {
   };
 
   // Bottom Nav items
-  const homeItem = SIDEBAR_NAV_ITEMS.find(i => i.path === '/dashboard');
-  const priorityPaths = ['/leads-clients', '/bookings', '/site-visits', '/tasks', '/hr-hub', '/finance', '/properties', '/projects'];
-  const allNavItems = SIDEBAR_NAV_ITEMS.filter(i => !i.group && i.path);
-  
+  const homeItem = SIDEBAR_NAV_ITEMS.find((i) => i.path === '/dashboard');
+  const profileItem = SIDEBAR_NAV_ITEMS.find((i) => i.path === '/profile');
+  const priorityPaths = [
+    '/leads-clients',
+    '/bookings',
+    '/site-visits',
+    '/tasks',
+    '/hr-hub',
+    '/finance',
+    '/properties',
+    '/projects',
+  ];
+  const allNavItems = SIDEBAR_NAV_ITEMS.filter((i) => !i.group && i.path);
+
+  // Capped at 2 (was 3) to make room for a persistent Profile slot in the
+  // always-visible bar — previously Profile was reachable only through the
+  // full drawer, and mislabeled under an "ADMINISTRATION" group there too.
   const quickLinks: SidebarNavItem[] = [];
   for (const p of priorityPaths) {
-    const item = allNavItems.find(i => i.path === p);
+    const item = allNavItems.find((i) => i.path === p);
     if (item && isVisible(item)) {
       quickLinks.push(item);
     }
-    if (quickLinks.length >= 3) break;
+    if (quickLinks.length >= 2) break;
   }
 
   // Handle escape key and custom open event
@@ -93,10 +116,10 @@ export const MobileBottomNav: React.FC = () => {
       if (e.key === 'Escape') setIsDrawerOpen(false);
     };
     const handleOpenDrawer = () => setIsDrawerOpen(true);
-    
+
     window.addEventListener('keydown', handleEsc);
     window.addEventListener('open-mobile-drawer', handleOpenDrawer);
-    
+
     return () => {
       window.removeEventListener('keydown', handleEsc);
       window.removeEventListener('open-mobile-drawer', handleOpenDrawer);
@@ -110,28 +133,30 @@ export const MobileBottomNav: React.FC = () => {
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isDrawerOpen]);
 
   return (
     <>
       {/* Dim Overlay */}
       {isDrawerOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 bg-slate-950/60 z-[60] backdrop-blur-sm transition-opacity"
           onClick={() => setIsDrawerOpen(false)}
         />
       )}
 
       {/* Drawer */}
-      <div 
+      <div
         className={`md:hidden fixed inset-y-0 right-0 w-72 bg-navy-950 z-[70] shadow-2xl transform transition-transform duration-300 ease-in-out ${
           isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
         } flex flex-col`}
       >
         <div className="p-4 border-b border-navy-900 flex items-center justify-between bg-navy-950 shrink-0">
           <h2 className="font-bold text-slate-100 text-sm">Navigation Menu</h2>
-          <button 
+          <button
             onClick={() => setIsDrawerOpen(false)}
             aria-label="Close navigation"
             className="p-1.5 bg-navy-900 rounded-lg border border-navy-800 text-slate-400 hover:bg-navy-800 hover:text-white hover:border-navy-700 transition-colors"
@@ -141,6 +166,32 @@ export const MobileBottomNav: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-4 pb-24">
+          {ungroupedItems.length > 0 && (
+            <div className="space-y-1">
+              {ungroupedItems.map((item) => {
+                const isActive = location.pathname.startsWith(item.path || '');
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNav(item.path || '/')}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm'
+                        : 'text-slate-300 hover:bg-navy-800 hover:text-white'
+                    }`}
+                  >
+                    {item.icon ? (
+                      <item.icon
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-gold-400' : 'opacity-80'}`}
+                      />
+                    ) : null}
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {groups.map((group) => {
             const isExpanded = expandedGroups[group.groupItem.id];
             return (
@@ -167,11 +218,15 @@ export const MobileBottomNav: React.FC = () => {
                           onClick={() => handleNav(item.path || '/')}
                           aria-current={isActive ? 'page' : undefined}
                           className={`w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                            isActive ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-800 hover:text-white'
+                            isActive
+                              ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm'
+                              : 'text-slate-300 hover:bg-navy-800 hover:text-white'
                           }`}
                         >
                           {item.icon ? (
-                            <item.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-gold-400' : 'opacity-80'}`} />
+                            <item.icon
+                              className={`w-4 h-4 shrink-0 ${isActive ? 'text-gold-400' : 'opacity-80'}`}
+                            />
                           ) : null}
                           <span className="truncate">{item.label}</span>
                         </button>
@@ -185,28 +240,42 @@ export const MobileBottomNav: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Bottom Nav Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-between text-white shadow-2xl">
+      {/* Main Bottom Nav Bar — deliberately BELOW every modal's z-index (they're
+          all z-50 or higher; see the many "fixed inset-0 z-50" dialogs across
+          the app). Two elements at the same z-index stack by DOM order, which
+          made this bar cover modal footers/submit buttons on a coin-flip
+          basis depending on where each modal happened to mount. Sitting one
+          tier below guarantees every dialog wins regardless of DOM order,
+          while this still stays above ordinary (non-fixed) page content. */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-between text-white shadow-2xl">
         {homeItem && (
           <button
             onClick={() => handleNav(homeItem.path || '/')}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-              location.pathname.startsWith(homeItem.path || '') ? 'text-navy-400 font-extrabold bg-navy-950/60' : 'text-slate-400 hover:text-slate-200'
+              location.pathname.startsWith(homeItem.path || '')
+                ? 'text-navy-400 font-extrabold bg-navy-950/60'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {homeItem.icon ? <homeItem.icon className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+            {homeItem.icon ? (
+              <homeItem.icon className="w-5 h-5" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5" />
+            )}
             <span className="text-[9px] truncate w-full text-center">{homeItem.label}</span>
           </button>
         )}
 
-        {quickLinks.map(item => {
+        {quickLinks.map((item) => {
           const isActive = location.pathname.startsWith(item.path || '');
           return (
             <button
               key={item.id}
               onClick={() => handleNav(item.path || '/')}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
-                isActive ? 'text-navy-400 font-extrabold bg-navy-950/60' : 'text-slate-400 hover:text-slate-200'
+                isActive
+                  ? 'text-navy-400 font-extrabold bg-navy-950/60'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               {item.icon ? <item.icon className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
@@ -215,6 +284,24 @@ export const MobileBottomNav: React.FC = () => {
           );
         })}
 
+        {profileItem && (
+          <button
+            onClick={() => handleNav(profileItem.path || '/profile')}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all ${
+              location.pathname.startsWith(profileItem.path || '')
+                ? 'text-navy-400 font-extrabold bg-navy-950/60'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {profileItem.icon ? (
+              <profileItem.icon className="w-5 h-5" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5" />
+            )}
+            <span className="text-[9px] truncate w-full text-center">Profile</span>
+          </button>
+        )}
+
         <button
           onClick={() => setIsDrawerOpen(true)}
           className="flex-1 flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all text-slate-400 hover:text-slate-200"
@@ -222,7 +309,6 @@ export const MobileBottomNav: React.FC = () => {
           <Menu className="w-5 h-5" />
           <span className="text-[9px] truncate w-full text-center">Menu</span>
         </button>
-
       </div>
     </>
   );

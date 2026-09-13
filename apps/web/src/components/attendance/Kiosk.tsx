@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { QrCode, CheckCircle2, Clock, AlertCircle, RefreshCw, XCircle, LogOut, Lock, User, Key, Camera, VideoOff } from 'lucide-react';
+import {
+  QrCode,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  RefreshCw,
+  XCircle,
+  LogOut,
+  Lock,
+  User,
+  Key,
+  Camera,
+  VideoOff,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { ScanResult } from '../../types';
 import jsQR from 'jsqr';
@@ -16,6 +31,7 @@ export const Kiosk: React.FC = () => {
   // Kiosk credential login state
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showKioskPassword, setShowKioskPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [branchName, setBranchName] = useState<string | null>(null);
@@ -34,11 +50,28 @@ export const Kiosk: React.FC = () => {
   // Clock
   useEffect(() => {
     const updateTime = () => {
-      setTimeIST(new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour12: false }));
+      setTimeIST(
+        new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour12: false }),
+      );
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // § Phase 6 — while on /kiosk, point the browser at a distinctly-branded
+  // manifest (its own name/icon/start_url) so "Install app" here creates a
+  // separate home-screen icon that opens straight into kiosk mode, rather
+  // than the main CRM's icon. Reuses the same root-scoped service worker —
+  // no separate SW registration, avoids Service-Worker-Allowed complexity.
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!link) return;
+    const originalHref = link.getAttribute('href');
+    link.setAttribute('href', '/kiosk-manifest.json');
+    return () => {
+      if (originalHref) link.setAttribute('href', originalHref);
+    };
   }, []);
 
   // Restore token
@@ -60,7 +93,7 @@ export const Kiosk: React.FC = () => {
   const stopCamera = () => {
     cameraRunningRef.current = false;
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     setCameraActive(false);
@@ -68,7 +101,9 @@ export const Kiosk: React.FC = () => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -81,11 +116,13 @@ export const Kiosk: React.FC = () => {
     } catch (err) {
       console.error('Error accessing camera', err);
       if (err instanceof Error && err.name === 'NotAllowedError') {
-         setErrorMessage('Camera access denied. Please grant permission in your browser.');
+        setErrorMessage('Camera access denied. Please grant permission in your browser.');
       } else if (err instanceof Error && err.name === 'NotFoundError') {
-         setErrorMessage('No camera found on this device.');
+        setErrorMessage('No camera found on this device.');
       } else {
-         setErrorMessage('Camera access denied or unavailable. Please ensure you are using HTTPS or localhost.');
+        setErrorMessage(
+          'Camera access denied or unavailable. Please ensure you are using HTTPS or localhost.',
+        );
       }
       setMode('ERROR');
       startCountdown();
@@ -104,13 +141,15 @@ export const Kiosk: React.FC = () => {
         ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
         const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
+          inversionAttempts: 'dontInvert',
         });
 
         if (code && !scanDelayRef.current) {
           scanDelayRef.current = true;
           handleScan(code.data);
-          setTimeout(() => { scanDelayRef.current = false; }, 2000);
+          setTimeout(() => {
+            scanDelayRef.current = false;
+          }, 2000);
         }
       }
     }
@@ -279,7 +318,9 @@ export const Kiosk: React.FC = () => {
                 <Lock className="w-8 h-8 text-navy-400" />
               </div>
               <h1 className="text-2xl font-extrabold tracking-tight">RRH-CRMS</h1>
-              <p className="text-navy-400 font-medium text-sm tracking-widest uppercase mt-1">Kiosk Terminal Login</p>
+              <p className="text-navy-400 font-medium text-sm tracking-widest uppercase mt-1">
+                Kiosk Terminal Login
+              </p>
             </div>
 
             {loginError && (
@@ -310,14 +351,27 @@ export const Kiosk: React.FC = () => {
                   <Key className="w-4 h-4 inline mr-1.5 -mt-0.5" />
                   Password
                 </label>
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleKioskLogin()}
-                  placeholder="Enter kiosk password"
-                  className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-navy-500 text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showKioskPassword ? 'text' : 'password'}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleKioskLogin()}
+                    placeholder="Enter kiosk password"
+                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 pr-11 focus:outline-none focus:ring-2 focus:ring-navy-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKioskPassword(!showKioskPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    {showKioskPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -353,7 +407,9 @@ export const Kiosk: React.FC = () => {
       <header className="z-10 p-6 flex justify-between items-center border-b border-slate-800 bg-slate-900/50 backdrop-blur-md">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">RRH-CRMS</h1>
-          <p className="text-navy-400 font-medium text-sm tracking-widest uppercase mt-1">Smart Attendance Kiosk</p>
+          <p className="text-navy-400 font-medium text-sm tracking-widest uppercase mt-1">
+            Smart Attendance Kiosk
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {branchName && (
@@ -383,13 +439,15 @@ export const Kiosk: React.FC = () => {
             {credentialLabel && (
               <p className="text-xs text-slate-500 mb-2">Operating as: {credentialLabel}</p>
             )}
-            
+
             <h2 className="text-4xl font-bold mb-4 text-slate-100">Show your QR Code</h2>
             <p className="text-slate-400 text-lg mb-8">
               Place your employee QR code in front of the camera to log in or log out.
             </p>
 
-            <div className={`mb-8 relative rounded-3xl overflow-hidden border-2 border-navy-500/50 shadow-2xl mx-auto w-[90vw] max-w-[500px] aspect-square bg-black flex items-center justify-center ${!cameraActive ? 'hidden' : ''}`}>
+            <div
+              className={`mb-8 relative rounded-3xl overflow-hidden border-2 border-navy-500/50 shadow-2xl mx-auto w-[90vw] max-w-[500px] aspect-square bg-black flex items-center justify-center ${!cameraActive ? 'hidden' : ''}`}
+            >
               <video ref={videoRef} className="w-full h-full object-cover" />
               <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 border-[8px] border-navy-400/30 rounded-3xl pointer-events-none" />
@@ -409,7 +467,9 @@ export const Kiosk: React.FC = () => {
                   <Camera className="w-5 h-5" />
                   Enable Camera
                 </button>
-                <p className="text-xs text-slate-500 mt-4 max-w-xs text-center">Camera permission is required to scan QR codes.</p>
+                <p className="text-xs text-slate-500 mt-4 max-w-xs text-center">
+                  Camera permission is required to scan QR codes.
+                </p>
               </div>
             )}
           </div>
@@ -425,8 +485,14 @@ export const Kiosk: React.FC = () => {
 
         {mode === 'SUCCESS' && scanResult && (
           <div className="text-center max-w-md w-full bg-slate-800/80 backdrop-blur-xl rounded-3xl p-8 border border-slate-700 shadow-2xl animate-scale-up">
-            <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${scanResult.type === 'LOG_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-navy-500/20 text-navy-400'}`}>
-              {scanResult.type === 'LOG_IN' ? <CheckCircle2 className="w-12 h-12" /> : <LogOut className="w-12 h-12" />}
+            <div
+              className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${scanResult.type === 'LOG_IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-navy-500/20 text-navy-400'}`}
+            >
+              {scanResult.type === 'LOG_IN' ? (
+                <CheckCircle2 className="w-12 h-12" />
+              ) : (
+                <LogOut className="w-12 h-12" />
+              )}
             </div>
 
             <h2 className="text-3xl font-bold text-white mb-1">
@@ -438,7 +504,9 @@ export const Kiosk: React.FC = () => {
               })()}
             </h2>
             <p className="text-slate-400 font-medium mb-6">
-              {scanResult.type === 'LOG_IN' ? 'You have logged in successfully.' : 'You have logged out successfully.'}
+              {scanResult.type === 'LOG_IN'
+                ? 'You have logged in successfully.'
+                : 'You have logged out successfully.'}
             </p>
 
             <div className="mt-6 space-y-4">
@@ -450,11 +518,15 @@ export const Kiosk: React.FC = () => {
               {scanResult.type === 'LOG_IN' && (
                 <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">
                   <span className="text-slate-400">Status</span>
-                  <span className={`font-bold px-3 py-1 rounded-full text-sm ${
-                    scanResult.status === 'PRESENT' ? 'bg-emerald-500/20 text-emerald-400' :
-                    scanResult.status === 'LATE' ? 'bg-amber-500/20 text-amber-400' :
-                    'bg-slate-500/20 text-slate-400'
-                  }`}>
+                  <span
+                    className={`font-bold px-3 py-1 rounded-full text-sm ${
+                      scanResult.status === 'PRESENT'
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : scanResult.status === 'LATE'
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : 'bg-slate-500/20 text-slate-400'
+                    }`}
+                  >
                     {scanResult.status}
                   </span>
                 </div>
@@ -463,7 +535,9 @@ export const Kiosk: React.FC = () => {
               {scanResult.type === 'LOG_OUT' && scanResult.duration !== undefined && (
                 <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center border border-slate-700">
                   <span className="text-slate-400">Working Duration</span>
-                  <span className="text-navy-400 font-bold">{Math.floor(scanResult.duration / 60)}h {scanResult.duration % 60}m</span>
+                  <span className="text-navy-400 font-bold">
+                    {Math.floor(scanResult.duration / 60)}h {scanResult.duration % 60}m
+                  </span>
                 </div>
               )}
             </div>

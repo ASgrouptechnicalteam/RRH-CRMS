@@ -33,10 +33,10 @@ export const RoleAssignmentPage: React.FC = () => {
       setError('');
       const res = await fetchWithAuth(`${API_BASE_URL}/employees`);
       if (!res.ok) throw new Error('Failed to fetch employees');
-      
+
       const data = await res.json();
       setEmployees(data.employees || []);
-      
+
       // Initialize edited roles
       const rolesMap: Record<number, string[]> = {};
       data.employees.forEach((emp: Employee) => {
@@ -58,10 +58,10 @@ export const RoleAssignmentPage: React.FC = () => {
   };
 
   const handleRoleToggle = (employeeId: number, roleName: string) => {
-    setEditedRoles(prev => {
+    setEditedRoles((prev) => {
       const current = prev[employeeId] || [];
       if (current.includes(roleName)) {
-        return { ...prev, [employeeId]: current.filter(r => r !== roleName) };
+        return { ...prev, [employeeId]: current.filter((r) => r !== roleName) };
       } else {
         return { ...prev, [employeeId]: [...current, roleName] };
       }
@@ -71,7 +71,7 @@ export const RoleAssignmentPage: React.FC = () => {
   const saveRoles = async (employeeId: number) => {
     const rolesToSave = editedRoles[employeeId] || [];
     if (rolesToSave.length === 0) {
-      alert("An employee must have at least one role.");
+      alert('An employee must have at least one role.');
       return;
     }
 
@@ -79,7 +79,8 @@ export const RoleAssignmentPage: React.FC = () => {
       setSavingId(employeeId);
       const res = await fetchWithAuth(`${API_BASE_URL}/employees/${employeeId}/roles`, {
         method: 'PUT',
-        body: JSON.stringify({ role_names: rolesToSave })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role_names: rolesToSave }),
       });
 
       if (!res.ok) {
@@ -88,25 +89,27 @@ export const RoleAssignmentPage: React.FC = () => {
       }
 
       // Success - update local employees array
-      setEmployees(prev => prev.map(emp => 
-        emp.id === employeeId ? { ...emp, roles: [...rolesToSave] } : emp
-      ));
-      alert("Roles updated successfully");
+      setEmployees((prev) =>
+        prev.map((emp) => (emp.id === employeeId ? { ...emp, roles: [...rolesToSave] } : emp)),
+      );
+      alert('Roles updated successfully');
     } catch (err: any) {
       alert(err.message);
       // Revert local edit state to original
-      const originalEmp = employees.find(e => e.id === employeeId);
+      const originalEmp = employees.find((e) => e.id === employeeId);
       if (originalEmp) {
-        setEditedRoles(prev => ({ ...prev, [employeeId]: [...originalEmp.roles] }));
+        setEditedRoles((prev) => ({ ...prev, [employeeId]: [...originalEmp.roles] }));
       }
     } finally {
       setSavingId(null);
     }
   };
 
-  const filteredEmployees = employees.filter(emp => {
+  const filteredEmployees = employees.filter((emp) => {
     const search = searchQuery.toLowerCase();
-    return emp.fullName.toLowerCase().includes(search) || emp.employeeCode.toLowerCase().includes(search);
+    return (
+      emp.fullName.toLowerCase().includes(search) || emp.employeeCode.toLowerCase().includes(search)
+    );
   });
 
   const isUserAdmin = user?.roles?.includes(Roles.ADMIN);
@@ -122,7 +125,7 @@ export const RoleAssignmentPage: React.FC = () => {
               <h1 className="text-2xl font-extrabold tracking-tight">System Role Assignment</h1>
             </div>
             <p className="text-sm text-navy-200/80 max-w-2xl">
-              Manage functional system access by assigning precise fixed roles to employees. 
+              Manage functional system access by assigning precise fixed roles to employees.
             </p>
           </div>
         </div>
@@ -166,20 +169,26 @@ export const RoleAssignmentPage: React.FC = () => {
           <div className="max-h-[600px] overflow-y-auto pr-1 space-y-4">
             {filteredEmployees.map((emp) => {
               const currentEditedRoles = editedRoles[emp.id] || [];
-              const hasChanges = JSON.stringify([...currentEditedRoles].sort()) !== JSON.stringify([...emp.roles].sort());
+              const hasChanges =
+                JSON.stringify([...currentEditedRoles].sort()) !==
+                JSON.stringify([...emp.roles].sort());
               const isSaving = savingId === emp.id;
 
               return (
-                <div key={emp.id} className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow">
+                <div
+                  key={emp.id}
+                  className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow"
+                >
                   <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    
                     {/* Employee Identity */}
                     <div className="flex items-center gap-4 min-w-[250px] shrink-0">
                       <div className="w-12 h-12 bg-navy-50 text-navy-700 rounded-full flex items-center justify-center font-bold text-lg shrink-0 border border-navy-100">
                         {emp.fullName.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-bold text-navy-900 text-lg leading-tight">{emp.fullName}</h3>
+                        <h3 className="font-bold text-navy-900 text-lg leading-tight">
+                          {emp.fullName}
+                        </h3>
                         <div className="text-sm font-semibold text-slate-500 mt-1 bg-slate-100 px-2 py-0.5 rounded inline-block">
                           {emp.employeeCode}
                         </div>
@@ -188,17 +197,22 @@ export const RoleAssignmentPage: React.FC = () => {
 
                     {/* Roles Checkboxes */}
                     <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-wrap gap-3">
-                      {availableRoles.map(role => {
+                      {availableRoles.map((role) => {
                         const isSelected = currentEditedRoles.includes(role);
                         // MDs cannot assign ADMIN role unless they are an ADMIN
                         const isDisabled = role === Roles.ADMIN && !isUserAdmin;
-                        
+
                         return (
-                          <label key={role} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-colors ${
-                            isSelected ? 'bg-navy-900 text-white border-navy-900' : 'bg-white text-slate-700 border-slate-300 hover:border-navy-500'
-                          } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                            <input 
-                              type="checkbox" 
+                          <label
+                            key={role}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-colors ${
+                              isSelected
+                                ? 'bg-navy-900 text-white border-navy-900'
+                                : 'bg-white text-slate-700 border-slate-300 hover:border-navy-500'
+                            } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
                               className="sr-only"
                               checked={isSelected}
                               disabled={isDisabled}
@@ -216,8 +230,8 @@ export const RoleAssignmentPage: React.FC = () => {
                         onClick={() => saveRoles(emp.id)}
                         disabled={!hasChanges || isSaving}
                         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-sm w-full lg:w-auto ${
-                          hasChanges 
-                            ? 'bg-gold-500 text-navy-900 hover:bg-gold-400 border border-gold-600 shadow-gold-500/20 hover:shadow-lg' 
+                          hasChanges
+                            ? 'bg-gold-500 text-navy-900 hover:bg-gold-400 border border-gold-600 shadow-gold-500/20 hover:shadow-lg'
                             : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                         }`}
                       >
@@ -229,7 +243,6 @@ export const RoleAssignmentPage: React.FC = () => {
                         Save Roles
                       </button>
                     </div>
-
                   </div>
                 </div>
               );

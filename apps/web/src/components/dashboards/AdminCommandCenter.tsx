@@ -3,9 +3,20 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Link } from 'react-router-dom';
-import { 
-  ServerCog, ShieldAlert, Database, Users, Target, Building, ScrollText, 
-  Eye, RefreshCw, Activity, Lock, ActivitySquare, ShieldCheck
+import {
+  ServerCog,
+  ShieldAlert,
+  Database,
+  Users,
+  Target,
+  Building,
+  ScrollText,
+  Eye,
+  RefreshCw,
+  Activity,
+  Lock,
+  ActivitySquare,
+  ShieldCheck,
 } from 'lucide-react';
 import { StatCard, ListWidget, ListItem } from '../ui';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
@@ -60,11 +71,11 @@ const ENTITY_LABELS: Record<string, string> = {
 };
 
 const formatEntityType = (type?: string): string =>
-  type ? ENTITY_LABELS[type] ?? 'Record' : 'Record';
+  type ? (ENTITY_LABELS[type] ?? 'Record') : 'Record';
 
 export const AdminCommandCenter: React.FC = () => {
   const { user, fetchWithAuth } = useAuth();
-  const { showToast , showError } = useToast();
+  const { showToast, showError } = useToast();
 
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -123,32 +134,32 @@ export const AdminCommandCenter: React.FC = () => {
 
   useEffect(() => {
     fetchTelemetry();
-
   }, [fetchTelemetry]);
 
   const dbStatus = metrics?.databaseStatus;
   const dbHealthy = dbStatus === 'HEALTHY';
 
   // Prepare ListWidget data
-  const securityItems: ListItem[] = securityAlerts.slice(0, 8).map(alert => ({
+  const securityItems: ListItem[] = securityAlerts.slice(0, 8).map((alert) => ({
     id: alert.id,
     title: alert.new_value || alert.action,
     subtitle: `${new Date(alert.created_at).toLocaleString()} · Actor #${alert.actor_id} ${alert.entity_type ? `· ${alert.entity_type} #${alert.entity_id}` : ''}`,
     icon: ShieldAlert,
-    link: '/system-control'
+    link: '/system-control',
   }));
 
-  const auditItems: ListItem[] = auditLogs.slice(0, 30).map(log => ({
+  const auditItems: ListItem[] = auditLogs.slice(0, 30).map((log) => ({
     id: log.id,
     title: `${log.action} ${formatEntityType(log.entity_type)} #${log.entity_id}`,
     subtitle: `Actor: ${log.actor_code} (${log.actor_role}) · ${new Date(log.created_at).toLocaleString()}`,
-    meta: (log.old_value || log.new_value) ? (
-      <div className="text-[10px] font-mono bg-slate-50 border border-slate-100 rounded px-1 max-w-[150px] truncate text-slate-500">
-        {log.old_value && <span className="line-through mr-1">{log.old_value}</span>}
-        {log.new_value && <span>{log.new_value}</span>}
-      </div>
-    ) : undefined,
-    icon: Eye
+    meta:
+      log.old_value || log.new_value ? (
+        <div className="text-[10px] font-mono bg-slate-50 border border-slate-100 rounded px-1 max-w-[150px] truncate text-slate-500">
+          {log.old_value && <span className="line-through mr-1">{log.old_value}</span>}
+          {log.new_value && <span>{log.new_value}</span>}
+        </div>
+      ) : undefined,
+    icon: Eye,
   }));
 
   return (
@@ -172,19 +183,29 @@ export const AdminCommandCenter: React.FC = () => {
             </span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3 shrink-0">
-          <div className={`px-4 py-2 rounded-xl border text-center ${
-              isLoading ? 'bg-slate-50 border-slate-200' : dbHealthy ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'
+          <div
+            className={`px-4 py-2 rounded-xl border text-center ${
+              isLoading
+                ? 'bg-slate-50 border-slate-200'
+                : dbHealthy
+                  ? 'bg-success/10 border-success/20'
+                  : 'bg-danger/10 border-danger/20'
             }`}
           >
-            <span className="text-[10px] uppercase font-bold text-slate-500 block">System Status</span>
-            <span className={`text-sm font-black flex items-center gap-1.5 justify-center ${
+            <span className="text-[10px] uppercase font-bold text-slate-500 block">
+              System Status
+            </span>
+            <span
+              className={`text-sm font-black flex items-center gap-1.5 justify-center ${
                 isLoading ? 'text-slate-400' : dbHealthy ? 'text-success' : 'text-danger'
               }`}
             >
               {!isLoading && (
-                <span className={`w-2 h-2 rounded-full animate-pulse ${dbHealthy ? 'bg-success' : 'bg-danger'}`} />
+                <span
+                  className={`w-2 h-2 rounded-full animate-pulse ${dbHealthy ? 'bg-success' : 'bg-danger'}`}
+                />
               )}
               {isLoading ? 'CHECKING...' : dbStatus || 'UNAVAILABLE'}
             </span>
@@ -209,17 +230,32 @@ export const AdminCommandCenter: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Database" value={dbStatus || 'UNKNOWN'} icon={Database} />
-        <StatCard label="Total Users" value={metrics?.totalUsers || '—'} icon={Users} link="/employees" />
-        <StatCard label="Active Sessions" value={metrics?.activeSessions || '—'} icon={ActivitySquare} />
-        <StatCard label="Total Leads" value={metrics?.totalLeads || '—'} icon={Target} link="/leads" />
+        <StatCard
+          label="Total Users"
+          value={metrics?.totalUsers || '—'}
+          icon={Users}
+          link="/hr-hub"
+        />
+        <StatCard
+          label="Active Sessions"
+          value={metrics?.activeSessions || '—'}
+          icon={ActivitySquare}
+        />
+        <StatCard
+          label="Total Leads"
+          value={metrics?.totalLeads || '—'}
+          icon={Target}
+          link="/leads"
+        />
       </div>
 
       <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl">
         <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <h3 className="text-lg font-bold text-slate-700">System Operations Normal</h3>
         <p className="text-sm text-slate-500 max-w-md mx-auto mt-2">
-          Key performance indicators and high-level health metrics are displayed above. 
-          Detailed audit logs and granular system controls have been migrated to the dedicated Super Admin views.
+          Key performance indicators and high-level health metrics are displayed above. Detailed
+          audit logs and granular system controls have been migrated to the dedicated Super Admin
+          views.
         </p>
       </div>
     </div>

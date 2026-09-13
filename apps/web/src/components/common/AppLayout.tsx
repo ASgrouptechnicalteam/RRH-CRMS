@@ -1,6 +1,33 @@
 import React, { type ComponentType, useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Building2, MapPinned, CalendarCheck, FileCheck, IndianRupee, Settings2, UserCircle, ClipboardList, Briefcase, ChevronDown, ChevronRight, Map, FileText, Menu, Clock, Calendar, TrendingUp, ShieldCheck, MonitorSmartphone } from 'lucide-react';
+import {
+  Users,
+  Building2,
+  MapPinned,
+  CalendarCheck,
+  FileCheck,
+  IndianRupee,
+  Settings2,
+  UserCircle,
+  ClipboardList,
+  Briefcase,
+  ChevronDown,
+  ChevronRight,
+  Map,
+  FileText,
+  Menu,
+  Clock,
+  Calendar,
+  TrendingUp,
+  ShieldCheck,
+  MonitorSmartphone,
+  ClipboardCheck,
+  MessageSquareText,
+  MessageSquareWarning,
+  HelpCircle,
+  BookOpen,
+  Trophy,
+} from 'lucide-react';
 import { Roles, Permissions } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationDrawer } from '../notifications/NotificationDrawer';
@@ -52,10 +79,14 @@ export const AppLayout: React.FC<{
       <header className="utility-bar shrink-0 bg-white dark:bg-slate-800 border-b border-neutral-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img src="/logo.svg" alt="RS CRM Logo" className="h-8 w-auto hidden sm:block" />
-          <span className="text-sm font-black tracking-tight text-gold whitespace-nowrap sm:hidden md:inline-block">RS CRM</span>
+          <span className="text-sm font-black tracking-tight text-gold whitespace-nowrap sm:hidden md:inline-block">
+            RS CRM
+          </span>
           {title && (
             <>
-              <span className="text-neutral-300 hidden sm:inline-block" aria-hidden="true">/</span>
+              <span className="text-neutral-300 hidden sm:inline-block" aria-hidden="true">
+                /
+              </span>
               <h1 className="text-lg font-semibold text-navy truncate max-w-[150px] sm:max-w-xs">
                 {title}
               </h1>
@@ -81,7 +112,9 @@ export const AppLayout: React.FC<{
             {isProfileMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-neutral-100 dark:border-slate-700 py-2 z-50">
                 <div className="px-4 py-3 border-b border-neutral-100 dark:border-slate-700">
-                  <p className="text-sm font-semibold text-navy dark:text-navy-300 truncate">{user?.fullName || 'Unknown User'}</p>
+                  <p className="text-sm font-semibold text-navy dark:text-navy-300 truncate">
+                    {user?.fullName || 'Unknown User'}
+                  </p>
                   {user?.roles && user.roles.length > 1 ? (
                     <select
                       value={activeRole}
@@ -89,31 +122,60 @@ export const AppLayout: React.FC<{
                       onClick={(e) => e.stopPropagation()}
                       className="mt-1 block w-full text-xs text-neutral-500 dark:text-slate-400 capitalize bg-neutral-50 dark:bg-slate-700 border border-neutral-200 dark:border-slate-600 rounded px-2 py-1 outline-none cursor-pointer"
                     >
-                      {user.roles.map(r => <option key={r} value={r}>{r}</option>)}
+                      {user.roles.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
                     </select>
                   ) : (
-                    <p className="text-xs text-neutral-500 dark:text-slate-400 capitalize truncate">{activeRole}</p>
+                    <p className="text-xs text-neutral-500 dark:text-slate-400 capitalize truncate">
+                      {activeRole}
+                    </p>
                   )}
-                  <p className="text-[10px] text-neutral-400 dark:text-slate-500 mt-1 uppercase tracking-wider">{user?.employeeCode}</p>
+                  <p className="text-[10px] text-neutral-400 dark:text-slate-500 mt-1 uppercase tracking-wider">
+                    {user?.employeeCode}
+                  </p>
                 </div>
                 <div className="py-1">
-                  <NavLink to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 dark:text-slate-300 hover:bg-neutral-50 dark:hover:bg-slate-700">
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-neutral-700 dark:text-slate-300 hover:bg-neutral-50 dark:hover:bg-slate-700"
+                  >
                     Profile
                   </NavLink>
-                  <NavLink to="/settings" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-neutral-700 dark:text-slate-300 hover:bg-neutral-50 dark:hover:bg-slate-700">
+                  <NavLink
+                    to="/settings"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-neutral-700 dark:text-slate-300 hover:bg-neutral-50 dark:hover:bg-slate-700"
+                  >
                     Settings
                   </NavLink>
-                  <button onClick={() => { setIsProfileMenuOpen(false); window.dispatchEvent(new Event('restart-product-tour')); }} className="w-full text-left px-4 py-2 text-sm text-navy-600 dark:text-navy-300 hover:bg-navy-50 dark:hover:bg-slate-700">
+                  <button
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      window.dispatchEvent(new Event('restart-product-tour'));
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-navy-600 dark:text-navy-300 hover:bg-navy-50 dark:hover:bg-slate-700"
+                  >
                     Take Product Tour
                   </button>
-                  <button onClick={() => { setIsProfileMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-red-50 dark:hover:bg-red-900/20">
+                  <button
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
                     Logout
                   </button>
                 </div>
               </div>
             )}
           </div>
-          <div className="md:hidden w-8" /> {/* Placeholder to balance the layout since the menu button moved to bottom nav */}
+          <div className="md:hidden w-8" />{' '}
+          {/* Placeholder to balance the layout since the menu button moved to bottom nav */}
         </div>
       </header>
 
@@ -135,7 +197,7 @@ export const AppLayout: React.FC<{
         {/* Optional Right Rail */}
         {showRightRail && (
           <div
-            className="rail-right bg-white dark:bg-slate-800 border-l border-neutral-200 dark:border-slate-700 p-6 shrink-0 h-full overflow-y-auto"
+            className="hidden lg:block rail-right bg-white dark:bg-slate-800 border-l border-neutral-200 dark:border-slate-700 p-6 shrink-0 h-full overflow-y-auto"
             style={{ width: '320px' }}
           >
             <ContextualRail />
@@ -164,41 +226,206 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   // CORE APP (Un-grouped)
   { id: 'command-center', label: 'Dashboard', icon: Settings2, path: '/dashboard' },
   { id: 'leads-clients', label: 'Leads', icon: Users, path: '/leads-clients' },
-  { id: 'customers', label: 'Customers', path: '/customers', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
+  {
+    id: 'customers',
+    label: 'Customers',
+    path: '/customers',
+    requiredAnyRole: [
+      Roles.MD,
+      Roles.ADMIN,
+      Roles.SALES_MANAGER,
+      Roles.TELECALLER,
+      Roles.AGENT,
+      Roles.MARKETING_DIRECTOR,
+      Roles.FINANCE,
+      Roles.CHANNEL_PARTNER_MANAGER,
+    ],
+  },
+  { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning, path: '/complaints' },
   { id: 'site-visits', label: 'Site Visits', icon: CalendarCheck, path: '/site-visits' },
+  {
+    id: 'pm-approvals',
+    label: 'Visit Approvals',
+    icon: ClipboardCheck,
+    path: '/pm/site-visits/approvals',
+    requiredAnyRole: [Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN],
+  },
+  { id: 'demos', label: 'Demos', icon: Calendar, path: '/demos' },
+  {
+    id: 'demo-approvals',
+    label: 'Demo Approvals',
+    icon: ClipboardCheck,
+    path: '/pm/demos/approvals',
+    requiredAnyRole: [Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN],
+  },
   { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
   { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties' },
   { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects' },
-  { id: 'bookings', label: 'Bookings', icon: FileCheck, path: '/bookings', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.SALES_MANAGER, Roles.TELECALLER, Roles.AGENT, Roles.MARKETING_DIRECTOR, Roles.FINANCE, Roles.CHANNEL_PARTNER_MANAGER] },
+  {
+    id: 'bookings',
+    label: 'Bookings',
+    icon: FileCheck,
+    path: '/bookings',
+    requiredAnyRole: [
+      Roles.MD,
+      Roles.ADMIN,
+      Roles.SALES_MANAGER,
+      Roles.TELECALLER,
+      Roles.AGENT,
+      Roles.MARKETING_DIRECTOR,
+      Roles.FINANCE,
+      Roles.CHANNEL_PARTNER_MANAGER,
+    ],
+  },
 
   // WORK
   { id: 'group-work', label: 'WORK', group: true, icon: undefined },
   { id: 'my-attendance', label: 'My Attendance', icon: CalendarCheck, path: '/my-attendance' },
   { id: 'my-performance', label: 'My Performance', icon: TrendingUp, path: '/my-performance' },
+  { id: 'achievements', label: 'Achievements', icon: Trophy, path: '/achievements' },
   { id: 'tasks', label: 'Tasks', icon: ClipboardList, path: '/tasks' },
   { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/daily-report' },
 
   // FINANCE
   { id: 'group-finance', label: 'FINANCE', group: true, icon: undefined },
-  { id: 'finance', label: 'Payments & Refunds', icon: IndianRupee, path: '/finance', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.FINANCE] },
+  // Every role now gets EXPENSES_CREATE/EXPENSES_READ_OWN so any employee can
+  // submit and track their own petty-cash refunds -- FinanceHub.tsx's own
+  // docstring says as much ("Any employee: their own refund submissions +
+  // New Request button"), but this item was previously gated to just
+  // MD/Admin/Finance, hiding that page from everyone else entirely.
+  {
+    id: 'finance',
+    label: 'Payments & Refunds',
+    icon: IndianRupee,
+    path: '/finance',
+    requiredPermission: Permissions.EXPENSES_READ_OWN,
+  },
 
   // OPERATIONS
   { id: 'group-operations', label: 'OPERATIONS', group: true, icon: undefined },
-  { id: 'hr-employees', label: 'Employees', icon: Users, path: '/hr-hub', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'hr-attendance', label: 'Attendance', icon: Clock, path: '/hr-attendance', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'hr-approvals', label: 'Approvals', icon: Calendar, path: '/approvals', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'team-performance', label: 'Team Performance', icon: TrendingUp, path: '/team-performance', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
-  { id: 'hr-daily-reports', label: 'Daily Reports', icon: FileText, path: '/hr-daily-reports', requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN] },
-  { id: 'analytics', label: 'Analytics & Goals', icon: undefined, path: '/analytics', requiredAnyRole: [Roles.MD, Roles.ADMIN, Roles.MARKETING_DIRECTOR, Roles.HR_MANAGER, Roles.PROJECT_MANAGER, Roles.DIGITAL_MARKETING_HEAD, Roles.FINANCE, Roles.SALES_MANAGER] },
-  { id: 'system-control', label: 'System Control', icon: Settings2, path: '/system-control', requiredPermission: Permissions.ADMIN_SYSTEM_METRICS },
-  { id: 'pm-territories', label: 'PM Territories', icon: Map, path: '/pm-territories', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
+  {
+    id: 'hr-employees',
+    label: 'Employees',
+    icon: Users,
+    path: '/hr-hub',
+    requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN],
+  },
+  {
+    id: 'hr-attendance',
+    label: 'Attendance',
+    icon: Clock,
+    path: '/hr-attendance',
+    requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN],
+  },
+  {
+    id: 'hr-approvals',
+    label: 'Approvals',
+    icon: Calendar,
+    path: '/approvals',
+    requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN],
+  },
+  {
+    id: 'team-performance',
+    label: 'Team Performance',
+    icon: TrendingUp,
+    path: '/team-performance',
+    requiredAnyRole: [
+      Roles.MD,
+      Roles.ADMIN,
+      Roles.MARKETING_DIRECTOR,
+      Roles.HR_MANAGER,
+      Roles.PROJECT_MANAGER,
+      Roles.DIGITAL_MARKETING_HEAD,
+      Roles.FINANCE,
+      Roles.SALES_MANAGER,
+    ],
+  },
+  {
+    id: 'customer-feedback',
+    label: 'Customer Feedback',
+    icon: MessageSquareText,
+    path: '/customer-feedback',
+    requiredAnyRole: [
+      Roles.MD,
+      Roles.ADMIN,
+      Roles.MARKETING_DIRECTOR,
+      Roles.HR_MANAGER,
+      Roles.PROJECT_MANAGER,
+      Roles.DIGITAL_MARKETING_HEAD,
+      Roles.FINANCE,
+      Roles.SALES_MANAGER,
+    ],
+  },
+  {
+    id: 'hr-daily-reports',
+    label: 'Daily Reports',
+    icon: FileText,
+    path: '/hr-daily-reports',
+    requiredAnyRole: [Roles.MD, Roles.HR_MANAGER, Roles.ADMIN],
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics & Goals',
+    icon: undefined,
+    path: '/analytics',
+    requiredAnyRole: [
+      Roles.MD,
+      Roles.ADMIN,
+      Roles.MARKETING_DIRECTOR,
+      Roles.HR_MANAGER,
+      Roles.PROJECT_MANAGER,
+      Roles.DIGITAL_MARKETING_HEAD,
+      Roles.FINANCE,
+      Roles.SALES_MANAGER,
+    ],
+  },
+  {
+    id: 'system-control',
+    label: 'System Control',
+    icon: Settings2,
+    path: '/system-control',
+    requiredPermission: Permissions.ADMIN_SYSTEM_METRICS,
+  },
+  {
+    id: 'pm-territories',
+    label: 'PM Territories',
+    icon: Map,
+    path: '/pm-territories',
+    requiredAnyRole: [Roles.MD, Roles.ADMIN],
+  },
 
   // ADMINISTRATION
   { id: 'group-administration', label: 'ADMINISTRATION', group: true, icon: undefined },
-  { id: 'super-admin', label: 'Super Admin', icon: ShieldCheck, path: '/super-admin', requiredAnyRole: [Roles.ADMIN] },
-  { id: 'kiosk-management', label: 'Kiosk Management', icon: MonitorSmartphone, path: '/kiosk-management', requiredAnyRole: [Roles.MD, Roles.ADMIN] },
+  {
+    id: 'super-admin',
+    label: 'Super Admin',
+    icon: ShieldCheck,
+    path: '/super-admin',
+    requiredAnyRole: [Roles.ADMIN],
+  },
+  {
+    id: 'kiosk-management',
+    label: 'Kiosk Management',
+    icon: MonitorSmartphone,
+    path: '/kiosk-management',
+    requiredAnyRole: [Roles.MD, Roles.ADMIN],
+  },
+
+  // ACCOUNT — visible to everyone, so it must NOT sit under a group label
+  // (like the old "ADMINISTRATION" placement) that implies admin-only tools.
+  // Both the desktop sidebar and MobileBottomNav's drawer render whatever
+  // group an item is nested under, so a mislabeled group here mislabels it
+  // in both places at once.
+  { id: 'group-account', label: 'ACCOUNT', group: true, icon: undefined },
   { id: 'settings', label: 'Settings', icon: Settings2, path: '/settings' },
   { id: 'profile', label: 'Profile', icon: UserCircle, path: '/profile' },
+  { id: 'faq', label: 'Help & FAQ', icon: HelpCircle, path: '/faq' },
+  {
+    id: 'roles-responsibilities',
+    label: 'Roles & Responsibilities',
+    icon: BookOpen,
+    path: '/roles-responsibilities',
+  },
 ];
 
 export { SIDEBAR_NAV_ITEMS };
@@ -212,14 +439,23 @@ const SidebarNav: React.FC = () => {
     (!item.requiredPermission || userPermissions.includes(item.requiredPermission)) &&
     (!item.requiredAnyRole || item.requiredAnyRole.includes(activeRole));
 
-  type NavNode = { isGroup: boolean; groupItem?: SidebarNavItem; children?: SidebarNavItem[]; item?: SidebarNavItem };
+  type NavNode = {
+    isGroup: boolean;
+    groupItem?: SidebarNavItem;
+    children?: SidebarNavItem[];
+    item?: SidebarNavItem;
+  };
   const nodes: NavNode[] = [];
   let currentGroup: { groupItem: SidebarNavItem; children: SidebarNavItem[] } | null = null;
-  
+
   for (const entry of SIDEBAR_NAV_ITEMS) {
     if (entry.group) {
       if (currentGroup && currentGroup.children.length > 0) {
-        nodes.push({ isGroup: true, groupItem: currentGroup.groupItem, children: currentGroup.children });
+        nodes.push({
+          isGroup: true,
+          groupItem: currentGroup.groupItem,
+          children: currentGroup.children,
+        });
       }
       currentGroup = { groupItem: entry, children: [] };
     } else if (isVisible(entry)) {
@@ -231,7 +467,11 @@ const SidebarNav: React.FC = () => {
     }
   }
   if (currentGroup && currentGroup.children.length > 0) {
-    nodes.push({ isGroup: true, groupItem: currentGroup.groupItem, children: currentGroup.children });
+    nodes.push({
+      isGroup: true,
+      groupItem: currentGroup.groupItem,
+      children: currentGroup.children,
+    });
   }
 
   const storageKey = `rrh_sidebar_state_${user?.id || 'default'}`;
@@ -248,7 +488,7 @@ const SidebarNav: React.FC = () => {
     const newExpanded = { ...expandedGroups };
     for (const node of nodes) {
       if (node.isGroup && node.children) {
-        if (node.children.some(child => child.path && location.pathname.startsWith(child.path))) {
+        if (node.children.some((child) => child.path && location.pathname.startsWith(child.path))) {
           if (!newExpanded[node.groupItem!.id]) {
             newExpanded[node.groupItem!.id] = true;
             shouldUpdate = true;
@@ -258,7 +498,8 @@ const SidebarNav: React.FC = () => {
     }
     if (shouldUpdate) {
       setExpandedGroups(newExpanded);
-      const persistenceOff = localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
+      const persistenceOff =
+        localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
       if (!persistenceOff) {
         localStorage.setItem(storageKey, JSON.stringify(newExpanded));
       }
@@ -268,7 +509,8 @@ const SidebarNav: React.FC = () => {
   const toggleGroup = (groupId: string) => {
     const newExpanded = { ...expandedGroups, [groupId]: !expandedGroups[groupId] };
     setExpandedGroups(newExpanded);
-    const persistenceOff = localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
+    const persistenceOff =
+      localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
     if (!persistenceOff) {
       localStorage.setItem(storageKey, JSON.stringify(newExpanded));
     }
@@ -286,7 +528,9 @@ const SidebarNav: React.FC = () => {
               data-tour={`sidebar-${item.id}`}
               className={({ isActive }) =>
                 `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-800 hover:text-white'
+                  isActive
+                    ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm'
+                    : 'text-slate-300 hover:bg-navy-800 hover:text-white'
                 }`
               }
             >
@@ -321,7 +565,9 @@ const SidebarNav: React.FC = () => {
                     data-tour={`sidebar-${item.id}`}
                     className={({ isActive }) =>
                       `w-full flex items-center gap-3 rounded-md py-2 px-3 text-sm font-medium transition-colors ${
-                        isActive ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm' : 'text-slate-300 hover:bg-navy-800 hover:text-white'
+                        isActive
+                          ? 'bg-navy-900 text-gold-400 font-semibold shadow-sm'
+                          : 'text-slate-300 hover:bg-navy-800 hover:text-white'
                       }`
                     }
                   >
@@ -342,14 +588,10 @@ const ContextualRail: React.FC = () => {
   return (
     <div>
       <h2 className="text-base font-semibold text-navy mb-3">Filters</h2>
-      <p className="text-xs text-neutral-500 mb-4">
-        Refine your view with contextual filters.
-      </p>
+      <p className="text-xs text-neutral-500 mb-4">Refine your view with contextual filters.</p>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1">
-            Date range
-          </label>
+          <label className="block text-xs font-medium text-neutral-600 mb-1">Date range</label>
           <select className="input-field w-full text-sm">
             <option>This week</option>
             <option>This month</option>
@@ -357,9 +599,7 @@ const ContextualRail: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1">
-            Status
-          </label>
+          <label className="block text-xs font-medium text-neutral-600 mb-1">Status</label>
           <select className="input-field w-full text-sm">
             <option>All</option>
             <option>Active</option>

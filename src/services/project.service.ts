@@ -104,6 +104,7 @@ export class ProjectService {
       },
       include: {
         assigned_pm: { select: { id: true, employee_code: true, full_name: true, phone: true } },
+        verified_by: { select: { id: true, full_name: true } },
         properties: {
           select: {
             id: true,

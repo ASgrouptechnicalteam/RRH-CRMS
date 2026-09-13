@@ -93,6 +93,7 @@ enum ProjectType {
   VILLA
   MIXED
   COMMERCIAL
+  OTHER
 }
 
 enum AreaUnit {

@@ -207,7 +207,10 @@ router.post(
 // ─────────────────────────────────────────────────────────────
 
 // POST /api/v1/projects/:id/submit-for-review
-// PM submits their project for MD review (DRAFT|REJECTED → PENDING_VERIFICATION)
+// PM submits their project for MD review (DRAFT|REJECTED → PENDING_VERIFICATION).
+// Writes `verification_status` — the separate approval-gate field that
+// dataScope.ts actually checks for visibility — never the operational
+// `status` field (PLANNING/UNDER_CONSTRUCTION/...), which is unrelated.
 router.post(
   '/:id/submit-for-review',
   authenticateToken,
@@ -218,15 +221,15 @@ router.post(
       if (isNaN(projectId)) return res.status(400).json({ error: 'Invalid ID' });
       const project = await p.project.findFirst({ where: { id: projectId } });
       if (!project) return res.status(404).json({ error: 'Project not found' });
-      if (!['DRAFT', 'REJECTED'].includes(project.status)) {
+      if (!['DRAFT', 'REJECTED'].includes(project.verification_status)) {
         return res
           .status(400)
-          .json({ error: `Cannot submit: project is already ${project.status}` });
+          .json({ error: `Cannot submit: project is already ${project.verification_status}` });
       }
       const updated = await p.project.update({
         where: { id: projectId },
         data: {
-          status: 'PENDING_VERIFICATION',
+          verification_status: 'PENDING_VERIFICATION',
           verified_by_id: null,
           verified_at: null,
           verification_notes: null,
@@ -259,16 +262,16 @@ router.post(
       }
       const project = await p.project.findFirst({ where: { id: projectId } });
       if (!project) return res.status(404).json({ error: 'Project not found' });
-      if (project.status !== 'PENDING_VERIFICATION') {
-        return res
-          .status(400)
-          .json({ error: `Project is not pending verification (current: ${project.status})` });
+      if (project.verification_status !== 'PENDING_VERIFICATION') {
+        return res.status(400).json({
+          error: `Project is not pending verification (current: ${project.verification_status})`,
+        });
       }
       const newStatus = action === 'APPROVE' ? 'VERIFIED' : 'REJECTED';
       const updated = await p.project.update({
         where: { id: projectId },
         data: {
-          status: newStatus,
+          verification_status: newStatus,
           verified_by_id: req.user!.employeeId,
           verified_at: new Date(),
           verification_notes: notes || null,

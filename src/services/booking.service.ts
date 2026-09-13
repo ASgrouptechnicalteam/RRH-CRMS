@@ -352,6 +352,11 @@ export class BookingService {
         });
       }
 
+      // Customer + originating lead, fetched once and reused below both to
+      // sync the lead's status and to find performance-point contributors.
+      const cust = await tx.customer.findUnique({ where: { id: booking.customer_id } });
+      const leadId = cust?.origin_lead_id;
+
       // Update the associated Opportunity values (transactionally atomic with confirmation).
       const opp = await tx.opportunity.findFirst({ where: { booking_id: id } });
       if (opp) {
@@ -363,10 +368,29 @@ export class BookingService {
           },
         });
 
-        await tx.lead.update({
-          where: { id: opp.lead_id },
-          data: { status: 'BOOKED' },
-        });
+        const oppLead = await tx.lead.findUnique({ where: { id: opp.lead_id } });
+        if (oppLead && oppLead.status !== 'BOOKED') {
+          await WorkflowEngine.transitionLead(tx, opp.lead_id, 'BOOKED', {
+            actor: user,
+            entity: oppLead,
+          });
+        }
+      } else if (leadId) {
+        // Booking Initiation Wizard path: no Opportunity link exists, but the
+        // customer being booked did originate from a Lead. A confirmed,
+        // MD-approved, KYC-cleared booking is stronger ground truth than the
+        // Lead's intermediate pipeline stage, so it's allowed to close the
+        // Lead out as BOOKED from any active stage — see the widened
+        // transition matrix in lead.workflow.ts for why this is safe (the
+        // manual status-change buttons in the UI are unaffected; they build
+        // their own menu and never offer this jump).
+        const wizardLead = await tx.lead.findUnique({ where: { id: leadId } });
+        if (wizardLead && !['BOOKED', 'DROPPED', 'RECOVERED_TO_POOL'].includes(wizardLead.status)) {
+          await WorkflowEngine.transitionLead(tx, leadId, 'BOOKED', {
+            actor: user,
+            entity: wizardLead,
+          });
+        }
       }
 
       // Phase 9 Packet 5 — golden rule audit trail for the confirmation decision.
@@ -383,9 +407,6 @@ export class BookingService {
       });
 
       // Reward booking contributors with Performance Metric boost (+10pts per booking)
-      const cust = await tx.customer.findUnique({ where: { id: booking.customer_id } });
-      const leadId = cust?.origin_lead_id;
-
       const contributorIds = new Set<number>();
       if (booking.assigned_employee_id) contributorIds.add(booking.assigned_employee_id);
 

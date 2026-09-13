@@ -53,29 +53,56 @@ export class LeadWorkflow implements DomainWorkflow {
 
   /** Strict Transition Matrix for Leads (spec §1 transition table).
    * Key: Current Status → allowed next statuses.
+   *
+   * BOOKED is listed as a target on every state below that's also in
+   * DROPPABLE_FROM, not just BOOKING_INITIATED. This was added so a
+   * genuinely confirmed booking (MD-approved, KYC-cleared — see
+   * BookingService.confirmBooking) can close out the originating Lead even
+   * when that Lead never formally progressed through Negotiation/
+   * BOOKING_INITIATED, which happens whenever a booking is entered through
+   * the Booking Initiation Wizard for a customer who came from a live Lead.
+   * A confirmed booking is stronger evidence than the Lead's intermediate
+   * pipeline stage. This does NOT open a manual shortcut for staff — the
+   * UI's own status-change buttons build their menu independently (see
+   * LeadDetailModal.tsx's availableNextTransitions) and never offer BOOKED
+   * except from BOOKING_INITIATED; only the booking-confirmation code path
+   * exercises this wider rule.
    */
   private static transitionMatrix: Record<string, string[]> = {
     [LeadStatus.NEW]: [LeadStatus.ASSIGNED],
 
-    [LeadStatus.ASSIGNED]: [LeadStatus.CONTACTED, LeadStatus.DROPPED],
+    [LeadStatus.ASSIGNED]: [LeadStatus.CONTACTED, LeadStatus.DROPPED, LeadStatus.BOOKED],
 
-    [LeadStatus.CONTACTED]: [LeadStatus.QUALIFIED, LeadStatus.DROPPED],
+    [LeadStatus.CONTACTED]: [LeadStatus.QUALIFIED, LeadStatus.DROPPED, LeadStatus.BOOKED],
 
     [LeadStatus.QUALIFIED]: [
       LeadStatus.DEMO_SCHEDULED,
       LeadStatus.SITE_VISIT_SCHEDULED,
       LeadStatus.DROPPED,
+      LeadStatus.BOOKED,
     ],
 
-    [LeadStatus.DEMO_SCHEDULED]: [LeadStatus.DEMO_COMPLETED, LeadStatus.DROPPED],
+    [LeadStatus.DEMO_SCHEDULED]: [LeadStatus.DEMO_COMPLETED, LeadStatus.DROPPED, LeadStatus.BOOKED],
 
-    [LeadStatus.DEMO_COMPLETED]: [LeadStatus.SITE_VISIT_SCHEDULED, LeadStatus.DROPPED],
+    [LeadStatus.DEMO_COMPLETED]: [
+      LeadStatus.SITE_VISIT_SCHEDULED,
+      LeadStatus.DROPPED,
+      LeadStatus.BOOKED,
+    ],
 
-    [LeadStatus.SITE_VISIT_SCHEDULED]: [LeadStatus.SITE_VISIT_COMPLETED, LeadStatus.DROPPED],
+    [LeadStatus.SITE_VISIT_SCHEDULED]: [
+      LeadStatus.SITE_VISIT_COMPLETED,
+      LeadStatus.DROPPED,
+      LeadStatus.BOOKED,
+    ],
 
-    [LeadStatus.SITE_VISIT_COMPLETED]: [LeadStatus.NEGOTIATION, LeadStatus.DROPPED],
+    [LeadStatus.SITE_VISIT_COMPLETED]: [
+      LeadStatus.NEGOTIATION,
+      LeadStatus.DROPPED,
+      LeadStatus.BOOKED,
+    ],
 
-    [LeadStatus.NEGOTIATION]: [LeadStatus.BOOKING_INITIATED, LeadStatus.DROPPED],
+    [LeadStatus.NEGOTIATION]: [LeadStatus.BOOKING_INITIATED, LeadStatus.DROPPED, LeadStatus.BOOKED],
 
     [LeadStatus.BOOKING_INITIATED]: [LeadStatus.BOOKED, LeadStatus.DROPPED],
 

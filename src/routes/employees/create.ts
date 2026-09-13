@@ -154,7 +154,12 @@ router.post(
           job_title: job_title || role_name,
           department: department || 'Operations',
           employment_type: employment_type || 'FULL_TIME',
-          report_required: employment_type === 'FULL_TIME',
+          // Every employment type submits a daily report before logout —
+          // this used to default to false for part-time/contract/intern,
+          // silently exempting them from the kiosk logout gate (see
+          // routes/attendance/qr.ts). Still overridable per-employee via the
+          // existing admin-actions endpoint for genuine exceptions.
+          report_required: true,
           reporting_manager_id: reporting_manager_id ? parseInt(reporting_manager_id, 10) : null,
           date_of_joining: date_of_joining ? new Date(date_of_joining) : new Date(),
           salary_ctc: salary_ctc ? parseFloat(salary_ctc) : 35000,

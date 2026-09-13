@@ -77,6 +77,7 @@ interface BookingFormInput {
   // Financial summary
   emi_months?: number;
   emi_charges?: number;
+  emi_interest_rate?: number;
   total_cost?: number;
   total_cost_words?: string;
   // Booking receipt
@@ -305,6 +306,7 @@ export class BookingService {
         // schedule from these rather than duplicating the CRM's EMI logic.
         emi_months: booking.emi_months,
         emi_charges: booking.emi_charges,
+        emi_interest_rate: (booking as any).emi_interest_rate,
         total_cost: booking.total_cost,
       },
       property: bookedTitle ? { title: bookedTitle } : null,
@@ -533,6 +535,7 @@ export class BookingService {
           charges_per_sqyd: dto.charges_per_sqyd ?? null,
           emi_months: dto.emi_months ?? null,
           emi_charges: dto.emi_charges ?? null,
+          emi_interest_rate: dto.emi_interest_rate ?? null,
           total_cost: dto.total_cost ?? null,
           total_cost_words: dto.total_cost_words ?? null,
           receipt_no: dto.receipt_no ?? null,
@@ -543,7 +546,7 @@ export class BookingService {
           // Workflow
           form_status: 'SUBMITTED',
           form_submitted_at: now,
-          form_submitted_by_id: user.employeeId ?? null,
+          ...(user.employeeId ? { form_submitted_by: { connect: { id: user.employeeId } } } : {}),
           tc_accepted_at: dto.tc_accepted_by_name ? now : null,
           tc_accepted_by_name: dto.tc_accepted_by_name ?? null,
           // Legacy
@@ -594,7 +597,7 @@ export class BookingService {
           : undefined,
         form_status: 'SUBMITTED',
         form_submitted_at: now,
-        form_submitted_by_id: user.employeeId ?? null,
+        ...(user.employeeId ? { form_submitted_by: { connect: { id: user.employeeId } } } : {}),
         tc_accepted_at: formData.tc_accepted_by_name ? now : undefined,
         md_rejection_reason: null, // clear any previous rejection
       } as any,
@@ -670,7 +673,7 @@ export class BookingService {
       data: {
         form_status: 'MD_APPROVED',
         md_approved_at: now,
-        md_approved_by_id: user.employeeId ?? null,
+        ...(user.employeeId ? { md_approved_by: { connect: { id: user.employeeId } } } : {}),
       } as any,
     });
 

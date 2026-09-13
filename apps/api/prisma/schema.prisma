@@ -2069,7 +2069,8 @@ model Booking {
   sale_price_per_sqyd  Float? // "Sale Price/Sq.Yd"
   charges_per_sqyd     Float? // "Charges/Sq Yd"
   emi_months           Int? // "EMI months"
-  emi_charges          Float? // "EMI Charges" (monthly installment amount)
+  emi_charges          Float? // "EMI Charges" (monthly installment amount, auto-calculated by the standard reducing-balance formula unless overridden)
+  emi_interest_rate    Float? // Annual interest rate (%) used for the EMI schedule; 0/null = interest-free installment plan (interest then applies only as the T&C's 24% p.a. late-payment penalty)
   total_cost           Float? // "Total Cost" computed: area × sale_price_per_sqyd + charges
   total_cost_words     String? // "In words" for total cost
   receipt_no           String? // "Receipt No" for the booking amount receipt

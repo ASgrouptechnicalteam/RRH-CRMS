@@ -1,0 +1,13 @@
+# P3 Discovery Acceptance Matrix
+
+| Requirement             | Description                                                         | Status  | Evidence                                                                                                                      |
+| :---------------------- | :------------------------------------------------------------------ | :------ | :---------------------------------------------------------------------------------------------------------------------------- |
+| **Normal Search**       | Property search via canonical URL structure.                        | ✅ Pass | `src/app/properties/page.tsx` properly consumes URL searchParams.                                                             |
+| **Filters**             | Location, Type, Listing, Budget, Possession, Bedrooms.              | ✅ Pass | Extracted and parsed accurately in `src/components/search/SearchFilters.tsx` and mapped via `filtersToQuery` in `lib/dto.ts`. |
+| **Sorting**             | Relevance, Newest, Price (Low to High), Price (High to Low).        | ✅ Pass | Sort options defined in `types/search.ts` and managed in `SearchResults.tsx`.                                                 |
+| **Property Cards**      | Consistent responsive grid with semantic design tokens.             | ✅ Pass | Uses `@theme` tokens (e.g. `bg-brand-navy`, `border-border`) correctly via `Badge` and Tailwind utility classes.              |
+| **Property Details**    | Displays public CRM fields. Strips seller details & private notes.  | ✅ Pass | `toPublicPropertyDetail` cleanly strips restricted fields using `ALLOWED_DETAIL_KEYS`.                                        |
+| **Project Details**     | Lists associated properties properly formatted within the P1 Shell. | ✅ Pass | Double container padding fixed in `projects/page.tsx`. Sub-properties rendered cleanly.                                       |
+| **Shortlist & Compare** | CTAs available on Property Cards.                                   | ✅ Pass | Present via `PropertyCardActions.tsx` tied to `CustomerActivityProvider`.                                                     |
+| **Empty States**        | Truthful degradation on no results (Filters vs CRM unavailable).    | ✅ Pass | Derived logically in `lib/matching/emptyState.ts`.                                                                            |
+| **UI Components**       | Utilizes unified `Button` implementation.                           | ✅ Pass | Replaced standard HTML buttons with React canonical `Button` inside `SearchFilters.tsx`.                                      |

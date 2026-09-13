@@ -2,11 +2,35 @@ import { prisma } from '../../lib/prisma';
 import { TokenPayload } from '../../utils/jwt';
 import { Roles, Permissions } from '../../shared';
 import { can } from '../../authz/authorization';
-import { buildLeadScope } from '../../authz/dataScope';
+import { buildLeadScope, getAccessibleCompanyIds } from '../../authz/dataScope';
 import { LeadPolicy } from '../../policies/lead.policy';
 import { AppError } from './errors';
 
 const p = prisma;
+
+/**
+ * Leads that fell through auto-distribution entirely (findBestAssigneeForLead
+ * found no eligible telecaller at creation/recovery time — see
+ * utils/distributionService.ts) and so were never assigned to anyone. Rare in
+ * practice, but with no other route to them they'd otherwise sit invisible
+ * forever. Scoped to the requester's accessible companies, not their
+ * personal team, since by definition no one owns these yet.
+ */
+export async function getUnclaimedLeads(user: TokenPayload) {
+  const companyIds = await getAccessibleCompanyIds(user);
+  return p.lead.findMany({
+    where: {
+      company_id: user.roles.includes(Roles.ADMIN) ? undefined : { in: companyIds },
+      assigned_to_id: null,
+      status: 'NEW',
+    },
+    include: {
+      created_by: { select: { id: true, employee_code: true, full_name: true } },
+      preferred_locations: { orderBy: { sort_order: 'asc' } },
+    },
+    orderBy: { created_at: 'asc' },
+  });
+}
 
 export async function getLeads(user: TokenPayload, take: number = 20, skip: number = 0) {
   const whereCondition = await buildLeadScope(user);

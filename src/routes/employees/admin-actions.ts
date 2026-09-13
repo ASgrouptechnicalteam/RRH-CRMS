@@ -8,6 +8,7 @@ import { Roles, Permissions, EmptyBodySchema, EmployeeRolesUpdateSchema } from '
 import { can } from '../../authz/authorization';
 import { notifyEmployee } from '../../utils/notifyEmployee';
 import { validateRequestBody } from '../../middleware/validate';
+import { generateTemporaryPassword } from '../../utils/tempPassword';
 import { z } from 'zod';
 
 const router = Router();
@@ -32,7 +33,8 @@ router.post(
           .json({ error: 'Forbidden: Cannot reset password for employee outside your company' });
       }
 
-      const newHash = await bcrypt.hash('Radhareal@123', 12);
+      const newPassword = generateTemporaryPassword();
+      const newHash = await bcrypt.hash(newPassword, 12);
 
       await prisma.$transaction(async (tx) => {
         await tx.employee.update({
@@ -55,11 +57,12 @@ router.post(
         type: 'PASSWORD_RESET',
         title: '🔐 Your Password Has Been Reset',
         message:
-          'An administrator has reset your password to the default. Please log in and change it immediately.',
+          'An administrator has reset your password. Ask them for the temporary password and change it on your next login.',
       });
 
       return res.status(200).json({
-        message: 'Password reset to default (Password@123) successfully',
+        message: 'Password reset successfully',
+        temporaryPassword: newPassword,
       });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to reset employee password' });

@@ -13,14 +13,18 @@ export const AttendanceStatus = {
 
 export type AttendanceStatusType = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 
-// Password Change Schema (Forced first login)
+// Password Change Schema (Forced first login) — same complexity bar as
+// EmployeeCreateSchema.initial_password so a self-chosen password can never
+// be weaker than an admin-set one.
 export const ChangePasswordSchema = z.object({
   current_password: z.string().min(1, 'Current password is required'),
   new_password: z
     .string()
     .min(8, 'New password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 });
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;

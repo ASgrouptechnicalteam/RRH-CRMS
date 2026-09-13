@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Building,
-  CalendarCheck,
-  MapPin,
-  ClipboardList,
-} from 'lucide-react';
+import { Building, CalendarCheck, MapPin, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { PropertyListItem } from '../../types';
@@ -32,7 +27,7 @@ export const PMDashboard: React.FC = () => {
       const [propsRes, projectsRes, visitsRes] = await Promise.all([
         fetchWithAuth(`${API_BASE_URL}/properties?status=PENDING_VERIFICATION`),
         fetchWithAuth(`${API_BASE_URL}/projects`),
-        fetchWithAuth(`${API_BASE_URL}/site-visits`)
+        fetchWithAuth(`${API_BASE_URL}/site-visits`),
       ]);
 
       if (propsRes.ok) {
@@ -49,26 +44,27 @@ export const PMDashboard: React.FC = () => {
       let assignedDemos = 0;
       let visitsPendingCount = 0;
       const responses: ListItem[] = [];
-      
+
       if (visitsRes.ok) {
         const data = await visitsRes.json();
         const visits = data.visits || [];
-        
-        assignedDemos = visits.filter((v: any) => 
-          v.assigned_agent_id === user?.id && 
-          !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status)
+
+        assignedDemos = visits.filter(
+          (v: any) =>
+            v.assigned_agent_id === user?.id &&
+            !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(v.status),
         ).length;
-        
+
         const pendingVisits = visits.filter((v: any) => v.status === 'PENDING');
         visitsPendingCount = pendingVisits.length;
-        
+
         pendingVisits.forEach((v: any) => {
           responses.push({
             id: v.id.toString(),
             title: `Visit for ${v.customer?.customer_name || 'Customer'}`,
             subtitle: `Requested for ${new Date(v.scheduled_date).toLocaleDateString()}`,
             icon: MapPin,
-            link: '/site-visits'
+            link: '/site-visits',
           });
         });
       }
@@ -79,7 +75,6 @@ export const PMDashboard: React.FC = () => {
         activeProjects,
       });
       setPendingResponses(responses);
-
     } catch (e) {
       console.error('Fetch PM properties error:', e);
     } finally {
@@ -98,8 +93,12 @@ export const PMDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Project Manager Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.employeeCode}. Here are your pending actions and audits.</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">
+            Project Manager Dashboard
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Welcome back, {user?.employeeCode}. Here are your pending actions and verifications.
+          </p>
         </div>
       </div>
 
@@ -109,25 +108,25 @@ export const PMDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Assigned Demos"
-          value={isLoading ? "..." : metrics.assignedDemos}
+          value={isLoading ? '...' : metrics.assignedDemos}
           icon={CalendarCheck}
           link="/site-visits"
         />
         <StatCard
           label="Visits Pending Acceptance"
-          value={isLoading ? "..." : metrics.siteVisitsPending}
+          value={isLoading ? '...' : metrics.siteVisitsPending}
           icon={MapPin}
-          link="/site-visits"
+          link="/pm/site-visits/approvals"
         />
         <StatCard
           label="Active Projects"
-          value={isLoading ? "..." : metrics.activeProjects}
+          value={isLoading ? '...' : metrics.activeProjects}
           icon={Building}
           link="/projects"
         />
         <StatCard
-          label="Pending Property Audits"
-          value={isLoading ? "..." : pendingPropertyAudits}
+          label="Pending PM Verification"
+          value={isLoading ? '...' : pendingPropertyAudits}
           icon={ClipboardList}
           link="/properties"
         />
@@ -145,7 +144,7 @@ export const PMDashboard: React.FC = () => {
             title="Pending My Response"
             items={pendingResponses}
             emptyStateMessage="No visit requests pending acceptance."
-            viewAllLink="/site-visits"
+            viewAllLink="/pm/site-visits/approvals"
           />
         </div>
       </div>

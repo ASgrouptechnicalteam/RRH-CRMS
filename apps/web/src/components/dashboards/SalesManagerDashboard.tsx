@@ -2,9 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import {
-  Users, Medal, TrendingUp, Calendar, AlertCircle, Clock, ShieldAlert, Award, Activity, PhoneCall, CheckCircle, Target
+  Users,
+  Medal,
+  TrendingUp,
+  Calendar,
+  AlertCircle,
+  Clock,
+  ShieldAlert,
+  Award,
+  Activity,
+  PhoneCall,
+  CheckCircle,
+  Target,
 } from 'lucide-react';
-import { SalesManagerDashboardData, PipelineStageCount, TeamPerformanceRow, LeadAttributionRow, StalledLeadRow, OverdueTaskRow } from '../../types';
+import {
+  SalesManagerDashboardData,
+  PipelineStageCount,
+  TeamPerformanceRow,
+  LeadAttributionRow,
+  StalledLeadRow,
+  OverdueTaskRow,
+} from '../../types';
 import { StatCard, ListWidget, ListItem, DataTable } from '../ui';
 
 import { ActiveSiteVisitsBanner } from '../siteVisits/ActiveSiteVisitsBanner';
@@ -39,20 +57,34 @@ export const SalesManagerDashboard: React.FC = () => {
     );
   }
 
-  if (!data) return <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load dashboard data.</div>;
+  if (!data)
+    return (
+      <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load dashboard data.</div>
+    );
 
-  const { kpis, pipeline, teamPerformance, leadAttribution, stalledLeads, recoveredUnassignedLeads, overdueTasks, siteVisits, targets } = data;
+  const {
+    kpis,
+    pipeline,
+    teamPerformance,
+    leadAttribution,
+    stalledLeads,
+    recoveredUnassignedLeads,
+    overdueTasks,
+    siteVisits,
+    targets,
+  } = data;
 
   // Prepare ListWidget data for Recovered Leads
-  const recoveredItems: ListItem[] = recoveredUnassignedLeads?.map((l) => ({
-    id: String(l.id),
-    title: `Lead #${l.id} - ${l.customer_name || 'No Name'}`,
-    subtitle: 'Waiting for Assignment',
-    value: new Date(l.created_at || '').toLocaleDateString(),
-    icon: AlertCircle,
-    color: 'text-amber-500',
-    link: `/leads/${l.id}`
-  })) || [];
+  const recoveredItems: ListItem[] =
+    recoveredUnassignedLeads?.map((l) => ({
+      id: String(l.id),
+      title: `Lead #${l.id} - ${l.customer_name || 'No Name'}`,
+      subtitle: 'Waiting for Assignment',
+      value: new Date(l.created_at || '').toLocaleDateString(),
+      icon: AlertCircle,
+      color: 'text-amber-500',
+      link: `/leads/${l.id}`,
+    })) || [];
 
   // Prepare ListWidget data for Stalled Leads
   const stalledItems: ListItem[] = stalledLeads.map((l) => ({
@@ -61,7 +93,7 @@ export const SalesManagerDashboard: React.FC = () => {
     subtitle: l.assigned_to?.full_name || 'Unassigned',
     value: new Date(l.last_contacted_at || l.created_at || '').toLocaleDateString(),
     icon: ShieldAlert,
-    link: `/leads/${l.id}`
+    link: `/leads/${l.id}`,
   }));
 
   // Prepare ListWidget data for Overdue Tasks
@@ -71,15 +103,19 @@ export const SalesManagerDashboard: React.FC = () => {
     subtitle: t.assignee?.full_name || 'Unassigned',
     value: new Date(t.target_date || '').toLocaleDateString(),
     icon: Clock,
-    link: `/tasks`
+    link: `/tasks`,
   }));
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Sales Manager Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Monitor team pipeline execution and performance.</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">
+            Sales Manager Dashboard
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Monitor team pipeline execution and performance.
+          </p>
         </div>
       </div>
 
@@ -87,12 +123,7 @@ export const SalesManagerDashboard: React.FC = () => {
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          label="Team Lead Load"
-          value={kpis.totalLeads}
-          icon={Users}
-          link="/leads"
-        />
+        <StatCard label="Team Lead Load" value={kpis.totalLeads} icon={Users} link="/leads" />
         <StatCard
           label="Conversion Rate"
           value={`${kpis.conversionRate.toFixed(1)}%`}
@@ -117,9 +148,9 @@ export const SalesManagerDashboard: React.FC = () => {
                 Top Lead Introducers
               </h3>
             </div>
-            
+
             <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 flex-1">
-              <DataTable 
+              <DataTable
                 columns={[
                   { key: 'employee', header: 'Introduced By' },
                   { key: 'introduced', header: 'Introduced' },
@@ -127,15 +158,17 @@ export const SalesManagerDashboard: React.FC = () => {
                   { key: 'won', header: 'Won' },
                   { key: 'conv', header: 'Conv. %' },
                 ]}
-                data={leadAttribution.map(la => ({
+                data={leadAttribution.map((la) => ({
                   id: la.employee.id,
-                  employee: <div className="font-semibold text-navy-900">{la.employee.full_name}</div>,
+                  employee: (
+                    <div className="font-semibold text-navy-900">{la.employee.full_name}</div>
+                  ),
                   introduced: <span className="font-bold text-navy-700">{la.leadsIntroduced}</span>,
                   qualified: <span className="font-medium text-navy-800">{la.qualified}</span>,
                   won: <span className="font-bold text-success">{la.won}</span>,
-                  conv: `${la.conversionRate.toFixed(1)}%`
+                  conv: `${la.conversionRate.toFixed(1)}%`,
                 }))}
-                emptyMessage="No attribution data available."
+                emptyMessage="No lead-source data yet."
               />
             </div>
           </div>
@@ -147,11 +180,13 @@ export const SalesManagerDashboard: React.FC = () => {
                 <Users className="w-4 h-4 text-action" />
                 Team Distribution
               </h3>
-              <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Operational - Active Load</span>
+              <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Operational - Active Load
+              </span>
             </div>
-            
+
             <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1 flex-1">
-              <DataTable 
+              <DataTable
                 columns={[
                   { key: 'employee', header: 'Employee' },
                   { key: 'assigned', header: 'Assigned' },
@@ -160,14 +195,16 @@ export const SalesManagerDashboard: React.FC = () => {
                   { key: 'won', header: 'Won' },
                   { key: 'conv', header: 'Conv. %' },
                 ]}
-                data={teamPerformance.map(tp => ({
+                data={teamPerformance.map((tp) => ({
                   id: tp.employee.id,
-                  employee: <div className="font-semibold text-navy-800">{tp.employee.full_name}</div>,
+                  employee: (
+                    <div className="font-semibold text-navy-800">{tp.employee.full_name}</div>
+                  ),
                   assigned: tp.assignedLeads,
                   contacted: tp.contacted,
                   qualified: tp.qualified,
                   won: <span className="font-bold text-navy-600">{tp.won}</span>,
-                  conv: `${tp.conversionRate.toFixed(1)}%`
+                  conv: `${tp.conversionRate.toFixed(1)}%`,
                 }))}
                 emptyMessage="No team performance data available."
               />
@@ -211,9 +248,9 @@ export const SalesManagerDashboard: React.FC = () => {
                 <span>{targets.targetAttainmentPercentage?.toFixed(1) || 0}%</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all ${targets.targetAttainmentPercentage >= 100 ? 'bg-success' : 'bg-danger'}`} 
-                  style={{ width: `${Math.min(targets.targetAttainmentPercentage || 0, 100)}%` }} 
+                <div
+                  className={`h-full rounded-full transition-all ${targets.targetAttainmentPercentage >= 100 ? 'bg-success' : 'bg-danger'}`}
+                  style={{ width: `${Math.min(targets.targetAttainmentPercentage || 0, 100)}%` }}
                 />
               </div>
             </div>

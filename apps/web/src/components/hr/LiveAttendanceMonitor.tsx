@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { CheckCircle2, Clock, AlertTriangle, AlertCircle } from 'lucide-react';
+import { StatusPill } from '../ui/StatusPill';
+import { attendanceStatusToPillType } from '../../utils/attendanceStatus';
 
 interface AttendanceLog {
   id: number;
@@ -15,16 +17,18 @@ interface AttendanceLog {
 }
 
 export const LiveAttendanceMonitor: React.FC = () => {
-  const { accessToken } = useAuth();
+  const { fetchWithAuth } = useAuth();
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLiveAttendance = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/attendance/live`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      // fetchWithAuth (not a raw fetch with a manually-attached token) —
+      // it transparently refreshes and retries once on a 401, so a
+      // momentarily-stale access token right after login/navigation doesn't
+      // surface as a false "Failed to fetch" error here.
+      const res = await fetchWithAuth(`${API_BASE_URL}/attendance/live`);
       if (!res.ok) throw new Error('Failed to fetch attendance logs');
       const data = await res.json();
       setLogs(data.logs || []);
@@ -36,24 +40,35 @@ export const LiveAttendanceMonitor: React.FC = () => {
     }
   };
 
+  // fetchWithAuth (from AuthContext) is a plain function, not memoized, so it
+  // gets a new reference on every AuthProvider render — depending on it here
+  // would restart this polling interval on renders unrelated to this page.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchLiveAttendance();
     const interval = setInterval(fetchLiveAttendance, 60000); // Refresh every minute
     return () => clearInterval(interval);
-  }, [accessToken]);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PRESENT': return 'text-green-700 bg-green-50 border-green-200';
-      case 'LATE': return 'text-amber-700 bg-amber-50 border-amber-200';
-      case 'HALF_DAY': return 'text-orange-700 bg-orange-50 border-orange-200';
-      case 'ABSENT': return 'text-red-700 bg-red-50 border-red-200';
-      default: return 'text-slate-700 bg-slate-50 border-slate-200';
+      case 'PRESENT':
+        return 'text-green-700 bg-green-50 border-green-200';
+      case 'LATE':
+        return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'HALF_DAY':
+        return 'text-orange-700 bg-orange-50 border-orange-200';
+      case 'ABSENT':
+        return 'text-red-700 bg-red-50 border-red-200';
+      default:
+        return 'text-slate-700 bg-slate-50 border-slate-200';
     }
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center text-slate-500 animate-pulse">Loading live attendance...</div>;
+    return (
+      <div className="p-8 text-center text-slate-500 animate-pulse">Loading live attendance...</div>
+    );
   }
 
   if (error) {
@@ -70,7 +85,9 @@ export const LiveAttendanceMonitor: React.FC = () => {
       <div className="bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center flex flex-col items-center justify-center space-y-4">
         <Clock className="w-12 h-12 text-slate-300" />
         <h3 className="text-lg font-bold text-slate-700">No Scans Yet Today</h3>
-        <p className="text-sm text-slate-500">Employees who scan the QR code today will appear here.</p>
+        <p className="text-sm text-slate-500">
+          Employees who scan the QR code today will appear here.
+        </p>
       </div>
     );
   }
@@ -87,23 +104,30 @@ export const LiveAttendanceMonitor: React.FC = () => {
         </span>
       </div>
       <div className="divide-y divide-slate-100">
-        {logs.map(log => (
-          <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
+        {logs.map((log) => (
+          <div
+            key={log.id}
+            className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between"
+          >
             <div>
-              <div className="font-bold text-slate-800">
-                {log.employee.full_name}
-              </div>
+              <div className="font-bold text-slate-800">{log.employee.full_name}</div>
               <div className="text-xs text-slate-500 font-mono mt-0.5">
                 {log.employee.employee_code}
               </div>
             </div>
             <div className="text-right">
-              <div className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusColor(log.status)}`}>
-                {log.status.replace('_', ' ')}
-              </div>
+              <StatusPill
+                status={log.status.replace('_', ' ')}
+                type={attendanceStatusToPillType(log.status)}
+                bordered
+              />
               <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1 justify-end">
                 <Clock className="w-3 h-3" />
-                {new Date(log.check_in_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
+                {new Date(log.check_in_at).toLocaleTimeString('en-IN', {
+                  timeZone: 'Asia/Kolkata',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </div>
             </div>
           </div>

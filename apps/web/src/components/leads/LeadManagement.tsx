@@ -1,28 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Users,
   Plus,
   Upload,
   TrendingUp,
-  ShieldCheck,
   PhoneCall,
   ChevronRight,
-  X
+  X,
+  AlertCircle,
+  Search,
+  MapPin,
+  Home,
+  IndianRupee,
+  UserCircle2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
+import { getLeadStatusLabel, getLeadSourceLabel, getRelativeAge } from '../../constants/leadStatus';
+import { getPropertyTypeLabel } from '../../constants/propertyTypes';
 import { Roles, Permissions } from '../../shared';
 import { QuickAddLeadModal } from './QuickAddLeadModal';
 import { LeadDetailModal } from './LeadDetailModal';
-import {
-  MonitorData,
-  EmployeeListItem,
-  ParsedBulkLeadRow,
-} from '../../types';
+import { DropLeadModal } from './DropLeadModal';
+import { MonitorData, EmployeeListItem, ParsedBulkLeadRow } from '../../types';
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatusPill } from '../ui/StatusPill';
-import { StatCard } from '../ui/StatCard';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface Lead {
@@ -52,13 +56,129 @@ interface Lead {
   can_edit?: boolean;
 }
 
+// Compact list-card for the Lead Pipeline section. Borrows the Telecaller
+// dashboard's strongest idea -- avatar, name, and a clear colored status
+// pill let one lead register at a glance -- but drops that card's action
+// bar (Call / Contacted / Qualify / Visit), since the viewer here (Ops/
+// Admin scanning dozens-to-hundreds of leads) isn't the person who'd work
+// any single lead; the job on this page is fast comprehension and
+// reassignment, not per-lead actions.
+interface LeadCardProps {
+  lead: Lead;
+  canAssign: boolean;
+  employees: any[];
+  onAssign: (leadId: number, assigneeId: string) => void;
+  onOpen: (lead: Lead) => void;
+  statusType: string;
+}
+
+const LeadCard: React.FC<LeadCardProps> = ({
+  lead,
+  canAssign,
+  employees,
+  onAssign,
+  onOpen,
+  statusType,
+}) => {
+  const hasBudget = lead.budget_min || lead.budget_max;
+  const budgetText = hasBudget
+    ? `₹${((lead.budget_min || 0) / 100000).toFixed(0)}L - ₹${((lead.budget_max || 0) / 100000).toFixed(0)}L`
+    : null;
+
+  return (
+    <div
+      onClick={() => onOpen(lead)}
+      className="bg-white rounded-2xl border border-slate-200 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer flex flex-col"
+    >
+      {/* Header: identity + status */}
+      <div className="p-4 flex items-start gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-navy-700 to-navy-500 flex items-center justify-center text-white font-black text-sm shrink-0">
+          {lead.customer_name.charAt(0).toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-bold text-slate-800 text-sm truncate">{lead.customer_name}</h4>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono mt-0.5">
+            <span>{lead.lead_code}</span>
+            <span>·</span>
+            <PhoneCall className="w-3 h-3" />
+            <span>{lead.phone}</span>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <StatusPill status={getLeadStatusLabel(lead.status)} type={statusType as any} />
+          <div className="text-[10px] text-slate-400 mt-1">{getRelativeAge(lead.created_at)}</div>
+        </div>
+      </div>
+
+      {/* Body: what they want, what they can afford */}
+      <div className="px-4 pb-3 space-y-1.5">
+        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+          <Home className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <span className="font-medium">
+            {getPropertyTypeLabel(lead.property_type_preference) || 'Any type'}
+          </span>
+          <span className="text-slate-300">•</span>
+          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <span className="truncate">{lead.preferred_location || 'Location not set'}</span>
+        </div>
+        {budgetText && (
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
+            <IndianRupee className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="font-medium">{budgetText}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer: source, assignment, and the one action this page needs */}
+      <div className="mt-auto px-4 py-3 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold shrink-0">
+            {getLeadSourceLabel(lead.source)}
+          </span>
+          {canAssign ? (
+            <select
+              value={lead.assigned_to?.id || ''}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => onAssign(lead.id, e.target.value)}
+              className="min-w-0 flex-1 py-1 px-1.5 text-[11px] font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-navy-500"
+            >
+              <option value="">Unassigned Pool</option>
+              {employees.map((emp: any) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.fullName || emp.employeeCode}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="flex items-center gap-1 text-[11px] text-slate-500 truncate">
+              <UserCircle2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              {lead.assigned_to?.full_name || 'Unassigned Pool'}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {lead.can_edit === false && (
+            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase tracking-wider border border-slate-200">
+              View Only
+            </span>
+          )}
+          <ChevronRight className="w-4 h-4 text-slate-300" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const LeadManagement: React.FC = () => {
   const { user, fetchWithAuth, activeRole } = useAuth();
-  const { showToast , showError } = useToast();
+  const { showToast, showError } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [monitorData, setMonitorData] = useState<MonitorData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [leadSearchQuery, setLeadSearchQuery] = useState<string>('');
+  const [leadViewTab, setLeadViewTab] = useState<'pipeline' | 'added_by_me'>('pipeline');
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
 
   const fetchEmployees = async () => {
@@ -76,12 +196,20 @@ export const LeadManagement: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [dropLeadId, setDropLeadId] = useState<number | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [parsedBulkLeads, setParsedBulkLeads] = useState<ParsedBulkLeadRow[]>([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
 
-  const isOperatorOrAdmin = ([Roles.DIGITAL_LEAD_OPERATOR, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as string[]).includes(activeRole);
+  const isOperatorOrAdmin = (
+    [Roles.DIGITAL_LEAD_OPERATOR, Roles.MARKETING_DIRECTOR, Roles.MD, Roles.ADMIN] as string[]
+  ).includes(activeRole);
+  // ADMIN's RolePermissionsMatrix entry has no leads.* permissions at all —
+  // backend authorization still allows it (authorization.ts's ADMIN bypass),
+  // so it's checked alongside the permission flag here to match.
+  const canCreateLead =
+    !!user?.permissions?.includes(Permissions.LEADS_CREATE) || activeRole === Roles.ADMIN;
 
   const handleBulkUploadBtnClick = () => {
     fileInputRef.current?.click();
@@ -103,7 +231,8 @@ export const LeadManagement: React.FC = () => {
       }
 
       const parsedRows: ParsedBulkLeadRow[] = [];
-      const startIdx = lines[0].toLowerCase().includes('phone') || lines[0].toLowerCase().includes('name') ? 1 : 0;
+      const startIdx =
+        lines[0].toLowerCase().includes('phone') || lines[0].toLowerCase().includes('name') ? 1 : 0;
 
       for (let i = startIdx; i < lines.length; i++) {
         const parts = lines[i].split(',').map((p) => p.trim().replace(/^["']|["']$/g, ''));
@@ -120,7 +249,10 @@ export const LeadManagement: React.FC = () => {
       }
 
       if (parsedRows.length === 0) {
-        showToast('No valid lead rows found in CSV. Format: Name, Phone, Email, PropertyType, Location, Notes', 'error');
+        showToast(
+          'No valid lead rows found in CSV. Format: Name, Phone, Email, PropertyType, Location, Notes',
+          'error',
+        );
         return;
       }
 
@@ -148,21 +280,27 @@ export const LeadManagement: React.FC = () => {
         setParsedBulkLeads([]);
         fetchLeads();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); } finally {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
       setIsBulkUploading(false);
     }
   };
 
   const fetchLeads = async () => {
     setIsLoading(true);
+    setHasError(false);
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/leads`);
       const data = await res.json();
       if (res.ok) {
         setLeads(data.leads || []);
+      } else {
+        setHasError(true);
       }
 
       if (isOperatorOrAdmin) {
@@ -174,7 +312,11 @@ export const LeadManagement: React.FC = () => {
       }
     } catch (e) {
       console.error('Fetch leads error:', e);
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
+      setHasError(true);
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -202,14 +344,17 @@ export const LeadManagement: React.FC = () => {
         showToast('Lead assigned successfully', 'success');
         fetchLeads();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (e) {
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); }
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    }
   };
 
   const handleUpdateStatus = async (leadId: number, newStatus: string) => {
-    const lead = leads.find(l => l.id === leadId);
+    const lead = leads.find((l) => l.id === leadId);
     if (!lead || lead.status === newStatus) return;
 
     let notes = '';
@@ -234,10 +379,40 @@ export const LeadManagement: React.FC = () => {
           setSelectedLead({ ...selectedLead, status: newStatus });
         }
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    }
+  };
+
+  const handleConfirmDrop = async (exitReason: string, exitReasonDetail: string) => {
+    if (dropLeadId == null) return;
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${dropLeadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'DROPPED',
+          exit_reason: exitReason,
+          exit_reason_detail: exitReasonDetail,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Lead dropped', 'success');
+        setDropLeadId(null);
+        fetchLeads();
+      } else {
+        await handleApiError(res, showError, data);
+      }
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    }
   };
 
   /**
@@ -246,7 +421,7 @@ export const LeadManagement: React.FC = () => {
    * qualification revisions (§1 row 4).
    */
   const handleDemoCompletion = async (leadId: number, qualification: any, notes: string) => {
-    const lead = leads.find(l => l.id === leadId);
+    const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
 
     try {
@@ -268,10 +443,13 @@ export const LeadManagement: React.FC = () => {
           setSelectedLead({ ...selectedLead, status: 'DEMO_COMPLETED' });
         }
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (err) {
-      showError(toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err })); }
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    }
   };
 
   const getStatusMap = (status: string) => {
@@ -300,15 +478,13 @@ export const LeadManagement: React.FC = () => {
     }
   };
 
-  const filteredLeads = leads.filter(l => statusFilter === 'ALL' || l.status === statusFilter);
+  const addedByMeUnassigned = leads.filter((l) => l.created_by?.id === user?.id && !l.assigned_to);
+  const baseLeads = leadViewTab === 'added_by_me' ? addedByMeUnassigned : leads;
+  const filteredLeads = baseLeads.filter(
+    (l) => statusFilter === 'ALL' || l.status === statusFilter,
+  );
 
   const columns: ColumnDef<Lead>[] = [
-    {
-      key: 'lead_code',
-      header: 'Code',
-      sortable: true,
-      render: (l) => <span className="font-mono font-bold text-navy-900">{l.lead_code}</span>
-    },
     {
       key: 'customer_name',
       header: 'Customer',
@@ -316,33 +492,38 @@ export const LeadManagement: React.FC = () => {
       render: (l) => (
         <div>
           <div className="font-bold text-slate-800">{l.customer_name}</div>
+          <div className="text-[11px] text-slate-400 font-mono mt-0.5">{l.lead_code}</div>
           <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
             <PhoneCall className="w-3 h-3 text-slate-400" />
             {l.phone}
           </div>
         </div>
-      )
+      ),
     },
     {
       key: 'property_type_preference',
-      header: 'Preference',
+      header: 'Looking For',
       sortable: true,
       render: (l) => (
         <div>
-          <div className="font-medium text-slate-800">{l.property_type_preference || 'Residential'}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">{l.preferred_location || 'N/A'}</div>
+          <div className="font-medium text-slate-800">
+            {l.property_type_preference || 'Residential'}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-0.5">
+            {l.preferred_location || 'Location not set'}
+          </div>
         </div>
-      )
+      ),
     },
     {
       key: 'source',
       header: 'Source',
       sortable: true,
       render: (l) => (
-        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold uppercase">
-          {l.source}
+        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold">
+          {getLeadSourceLabel(l.source)}
         </span>
-      )
+      ),
     },
     {
       key: 'assigned_to',
@@ -355,10 +536,10 @@ export const LeadManagement: React.FC = () => {
               <select
                 value={l.assigned_to?.id || ''}
                 onChange={(e) => handleUpdateLeadAssignment(l.id, e.target.value)}
-                className="w-full max-w-[140px] p-1.5 text-xs font-semibold bg-surface border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-navy-500"
+                className="w-full max-w-[140px] py-2 px-1.5 text-xs font-semibold bg-surface border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-navy-500"
               >
                 <option value="">Unassigned Pool</option>
-                {employees.map(emp => (
+                {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
                     {emp.full_name || emp.employee_code}
                   </option>
@@ -373,20 +554,31 @@ export const LeadManagement: React.FC = () => {
               {l.assigned_to.employee_code.slice(-3)}
             </div>
             <div className="min-w-0">
-              <div className="font-bold text-slate-800 text-[11px] truncate">{l.assigned_to.full_name || l.assigned_to.employee_code}</div>
-              <div className="text-[9px] text-slate-400 font-mono truncate">{l.assignment_type || 'AUTO'}</div>
+              <div className="font-bold text-slate-800 text-[11px] truncate">
+                {l.assigned_to.full_name || l.assigned_to.employee_code}
+              </div>
+              <div className="text-[9px] text-slate-400 font-mono truncate">
+                {l.assignment_type || 'AUTO'}
+              </div>
             </div>
           </div>
         ) : (
           <span className="text-slate-400 italic text-[11px]">Unassigned Pool</span>
         );
-      }
+      },
     },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
-      render: (l) => <StatusPill status={l.status} type={getStatusMap(l.status) as any} />
+      render: (l) => (
+        <div>
+          <StatusPill status={getLeadStatusLabel(l.status)} type={getStatusMap(l.status) as any} />
+          <div className="text-[10px] text-slate-400 mt-1">
+            {getRelativeAge(l.created_at)} in pipeline
+          </div>
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -409,8 +601,8 @@ export const LeadManagement: React.FC = () => {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -423,7 +615,8 @@ export const LeadManagement: React.FC = () => {
             <h2 className="text-xl font-extrabold tracking-tight">Leads & Distribution</h2>
           </div>
           <p className="text-xs text-navy-200/80">
-            Intelligent auto-distribution algorithm based on telecaller score, response speed, and active load
+            Intelligent auto-distribution algorithm based on telecaller score, response speed, and
+            active load
           </p>
         </div>
 
@@ -446,16 +639,25 @@ export const LeadManagement: React.FC = () => {
             </button>
           )}
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            data-tour="lead-create"
-            className="px-4 py-2 bg-gold-600 hover:bg-gold-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Lead</span>
-          </button>
+          {canCreateLead && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              data-tour="lead-create"
+              className="px-4 py-2 bg-gold-600 hover:bg-gold-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New Lead</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {hasError && (
+        <div className="text-sm text-danger-700 bg-danger-50 border border-danger-200 rounded-lg px-4 py-3 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-danger-600" />
+          Unable to load leads. Please try again later.
+        </div>
+      )}
 
       {/* Digital Lead Operator Intake Monitor */}
       {isOperatorOrAdmin && monitorData && (
@@ -469,73 +671,166 @@ export const LeadManagement: React.FC = () => {
             </span>
           </div>
 
+          {/* A roster of every telecaller's current load is reference
+              material for rebalancing assignments, not a headline metric --
+              a compact, sortable table reads at a glance; a grid of
+              full-sized StatCards (one per telecaller) drew as much
+              attention to each row as the KPIs above it. */}
           <div className="max-h-72 md:max-h-96 overflow-y-auto overscroll-contain pr-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {monitorData.telecallers.map((tc: any) => {
-                const displayName = tc.fullName || tc.full_name || 'Unknown';
-                const displayCode = tc.employeeCode || tc.employee_code || tc.id;
-                
-                return (
-                  <StatCard
-                    key={tc.id}
-                    label={`${displayName} · ${displayCode}`}
-                    value={tc.activeLeadCount || 0}
-                    icon={ShieldCheck}
-                    trend={{
-                      direction: 'up',
-                      value: String(tc.closureRate || 0), // Removed extra '%' since string likely already has it
-                      label: 'Closure Rate'
-                    }}
-                  />
-                );
-              })}
-            </div>
+            <DataTable
+              columns={[
+                {
+                  key: 'name',
+                  header: 'Telecaller',
+                  sortable: true,
+                  render: (tc: any) => (
+                    <div>
+                      <div className="font-semibold text-navy-900">
+                        {tc.fullName || tc.full_name || 'Unknown'}
+                      </div>
+                      <div className="text-xs text-slate-400 font-mono">
+                        {tc.employeeCode || tc.employee_code || tc.id}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'activeLeadCount',
+                  header: 'Active Leads',
+                  sortable: true,
+                  render: (tc: any) => (
+                    <span className="font-semibold text-navy-700">{tc.activeLeadCount || 0}</span>
+                  ),
+                },
+                {
+                  key: 'closureRate',
+                  header: 'Closure Rate',
+                  sortable: true,
+                  render: (tc: any) => (
+                    <span className="text-slate-600">{tc.closureRate || '0.0%'}</span>
+                  ),
+                },
+              ]}
+              data={monitorData.telecallers}
+              searchable={false}
+              emptyMessage="No active telecallers found."
+            />
           </div>
         </div>
       )}
 
-      {/* Main Leads Table */}
+      {/* Lead Pipeline -- compact cards, one lead per glance */}
       <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setLeadViewTab('pipeline')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              leadViewTab === 'pipeline'
+                ? 'bg-navy-900 text-white shadow-sm'
+                : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            Lead Pipeline
+          </button>
+          <button
+            onClick={() => setLeadViewTab('added_by_me')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
+              leadViewTab === 'added_by_me'
+                ? 'bg-navy-900 text-white shadow-sm'
+                : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            Leads Added by Me
+            {addedByMeUnassigned.length > 0 && (
+              <span
+                className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] flex items-center justify-center ${
+                  leadViewTab === 'added_by_me' ? 'bg-white/20' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {addedByMeUnassigned.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {leadViewTab === 'added_by_me' && (
+          <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+            Leads you added that are currently unassigned. View only — once assigned to someone,
+            they'll move to Lead Pipeline.
+          </p>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-lg font-bold text-navy-900">Lead Pipeline</h3>
-          
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-slate-500">Filter Status:</label>
+          <p className="text-xs text-slate-400">
+            Showing {filteredLeads.length} of {baseLeads.length} leads
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={leadSearchQuery}
+                onChange={(e) => setLeadSearchQuery(e.target.value)}
+                placeholder="Search name, phone, code..."
+                className="pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm w-56 focus:outline-none focus:border-navy-500"
+              />
+            </div>
+            <label className="text-xs font-semibold text-slate-500">Status:</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-navy-500"
             >
               <option value="ALL">All Statuses</option>
-              <option value="NEW">NEW</option>
-              <option value="ASSIGNED">ASSIGNED</option>
-              <option value="CONTACTED">CONTACTED</option>
-              <option value="QUALIFIED">QUALIFIED</option>
-              <option value="SITE_VISIT_SCHEDULED">SITE VISIT SCHEDULED</option>
-              <option value="NEGOTIATION">NEGOTIATION</option>
-              <option value="BOOKING_INITIATED">BOOKING INITIATED</option>
-              <option value="BOOKED">BOOKED</option>
-              <option value="DROPPED">DROPPED</option>
+              <option value="NEW">New</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="QUALIFIED">Qualified</option>
+              <option value="SITE_VISIT_SCHEDULED">Site Visit</option>
+              <option value="NEGOTIATION">Negotiation</option>
+              <option value="BOOKING_INITIATED">Booking</option>
+              <option value="BOOKED">Booked</option>
+              <option value="DROPPED">Dropped</option>
             </select>
           </div>
         </div>
 
         {isLoading ? (
           <div className="py-12 text-center text-slate-500">Loading leads...</div>
+        ) : filteredLeads.length === 0 ? (
+          <div className="py-16 text-center bg-slate-50 rounded-2xl border border-slate-100">
+            <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <p className="font-bold text-slate-500 text-sm">
+              {leadViewTab === 'added_by_me'
+                ? "You haven't added any leads that are currently unassigned."
+                : 'No leads found matching your criteria.'}
+            </p>
+          </div>
         ) : (
-          <DataTable
-            columns={columns}
-            data={filteredLeads}
-            onRowClick={setSelectedLead}
-            searchable={true}
-            emptyMessage="No leads found matching your criteria."
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredLeads.map((lead: Lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                canAssign={
+                  leadViewTab === 'added_by_me'
+                    ? false
+                    : !!user?.permissions?.includes(Permissions.LEADS_ASSIGN)
+                }
+                employees={employees}
+                onAssign={handleUpdateLeadAssignment}
+                onOpen={setSelectedLead}
+                statusType={getStatusMap(lead.status)}
+              />
+            ))}
+          </div>
         )}
       </div>
 
       {/* Quick Add Lead Modal */}
       {showAddModal && (
-        <QuickAddLeadModal 
+        <QuickAddLeadModal
           onClose={() => setShowAddModal(false)}
           onSuccess={(leadId) => {
             setShowAddModal(false);
@@ -553,6 +848,11 @@ export const LeadManagement: React.FC = () => {
           onRefreshLeads={fetchLeads}
           onDemoComplete={handleDemoCompletion}
         />
+      )}
+
+      {/* Drop Lead Reason Modal */}
+      {dropLeadId != null && (
+        <DropLeadModal onClose={() => setDropLeadId(null)} onConfirm={handleConfirmDrop} />
       )}
 
       {/* Bulk CSV Lead Preview Modal */}
@@ -577,25 +877,17 @@ export const LeadManagement: React.FC = () => {
               Parsed <strong className="text-slate-900">{parsedBulkLeads.length} leads</strong>.
             </p>
 
-            <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 font-semibold text-slate-600 sticky top-0 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-2">Name</th>
-                    <th className="px-4 py-2">Phone</th>
-                    <th className="px-4 py-2">Location</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {parsedBulkLeads.map((row, idx) => (
-                    <tr key={idx}>
-                      <td className="px-4 py-2 font-medium text-slate-900">{row.customer_name}</td>
-                      <td className="px-4 py-2 text-slate-600">{row.phone}</td>
-                      <td className="px-4 py-2 text-slate-600">{row.location}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="h-60">
+              <DataTable
+                columns={[
+                  { key: 'customer_name', header: 'Name' },
+                  { key: 'phone', header: 'Phone' },
+                  { key: 'location', header: 'Location' },
+                ]}
+                data={parsedBulkLeads}
+                searchable={false}
+                emptyMessage="No leads found in this source."
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-4">

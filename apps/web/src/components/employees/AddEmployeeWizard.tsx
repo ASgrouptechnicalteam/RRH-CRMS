@@ -1,13 +1,42 @@
 import React, { useState } from 'react';
-import { 
-  Building2, User, Key, Users, ArrowRight, ArrowLeft, Building, 
-  MapPin, CheckCircle2, FileText, Phone, Mail, GraduationCap, DollarSign, CreditCard, Heart, X, ShieldAlert,
-  CreditCardIcon, Briefcase
+import {
+  Building2,
+  User,
+  Key,
+  Users,
+  ArrowRight,
+  ArrowLeft,
+  Building,
+  MapPin,
+  CheckCircle2,
+  FileText,
+  Phone,
+  Mail,
+  GraduationCap,
+  DollarSign,
+  CreditCard,
+  Heart,
+  X,
+  ShieldAlert,
+  CreditCardIcon,
+  Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
+
+// Mirrors apps/api/src/shared/employee.ts's initial_password Zod schema
+// exactly, so a weak password is caught here instead of failing late after
+// the whole multi-step wizard is filled in.
+const getPasswordRuleError = (pwd: string): string | null => {
+  if (pwd.length < 8) return 'must be at least 8 characters long';
+  if (!/[A-Z]/.test(pwd)) return 'must contain at least one uppercase letter';
+  if (!/[a-z]/.test(pwd)) return 'must contain at least one lowercase letter';
+  if (!/[0-9]/.test(pwd)) return 'must contain at least one number';
+  if (!/[^A-Za-z0-9]/.test(pwd)) return 'must contain at least one special character';
+  return null;
+};
 
 interface AddEmployeeWizardProps {
   onClose: () => void;
@@ -16,10 +45,15 @@ interface AddEmployeeWizardProps {
   managers: { id: number; label: string }[];
 }
 
-export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, onSuccess, branches, managers }) => {
+export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
+  onClose,
+  onSuccess,
+  branches,
+  managers,
+}) => {
   const { fetchWithAuth } = useAuth();
-  const { showToast , showError } = useToast();
-  
+  const { showToast, showError } = useToast();
+
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,12 +92,16 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
   const [bankIfsc, setBankIfsc] = useState('');
   const [bankBranch, setBankBranch] = useState('');
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 5));
-  const handleBack = () => setStep(s => Math.max(s - 1, 1));
+  const handleNext = () => setStep((s) => Math.min(s + 1, 5));
+  const handleBack = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleSubmit = async () => {
     if (!fullName || !phone || !addRole || !addBranchId) {
       showError({ message: 'Please fill all required basic details in Step 1' });
+      return;
+    }
+    if (getPasswordRuleError(initialPassword)) {
+      showError({ message: `Initial password: ${getPasswordRuleError(initialPassword)}` });
       return;
     }
 
@@ -77,7 +115,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         branch_id: addBranchId,
         additional_branch_ids: additionalBranchIds,
         initial_password: initialPassword,
-        
+
         current_address: currentAddress,
         permanent_address: permanentAddress,
         blood_group: bloodGroup,
@@ -110,13 +148,19 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
       const data = await res.json();
       if (res.ok) {
-        showToast(`Employee Onboarded Successfully! Code: ${data.employee.employee_code}`, 'success');
+        showToast(
+          `Employee Onboarded Successfully! Code: ${data.employee.employee_code}`,
+          'success',
+        );
         onSuccess();
       } else {
-          await handleApiError(res, showError, data);
-        }
+        await handleApiError(res, showError, data);
+      }
     } catch (e) {
-      showError(toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e })); } finally {
+      showError(
+        toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -130,13 +174,22 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
           const isActive = step === i + 1;
           const isPassed = step > i + 1;
           return (
-            <div key={s} className={`flex items-center gap-3 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 
+            <div
+              key={s}
+              className={`flex items-center gap-3 ${isActive ? 'opacity-100' : 'opacity-40'}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 
                 ${isActive ? 'border-navy-600 text-navy-700 bg-navy-50' : isPassed ? 'border-navy-500 bg-navy-500 text-white' : 'border-slate-300 text-slate-500'}
-              `}>
+              `}
+              >
                 {isPassed ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
               </div>
-              <span className={`font-semibold text-sm ${isActive ? 'text-navy-900' : 'text-slate-600'}`}>{s}</span>
+              <span
+                className={`font-semibold text-sm ${isActive ? 'text-navy-900' : 'text-slate-600'}`}
+              >
+                {s}
+              </span>
             </div>
           );
         })}
@@ -150,42 +203,74 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         return (
           <div className="space-y-6 animate-fadeIn">
             <h2 className="text-2xl font-bold text-slate-800">Basic & Login Info</h2>
-            <p className="text-slate-500 text-sm">Essential details to create the employee's CRM account.</p>
-            
+            <p className="text-slate-500 text-sm">
+              Essential details to create the employee's CRM account.
+            </p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Full Legal Name *
+                </label>
                 <div className="relative">
                   <User className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="Enter full legal name" />
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="Enter full legal name"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Primary Phone Number *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Primary Phone Number *
+                </label>
                 <div className="relative">
                   <Phone className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="+91 9876543210" />
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="+91 9876543210"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Official Email Address</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Official Email Address
+                </label>
                 <div className="relative">
                   <Mail className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="john.doe@radharealhomes.com" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="john.doe@radharealhomes.com"
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">System Role *</label>
-                <select value={addRole} onChange={e => setAddRole(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
+                <select
+                  value={addRole}
+                  onChange={(e) => setAddRole(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                >
                   <option value="telecallers">telecallers</option>
                   <option value="Agent">Agent</option>
                   <option value="Sales manager">Sales manager</option>
                   <option value="digital marketing executive">digital marketing executive</option>
                   <option value="Digital lead operator">Digital lead operator</option>
-                  <option value="Digital Marketing head(manager)">Digital Marketing head(manager)</option>
+                  <option value="Digital Marketing head(manager)">
+                    Digital Marketing head(manager)
+                  </option>
                   <option value="marketing director">marketing director</option>
                   <option value="project managers">project managers</option>
                   <option value="Channel partner manager">Channel partner manager</option>
@@ -197,66 +282,127 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Primary Branch *</label>
-                <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Primary Branch *
+                </label>
+                <select
+                  value={addBranchId}
+                  onChange={(e) => setAddBranchId(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                >
                   <option value="">-- Select Branch --</option>
-                  {branches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Additional Branches</label>
-                <select 
-                  multiple 
-                  value={additionalBranchIds} 
-                  onChange={e => {
-                    const options = Array.from(e.target.selectedOptions, option => option.value);
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Additional Branches
+                </label>
+                <select
+                  multiple
+                  value={additionalBranchIds}
+                  onChange={(e) => {
+                    const options = Array.from(e.target.selectedOptions, (option) => option.value);
                     setAdditionalBranchIds(options);
-                  }} 
+                  }}
                   className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 min-h-[100px]"
                 >
-                  {branches.filter(b => b.id.toString() !== addBranchId).map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
+                  {branches
+                    .filter((b) => b.id.toString() !== addBranchId)
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
                 </select>
-                <p className="text-[10px] text-slate-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Hold Ctrl (Windows) or Cmd (Mac) to select multiple.
+                </p>
               </div>
 
               <div className="col-span-1 md:col-span-2 p-4 bg-navy-50 border border-navy-100 rounded-xl flex gap-3">
                 <Key className="w-5 h-5 text-navy-600 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-bold text-navy-900">Initial Password</h4>
-                  <p className="text-xs text-navy-700 mb-2">The employee will be forced to change this upon their first login.</p>
-                  <input type="text" value={initialPassword} onChange={e => setInitialPassword(e.target.value)} className="p-2 border border-navy-200 rounded-lg w-full max-w-xs text-sm" />
+                  <p className="text-xs text-navy-700 mb-2">
+                    The employee will be forced to change this upon their first login.
+                  </p>
+                  <input
+                    type="text"
+                    value={initialPassword}
+                    onChange={(e) => setInitialPassword(e.target.value)}
+                    className={`p-2 border rounded-lg w-full max-w-xs text-sm ${
+                      initialPassword && getPasswordRuleError(initialPassword)
+                        ? 'border-red-400'
+                        : 'border-navy-200'
+                    }`}
+                  />
+                  {initialPassword && getPasswordRuleError(initialPassword) ? (
+                    <p className="text-[11px] text-red-600 mt-1">
+                      Password {getPasswordRuleError(initialPassword)}.
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-navy-500 mt-1">
+                      At least 8 characters, with uppercase, lowercase, a number, and a special
+                      character.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         );
-      
+
       case 2:
         return (
           <div className="space-y-6 animate-fadeIn">
             <h2 className="text-2xl font-bold text-slate-800">Personal Details</h2>
-            <p className="text-slate-500 text-sm">You may skip sensitive details. The employee can update them later.</p>
-            
+            <p className="text-slate-500 text-sm">
+              You may skip sensitive details. The employee can update them later.
+            </p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Current Address</label>
-                <textarea value={currentAddress} onChange={e => setCurrentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"></textarea>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Current Address
+                </label>
+                <textarea
+                  value={currentAddress}
+                  onChange={(e) => setCurrentAddress(e.target.value)}
+                  rows={2}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                ></textarea>
               </div>
 
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Permanent Address</label>
-                <textarea value={permanentAddress} onChange={e => setPermanentAddress(e.target.value)} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"></textarea>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Permanent Address
+                </label>
+                <textarea
+                  value={permanentAddress}
+                  onChange={(e) => setPermanentAddress(e.target.value)}
+                  rows={2}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                ></textarea>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Blood Group</label>
-                <select value={bloodGroup} onChange={e => setBloodGroup(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
-                  {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(b => <option key={b} value={b}>{b}</option>)}
+                <select
+                  value={bloodGroup}
+                  onChange={(e) => setBloodGroup(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                >
+                  {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -266,12 +412,28 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">PAN Number</label>
-                    <input type="text" value={panNumber} onChange={e => setPanNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono uppercase" placeholder="ABCDE1234F" />
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      PAN Number
+                    </label>
+                    <input
+                      type="text"
+                      value={panNumber}
+                      onChange={(e) => setPanNumber(e.target.value)}
+                      className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono uppercase"
+                      placeholder="ABCDE1234F"
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Aadhaar Number</label>
-                    <input type="text" value={aadhaarNumber} onChange={e => setAadhaarNumber(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest" placeholder="1234 5678 9012" />
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Aadhaar Number
+                    </label>
+                    <input
+                      type="text"
+                      value={aadhaarNumber}
+                      onChange={(e) => setAadhaarNumber(e.target.value)}
+                      className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest"
+                      placeholder="1234 5678 9012"
+                    />
                   </div>
                 </div>
               </div>
@@ -283,19 +445,34 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Name</label>
-                    <input type="text" value={emergencyContactName} onChange={e => setEmergencyContactName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
+                    <input
+                      type="text"
+                      value={emergencyContactName}
+                      onChange={(e) => setEmergencyContactName(e.target.value)}
+                      className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Relation</label>
-                    <input type="text" value={emergencyContactRelation} onChange={e => setEmergencyContactRelation(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Spouse, Father" />
+                    <input
+                      type="text"
+                      value={emergencyContactRelation}
+                      onChange={(e) => setEmergencyContactRelation(e.target.value)}
+                      className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                      placeholder="e.g. Spouse, Father"
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Phone</label>
-                    <input type="text" value={emergencyContactPhone} onChange={e => setEmergencyContactPhone(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
+                    <input
+                      type="text"
+                      value={emergencyContactPhone}
+                      onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                      className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    />
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         );
@@ -304,20 +481,32 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         return (
           <div className="space-y-6 animate-fadeIn">
             <h2 className="text-2xl font-bold text-slate-800">Professional Info</h2>
-            <p className="text-slate-500 text-sm">Role, reporting structure, and compensation details.</p>
-            
+            <p className="text-slate-500 text-sm">
+              Role, reporting structure, and compensation details.
+            </p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Job Title</label>
                 <div className="relative">
                   <Briefcase className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Senior Telecaller" />
+                  <input
+                    type="text"
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="e.g. Senior Telecaller"
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Department</label>
-                <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                >
                   <option>Sales & Leads</option>
                   <option>Marketing</option>
                   <option>Operations</option>
@@ -329,18 +518,32 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Reporting Manager</label>
-                <select value={reportingManagerId} onChange={e => setReportingManagerId(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Reporting Manager
+                </label>
+                <select
+                  value={reportingManagerId}
+                  onChange={(e) => setReportingManagerId(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                >
                   <option value="">-- No Manager (Independent) --</option>
-                  {managers.map(m => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
+                  {managers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Employment Type</label>
-                <select value={employmentType} onChange={e => setEmploymentType(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Employment Type
+                </label>
+                <select
+                  value={employmentType}
+                  onChange={(e) => setEmploymentType(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                >
                   <option value="FULL_TIME">Full Time</option>
                   <option value="PART_TIME">Part Time</option>
                   <option value="CONTRACT">Contract</option>
@@ -353,32 +556,56 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
                   <input
                     type="checkbox"
                     checked={reportRequired}
-                    onChange={e => setReportRequired(e.target.checked)}
+                    onChange={(e) => setReportRequired(e.target.checked)}
                     className="w-4 h-4 rounded border-slate-300 text-navy-700 focus:ring-navy-500"
                   />
-                  <span className="text-xs font-semibold text-slate-700">Daily Report Required</span>
+                  <span className="text-xs font-semibold text-slate-700">
+                    Daily Report Required
+                  </span>
                 </label>
                 <span className="text-[10px] text-slate-400">Unchecked = reports optional</span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Date of Joining</label>
-                <input type="date" value={dateOfJoining} onChange={e => setDateOfJoining(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Date of Joining
+                </label>
+                <input
+                  type="date"
+                  value={dateOfJoining}
+                  onChange={(e) => setDateOfJoining(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Annual CTC (₹)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Annual CTC (₹)
+                </label>
                 <div className="relative">
                   <DollarSign className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="number" value={salaryCtc} onChange={e => setSalaryCtc(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" />
+                  <input
+                    type="number"
+                    value={salaryCtc}
+                    onChange={(e) => setSalaryCtc(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                  />
                 </div>
               </div>
 
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Background / Education</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Background / Education
+                </label>
                 <div className="relative">
                   <GraduationCap className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={backgroundEducation} onChange={e => setBackgroundEducation(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. B.Tech Computer Science, MBA Marketing" />
+                  <input
+                    type="text"
+                    value={backgroundEducation}
+                    onChange={(e) => setBackgroundEducation(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="e.g. B.Tech Computer Science, MBA Marketing"
+                  />
                 </div>
               </div>
             </div>
@@ -389,40 +616,71 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
         return (
           <div className="space-y-6 animate-fadeIn">
             <h2 className="text-2xl font-bold text-slate-800">Banking Information</h2>
-            <p className="text-slate-500 text-sm">For payroll processing. This data will be encrypted in the database.</p>
-            
+            <p className="text-slate-500 text-sm">
+              For payroll processing. This data will be encrypted in the database.
+            </p>
+
             <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Bank Name</label>
                 <div className="relative">
                   <Building2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. HDFC Bank" />
+                  <input
+                    type="text"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="e.g. HDFC Bank"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Account Number</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Account Number
+                </label>
                 <div className="relative">
                   <CreditCardIcon className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input type="password" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest" placeholder="●●●●●●●●●●●●" />
+                  <input
+                    type="password"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest"
+                    placeholder="●●●●●●●●●●●●"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">IFSC Code</label>
-                  <input type="text" value={bankIfsc} onChange={e => setBankIfsc(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono uppercase" placeholder="HDFC0001234" />
+                  <input
+                    type="text"
+                    value={bankIfsc}
+                    onChange={(e) => setBankIfsc(e.target.value)}
+                    className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono uppercase"
+                    placeholder="HDFC0001234"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Branch Name</label>
-                  <input type="text" value={bankBranch} onChange={e => setBankBranch(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500" placeholder="e.g. Madhapur" />
+                  <input
+                    type="text"
+                    value={bankBranch}
+                    onChange={(e) => setBankBranch(e.target.value)}
+                    className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+                    placeholder="e.g. Madhapur"
+                  />
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-sm flex gap-3">
               <ShieldAlert className="w-5 h-5 shrink-0" />
-              <p>You can skip this step and allow the employee to enter these details securely from their profile upon first login.</p>
+              <p>
+                You can skip this step and allow the employee to enter these details securely from
+                their profile upon first login.
+              </p>
             </div>
           </div>
         );
@@ -433,27 +691,51 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
             <div className="text-center">
               <CheckCircle2 className="w-16 h-16 text-navy-500 mx-auto mb-4" />
               <h2 className="text-3xl font-bold text-slate-800">Ready to Onboard</h2>
-              <p className="text-slate-500 text-sm mt-2">Please review the details below before creating the employee account.</p>
+              <p className="text-slate-500 text-sm mt-2">
+                Please review the details below before creating the employee account.
+              </p>
             </div>
-            
+
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-6 shadow-sm">
               <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-4">
                 <div>
-                  <div className="text-xs font-bold text-navy-700 bg-navy-100 inline-block px-2 py-1 rounded mb-2">{addRole}</div>
+                  <div className="text-xs font-bold text-navy-700 bg-navy-100 inline-block px-2 py-1 rounded mb-2">
+                    {addRole}
+                  </div>
                   <h3 className="text-xl font-bold text-slate-800">{fullName}</h3>
-                  <p className="text-slate-500 text-sm flex items-center gap-1 mt-1"><Phone className="w-3.5 h-3.5" /> {phone}</p>
+                  <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
+                    <Phone className="w-3.5 h-3.5" /> {phone}
+                  </p>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-slate-700">{department}</div>
                   <div className="text-xs text-slate-500">{jobTitle || addRole}</div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 text-sm gap-4">
-                <div><span className="text-slate-400 block text-xs">Email</span><span className="font-semibold">{email || 'N/A'}</span></div>
-                <div><span className="text-slate-400 block text-xs">Branch</span><span className="font-semibold">{branches.find(b => b.id.toString() === addBranchId)?.name || 'N/A'}</span></div>
-                <div><span className="text-slate-400 block text-xs">Gov IDs Provided</span><span className="font-semibold">{panNumber || aadhaarNumber ? 'Yes (Encrypted)' : 'No (Pending)'}</span></div>
-                <div><span className="text-slate-400 block text-xs">Bank Details</span><span className="font-semibold">{bankAccountNumber ? 'Yes (Encrypted)' : 'No (Pending)'}</span></div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Email</span>
+                  <span className="font-semibold">{email || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Branch</span>
+                  <span className="font-semibold">
+                    {branches.find((b) => b.id.toString() === addBranchId)?.name || 'N/A'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Gov IDs Provided</span>
+                  <span className="font-semibold">
+                    {panNumber || aadhaarNumber ? 'Yes (Encrypted)' : 'No (Pending)'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-xs">Bank Details</span>
+                  <span className="font-semibold">
+                    {bankAccountNumber ? 'Yes (Encrypted)' : 'No (Pending)'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -464,22 +746,22 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-0 md:p-6">
       <div className="w-full h-full md:h-auto md:max-h-[90vh] max-w-5xl bg-white md:rounded-3xl shadow-2xl flex flex-col relative overflow-hidden animate-scaleUp">
-        
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-white sticky top-0 z-10">
           <h2 className="text-xl font-bold text-slate-800 md:hidden">Onboard Employee</h2>
           <div className="hidden md:block" />
-          <button onClick={onClose} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
-          <div className="hidden md:block p-8 bg-slate-50/50">
-            {renderStepIndicator()}
-          </div>
-          
+          <div className="hidden md:block p-8 bg-slate-50/50">{renderStepIndicator()}</div>
+
           <div className="flex-1 p-6 md:p-10 overflow-y-auto bg-white custom-scrollbar">
             {renderStepContent()}
           </div>
@@ -487,16 +769,16 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
 
         {/* Footer Navigation */}
         <div className="p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between sticky bottom-0">
-          <button 
-            onClick={handleBack} 
+          <button
+            onClick={handleBack}
             disabled={step === 1}
             className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-0"
           >
             Back
           </button>
-          
+
           {step < 5 ? (
-            <button 
+            <button
               onClick={handleNext}
               disabled={step === 1 && (!fullName || !phone || !addBranchId)}
               className="px-8 py-3 bg-navy-700 text-white font-bold rounded-xl shadow-md hover:bg-navy-800 transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -504,7 +786,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({ onClose, o
               Continue <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <button 
+            <button
               onClick={handleSubmit}
               disabled={isLoading}
               className="px-8 py-3 bg-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-70"

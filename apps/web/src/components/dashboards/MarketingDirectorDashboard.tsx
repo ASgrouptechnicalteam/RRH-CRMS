@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import {
-  TrendingUp, Calendar, AlertCircle, PieChart, Target, Zap, Megaphone, Users
+  TrendingUp,
+  Calendar,
+  AlertCircle,
+  PieChart,
+  Target,
+  Zap,
+  Megaphone,
+  Users,
 } from 'lucide-react';
 import { SalesManagerDashboardData, LeadAttributionRow } from '../../types';
 import { StatCard, DataTable } from '../ui';
@@ -39,25 +46,33 @@ export const MarketingDirectorDashboard: React.FC = () => {
     );
   }
 
-  if (!data) return (
-    <div className="text-danger-700 p-4 bg-danger-50 rounded-lg flex items-center gap-2">
-      <AlertCircle className="w-5 h-5" />
-      Failed to load marketing dashboard data.
-    </div>
-  );
+  if (!data)
+    return (
+      <div className="text-danger-700 p-4 bg-danger-50 rounded-lg flex items-center gap-2">
+        <AlertCircle className="w-5 h-5" />
+        Failed to load marketing dashboard data.
+      </div>
+    );
 
   const { kpis, pipeline, leadAttribution } = data;
 
   // Determine the top performing source from leadAttribution
-  const sortedSources = [...(leadAttribution || [])].sort((a, b) => b.leadsIntroduced - a.leadsIntroduced);
-  const topSource = sortedSources.length > 0 ? sortedSources[0].employee?.full_name || 'N/A' : '—';
+  const sortedSources = [...(leadAttribution || [])].sort(
+    (a, b) => b.leadsIntroduced - a.leadsIntroduced,
+  );
+  const topSource =
+    sortedSources.length > 0 ? sortedSources[0].employee?.full_name || 'N/A' : 'N/A';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">Marketing Director Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Monitor lead generation, attribution, and pipeline conversion.</p>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">
+            Marketing Director Dashboard
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Monitor lead generation, attribution, and pipeline conversion.
+          </p>
         </div>
         <div className="bg-navy-50 text-navy-700 px-3 py-1.5 rounded-lg text-sm font-semibold border border-navy-100 flex items-center gap-2">
           <Megaphone className="w-4 h-4 text-gold-500" />
@@ -67,34 +82,23 @@ export const MarketingDirectorDashboard: React.FC = () => {
 
       {/* Primary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Lead Volume"
-          value={kpis?.totalLeads ?? '—'}
-          icon={Users}
-          link="/leads"
-        />
+        <StatCard label="Total Lead Volume" value={kpis.totalLeads} icon={Users} link="/leads" />
         <StatCard
           label="Conversion Rate"
-          value={kpis?.conversionRate != null ? `${kpis.conversionRate.toFixed(1)}%` : '—'}
+          value={`${kpis.conversionRate.toFixed(1)}%`}
           icon={TrendingUp}
           link="/leads"
         />
         <StatCard
           label="Site Visits Generated"
-          value={kpis?.siteVisits ?? '—'}
+          value={kpis.siteVisits}
           icon={Calendar}
           link="/site-visits"
         />
-        <StatCard
-          label="Top Lead Introducer"
-          value={topSource}
-          icon={Zap}
-          link="/employees"
-        />
+        <StatCard label="Top Lead Introducer" value={topSource} icon={Zap} link="/hr-hub" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
         {/* Lead Attribution / Sources */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           <div className="p-5 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
@@ -106,10 +110,20 @@ export const MarketingDirectorDashboard: React.FC = () => {
               <div className="max-h-72 overflow-y-auto pr-1">
                 <DataTable
                   columns={[
-                    { key: 'employee', header: 'Team Member', render: (row: LeadAttributionRow) => <span>{row.employee?.full_name || 'Unknown'}</span> },
-                    { key: 'leadsIntroduced', header: 'Leads Generated', render: (row: LeadAttributionRow) => (
-                      <span className="font-semibold text-navy-700">{row.leadsIntroduced}</span>
-                    )},
+                    {
+                      key: 'employee',
+                      header: 'Team Member',
+                      render: (row: LeadAttributionRow) => (
+                        <span>{row.employee?.full_name || 'Unknown'}</span>
+                      ),
+                    },
+                    {
+                      key: 'leadsIntroduced',
+                      header: 'Leads Generated',
+                      render: (row: LeadAttributionRow) => (
+                        <span className="font-semibold text-navy-700">{row.leadsIntroduced}</span>
+                      ),
+                    },
                   ]}
                   data={leadAttribution}
                 />
@@ -135,9 +149,13 @@ export const MarketingDirectorDashboard: React.FC = () => {
                 <DataTable
                   columns={[
                     { key: 'stage', header: 'Stage' },
-                    { key: 'count', header: 'Active Leads', render: (row: any) => (
-                      <span className="font-semibold text-navy-700">{row.count}</span>
-                    )},
+                    {
+                      key: 'count',
+                      header: 'Active Leads',
+                      render: (row: any) => (
+                        <span className="font-semibold text-navy-700">{row.count}</span>
+                      ),
+                    },
                   ]}
                   data={pipeline}
                 />
@@ -150,7 +168,6 @@ export const MarketingDirectorDashboard: React.FC = () => {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

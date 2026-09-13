@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Loader2, AlertCircle, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  Loader2,
+  AlertCircle,
+  User,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 
@@ -13,7 +20,7 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
   const [error, setError] = useState<string | null>(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+
   const [calendarData, setCalendarData] = useState<any>(null);
 
   const fetchCalendar = async (year: number, month: number) => {
@@ -57,7 +64,7 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const daysInMonth = getDaysInMonth(year, month + 1);
-    
+
     // Day 0 is Sunday, 1 is Monday...
     const firstDay = new Date(year, month, 1).getDay();
     const grid = [];
@@ -68,14 +75,19 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
 
     // Pad empty cells before the 1st
     for (let i = 0; i < firstDay; i++) {
-      grid.push(<div key={`empty-${i}`} className="h-24 bg-slate-50 border border-slate-100 rounded-lg"></div>);
+      grid.push(
+        <div
+          key={`empty-${i}`}
+          className="h-24 bg-slate-50 border border-slate-100 rounded-lg"
+        ></div>,
+      );
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dateObj = new Date(year, month, day);
       const isSunday = dateObj.getDay() === 0;
-      const isFuture = isCurrentMonth && day > currentDay || dateObj > today;
-      
+      const isFuture = (isCurrentMonth && day > currentDay) || dateObj > today;
+
       const dayStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       const dayData = calendarData.calendar ? calendarData.calendar[dayStr] : null;
 
@@ -125,22 +137,33 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
 
       grid.push(
         <div key={day} className={`h-24 border rounded-lg p-2 flex flex-col ${statusColor}`}>
-          <span className={`text-sm font-semibold ${isBeforeCreation ? 'text-slate-400' : 'text-slate-700'}`}>{day}</span>
+          <span
+            className={`text-sm font-semibold ${isBeforeCreation ? 'text-slate-400' : 'text-slate-700'}`}
+          >
+            {day}
+          </span>
           <div className="flex-1 flex items-center justify-center">
             {statusText && (
-              <span className={`text-xs font-medium text-center px-1 py-0.5 rounded ${
-                statusText === 'Absent' ? 'text-red-700' :
-                statusText === 'Present' ? 'text-emerald-700' :
-                statusText === 'Late' ? 'text-amber-700' :
-                statusText === 'Half Day' ? 'text-purple-700' :
-                statusText === 'Paid Leave' ? 'text-orange-700' :
-                'text-slate-600'
-              }`}>
+              <span
+                className={`text-xs font-medium text-center px-1 py-0.5 rounded ${
+                  statusText === 'Absent'
+                    ? 'text-red-700'
+                    : statusText === 'Present'
+                      ? 'text-emerald-700'
+                      : statusText === 'Late'
+                        ? 'text-amber-700'
+                        : statusText === 'Half Day'
+                          ? 'text-purple-700'
+                          : statusText === 'Paid Leave'
+                            ? 'text-orange-700'
+                            : 'text-slate-600'
+                }`}
+              >
                 {statusText}
               </span>
             )}
           </div>
-        </div>
+        </div>,
       );
     }
 
@@ -155,13 +178,11 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
             <CalendarIcon className="w-6 h-6 text-navy-600" />
             Monthly Calendar
           </h2>
-          <p className="text-slate-500 mt-1 text-sm">
-            View attendance punches and penalties.
-          </p>
+          <p className="text-slate-500 mt-1 text-sm">View attendance punches and penalties.</p>
         </div>
 
         <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-lg border border-slate-200">
-          <button 
+          <button
             onClick={handlePrevMonth}
             className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-300 transition-colors"
           >
@@ -170,7 +191,7 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
           <span className="font-semibold text-slate-700 min-w-[120px] text-center">
             {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </span>
-          <button 
+          <button
             onClick={handleNextMonth}
             className="p-1 hover:bg-white rounded border border-transparent hover:border-slate-300 transition-colors"
           >
@@ -193,37 +214,6 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
           </div>
         ) : (
           <>
-            {calendarData?.summary && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
-                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Lates</p>
-                  <p className="text-2xl font-bold text-amber-600">{calendarData.summary.lateCount}</p>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
-                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Half Days</p>
-                  <p className="text-2xl font-bold text-purple-600">{calendarData.summary.halfDayCount}</p>
-                </div>
-                <div className="bg-red-50 p-4 rounded-xl border border-red-100 text-center">
-                  <p className="text-xs text-red-500 font-medium uppercase tracking-wide">Penalty (Lates)</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    +{calendarData.summary.equivalentAbsentFromLate} <span className="text-sm font-normal">Absent</span>
-                  </p>
-                </div>
-                <div className="bg-red-50 p-4 rounded-xl border border-red-100 text-center">
-                  <p className="text-xs text-red-500 font-medium uppercase tracking-wide">Penalty (Half Days)</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    +{calendarData.summary.equivalentAbsentFromHalfDay} <span className="text-sm font-normal">Absent</span>
-                  </p>
-                </div>
-                <div className="bg-red-100 p-4 rounded-xl border border-red-200 text-center col-span-2 md:col-span-1">
-                  <p className="text-xs text-red-600 font-medium uppercase tracking-wide">Total Penalty</p>
-                  <p className="text-2xl font-bold text-red-700">
-                    {calendarData.summary.totalEquivalentAbsent} <span className="text-sm font-normal">Absent</span>
-                  </p>
-                </div>
-              </div>
-            )}
-
             <div className="mb-4 grid grid-cols-7 gap-2 text-center text-xs font-semibold text-slate-500 uppercase">
               <div>Sun</div>
               <div>Mon</div>
@@ -234,9 +224,7 @@ export const MonthlyAttendanceCalendar: React.FC<CalendarProps> = ({ employeeId 
               <div>Sat</div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2">
-              {generateCalendarGrid()}
-            </div>
+            <div className="grid grid-cols-7 gap-2">{generateCalendarGrid()}</div>
           </>
         )}
       </div>

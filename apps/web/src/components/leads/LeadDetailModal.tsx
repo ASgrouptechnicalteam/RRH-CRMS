@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   Send,
   IndianRupee,
-  Clock
+  Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -26,13 +26,15 @@ import {
   MatchItem,
   SavedInterestItem,
   LeadVisitItem,
+  LeadDemoItem,
   LeadTaskItem,
-  LeadSalesOppItem
+  LeadSalesOppItem,
 } from '../../types';
 import { StatusPill } from '../ui/StatusPill';
 import { QualifyLeadModal } from './QualifyLeadModal';
 import { QualificationFormModal } from './QualificationFormModal';
 import { getPropertyTypeLabel } from '../../constants/propertyTypes';
+import { getLeadStatusLabel } from '../../constants/leadStatus';
 import { toUserFacingError } from '../../utils/userFacingError';
 
 interface Lead {
@@ -46,6 +48,9 @@ interface Lead {
   assignment_type?: string;
   property_type_preference?: string;
   preferred_location?: string;
+  // Full multi-location list (§ Phase 2) — preferred_location above stays as
+  // the primary/first entry for backward compatibility.
+  preferred_locations?: { id: number; location: string; sort_order: number }[];
   budget_min?: number;
   budget_max?: number;
   assigned_to?: { id: number; employee_code: string; full_name: string; phone: string };
@@ -59,6 +64,10 @@ interface Lead {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   referral_person_name?: string | null;
+  external_agent_name?: string | null;
+  external_agent_phone?: string | null;
+  external_agent_associate_id?: string | null;
+  external_agent_company?: string | null;
   can_edit?: boolean;
 }
 
@@ -71,13 +80,22 @@ interface LeadDetailModalProps {
   initialShowScheduleModal?: boolean;
 }
 
-export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdateStatus, onRefreshLeads, onDemoComplete, initialShowScheduleModal }) => {
+export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
+  lead,
+  onClose,
+  onUpdateStatus,
+  onRefreshLeads,
+  onDemoComplete,
+  initialShowScheduleModal,
+}) => {
   const { user, fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { sendWhatsAppMessage } = useWhatsApp();
 
-  const [dossierTab, setDossierTab] = useState<'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS' | 'FOLLOW_UPS' | 'SALES_OPPS'>('DETAILS');
+  const [dossierTab, setDossierTab] = useState<
+    'DETAILS' | 'MATCHES' | 'INTERESTS' | 'VISITS' | 'DEMOS' | 'FOLLOW_UPS' | 'SALES_OPPS'
+  >('DETAILS');
   const [activeTab, setActiveTab] = useState('DETAILS');
   const [showQualifyModal, setShowQualifyModal] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
@@ -85,6 +103,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [savedInterests, setSavedInterests] = useState<SavedInterestItem[]>([]);
   const [leadVisits, setLeadVisits] = useState<LeadVisitItem[]>([]);
+  const [leadDemos, setLeadDemos] = useState<LeadDemoItem[]>([]);
   const [leadTasks, setLeadTasks] = useState<LeadTaskItem[]>([]);
   const [leadSalesOpps, setLeadSalesOpps] = useState<LeadSalesOppItem[]>([]);
 
@@ -95,15 +114,21 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   // New Task Form State
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
-  const [newTaskDeadline, setNewTaskDeadline] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
+  const [newTaskDeadline, setNewTaskDeadline] = useState(
+    new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+  );
   const [newTaskPriority, setNewTaskPriority] = useState('MEDIUM');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   // Site Visit Schedule Form
   const [showScheduleModal, setShowScheduleModal] = useState(initialShowScheduleModal || false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
-  const [scheduleNotes, setScheduleNotes] = useState('Telecaller booked site visit for client discussion.');
+  const [scheduleDate, setScheduleDate] = useState(
+    new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+  );
+  const [scheduleNotes, setScheduleNotes] = useState(
+    'Telecaller booked site visit for client discussion.',
+  );
   const [schedulePropertyId, setSchedulePropertyId] = useState<string>('');
 
   // Demo completion modal (§1 row 4: demo handler may revise qualification fields)
@@ -119,6 +144,18 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
   // Qualification state for editing
   const [showQualificationModal, setShowQualificationModal] = useState(false);
 
+  // Eligible demo-handler list for the Schedule Demo modal.
+  const [demoAssignees, setDemoAssignees] = useState<
+    { id: number; full_name?: string; employee_code?: string }[]
+  >([]);
+  const [isLoadingDemoAssignees, setIsLoadingDemoAssignees] = useState(false);
+  const [demoHandlerId, setDemoHandlerId] = useState('');
+  const [showDemoScheduleModal, setShowDemoScheduleModal] = useState(false);
+  const [demoScheduleDate, setDemoScheduleDate] = useState(
+    new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+  );
+  const [isSchedulingDemo, setIsSchedulingDemo] = useState(false);
+
   // Pre-fill demo completion form when modal opens
   useEffect(() => {
     if (showDemoCompleteModal) {
@@ -130,6 +167,30 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
       setDemoSiteVisitCompleted(false);
     }
   }, [showDemoCompleteModal, lead]);
+
+  const fetchDemoAssignees = async () => {
+    setIsLoadingDemoAssignees(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/employees/demo-assignees`);
+      const data = await res.json();
+      if (res.ok) {
+        setDemoAssignees(data.assignees || []);
+      }
+    } catch (e) {
+      console.error('Fetch demo assignees error:', e);
+    } finally {
+      setIsLoadingDemoAssignees(false);
+    }
+  };
+
+  // Reset + fetch the eligible-assignee list every time the Schedule Demo
+  // modal opens, so a stale selection can't leak across leads/openings.
+  useEffect(() => {
+    if (showDemoScheduleModal) {
+      setDemoHandlerId('');
+      fetchDemoAssignees();
+    }
+  }, [showDemoScheduleModal]);
 
   const fetchMatchesForLead = async (leadId: number) => {
     setIsLoadingMatches(true);
@@ -170,6 +231,18 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
     }
   };
 
+  const fetchLeadDemos = async (leadId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/demos?leadId=${leadId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setLeadDemos(data.demos || []);
+      }
+    } catch (e) {
+      console.error('Fetch lead demos error:', e);
+    }
+  };
+
   const fetchLeadTasks = async (leadId: number) => {
     setIsLoadingTasks(true);
     try {
@@ -191,7 +264,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
       const resAll = await fetchWithAuth(`${API_BASE_URL}/opportunities`);
       const data = await resAll.json();
       if (resAll.ok) {
-        const filtered = (data.opportunities || []).filter((o: LeadSalesOppItem) => o.lead_id === leadId);
+        const filtered = (data.opportunities || []).filter(
+          (o: LeadSalesOppItem) => o.lead_id === leadId,
+        );
         setLeadSalesOpps(filtered);
       }
     } catch (e) {
@@ -222,7 +297,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
           priority: newTaskPriority,
           deadline: newTaskDeadline,
           lead_id: leadId,
-          assignee_id: user?.id
+          assignee_id: user?.id,
         }),
       });
       const data = await res.json();
@@ -277,11 +352,18 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
     }
   };
 
-  const handleSendWhatsAppProposal = async (leadId: number, propertyId: number, defaultUrl?: string) => {
+  const handleSendWhatsAppProposal = async (
+    leadId: number,
+    propertyId: number,
+    defaultUrl?: string,
+  ) => {
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/whatsapp-proposal/${propertyId}`, {
-        method: 'POST',
-      });
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/leads/${leadId}/whatsapp-proposal/${propertyId}`,
+        {
+          method: 'POST',
+        },
+      );
       const data = await res.json();
       if (res.ok) {
         showToast('WhatsApp Proposal generated & logged in activity history!', 'success');
@@ -424,8 +506,23 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
 
   const availableNextTransitions = () => {
     const current = lead.status;
-    let valid = ['DROPPED'];
-    
+    // Mirrors LeadWorkflow.DROPPABLE_FROM (apps/api/src/workflows/lead.workflow.ts)
+    // exactly — NEW, BOOKED, DROPPED and RECOVERED_TO_POOL cannot be dropped,
+    // and offering the button there always errored on click.
+    const DROPPABLE_FROM = new Set([
+      'ASSIGNED',
+      'CONTACTED',
+      'QUALIFIED',
+      'DEMO_SCHEDULED',
+      'DEMO_COMPLETED',
+      'SITE_VISIT_SCHEDULED',
+      'SITE_VISIT_COMPLETED',
+      'NEGOTIATION',
+      'BOOKING_INITIATED',
+    ]);
+
+    let valid: string[] = DROPPABLE_FROM.has(current) ? ['DROPPED'] : [];
+
     if (current === 'NEW') valid.push('ASSIGNED');
     if (current === 'ASSIGNED') valid.push('CONTACTED');
     if (current === 'CONTACTED') valid.push('QUALIFIED');
@@ -437,8 +534,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
     if (current === 'NEGOTIATION') valid.push('BOOKING_INITIATED');
     if (current === 'BOOKING_INITIATED') valid.push('BOOKED');
     if (current === 'DROPPED') valid.push('RECOVERED_TO_POOL');
+    if (current === 'RECOVERED_TO_POOL') valid.push('ASSIGNED');
 
-    return valid.filter(v => v !== current);
+    return valid.filter((v) => v !== current);
   };
 
   return (
@@ -465,7 +563,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
           <div className="flex items-start justify-between mb-5">
             <div>
               <h3 className="font-bold text-navy-900 text-2xl">{lead.customer_name}</h3>
-              <p className="text-sm text-slate-500 font-mono mt-1">{lead.phone} {lead.email ? `• ${lead.email}` : ''}</p>
+              <p className="text-sm text-slate-500 font-mono mt-1">
+                {lead.phone} {lead.email ? `• ${lead.email}` : ''}
+              </p>
             </div>
             {lead.lead_score !== undefined && (
               <div className="flex flex-col items-end">
@@ -489,7 +589,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                   {lead.created_by?.full_name || lead.created_by?.employee_code || 'System'}
                 </div>
               </div>
-              
+
               <div className="flex flex-col gap-1 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
                 <span className="text-slate-400 text-[10px] uppercase font-bold tracking-widest flex items-center gap-1.5">
                   <UserCheck className="w-3.5 h-3.5 text-navy-600" /> Assigned To
@@ -501,7 +601,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
             </div>
 
             <div>
-              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Source</span>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                Source
+              </span>
               <div className="font-semibold text-navy-900 mt-0.5">
                 {lead.source}
                 {lead.source === 'REFERRAL' && lead.referral_person_name && (
@@ -511,21 +613,31 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 )}
               </div>
             </div>
-            
+
             <div>
-              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Created</span>
-              <div className="font-semibold text-navy-900 mt-0.5">{new Date(lead.created_at).toLocaleDateString()}</div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                Created
+              </span>
+              <div className="font-semibold text-navy-900 mt-0.5">
+                {new Date(lead.created_at).toLocaleDateString()}
+              </div>
             </div>
 
             <div>
-              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Location</span>
-              <div className="font-semibold text-navy-900 mt-0.5">{lead.preferred_location || 'N/A'}</div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                Location
+              </span>
+              <div className="font-semibold text-navy-900 mt-0.5">
+                {lead.preferred_location || 'N/A'}
+              </div>
             </div>
-            
+
             <div>
-              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Preference & Budget</span>
+              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                Preference & Budget
+              </span>
               <div className="font-semibold text-navy-900 mt-0.5 flex items-center gap-2">
-                {lead.property_type_preference || 'Unspecified'} 
+                {lead.property_type_preference || 'Unspecified'}
                 <span className="text-slate-500">
                   (₹{lead.budget_max ? (lead.budget_max / 100000).toFixed(1) + 'L' : 'Flexible'})
                 </span>
@@ -539,22 +651,28 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 )}
               </div>
             </div>
-            
+
             {lead.campaign && (
               <div className="col-span-2 mt-2 pt-3 border-t border-slate-200 flex flex-wrap gap-4">
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Campaign</span>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                    Campaign
+                  </span>
                   <div className="font-semibold text-navy-900 mt-0.5">{lead.campaign}</div>
                 </div>
                 {lead.utm_source && (
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">UTM Source</span>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                      UTM Source
+                    </span>
                     <div className="font-semibold text-navy-900 mt-0.5">{lead.utm_source}</div>
                   </div>
                 )}
                 {lead.utm_medium && (
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">UTM Medium</span>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                      UTM Medium
+                    </span>
                     <div className="font-semibold text-navy-900 mt-0.5">{lead.utm_medium}</div>
                   </div>
                 )}
@@ -568,9 +686,10 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
               { id: 'MATCHES', label: `Matches (${matches.length})`, icon: Building2 },
               { id: 'INTERESTS', label: `Interests (${savedInterests.length})`, icon: ShieldCheck },
               { id: 'VISITS', label: `Visits (${leadVisits.length})`, icon: MapPin },
+              { id: 'DEMOS', label: `Demos (${leadDemos.length})`, icon: Calendar },
               { id: 'FOLLOW_UPS', label: `Tasks (${leadTasks.length})`, icon: PhoneCall },
               { id: 'SALES_OPPS', label: 'Sales Opps', icon: LineChart },
-            ].map(tab => (
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
@@ -578,12 +697,13 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                   if (tab.id === 'MATCHES') fetchMatchesForLead(lead.id);
                   if (tab.id === 'INTERESTS') fetchSavedInterests(lead.id);
                   if (tab.id === 'VISITS') fetchLeadVisits(lead.id);
+                  if (tab.id === 'DEMOS') fetchLeadDemos(lead.id);
                   if (tab.id === 'FOLLOW_UPS') fetchLeadTasks(lead.id);
                   if (tab.id === 'SALES_OPPS') fetchLeadSalesOpps(lead.id);
                 }}
                 className={`px-4 py-2 rounded-t-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors ${
-                  dossierTab === tab.id 
-                    ? 'border-navy-600 text-navy-900 bg-navy-50/50' 
+                  dossierTab === tab.id
+                    ? 'border-navy-600 text-navy-900 bg-navy-50/50'
                     : 'border-transparent text-slate-500 hover:text-navy-700 hover:bg-slate-50'
                 }`}
               >
@@ -610,7 +730,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                       </button>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setShowScheduleModal(true)}
@@ -633,51 +753,75 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                     )}
 
                     {availableNextTransitions()
-                      .filter(st => !(lead.status === 'DEMO_SCHEDULED' && st === 'DEMO_COMPLETED'))
-                      .map(st => (
-                      <button
-                        key={st}
-                        onClick={() => onUpdateStatus(lead.id, st)}
-                        disabled={lead.can_edit === false}
-                        className={`px-4 py-2 bg-white hover:bg-slate-50 text-navy-700 border border-slate-200 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        Move to {st.replace(/_/g, ' ')}
-                      </button>
-                    ))}
+                      .filter(
+                        (st) => !(lead.status === 'DEMO_SCHEDULED' && st === 'DEMO_COMPLETED'),
+                      )
+                      .map((st) => (
+                        <button
+                          key={st}
+                          onClick={() =>
+                            st === 'DEMO_SCHEDULED'
+                              ? setShowDemoScheduleModal(true)
+                              : onUpdateStatus(lead.id, st)
+                          }
+                          disabled={lead.can_edit === false}
+                          className={`px-4 py-2 bg-white hover:bg-slate-50 text-navy-700 border border-slate-200 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {st === 'DEMO_SCHEDULED'
+                            ? 'Schedule Demo'
+                            : `Move to ${st.replace(/_/g, ' ')}`}
+                        </button>
+                      ))}
                   </div>
                 </div>
 
                 <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-bold text-navy-900 text-sm">Qualification Details</h4>
-                      {lead.can_edit !== false && (
-                        <button
-                          onClick={() => setShowQualificationModal(true)}
-                          className="text-xs font-semibold text-navy-600 hover:text-navy-700 transition-colors"
-                        >
-                          Edit Details
-                        </button>
-                      )}
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-navy-900 text-sm">Qualification Details</h4>
+                    {lead.can_edit !== false && (
+                      <button
+                        onClick={() => setShowQualificationModal(true)}
+                        className="text-xs font-semibold text-navy-600 hover:text-navy-700 transition-colors"
+                      >
+                        Edit Details
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">
+                        Property Type
+                      </span>
+                      <span className="font-semibold text-navy-900">
+                        {getPropertyTypeLabel(lead.property_type_preference)}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Property Type</span>
-                        <span className="font-semibold text-navy-900">{getPropertyTypeLabel(lead.property_type_preference)}</span>
-                      </div>
-                      <div>
-                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Location</span>
-                        <span className="font-semibold text-navy-900">{lead.preferred_location || '—'}</span>
-                      </div>
-                      <div>
-                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Min Budget</span>
-                        <span className="font-semibold text-navy-900">{lead.budget_min ? `₹${lead.budget_min.toLocaleString('en-IN')}` : '—'}</span>
-                      </div>
-                      <div>
-                        <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">Max Budget</span>
-                        <span className="font-semibold text-navy-900">{lead.budget_max ? `₹${lead.budget_max.toLocaleString('en-IN')}` : '—'}</span>
-                      </div>
+                    <div>
+                      <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">
+                        Location
+                      </span>
+                      <span className="font-semibold text-navy-900">
+                        {lead.preferred_location || '—'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">
+                        Min Budget
+                      </span>
+                      <span className="font-semibold text-navy-900">
+                        {lead.budget_min ? `₹${lead.budget_min.toLocaleString('en-IN')}` : '—'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500 mb-1 text-xs uppercase tracking-wider font-bold">
+                        Max Budget
+                      </span>
+                      <span className="font-semibold text-navy-900">
+                        {lead.budget_max ? `₹${lead.budget_max.toLocaleString('en-IN')}` : '—'}
+                      </span>
                     </div>
                   </div>
+                </div>
 
                 <div className="space-y-4">
                   <h4 className="font-bold text-navy-900 text-sm">Activity Timeline</h4>
@@ -686,9 +830,14 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                       <div key={act.id} className="relative">
                         <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-navy-200 ring-4 ring-white" />
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-navy-900 text-sm">{act.activity_type.replace(/_/g, ' ')}</span>
+                          <span className="font-semibold text-navy-900 text-sm">
+                            {act.activity_type.replace(/_/g, ' ')}
+                          </span>
                           <span className="text-xs text-slate-400 font-mono">
-                            {new Date(act.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                            {new Date(act.created_at).toLocaleString([], {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
                           </span>
                         </div>
                         <p className="text-slate-600 text-sm">{act.notes}</p>
@@ -716,18 +865,27 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {matches.map((m: MatchItem) => (
-                      <div key={m.propertyId} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+                      <div
+                        key={m.propertyId}
+                        className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between"
+                      >
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono font-semibold text-slate-500 text-xs">{m.propertyCode}</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.matchScore >= 80 ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'}`}>
+                            <span className="font-mono font-semibold text-slate-500 text-xs">
+                              {m.propertyCode}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.matchScore >= 80 ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'}`}
+                            >
                               {m.matchScore}% Match
                             </span>
                           </div>
                           <h4 className="font-bold text-navy-900 text-sm mb-1">{m.title}</h4>
-                          <p className="text-xs text-slate-500 mb-3">{m.location} • ₹{(m.price / 100000).toFixed(1)}L • {m.areaSqft} sqft</p>
+                          <p className="text-xs text-slate-500 mb-3">
+                            {m.location} • ₹{(m.price / 100000).toFixed(1)}L • {m.areaSqft} sqft
+                          </p>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 mt-auto">
                           <button
                             onClick={() => handleAddInterest(lead.id, m.propertyId)}
@@ -737,7 +895,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                             Save
                           </button>
                           <button
-                            onClick={() => handleSendWhatsAppProposal(lead.id, m.propertyId, m.whatsAppUrl)}
+                            onClick={() =>
+                              handleSendWhatsAppProposal(lead.id, m.propertyId, m.whatsAppUrl)
+                            }
                             disabled={lead.can_edit === false}
                             className={`flex-1 py-1.5 bg-success-600 hover:bg-success-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
@@ -760,11 +920,20 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
                     {savedInterests.map((interest: SavedInterestItem) => (
-                      <div key={interest.id} className="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between shadow-sm group">
+                      <div
+                        key={interest.id}
+                        className="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between shadow-sm group"
+                      >
                         <div>
-                          <span className="font-mono font-medium text-slate-400 text-xs">{interest.property.property_code}</span>
-                          <h4 className="font-bold text-navy-900 text-sm mt-0.5">{interest.property.title}</h4>
-                          <p className="text-xs text-slate-500 mt-1">Saved on {new Date(interest.created_at).toLocaleDateString()}</p>
+                          <span className="font-mono font-medium text-slate-400 text-xs">
+                            {interest.property.property_code}
+                          </span>
+                          <h4 className="font-bold text-navy-900 text-sm mt-0.5">
+                            {interest.property.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Saved on {new Date(interest.created_at).toLocaleDateString()}
+                          </p>
                         </div>
                         <button
                           onClick={() => handleRemoveInterest(lead.id, interest.property_id)}
@@ -788,18 +957,59 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
                     {leadVisits.map((visit: LeadVisitItem) => (
-                      <div key={visit.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+                      <div
+                        key={visit.id}
+                        className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between"
+                      >
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-mono font-medium text-slate-400 text-xs">{visit.booking_code}</span>
+                            <span className="font-mono font-medium text-slate-400 text-xs">
+                              {visit.booking_code}
+                            </span>
                             <StatusPill status={visit.status} type={getStatusMap(visit.status)} />
                           </div>
                           {visit.property && (
-                            <h4 className="font-bold text-navy-900 text-sm mt-1">{visit.property.title}</h4>
+                            <h4 className="font-bold text-navy-900 text-sm mt-1">
+                              {visit.property.title}
+                            </h4>
                           )}
                           <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
                             <span>{new Date(visit.scheduled_date).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dossierTab === 'DEMOS' && (
+              <div className="space-y-4">
+                {leadDemos.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
+                    No demos scheduled.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {leadDemos.map((demo: LeadDemoItem) => (
+                      <div
+                        key={demo.id}
+                        className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <StatusPill status={demo.status} type={getStatusMap(demo.status)} />
+                          </div>
+                          {demo.handler && (
+                            <h4 className="font-bold text-navy-900 text-sm mt-1">
+                              {demo.handler.full_name}
+                            </h4>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{new Date(demo.scheduled_at).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
@@ -866,12 +1076,19 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                   ) : (
                     <div className="space-y-3">
                       {leadTasks.map((task: LeadTaskItem) => (
-                        <div key={task.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        <div
+                          key={task.id}
+                          className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm"
+                        >
                           <div className="flex items-center justify-between mb-1">
-                            <h5 className={`font-semibold text-sm ${task.status === 'COMPLETED' ? 'line-through text-slate-400' : 'text-navy-900'}`}>
+                            <h5
+                              className={`font-semibold text-sm ${task.status === 'COMPLETED' ? 'line-through text-slate-400' : 'text-navy-900'}`}
+                            >
                               {task.title}
                             </h5>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${task.priority === 'HIGH' || task.priority === 'URGENT' ? 'bg-danger-100 text-danger-800' : 'bg-slate-100 text-slate-600'}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${task.priority === 'HIGH' || task.priority === 'URGENT' ? 'bg-danger-100 text-danger-800' : 'bg-slate-100 text-slate-600'}`}
+                            >
                               {task.priority}
                             </span>
                           </div>
@@ -900,7 +1117,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                         const res = await fetchWithAuth(`${API_BASE_URL}/opportunities`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ lead_id: lead.id })
+                          body: JSON.stringify({ lead_id: lead.id }),
                         });
                         if (!res.ok) throw new Error('Failed to create sales opportunity');
                         showToast('Sales opportunity created', 'success');
@@ -915,7 +1132,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                     <Plus className="w-3.5 h-3.5" /> Create Opp
                   </button>
                 </div>
-                
+
                 {isLoadingSalesOpps ? (
                   <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
                 ) : leadSalesOpps.length === 0 ? (
@@ -925,20 +1142,29 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {leadSalesOpps.map((opp: LeadSalesOppItem) => (
-                      <div key={opp.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                      <div
+                        key={opp.id}
+                        className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+                      >
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <div className="text-[10px] font-mono text-slate-400 mb-0.5">#{opp.id}</div>
+                            <div className="text-[10px] font-mono text-slate-400 mb-0.5">
+                              #{opp.id}
+                            </div>
                             <h5 className="font-bold text-navy-900 text-sm truncate max-w-[150px]">
                               {opp.project?.name ? `${opp.project.name} Sales` : 'Open Opportunity'}
                             </h5>
                           </div>
-                          <StatusPill status={lead.status || 'UNKNOWN'} type="pending" />
+                          <StatusPill status={getLeadStatusLabel(lead.status)} type="pending" />
                         </div>
                         <div className="flex items-center justify-between text-sm mt-4 pt-3 border-t border-slate-100">
                           <div>
-                            <p className="text-[10px] text-slate-400 font-semibold uppercase">Value</p>
-                            <p className="font-bold text-navy-900">₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L</p>
+                            <p className="text-[10px] text-slate-400 font-semibold uppercase">
+                              Value
+                            </p>
+                            <p className="font-bold text-navy-900">
+                              ₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L
+                            </p>
                           </div>
                           <button
                             onClick={() => navigate('/sales-pipeline')}
@@ -965,30 +1191,35 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                 <MapPin className="w-5 h-5" />
                 <h3 className="font-bold text-sm tracking-wide">Book Site Visit</h3>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setShowScheduleModal(false);
                   setScheduleSuccess(false);
-                }} 
+                }}
                 className="hover:bg-black/10 p-1.5 rounded-full transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            
+
             {scheduleSuccess ? (
               <div className="p-8 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
                   <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                 </div>
                 <h4 className="text-xl font-bold text-navy-900">Demo Scheduled!</h4>
-                <p className="text-sm text-slate-500">The site visit has been successfully booked and routed.</p>
+                <p className="text-sm text-slate-500">
+                  The site visit has been successfully booked and routed.
+                </p>
                 <button
                   onClick={() => {
                     sendWhatsAppMessage('DEMO_SCHEDULED', lead.phone, {
                       customer_name: lead.customer_name,
                       visit_date: new Date(scheduleDate).toLocaleDateString(),
-                      visit_time: new Date(scheduleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      visit_time: new Date(scheduleDate).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
                       lead_code: lead.lead_code,
                     });
                   }}
@@ -1009,83 +1240,197 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
               </div>
             ) : (
               <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                    Scheduled Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                    Notes
+                  </label>
+                  <textarea
+                    value={scheduleNotes}
+                    onChange={(e) => setScheduleNotes(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 min-h-[80px]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                    Attach Property
+                  </label>
+                  <select
+                    value={schedulePropertyId}
+                    onChange={(e) => setSchedulePropertyId(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                  >
+                    <option value="">-- No Property Attached --</option>
+                    {savedInterests.map((interest) => (
+                      <option key={interest.property_id} value={interest.property_id}>
+                        {interest.property.title} ({interest.property.property_code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowScheduleModal(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!scheduleDate) return;
+                      try {
+                        const res = await fetchWithAuth(`${API_BASE_URL}/site-visits`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            lead_id: lead.id,
+                            scheduled_date: new Date(scheduleDate).toISOString(),
+                            notes: scheduleNotes,
+                            property_id: schedulePropertyId
+                              ? parseInt(schedulePropertyId, 10)
+                              : undefined,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          showToast('Site visit booked successfully', 'success');
+                          setScheduleSuccess(true);
+                          onRefreshLeads();
+                        } else {
+                          showToast(data.error || 'Failed to book site visit', 'error');
+                        }
+                      } catch (err) {
+                        showToast('Error booking site visit', 'error');
+                      }
+                    }}
+                    className="px-6 py-2 bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm rounded-xl shadow-md transition-all"
+                  >
+                    Confirm Booking
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showDemoScheduleModal && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col relative animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Scheduled Date & Time</label>
+                <h2 className="text-xl font-bold text-slate-900">Schedule Demo</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Pick a date and (optionally) who will run it.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDemoScheduleModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-white border border-transparent hover:border-slate-200 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-navy-500" />
+                  Date &amp; Time
+                </label>
                 <input
                   type="datetime-local"
-                  value={scheduleDate}
-                  onChange={(e) => setScheduleDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  required
+                  value={demoScheduleDate}
+                  onChange={(e) => setDemoScheduleDate(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Notes</label>
-                <textarea
-                  value={scheduleNotes}
-                  onChange={(e) => setScheduleNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 min-h-[80px]"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Attach Property</label>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-navy-500" />
+                  Handler (optional)
+                </label>
                 <select
-                  value={schedulePropertyId}
-                  onChange={(e) => setSchedulePropertyId(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                  value={demoHandlerId}
+                  onChange={(e) => setDemoHandlerId(e.target.value)}
+                  disabled={isLoadingDemoAssignees}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none disabled:opacity-50"
                 >
-                  <option value="">-- No Property Attached --</option>
-                  {savedInterests.map((interest) => (
-                    <option key={interest.property_id} value={interest.property_id}>
-                      {interest.property.title} ({interest.property.property_code})
+                  <option value="">Auto-assign from project PM</option>
+                  {demoAssignees.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.full_name || a.employee_code}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                  onClick={() => setShowDemoScheduleModal(false)}
+                  disabled={isSchedulingDemo}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-2xl transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
+                  disabled={isSchedulingDemo}
                   onClick={async () => {
-                    if (!scheduleDate) return;
+                    if (!demoScheduleDate) {
+                      showToast('Please select a date and time for this demo', 'error');
+                      return;
+                    }
+                    // demoHandlerId is optional — if not selected, backend auto-resolves
+                    // from the lead's project PM (territory-based auto-assign).
+                    setIsSchedulingDemo(true);
                     try {
-                      const res = await fetchWithAuth(`${API_BASE_URL}/site-visits`, {
-                        method: 'POST',
+                      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}/status`, {
+                        method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          lead_id: lead.id,
-                          scheduled_date: new Date(scheduleDate).toISOString(),
-                          notes: scheduleNotes,
-                          property_id: schedulePropertyId ? parseInt(schedulePropertyId, 10) : undefined,
+                          status: 'DEMO_SCHEDULED',
+                          demo_scheduled_at: new Date(demoScheduleDate).toISOString(),
+                          demo_handler_id: demoHandlerId ? parseInt(demoHandlerId, 10) : undefined,
                         }),
                       });
                       const data = await res.json();
                       if (res.ok) {
-                        showToast('Site visit booked successfully', 'success');
-                        setScheduleSuccess(true);
+                        showToast('Demo scheduled successfully', 'success');
+                        setShowDemoScheduleModal(false);
                         onRefreshLeads();
                       } else {
-                        showToast(data.error || 'Failed to book site visit', 'error');
+                        showToast(data.error || 'Failed to schedule demo', 'error');
                       }
                     } catch (err) {
-                      showToast('Error booking site visit', 'error');
+                      showToast('Error scheduling demo', 'error');
+                    } finally {
+                      setIsSchedulingDemo(false);
                     }
                   }}
-                  className="px-6 py-2 bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm rounded-xl shadow-md transition-all"
+                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-2xl shadow-md transition-colors disabled:opacity-50"
                 >
-                  Confirm Booking
+                  {isSchedulingDemo ? 'Scheduling...' : 'Confirm Schedule'}
                 </button>
               </div>
             </div>
-            )}
           </div>
         </div>
       )}
@@ -1096,7 +1441,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Complete Demo</h2>
-                <p className="text-sm text-slate-500 mt-1">Record demo outcome and any revised requirements.</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Record demo outcome and any revised requirements.
+                </p>
               </div>
               <button
                 onClick={() => setShowDemoCompleteModal(false)}
@@ -1106,7 +1453,10 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
               </button>
             </div>
 
-            <form onSubmit={handleDemoCompleteSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <form
+              onSubmit={handleDemoCompleteSubmit}
+              className="p-6 space-y-6 max-h-[70vh] overflow-y-auto"
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1 space-y-2">
                   <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -1118,7 +1468,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                     onChange={(e) => setDemoPropertyType(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none"
                   >
-                    <option value={lead.property_type_preference || ''}>{lead.property_type_preference || '— unchanged —'}</option>
+                    <option value={lead.property_type_preference || ''}>
+                      {lead.property_type_preference || '— unchanged —'}
+                    </option>
                     <option value="RESIDENTIAL_APARTMENT">Apartment</option>
                     <option value="RESIDENTIAL_VILLA">Villa</option>
                     <option value="RESIDENTIAL_PLOT">Plot</option>
@@ -1177,9 +1529,13 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
                       onChange={(e) => setDemoSiteVisitCompleted(e.target.checked)}
                       className="w-4 h-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
                     />
-                    <span className="text-sm font-semibold text-slate-700">Site visit completed</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      Site visit completed
+                    </span>
                   </label>
-                  <p className="text-xs text-slate-400 ml-7">Check if the customer toured the site during this demo.</p>
+                  <p className="text-xs text-slate-400 ml-7">
+                    Check if the customer toured the site during this demo.
+                  </p>
                 </div>
               </div>
 
@@ -1224,8 +1580,12 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose,
           leadId={lead.id}
           currentData={lead}
           onClose={() => setShowQualifyModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowQualifyModal(false);
+            // Qualification fields are saved by this point (QualifyLeadModal's
+            // own PATCH) — but saving those fields doesn't itself move the
+            // lead to QUALIFIED, so it still needs the actual transition.
+            await onUpdateStatus(lead.id, 'QUALIFIED');
             onRefreshLeads();
             onClose();
           }}

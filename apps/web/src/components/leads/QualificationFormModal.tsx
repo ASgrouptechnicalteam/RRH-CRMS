@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Button } from '../common/ui/Button';
 import { InputField } from '../common/ui/InputField';
 import { SelectField } from '../common/ui/SelectField';
+import { LocationListInput } from '../common/ui/LocationListInput';
 import { PROPERTY_TYPE_OPTIONS } from '../../constants/propertyTypes';
 import { useToast } from '../../context/ToastContext';
 import { toUserFacingError } from '../../utils/userFacingError';
@@ -11,7 +12,9 @@ export interface QualificationData {
   budget_min?: number;
   budget_max?: number;
   property_type_preference?: string;
+  /** @deprecated superseded by preferred_locations (multi-select) */
   preferred_location?: string;
+  preferred_locations?: string[];
 }
 
 interface QualificationFormModalProps {
@@ -29,7 +32,18 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
   onSave,
   onClose,
 }) => {
-  const [formData, setFormData] = useState<QualificationData>(initialData || {});
+  const seededInitialData: QualificationData = initialData
+    ? {
+        ...initialData,
+        preferred_locations:
+          initialData.preferred_locations && initialData.preferred_locations.length > 0
+            ? initialData.preferred_locations
+            : initialData.preferred_location
+              ? [initialData.preferred_location]
+              : [],
+      }
+    : {};
+  const [formData, setFormData] = useState<QualificationData>(seededInitialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
@@ -40,8 +54,10 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
     if (requireAllFields) {
       if (formData.budget_min == null) newErrors.budget_min = 'Min budget is required';
       if (formData.budget_max == null) newErrors.budget_max = 'Max budget is required';
-      if (!formData.property_type_preference) newErrors.property_type_preference = 'Property type is required';
-      if (!formData.preferred_location) newErrors.preferred_location = 'Preferred location is required';
+      if (!formData.property_type_preference)
+        newErrors.property_type_preference = 'Property type is required';
+      if (!formData.preferred_locations || formData.preferred_locations.length === 0)
+        newErrors.preferred_locations = 'At least one preferred location is required';
     }
 
     if (formData.budget_min != null && formData.budget_max != null) {
@@ -55,8 +71,14 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
   };
 
   const propertyTypeOptions = [...PROPERTY_TYPE_OPTIONS];
-  if (formData.property_type_preference && !PROPERTY_TYPE_OPTIONS.find(pt => pt.value === formData.property_type_preference)) {
-    propertyTypeOptions.push({ value: formData.property_type_preference, label: formData.property_type_preference });
+  if (
+    formData.property_type_preference &&
+    !PROPERTY_TYPE_OPTIONS.find((pt) => pt.value === formData.property_type_preference)
+  ) {
+    propertyTypeOptions.push({
+      value: formData.property_type_preference,
+      label: formData.property_type_preference,
+    });
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,14 +119,24 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
                 label="Min Budget (₹)"
                 type="number"
                 value={formData.budget_min ?? ''}
-                onChange={(e) => setFormData({ ...formData, budget_min: e.target.value === '' ? undefined : Number(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    budget_min: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
                 error={errors.budget_min}
               />
               <InputField
                 label="Max Budget (₹)"
                 type="number"
                 value={formData.budget_max ?? ''}
-                onChange={(e) => setFormData({ ...formData, budget_max: e.target.value === '' ? undefined : Number(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    budget_max: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
                 error={errors.budget_max}
               />
             </div>
@@ -113,18 +145,24 @@ export const QualificationFormModal: React.FC<QualificationFormModalProps> = ({
               label="Property Type Preference"
               placeholder="Select property type..."
               value={formData.property_type_preference || ''}
-              onChange={(e) => setFormData({ ...formData, property_type_preference: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, property_type_preference: e.target.value })
+              }
               error={errors.property_type_preference}
               options={propertyTypeOptions}
             />
 
-            <InputField
-              label="Preferred Location"
-              type="text"
+            <LocationListInput
+              values={formData.preferred_locations || []}
+              onChange={(locations) =>
+                setFormData({
+                  ...formData,
+                  preferred_locations: locations,
+                  preferred_location: locations[0],
+                })
+              }
               placeholder="e.g., Gachibowli, Hyderabad"
-              value={formData.preferred_location || ''}
-              onChange={(e) => setFormData({ ...formData, preferred_location: e.target.value })}
-              error={errors.preferred_location}
+              error={errors.preferred_locations}
             />
           </form>
         </div>

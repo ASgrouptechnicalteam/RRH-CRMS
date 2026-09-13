@@ -1,9 +1,22 @@
+import dotenv from 'dotenv';
+import path from 'path';
+// Load the monorepo root .env by absolute path — independent of the
+// process's cwd at launch time. The real secrets live in the repo root
+// .env (apps/api/.env is an empty stub); without an explicit load here,
+// everything reading process.env directly (e.g. utils/jwt.ts's secrets
+// check) only worked by accident, when whatever started the server also
+// happened to have already sourced that root .env into its shell. Starting
+// the server from a plain `npm run dev` with no such shell setup (e.g. the
+// monorepo's `npm run dev --workspaces`) left env vars unset and crashed on
+// the JWT secrets check. Must run before any other local import that reads
+// process.env at module load time.
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
+
 import { logger } from './utils/logger';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import path from 'path';
 import fs from 'fs';
 
 import healthRoutes from './routes/health';

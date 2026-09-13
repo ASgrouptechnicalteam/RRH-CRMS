@@ -312,7 +312,7 @@ export class OpportunityService {
       prisma.opportunity.findMany({
         where,
         include: {
-          lead: { select: { id: true, customer_name: true, phone: true } },
+          lead: { select: { id: true, customer_name: true, phone: true, status: true } },
           owner: { select: { id: true, full_name: true, employee_code: true } },
           project: { select: { id: true, name: true } },
           property: { select: { id: true, title: true, property_code: true } },

@@ -9,7 +9,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.test'), override: true }
 const testDbUrl = process.env.DATABASE_URL_TEST;
 
 if (!testDbUrl) {
-  console.error("ABORT: DATABASE_URL_TEST is not defined in .env.test");
+  console.error('ABORT: DATABASE_URL_TEST is not defined in .env.test');
   process.exit(1);
 }
 
@@ -18,7 +18,7 @@ let urlParams: URL;
 try {
   urlParams = new URL(testDbUrl);
 } catch (e) {
-  console.error("ABORT: Invalid DATABASE_URL_TEST format.");
+  console.error('ABORT: Invalid DATABASE_URL_TEST format.');
   process.exit(1);
 }
 
@@ -37,7 +37,9 @@ if (dbName !== 'u988844918_test' && dbName !== 'test_db') {
 }
 
 if (testDbUrl.includes('u988844918_crms')) {
-  console.error("ABORT: Test database URL contains production database identifier (u988844918_crms).");
+  console.error(
+    'ABORT: Test database URL contains production database identifier (u988844918_crms).',
+  );
   process.exit(1);
 }
 
@@ -55,11 +57,15 @@ console.log(`Executing Prisma db push safely...\n`);
 const childEnv = { ...process.env, DATABASE_URL: testDbUrl };
 
 // 7. Execute Prisma's db push
-const result = spawnSync('npx', ['prisma', 'db', 'push'], {
-  env: childEnv,
-  stdio: 'inherit',
-  shell: process.platform === 'win32' // Required to spawn npx correctly on Windows
-});
+const result = spawnSync(
+  'npx',
+  ['prisma', 'db', 'push', '--schema=apps/api/prisma/schema.prisma', '--accept-data-loss'],
+  {
+    env: childEnv,
+    stdio: 'inherit',
+    shell: process.platform === 'win32', // Required to spawn npx correctly on Windows
+  },
+);
 
 if (result.error) {
   console.error(`Execution error: ${result.error.message}`);

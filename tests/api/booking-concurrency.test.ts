@@ -7,7 +7,6 @@ import { Roles } from '@rrh-ems/shared';
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
@@ -37,7 +36,9 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
       return res.body.accessToken;
     };
 
-    const agentCode = deterministicUsers.find(u => u.roles[0] === Roles.DIGITAL_LEAD_OPERATOR)!.employee_code;
+    const agentCode = deterministicUsers.find(
+      (u) => u.roles[0] === Roles.DIGITAL_LEAD_OPERATOR,
+    )!.employee_code;
     agentToken = await getAuth(agentCode, 1);
 
     const decoded = JSON.parse(Buffer.from(agentToken.split('.')[1], 'base64').toString());
@@ -51,8 +52,8 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
         first_name: 'Concurrent',
         last_name: 'Tester',
         phone: '9999999999',
-        company_id: companyId
-      }
+        company_id: companyId,
+      },
     });
     customerId = customer.id;
   });
@@ -63,40 +64,34 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
         property_code: `TEST-PROP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         company_id: companyId,
         title: 'Concurrency Test Property',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1500,
         location: 'Test Location',
         status,
         created_by_id: agentId,
-        ...override
-      }
+        ...override,
+      },
     });
   };
 
   const attemptBooking = async (propertyId: number, token: string = agentToken) => {
-    return request(app)
-      .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        customer_id: customerId,
-        property_id: propertyId,
-        agreed_price: 4900000,
-        booking_amount: 100000,
-        notes: 'Concurrency Test Booking'
-      });
+    return request(app).post('/api/v1/bookings').set('Authorization', `Bearer ${token}`).send({
+      customer_id: customerId,
+      property_id: propertyId,
+      agreed_price: 4900000,
+      booking_amount: 100000,
+      notes: 'Concurrency Test Booking',
+    });
   };
 
   test('A. Two simultaneous requests for the same LIVE property produce exactly 1 success', async () => {
     const prop = await createTestProperty('LIVE');
-    
-    // Fire simultaneous requests
-    const [res1, res2] = await Promise.all([
-      attemptBooking(prop.id),
-      attemptBooking(prop.id)
-    ]);
 
-    const successes = [res1, res2].filter(r => r.status === 201);
-    const failures = [res1, res2].filter(r => r.status === 409 || r.status === 400);
+    // Fire simultaneous requests
+    const [res1, res2] = await Promise.all([attemptBooking(prop.id), attemptBooking(prop.id)]);
+
+    const successes = [res1, res2].filter((r) => r.status === 201);
+    const failures = [res1, res2].filter((r) => r.status === 409 || r.status === 400);
 
     expect(successes.length).toBe(1);
     expect(failures.length).toBe(1);
@@ -108,16 +103,16 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
 
   test('B. Three+ simultaneous requests produce exactly 1 success', async () => {
     const prop = await createTestProperty('LIVE');
-    
+
     const results = await Promise.all([
       attemptBooking(prop.id),
       attemptBooking(prop.id),
       attemptBooking(prop.id),
-      attemptBooking(prop.id)
+      attemptBooking(prop.id),
     ]);
 
-    const successes = results.filter(r => r.status === 201);
-    const failures = results.filter(r => r.status === 409 || r.status === 400);
+    const successes = results.filter((r) => r.status === 201);
+    const failures = results.filter((r) => r.status === 409 || r.status === 400);
 
     expect(successes.length).toBe(1);
     expect(failures.length).toBe(3);
@@ -148,8 +143,10 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
 
   test('F. Expired LOCKED property can be reclaimed safely', async () => {
     // Lock expired 1 hour ago
-    const prop = await createTestProperty('LOCKED', { locked_until: new Date(Date.now() - 3600 * 1000) });
-    
+    const prop = await createTestProperty('LOCKED', {
+      locked_until: new Date(Date.now() - 3600 * 1000),
+    });
+
     const res = await attemptBooking(prop.id);
     expect(res.status).toBe(201);
 
@@ -159,15 +156,14 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
   });
 
   test('G. Two simultaneous attempts against the SAME expired LOCK produce exactly 1 winner', async () => {
-    const prop = await createTestProperty('LOCKED', { locked_until: new Date(Date.now() - 3600 * 1000) });
-    
-    const [res1, res2] = await Promise.all([
-      attemptBooking(prop.id),
-      attemptBooking(prop.id)
-    ]);
+    const prop = await createTestProperty('LOCKED', {
+      locked_until: new Date(Date.now() - 3600 * 1000),
+    });
 
-    const successes = [res1, res2].filter(r => r.status === 201);
-    const failures = [res1, res2].filter(r => r.status === 409 || r.status === 400);
+    const [res1, res2] = await Promise.all([attemptBooking(prop.id), attemptBooking(prop.id)]);
+
+    const successes = [res1, res2].filter((r) => r.status === 201);
+    const failures = [res1, res2].filter((r) => r.status === 409 || r.status === 400);
 
     expect(successes.length).toBe(1);
     expect(failures.length).toBe(1);
@@ -176,11 +172,8 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
   test('I. Different properties can be booked concurrently', async () => {
     const prop1 = await createTestProperty('LIVE');
     const prop2 = await createTestProperty('LIVE');
-    
-    const [res1, res2] = await Promise.all([
-      attemptBooking(prop1.id),
-      attemptBooking(prop2.id)
-    ]);
+
+    const [res1, res2] = await Promise.all([attemptBooking(prop1.id), attemptBooking(prop2.id)]);
 
     expect(res1.status).toBe(201);
     expect(res2.status).toBe(201);
@@ -194,7 +187,7 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
 
   test('H. Booking creation failure rolls back the property lock', async () => {
     const prop = await createTestProperty('LIVE');
-    
+
     // Intentionally cause a DB error inside createBooking by sending invalid foreign keys
     // wait, if customer_id doesn't exist, it will throw foreign key constraint inside the transaction
     const res = await request(app)
@@ -204,7 +197,7 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
         customer_id: 999999, // Invalid customer
         property_id: prop.id,
         agreed_price: 4900000,
-        booking_amount: 100000
+        booking_amount: 100000,
       });
 
     expect(res.status).toBe(404); // Because tenant isolation / validation returns 404 for invalid customer
@@ -215,5 +208,4 @@ describe('Phase 9 Packet 2 - Booking Concurrency & Safety', () => {
     expect(p1.locked_until).toBeNull();
     expect(p1.locked_by_booking_id).toBeNull();
   });
-
 });

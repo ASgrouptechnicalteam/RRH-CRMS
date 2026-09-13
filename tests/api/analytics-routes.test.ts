@@ -21,7 +21,6 @@ import { prisma } from '../../apps/api/src/lib/prisma';
 import { setupDeterministicTestUsers } from '../fixtures/testUsers';
 import { Roles, Permissions } from '@rrh-ems/shared';
 
-
 const jwt = require('jsonwebtoken');
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 
@@ -38,21 +37,21 @@ function mdToken(companyId: number, employeeId: number): string {
     branchId: null,
     roles: [Roles.MD],
     permissions: [Permissions.ADMIN_SYSTEM_METRICS],
-    tokenVersion: 1
+    tokenVersion: 1,
   });
 }
 
 // Telecaller token WITHOUT ADMIN_SYSTEM_METRICS -> used for the 403 test.
 function telecallerToken(companyId: number, employeeId: number): string {
-    return signToken({
-      employeeId,
-      employeeCode: `RRH-TC-${employeeId.toString().padStart(3, '0')}`,
-      companyId,
-      branchId: null,
-      roles: ['TELECALLER'],
-      permissions: ['LEADS_READ'],
-      tokenVersion: 1
-    });
+  return signToken({
+    employeeId,
+    employeeCode: `RRH-TC-${employeeId.toString().padStart(3, '0')}`,
+    companyId,
+    branchId: null,
+    roles: ['TELECALLER'],
+    permissions: ['LEADS_READ'],
+    tokenVersion: 1,
+  });
 }
 
 // Unique test-run identifier (process PID ensures uniqueness across Jest runs)
@@ -61,7 +60,11 @@ const TEST_RUN_ID = process.pid.toString().padStart(5, '0');
 async function createCompany(name: string, code: string) {
   // Use test-run-specific code to prevent cross-run data contamination
   const uniqueCode = `${code}_${TEST_RUN_ID}`;
-  return await prisma.company.upsert({ where: { code: uniqueCode }, update: { name }, create: { name, code: uniqueCode } });
+  return await prisma.company.upsert({
+    where: { code: uniqueCode },
+    update: { name },
+    create: { name, code: uniqueCode },
+  });
 }
 
 async function createEmployee(
@@ -69,7 +72,7 @@ async function createEmployee(
   code: string,
   role: string,
   fullName: string,
-  attendanceRequired = true
+  attendanceRequired = true,
 ) {
   return await prisma.employee.upsert({
     where: { employee_code: code },
@@ -134,7 +137,9 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
     it('requires ADMIN_SYSTEM_METRICS (403 for a telecaller)', async () => {
       const tcUser = await prisma.employee.findFirst();
       const token = telecallerToken(1, tcUser!.id);
-      const res = await request(app).get('/api/v1/analytics/kpis').set('Authorization', `Bearer ${token}`);
+      const res = await request(app)
+        .get('/api/v1/analytics/kpis')
+        .set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(403);
     });
   });
@@ -199,7 +204,7 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
             property_code: `PRP-${companyId}-${i}`,
             company_id: companyId,
             title: `Property ${i}`,
-            price: 1000000,
+            final_price: 1000000,
             area_sqft: 1000,
             location: 'Test Location',
             created_by_id: mdId,
@@ -360,7 +365,11 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       await prisma.booking.deleteMany({ where: { company_id: companyBId } });
 
       // Company A: 10 leads (2 BOOKED, 3 SITE_VISIT_SCHEDULED, 5 NEW)
-      const aSpec = [{ n: 2, status: 'BOOKED' }, { n: 3, status: 'SITE_VISIT_SCHEDULED' }, { n: 5, status: 'NEW' }];
+      const aSpec = [
+        { n: 2, status: 'BOOKED' },
+        { n: 3, status: 'SITE_VISIT_SCHEDULED' },
+        { n: 5, status: 'NEW' },
+      ];
       let seq = 0;
       for (const { n, status } of aSpec) {
         for (let i = 0; i < n; i++) {
@@ -378,7 +387,11 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       }
 
       // Company B: 100 leads (50 BOOKED, 20 SITE_VISIT_SCHEDULED, 30 NEW) — materially different.
-      const bSpec = [{ n: 50, status: 'BOOKED' }, { n: 20, status: 'SITE_VISIT_SCHEDULED' }, { n: 30, status: 'NEW' }];
+      const bSpec = [
+        { n: 50, status: 'BOOKED' },
+        { n: 20, status: 'SITE_VISIT_SCHEDULED' },
+        { n: 30, status: 'NEW' },
+      ];
       let bseq = 0;
       for (const { n, status } of bSpec) {
         for (let i = 0; i < n; i++) {
@@ -486,7 +499,12 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
       const body: any = res.body;
 
       expect(body.companyId).toBe(companyId);
-      expect(body.crm).toEqual({ totalLeads: 0, wonLeads: 0, siteVisitsScheduled: 0 });
+      expect(body.crm).toEqual({
+        totalLeads: 0,
+        wonLeads: 0,
+        siteVisitsScheduled: 0,
+        dropOffByStage: [],
+      });
       expect(body.property).toEqual({ total: 0, live: 0, pendingMD: 0, pendingPM: 0 });
       expect(body.booking).toEqual({ totalBookings: 0 });
       expect(body.hr).toEqual({ activeEmployees: 1, attendanceExceptionsToday: 0 });
@@ -508,6 +526,3 @@ describe('Phase 16 Packet B — /api/v1/analytics/kpis', () => {
     });
   });
 });
-
-
-

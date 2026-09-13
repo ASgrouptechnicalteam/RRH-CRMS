@@ -8,7 +8,6 @@ import { NotificationService } from '../../apps/api/src/services/notification.se
 
 jest.setTimeout(30000);
 
-
 const p = prisma as any;
 
 describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => {
@@ -35,7 +34,7 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
       .post('/api/v1/auth/login')
       .set('X-Forwarded-For', '192.168.3.10')
       .send({
-        employee_code: deterministicUsers.find(u => u.roles[0] === Roles.MD)!.employee_code,
+        employee_code: deterministicUsers.find((u) => u.roles[0] === Roles.MD)!.employee_code,
         password: 'Password@123',
       });
     if (res.status !== 200) {
@@ -54,7 +53,7 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
         last_name: 'Test',
         phone: '7777777777',
         company_id: companyId,
-      }
+      },
     });
     customerId = customer.id;
 
@@ -72,13 +71,13 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
         property_code: `TEST-PROP-3E-${Date.now()}`,
         company_id: companyId,
         title: 'Notify Test Property',
-        price: 4900000,
+        final_price: 4900000,
         area_sqft: 1400,
         location: 'Test Location',
         category: 'VILLA',
         status: 'LIVE',
         created_by_id: mdUserId,
-      }
+      },
     });
     propertyId = property.id;
   });
@@ -108,7 +107,7 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
         property_id: propertyId,
         agreed_price: 4800000,
         booking_amount: 100000,
-        notes: 'Customer Notification Test Booking'
+        notes: 'Customer Notification Test Booking',
       });
     expect(createRes.status).toBe(201);
     const id = createRes.body.id;
@@ -140,7 +139,9 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
 
   const getNotifications = async (customer_id: number, query: string = '') => {
     const res = await request(app)
-      .get(`/api/v1/integration/portal/customer-notifications?company_id=${companyId}&crms_customer_id=${customer_id}${query}`)
+      .get(
+        `/api/v1/integration/portal/customer-notifications?company_id=${companyId}&crms_customer_id=${customer_id}${query}`,
+      )
       .set('Authorization', `Bearer ${process.env.PORTAL_CRM_SECRET}`);
     return res;
   };
@@ -220,12 +221,15 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
 
   // 4. Read API requires service token (401)
   test('4. Read API rejects missing/invalid service token with 401', async () => {
-    const noToken = await request(app)
-      .get(`/api/v1/integration/portal/customer-notifications?company_id=${companyId}&crms_customer_id=${customerId}`);
+    const noToken = await request(app).get(
+      `/api/v1/integration/portal/customer-notifications?company_id=${companyId}&crms_customer_id=${customerId}`,
+    );
     expect(noToken.status).toBe(401);
 
     const badToken = await request(app)
-      .get(`/api/v1/integration/portal/customer-notifications?company_id=${companyId}&crms_customer_id=${customerId}`)
+      .get(
+        `/api/v1/integration/portal/customer-notifications?company_id=${companyId}&crms_customer_id=${customerId}`,
+      )
       .set('Authorization', 'Bearer wrong-secret');
     expect(badToken.status).toBe(401);
   });
@@ -253,7 +257,9 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
   // 7. Cross-company customer cannot read another company's notifications
   test('7. Company isolation: cross-company query returns 404, never other company rows', async () => {
     const res = await request(app)
-      .get(`/api/v1/integration/portal/customer-notifications?company_id=9999&crms_customer_id=${customerId}`)
+      .get(
+        `/api/v1/integration/portal/customer-notifications?company_id=9999&crms_customer_id=${customerId}`,
+      )
       .set('Authorization', `Bearer ${process.env.PORTAL_CRM_SECRET}`);
     expect(res.status).toBe(404);
 
@@ -273,7 +279,7 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
         last_name: 'Customer',
         phone: '6666666666',
         company_id: companyId,
-      }
+      },
     });
 
     const res = await getNotifications(other.id);
@@ -337,7 +343,6 @@ describe('Phase 11 Packet 3E - Customer Notifications / Activation Flow', () => 
     expect(serialized).not.toContain('ABCDE1234F');
     expect(serialized).not.toContain('123456789012');
   });
-
 
   // 15. Notification creation is transactional: no orphan on rollback
   test('15. Notification creation is transactional (no orphan on rollback)', async () => {

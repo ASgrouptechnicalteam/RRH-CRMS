@@ -4,8 +4,6 @@ import { setupDeterministicTestUsers, deterministicUsers } from '../fixtures/tes
 import { Roles } from '@rrh-ems/shared';
 import { prisma } from '../../apps/api/src/lib/prisma';
 
-
-
 describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
   let mdToken: string;
   let telecallerToken: string;
@@ -17,7 +15,9 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
   let projectId: number;
   let propertyId: number;
 
-  const uniquePhone = `999${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}1`;
+  const uniquePhone = `999${Math.floor(Math.random() * 1000000)
+    .toString()
+    .padStart(6, '0')}1`;
   const pCode = `PRJ-${Date.now()}`;
   const propCode = `PROP-${Date.now()}`;
 
@@ -28,12 +28,14 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
     await setupDeterministicTestUsers();
 
     const login = async (code: string) => {
-      const res = await request(app).post('/api/v1/auth/login').send({ employee_code: code, password: 'Password@123' });
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ employee_code: code, password: 'Password@123' });
       return res.body.accessToken;
     };
 
-    const telecallerUser = deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!;
-    const mdUser = deterministicUsers.find(u => u.roles[0] === Roles.MD)!;
+    const telecallerUser = deterministicUsers.find((u) => u.roles[0] === Roles.TELECALLER)!;
+    const mdUser = deterministicUsers.find((u) => u.roles[0] === Roles.MD)!;
 
     telecallerToken = await login(telecallerUser.employee_code);
     mdToken = await login(mdUser.employee_code);
@@ -41,9 +43,11 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
     // Create a deterministic project and property in the DB
     const company = await prisma.company.findFirst();
     if (!company) throw new Error('No company found');
-    
+
     // We need the actual employee ID from the DB
-    const dbUser = await prisma.employee.findUnique({ where: { employee_code: mdUser.employee_code } });
+    const dbUser = await prisma.employee.findUnique({
+      where: { employee_code: mdUser.employee_code },
+    });
     if (!dbUser) throw new Error('No md found in db');
 
     const p = prisma as any;
@@ -53,8 +57,8 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
         project_code: pCode,
         name: 'E2E Test Project',
         location: 'Test City',
-        status: 'ACTIVE'
-      }
+        status: 'ACTIVE',
+      },
     });
     projectId = project.id;
 
@@ -67,11 +71,11 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
         title: 'E2E Test Property',
         category: 'VILLA',
         status: 'LIVE',
-        price: 5000000,
+        final_price: 5000000,
         area_sqft: 1000,
         location: 'Test Location',
-        created_by_id: dbUser.id
-      }
+        created_by_id: dbUser.id,
+      },
     });
     propertyId = property.id;
   });
@@ -83,9 +87,9 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
       .send({
         customer_name: 'E2E Lifecycle Lead',
         phone: uniquePhone,
-        source: 'WEBSITE'
+        source: 'WEBSITE',
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.lead).toBeDefined();
     leadId = res.body.lead.id;
@@ -93,10 +97,17 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
 
   it('2. Should advance Lead to SITE_VISIT_COMPLETED', async () => {
     // To advance ASSIGNED -> CONTACTED, we need a CALL_LOGGED activity
-    const tUser = deterministicUsers.find(u => u.roles[0] === Roles.TELECALLER)!;
-    const dbUser = await prisma.employee.findUnique({ where: { employee_code: tUser.employee_code } });
+    const tUser = deterministicUsers.find((u) => u.roles[0] === Roles.TELECALLER)!;
+    const dbUser = await prisma.employee.findUnique({
+      where: { employee_code: tUser.employee_code },
+    });
     await prisma.leadActivity.create({
-      data: { lead_id: leadId, actor_id: dbUser!.id, activity_type: 'CALL_LOGGED', notes: 'E2E Test Call' }
+      data: {
+        lead_id: leadId,
+        actor_id: dbUser!.id,
+        activity_type: 'CALL_LOGGED',
+        notes: 'E2E Test Call',
+      },
     });
 
     const patch1 = await request(app)
@@ -114,8 +125,8 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
           budget_min: 5000000,
           budget_max: 10000000,
           property_type_preference: 'VILLA',
-          preferred_location: 'Test City'
-        }
+          preferred_location: 'Test City',
+        },
       });
     expect(patch2.status).toBe(200);
 
@@ -131,15 +142,14 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
       .set('Authorization', `Bearer ${telecallerToken}`)
       .send({
         lead_id: leadId,
-        scheduled_date: new Date(Date.now() + 86400000).toISOString()
+        scheduled_date: new Date(Date.now() + 86400000).toISOString(),
       });
     expect(svRes.status).toBe(201);
     // Bypass complex SiteVisit routing for this test by forcing the Lead status via Prisma
     await prisma.lead.update({
       where: { id: leadId },
-      data: { status: 'SITE_VISIT_COMPLETED' }
+      data: { status: 'SITE_VISIT_COMPLETED' },
     });
-
 
     // It might be 200 or already there.
   });
@@ -153,9 +163,9 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
         project_id: projectId,
         property_id: propertyId,
         expected_value: 5000000,
-        probability: 50
+        probability: 50,
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.opportunity).toBeDefined();
     opportunityId = res.body.opportunity.id;
@@ -166,7 +176,7 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
       'REQUIREMENT_CAPTURED',
       'PROPERTY_SHORTLISTED',
       'NEGOTIATION',
-      'BOOKING_INITIATED'
+      'BOOKING_INITIATED',
     ];
 
     for (const stage of transitions) {
@@ -187,9 +197,9 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
       .set('Authorization', `Bearer ${mdToken}`)
       .send({
         agreed_price: 5000000,
-        booking_amount: 100000
+        booking_amount: 100000,
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.booking).toBeDefined();
     bookingId = res.body.booking.id;
@@ -208,10 +218,10 @@ describe('PHASE A - E2E CRM Lifecycle Workflow', () => {
     const res = await request(app)
       .get('/api/v1/leads')
       .set('Authorization', `Bearer ${telecallerToken}`);
-    
+
     const leads = res.body.leads;
     const ourLead = leads.find((l: any) => l.id === leadId);
-    
+
     expect(ourLead).toBeDefined();
     expect(ourLead.status).toBe('BOOKED');
   });

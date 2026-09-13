@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { MapPin, Calendar, User, Clock, AlertTriangle } from 'lucide-react';
+import { MapPin, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ListWidget, ListItem, StatusPill } from '../ui';
+import { SiteVisitCountdownBadge } from './SiteVisitCountdownBadge';
 
 interface SiteVisit {
   id: number;
   booking_code: string;
   status: string;
   scheduled_date: string;
-  lead?: {
-    customer_name: string;
-    contact_number: string;
-  };
-  property?: {
-    title: string;
-    property_code: string;
-  };
+  lead?: { customer_name: string; phone: string; preferred_location?: string };
+  property?: { title: string; property_code: string };
 }
 
 export const ActiveSiteVisitsBanner: React.FC = () => {
@@ -32,7 +27,6 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
         const res = await fetchWithAuth(`${API_BASE_URL}/site-visits?status=ACTIVE`);
         if (res.ok) {
           const data = await res.json();
-          // Filter for today's visits if they aren't already filtered on the backend
           const today = new Date().toISOString().split('T')[0];
           const todayVisits = (data.visits || []).filter(
             (v: SiteVisit) => v.scheduled_date && v.scheduled_date.startsWith(today),
@@ -45,29 +39,44 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchActiveVisits();
-    // Poll every 5 minutes to keep it fresh
     const interval = setInterval(fetchActiveVisits, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchWithAuth]);
 
   if (loading || activeVisits.length === 0) return null;
 
+  // These visits are already ACTIVE (i.e. accepted), so the customer phone
+  // number is no longer blind-queue-restricted — safe to show unconditionally.
   const items: ListItem[] = activeVisits.map((visit) => ({
     id: visit.id,
     icon: MapPin,
     title: visit.property?.title || 'Unknown Property',
-    subtitle: `${visit.lead?.customer_name || 'Unknown Client'} - ${new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+    subtitle: [
+      visit.lead?.customer_name || 'Unknown Client',
+      visit.lead?.preferred_location,
+      visit.lead?.phone,
+    ]
+      .filter(Boolean)
+      .join(' · '),
     meta: (
       <div className="flex flex-col items-end gap-2">
+        <SiteVisitCountdownBadge scheduledDate={visit.scheduled_date} />
         <StatusPill status="ACTIVE TODAY" type="success" />
+        {visit.lead?.phone && (
+          <a
+            href={`tel:${visit.lead.phone}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-action hover:underline"
+          >
+            <Phone className="w-3 h-3" />
+            {visit.lead.phone}
+          </a>
+        )}
         <button
           className="px-3 py-1 bg-action text-white text-xs font-bold rounded shadow-sm hover:bg-action-600 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            // No dedicated /site-visits/:id detail route exists — this list
-            // page is the correct, working destination.
             navigate('/site-visits');
           }}
         >
@@ -79,7 +88,6 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
 
   return (
     <div className="mb-6 rounded-2xl border-2 border-action shadow-md shadow-action/10 relative overflow-hidden bg-white">
-      {/* Visual distinct top border highlight */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-action to-blue-400"></div>
       <ListWidget title="⚠️ URGENT: Active Site Visits Today" items={items} emptyStateMessage="" />
     </div>

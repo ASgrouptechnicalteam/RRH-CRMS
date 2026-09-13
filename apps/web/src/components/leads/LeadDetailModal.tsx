@@ -31,7 +31,6 @@ import {
   LeadSalesOppItem,
 } from '../../types';
 import { StatusPill } from '../ui/StatusPill';
-import { QualifyLeadModal } from './QualifyLeadModal';
 import { QualificationFormModal } from './QualificationFormModal';
 import { getPropertyTypeLabel } from '../../constants/propertyTypes';
 import { getLeadStatusLabel } from '../../constants/leadStatus';
@@ -762,14 +761,18 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                           onClick={() =>
                             st === 'DEMO_SCHEDULED'
                               ? setShowDemoScheduleModal(true)
-                              : onUpdateStatus(lead.id, st)
+                              : st === 'QUALIFIED'
+                                ? setShowQualifyModal(true)
+                                : onUpdateStatus(lead.id, st)
                           }
                           disabled={lead.can_edit === false}
                           className={`px-4 py-2 bg-white hover:bg-slate-50 text-navy-700 border border-slate-200 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {st === 'DEMO_SCHEDULED'
                             ? 'Schedule Demo'
-                            : `Move to ${st.replace(/_/g, ' ')}`}
+                            : st === 'QUALIFIED'
+                              ? 'Qualify Lead'
+                              : `Move to ${st.replace(/_/g, ' ')}`}
                         </button>
                       ))}
                   </div>
@@ -1576,15 +1579,37 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       )}
 
       {showQualifyModal && (
-        <QualifyLeadModal
-          leadId={lead.id}
-          currentData={lead}
+        <QualificationFormModal
+          title="Qualify Lead"
+          initialData={{
+            budget_min: lead.budget_min,
+            budget_max: lead.budget_max,
+            property_type_preference: lead.property_type_preference,
+            preferred_location: lead.preferred_location,
+            preferred_locations: lead.preferred_locations?.map((pl) => pl.location),
+          }}
+          // Moving to QUALIFIED requires every field — the backend rejects
+          // the transition otherwise (lead.workflow.ts) — so this is the one
+          // place requireAllFields must be true, unlike the "Edit
+          // Qualification Details" instance below which allows partial saves.
+          requireAllFields
           onClose={() => setShowQualifyModal(false)}
-          onSuccess={async () => {
+          onSave={async (data) => {
+            const patchRes = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            const resData = await patchRes.json().catch(() => ({}));
+            if (!patchRes.ok) {
+              const formatted = toUserFacingError({ status: patchRes.status, body: resData });
+              showToast({ ...formatted, type: 'error' });
+              throw new Error('SILENT');
+            }
             setShowQualifyModal(false);
-            // Qualification fields are saved by this point (QualifyLeadModal's
-            // own PATCH) — but saving those fields doesn't itself move the
-            // lead to QUALIFIED, so it still needs the actual transition.
+            // Qualification fields are saved by this point — but that alone
+            // doesn't move the lead to QUALIFIED, so the transition still
+            // needs to happen explicitly.
             await onUpdateStatus(lead.id, 'QUALIFIED');
             onRefreshLeads();
             onClose();
@@ -1600,6 +1625,12 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             budget_max: lead.budget_max,
             property_type_preference: lead.property_type_preference,
             preferred_location: lead.preferred_location,
+            // lead.preferred_locations (the full multi-location list) was
+            // fetched but never passed in here, so this modal — which
+            // already fully supports editing multiple locations — only ever
+            // showed the single legacy value, silently discarding the rest
+            // whenever it was reopened and re-saved.
+            preferred_locations: lead.preferred_locations?.map((pl) => pl.location),
           }}
           requireAllFields={false} // Editing doesn't force all fields unless moving to QUALIFIED
           onClose={() => setShowQualificationModal(false)}

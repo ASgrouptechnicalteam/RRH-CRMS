@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Project Constants & Schemas
-const ProjectTypeEnum = z.enum(['PLOTTED', 'APARTMENT', 'VILLA', 'MIXED', 'COMMERCIAL']);
+const ProjectTypeEnum = z.enum(['PLOTTED', 'APARTMENT', 'VILLA', 'MIXED', 'COMMERCIAL', 'OTHER']);
 const AreaUnitEnum = z.enum(['SQFT', 'SQYD', 'SQM', 'ACRE', 'GUNTA', 'CENT', 'ANKANAM', 'HECTARE']);
 const PriceBasisEnum = z.enum(['CARPET', 'BUILT_UP', 'SUPER_BUILT_UP', 'PLOT_AREA', 'LUMPSUM']);
 

@@ -24,6 +24,7 @@ const PROJECT_TYPE_LABELS: Record<string, string> = {
   VILLA: 'Villas',
   MIXED: 'Mixed',
   COMMERCIAL: 'Commercial',
+  OTHER: 'Other',
 };
 
 /** Small stacked bar of live unit counts by sales status. Fetched per-card —

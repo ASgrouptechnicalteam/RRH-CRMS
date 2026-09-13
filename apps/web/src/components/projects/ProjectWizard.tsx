@@ -58,6 +58,10 @@ const KNOWN_APPROVAL_AUTHORITIES = [
   { value: 'HMDA', label: 'HMDA' },
   { value: 'GHMC', label: 'GHMC' },
   { value: 'MUDA', label: 'MUDA' },
+  { value: 'YTDA', label: 'YTDA (Yadadri Temple Development Authority)' },
+  { value: 'KUDA', label: 'KUDA (Karimnagar UDA)' },
+  { value: 'WUDA', label: 'WUDA (Warangal UDA)' },
+  { value: 'HYDRAA', label: 'HYDRAA' },
   { value: 'GRAM_PANCHAYAT', label: 'Gram Panchayat' },
   { value: 'MUNICIPALITY', label: 'Municipality' },
 ];
@@ -68,6 +72,7 @@ const PROJECT_TYPES = [
   { value: 'VILLA', label: 'Villas' },
   { value: 'MIXED', label: 'Mixed (Flats + Villas)' },
   { value: 'COMMERCIAL', label: 'Commercial' },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 const AREA_UNITS = [

@@ -357,18 +357,19 @@ export const LeadManagement: React.FC = () => {
     const lead = leads.find((l) => l.id === leadId);
     if (!lead || lead.status === newStatus) return;
 
-    let notes = '';
+    // Dropping requires a structured exit_reason the backend validates — hand
+    // off to DropLeadModal (see handleConfirmDrop) instead of collecting a
+    // free-text reason here that the API would reject.
     if (newStatus === 'DROPPED') {
-      const reason = window.prompt(`Please provide a reason for dropping this lead:`);
-      if (!reason) return;
-      notes = reason;
+      setDropLeadId(leadId);
+      return;
     }
 
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, notes }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       const data = await res.json();
@@ -403,6 +404,9 @@ export const LeadManagement: React.FC = () => {
       const data = await res.json();
       if (res.ok) {
         showToast('Lead dropped', 'success');
+        if (selectedLead && selectedLead.id === dropLeadId) {
+          setSelectedLead({ ...selectedLead, status: 'DROPPED' });
+        }
         setDropLeadId(null);
         fetchLeads();
       } else {

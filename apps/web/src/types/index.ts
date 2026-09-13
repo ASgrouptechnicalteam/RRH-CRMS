@@ -105,6 +105,16 @@ export interface ProjectListItem {
   default_area_unit?: ProjectAreaUnit | null;
   cover_image_url?: string | null;
   is_published?: boolean;
+
+  // Verification workflow — separate from `status` (the operational
+  // PLANNING/UNDER_CONSTRUCTION/etc lifecycle). DRAFT/REJECTED projects are
+  // only visible to MD/Admin and their assigned PM; everyone else only sees
+  // VERIFIED projects (see apps/api/src/authz/dataScope.ts).
+  verification_status?: 'DRAFT' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+  verified_by_id?: number | null;
+  verified_by?: { id: number; full_name?: string | null } | null;
+  verified_at?: ISODateTime | null;
+  verification_notes?: string | null;
 }
 
 /** Project detail DTO — extends the list item with nested properties + counts. */

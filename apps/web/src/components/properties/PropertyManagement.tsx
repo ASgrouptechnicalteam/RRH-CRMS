@@ -538,6 +538,55 @@ export const PropertyManagement: React.FC = () => {
     }
   };
 
+  // These two backend actions existed with no UI trigger anywhere — a
+  // rejected property was a permanent dead end (no way to resubmit) and DM
+  // Head had no "already fine, skip polish" shortcut. Wired up here.
+  const handleResubmit = async (propertyId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/properties/${propertyId}/resubmit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: actionNotes || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, 'success');
+        setActionNotes('');
+        setSelectedProperty(null);
+        fetchProperties();
+      } else {
+        await handleApiError(res, showError, data);
+      }
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    }
+  };
+
+  const handleDmVerifyAsIs = async (propertyId: number) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/properties/${propertyId}/dm-verify-as-is`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: actionNotes || 'Verified as-is, no SEO polish needed' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, 'success');
+        setActionNotes('');
+        setSelectedProperty(null);
+        fetchProperties();
+      } else {
+        await handleApiError(res, showError, data);
+      }
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    }
+  };
+
   const needsMyVerificationCount = properties.filter(
     (prop) => prop.status === 'PENDING_VERIFICATION' && prop.assigned_pm?.id === user?.id,
   ).length;
@@ -1129,17 +1178,55 @@ export const PropertyManagement: React.FC = () => {
                     className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl"
                   />
                   {user?.permissions?.includes(Permissions.PROPERTIES_DM_POLISH) && (
-                    <button
-                      onClick={() => handleDMPolish(selectedProperty.id)}
-                      disabled={!dmExecutiveId}
-                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Assign &amp; Send to DM Polish</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleDMPolish(selectedProperty.id)}
+                        disabled={!dmExecutiveId}
+                        className="px-4 py-2 bg-navy-700 hover:bg-navy-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow flex items-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Assign &amp; Send to DM Polish</span>
+                      </button>
+                      <button
+                        onClick={() => handleDmVerifyAsIs(selectedProperty.id)}
+                        title="Listing content is already good — skip SEO polish and send straight to MD for approval"
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300"
+                      >
+                        Verify As-Is
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
+
+              {/* REJECTED — this used to be a dead end with no way forward */}
+              {selectedProperty.status === 'REJECTED' &&
+                user?.permissions?.includes(Permissions.PROPERTIES_VERIFY) && (
+                  <div className="space-y-2">
+                    {selectedProperty.rejection_reason && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+                        <span className="font-bold">Rejection reason: </span>
+                        {selectedProperty.rejection_reason}
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-600">
+                      Fix the issue above, then resubmit this property for verification.
+                    </p>
+                    <textarea
+                      rows={2}
+                      placeholder="Notes for MD/PM about what was fixed (optional)..."
+                      value={actionNotes}
+                      onChange={(e) => setActionNotes(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl"
+                    />
+                    <button
+                      onClick={() => handleResubmit(selectedProperty.id)}
+                      className="px-4 py-2 bg-navy-700 hover:bg-navy-800 text-white font-bold text-xs rounded-xl shadow"
+                    >
+                      Resubmit for Verification
+                    </button>
+                  </div>
+                )}
 
               {/* Stage 3 Action for MD */}
               {selectedProperty.status === 'PENDING_MD_APPROVAL' &&

@@ -22,6 +22,7 @@ import {
   selectCls,
   PROPERTY_CATEGORIES,
   FACING_OPTIONS,
+  BHK_OPTIONS,
   brandForCategory,
   lookupPincode,
   categoryTabGroupOf,
@@ -460,6 +461,91 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       />
     </div>
   );
+  const BhkSelect = ({ label, k }: { label: string; k: string }) => {
+    const current = detail[k] || '';
+    const savedIsCustom = current !== '' && !BHK_OPTIONS.includes(current);
+    const [forceCustom, setForceCustom] = React.useState(false);
+    const isCustom = savedIsCustom || forceCustom;
+    return (
+      <div>
+        <FieldLabel>{label}</FieldLabel>
+        <select
+          className={inputCls}
+          value={isCustom ? 'OTHER' : current}
+          onChange={(e) => {
+            if (e.target.value === 'OTHER') {
+              setForceCustom(true);
+              setDetail(k, '');
+            } else {
+              setForceCustom(false);
+              setDetail(k, e.target.value);
+            }
+          }}
+        >
+          <option value="">Select...</option>
+          {BHK_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+          <option value="OTHER">Other...</option>
+        </select>
+        {isCustom && (
+          <input
+            className={`${inputCls} mt-2`}
+            placeholder="Specify BHK (e.g. 6 BHK Duplex)"
+            value={current}
+            onChange={(e) => setDetail(k, e.target.value)}
+          />
+        )}
+      </div>
+    );
+  };
+  // FACING_OPTIONS is a fixed 8-direction list with no escape hatch — a plot
+  // that's e.g. "corner, facing the lake on the east side" had nowhere to go
+  // but the nearest compass point. Adds "Other" with a free-text fallback,
+  // same pattern as BhkSelect above.
+  const FacingSelect = () => {
+    const current = form.facing || '';
+    const knownValues = FACING_OPTIONS.map((f) => f.value);
+    const savedIsCustom = current !== '' && !knownValues.includes(current);
+    const [forceCustom, setForceCustom] = React.useState(false);
+    const isCustom = savedIsCustom || forceCustom;
+    return (
+      <div>
+        <FieldLabel>Facing</FieldLabel>
+        <select
+          className={selectCls}
+          value={isCustom ? 'OTHER' : current}
+          onChange={(e) => {
+            if (e.target.value === 'OTHER') {
+              setForceCustom(true);
+              set('facing', '');
+            } else {
+              setForceCustom(false);
+              set('facing', e.target.value || null);
+            }
+          }}
+        >
+          <option value="">Not specified</option>
+          {FACING_OPTIONS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+          <option value="OTHER">Other...</option>
+        </select>
+        {isCustom && (
+          <input
+            className={`${selectCls} mt-2`}
+            placeholder="Specify facing (e.g. Corner, lake-facing east)"
+            value={current}
+            onChange={(e) => set('facing', e.target.value)}
+          />
+        )}
+      </div>
+    );
+  };
   const Check = ({ label, k }: { label: string; k: string }) => (
     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
       <input
@@ -555,21 +641,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Location / Position">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <Check label="Corner Plot" k="is_corner" />
                   <Check label="Park Facing" k="is_park_facing" />
@@ -621,7 +693,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Configuration">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <Text label="BHK (e.g. 3 BHK)" k="bhk" />
+                <BhkSelect label="BHK" k="bhk" />
                 <div>
                   <FieldLabel>Bedrooms</FieldLabel>
                   <input
@@ -702,21 +774,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Position">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <input
@@ -773,7 +831,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <Text label="Villa Number" k="villa_number" />
                 <Text label="Villa Type" k="villa_type" />
-                <Text label="BHK" k="bhk" />
+                <BhkSelect label="BHK" k="bhk" />
               </div>
             </SectionCard>
             <SectionCard title="Configuration">
@@ -888,21 +946,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Location">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <input
@@ -972,7 +1016,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <Text label="House Number" k="house_number" />
                 <Text label="House Type" k="house_type" />
-                <Text label="BHK" k="bhk" />
+                <BhkSelect label="BHK" k="bhk" />
               </div>
             </SectionCard>
             <SectionCard title="Configuration">
@@ -1086,21 +1130,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Position">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <input
@@ -1221,21 +1251,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Location">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <input
@@ -1364,21 +1380,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Position">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <input
@@ -1511,21 +1513,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
             </SectionCard>
             <SectionCard title="Location">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <FieldLabel>Facing</FieldLabel>
-                  <select
-                    className={selectCls}
-                    value={form.facing || ''}
-                    onChange={(e) => set('facing', e.target.value || null)}
-                  >
-                    <option value="">Not specified</option>
-                    {FACING_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FacingSelect />
                 <CheckRow>
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <input

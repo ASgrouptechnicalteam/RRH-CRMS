@@ -90,6 +90,8 @@ export const Permissions = {
   PROJECTS_READ: 'projects.read',
   PROJECTS_UPDATE: 'projects.update',
   PROJECTS_DELETE: 'projects.delete',
+  PROJECTS_SUBMIT_VERIFY: 'projects.submit_verify', // PM submits project for MD review
+  PROJECTS_VERIFY: 'projects.verify', // MD approves/rejects
 
   BOOKINGS_CREATE: 'bookings.create',
   BOOKINGS_READ: 'bookings.read',
@@ -236,6 +238,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.PROJECTS_READ,
     Permissions.PROJECTS_UPDATE,
     Permissions.PROJECTS_DELETE,
+    Permissions.PROJECTS_SUBMIT_VERIFY,
     Permissions.PROPERTIES_CREATE,
     Permissions.PROPERTIES_VERIFY,
     Permissions.PROPERTIES_READ,

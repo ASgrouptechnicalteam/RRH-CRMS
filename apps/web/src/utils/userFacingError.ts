@@ -86,6 +86,13 @@ export function toUserFacingError(input: {
       nextStep: 'Refresh the page to see the latest data.',
     };
   }
+  if (input.status === 409 && textToSearch.includes('already used by employee')) {
+    return {
+      title: 'Duplicate employee',
+      message: rawMsg,
+      nextStep: 'Search the employee list for that code before onboarding again.',
+    };
+  }
   if (input.status === 409) {
     return {
       title: 'Conflict',

@@ -105,12 +105,14 @@ describe('Phase C - Role UAT Beta Acceptance', () => {
 
   // 1. MD - Positive
   it('[MD] EMPLOYEES_CREATE -> 201', async () => {
+    // Unique phone per run: Employee.phone/email are now enforced unique per
+    // company (2026-09-14 QA fix) and this suite's DB rows persist across runs.
     const res = await request(app)
       .post('/api/v1/employees')
       .set('Authorization', `Bearer ${getToken(Roles.MD)}`)
       .send({
         full_name: 'MD New Emp',
-        phone: '+919000000001',
+        phone: `+9190${Date.now().toString().slice(-6)}01`,
         role_name: Roles.TELECALLER,
         branch_id: 1,
       });
@@ -223,7 +225,7 @@ describe('Phase C - Role UAT Beta Acceptance', () => {
       .set('Authorization', `Bearer ${getToken(Roles.HR_MANAGER)}`)
       .send({
         full_name: 'HR New Emp',
-        phone: '+919000000006',
+        phone: `+9190${Date.now().toString().slice(-6)}06`,
         role_name: Roles.TELECALLER,
         branch_id: 1,
       });

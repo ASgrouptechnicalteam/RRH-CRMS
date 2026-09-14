@@ -8,6 +8,12 @@ import { Roles, DepartmentCodes, Permissions, EmployeeCreateSchema } from '../..
 import { encryptData } from '../../utils/crypto';
 import { validateRequestBody } from '../../middleware/validate';
 import { generateTemporaryPassword } from '../../utils/tempPassword';
+import {
+  findEmployeeContactConflict,
+  employeeContactConflictMessage,
+  normaliseEmployeePhone,
+  normaliseEmployeeEmail,
+} from '../../services/employeeContact.service';
 
 const router = Router();
 
@@ -103,6 +109,23 @@ router.post(
           ? parseInt(req.body.company_id, 10)
           : req.user!.companyId;
 
+      // Phone/email must be unique within the company (QA 2026-09-14). Checked
+      // here rather than trusting the form: the same person was being
+      // onboarded twice with the same number.
+      const normalisedPhone = normaliseEmployeePhone(phone);
+      const normalisedEmail = normaliseEmployeeEmail(email);
+      const conflict = await findEmployeeContactConflict(prisma, {
+        companyId: targetCompanyId,
+        phone: normalisedPhone,
+        email: normalisedEmail,
+      });
+      if (conflict) {
+        return res.status(409).json({
+          error: employeeContactConflictMessage(conflict),
+          conflict: { field: conflict.field, employee_code: conflict.employee.employee_code },
+        });
+      }
+
       const deptCode = DepartmentCodes[role_name] || 'EX';
 
       let employeeCode = '';
@@ -136,10 +159,10 @@ router.post(
         data: {
           employee_code: employeeCode,
           full_name,
-          phone,
+          phone: normalisedPhone,
           secondary_phone,
           whatsapp_number: whatsapp_number || phone,
-          email,
+          email: normalisedEmail,
           blood_group: blood_group || 'O+',
           social_links,
           current_address,

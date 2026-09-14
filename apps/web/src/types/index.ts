@@ -319,9 +319,15 @@ export interface LeadActivity {
   created_at: ISODateTime;
 }
 
-/** Matched property for a lead (GET /leads/:id/matches). */
+/**
+ * Matched property OR project unit for a lead (GET /leads/:id/matches).
+ * `kind` defaults to 'PROPERTY' when absent (older cached responses) — a
+ * unit result reuses `propertyId` for the unit's own id (see
+ * matchingEngine.ts), and adds `projectId`/`projectName`/`unitNumber`.
+ */
 export interface MatchItem {
   id?: number;
+  kind?: 'PROPERTY' | 'UNIT';
   propertyId: number;
   property?: PropertyListItem;
   propertyCode?: string;
@@ -329,6 +335,9 @@ export interface MatchItem {
   location?: string;
   price: number;
   areaSqft?: number;
+  projectId?: number;
+  projectName?: string;
+  unitNumber?: string;
   matchScore: number;
   whatsAppUrl: string;
   matchBreakdown: { locationMatch: boolean; budgetMatch: boolean };
@@ -336,11 +345,29 @@ export interface MatchItem {
   is_active?: boolean;
 }
 
-/** Saved property interest (GET /leads/:id/properties). */
+/** A saved interest's project-unit shape (GET /leads/:id/properties), nested project included. */
+export interface SavedInterestUnitItem {
+  id: number;
+  unit_code: string;
+  unit_number: string;
+  flat_number?: string | null;
+  villa_number?: string | null;
+  plot_number?: string | null;
+  final_price: number;
+  sales_status: string;
+  project: { id: number; name: string; location: string; assigned_pm_id: number | null };
+}
+
+/**
+ * Saved property (or project unit) interest (GET /leads/:id/properties).
+ * Points at exactly one of `property` / `project_unit` — never both.
+ */
 export interface SavedInterestItem {
   id?: number;
-  property_id: number;
-  property: PropertyListItem;
+  property_id?: number | null;
+  property?: PropertyListItem | null;
+  project_unit_id?: number | null;
+  project_unit?: SavedInterestUnitItem | null;
   is_active?: boolean;
   created_at: ISODateTime;
 }

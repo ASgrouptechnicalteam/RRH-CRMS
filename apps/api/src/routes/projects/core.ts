@@ -278,6 +278,33 @@ router.post(
         },
       });
       logger.info(`Project ${projectId} ${newStatus} by MD employee ${req.user!.employeeId}`);
+
+      // "Every project is a property": approving a project makes its already-
+      // AVAILABLE units visible for the first time (matching/booking gate on
+      // Project.verification_status = VERIFIED) — give dropped
+      // "no matching inventory" leads the same automatic-recovery chance a
+      // newly-LIVE property gives them. Fire-and-forget, same pattern as
+      // property.service.ts's LIVE transition.
+      if (newStatus === 'VERIFIED') {
+        p.projectUnit
+          .findMany({
+            where: { project_id: projectId, sales_status: 'AVAILABLE' },
+            select: { id: true },
+          })
+          .then((units) => {
+            import('../../services/lead.service').then(({ LeadService }) => {
+              for (const unit of units) {
+                LeadService.triggerLeadRecoveryForUnit(unit.id).catch((err) =>
+                  logger.error(`Error triggering lead recovery for unit ${unit.id}:`, err),
+                );
+              }
+            });
+          })
+          .catch((err) =>
+            logger.error(`Error listing units for project ${projectId} recovery:`, err),
+          );
+      }
+
       const msg =
         action === 'APPROVE'
           ? `Project "${project.name}" approved and is now visible to all staff.`

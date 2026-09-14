@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { buildProjectScope } from '../authz/dataScope';
 import { can } from '../authz/authorization';
+import { logger } from '../utils/logger';
 import { Permissions } from '../shared';
 import {
   ProjectUnitCreateInput,
@@ -362,8 +363,8 @@ export class ProjectUnitService {
       };
     }
 
-    return p.$transaction(async (tx) => {
-      const updated = await tx.projectUnit.update({
+    const updated = await p.$transaction(async (tx) => {
+      const updatedUnit = await tx.projectUnit.update({
         where: { id: unitId },
         data: { sales_status: status as any },
       });
@@ -378,8 +379,22 @@ export class ProjectUnitService {
           reason: reason || null,
         },
       });
-      return updated;
+      return updatedUnit;
     });
+
+    // "Every project is a property": a unit going AVAILABLE deserves the same
+    // automatic-recovery chance a newly-LIVE property gives dropped leads —
+    // see matchDroppedLeadsToUnit for why (property.service.ts's LIVE
+    // transition does the same thing, same fire-and-forget pattern).
+    if (updated.sales_status === 'AVAILABLE') {
+      import('./lead.service').then(({ LeadService }) => {
+        LeadService.triggerLeadRecoveryForUnit(unitId).catch((err) =>
+          logger.error(`Error triggering lead recovery for unit ${unitId}:`, err),
+        );
+      });
+    }
+
+    return updated;
   }
 
   static async overridePrice(

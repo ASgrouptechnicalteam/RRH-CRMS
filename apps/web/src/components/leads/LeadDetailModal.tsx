@@ -324,16 +324,26 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     }
   };
 
-  const handleAddInterest = async (leadId: number, propertyId: number) => {
+  // `kind` defaults to 'PROPERTY' so every pre-existing call site (which never
+  // passed one) keeps working unchanged — only the Matches tab's project-unit
+  // cards pass 'UNIT'.
+  const handleAddInterest = async (
+    leadId: number,
+    id: number,
+    kind: 'PROPERTY' | 'UNIT' = 'PROPERTY',
+  ) => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ property_id: propertyId }),
+        body: JSON.stringify(kind === 'UNIT' ? { project_unit_id: id } : { property_id: id }),
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('Property saved to interests', 'success');
+        showToast(
+          kind === 'UNIT' ? 'Unit saved to interests' : 'Property saved to interests',
+          'success',
+        );
         fetchSavedInterests(leadId);
       } else {
         showToast(data.error || 'Failed to save interest', 'error');
@@ -343,14 +353,19 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     }
   };
 
-  const handleRemoveInterest = async (leadId: number, propertyId: number) => {
+  const handleRemoveInterest = async (
+    leadId: number,
+    id: number,
+    kind: 'PROPERTY' | 'UNIT' = 'PROPERTY',
+  ) => {
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/properties/${propertyId}`, {
-        method: 'DELETE',
-      });
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/leads/${leadId}/properties/${id}${kind === 'UNIT' ? '?kind=UNIT' : ''}`,
+        { method: 'DELETE' },
+      );
       const data = await res.json();
       if (res.ok) {
-        showToast('Property removed from interests', 'success');
+        showToast('Removed from interests', 'success');
         fetchSavedInterests(leadId);
       } else {
         showToast(data.error || 'Failed to remove interest', 'error');
@@ -362,12 +377,13 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 
   const handleSendWhatsAppProposal = async (
     leadId: number,
-    propertyId: number,
+    id: number,
     defaultUrl?: string,
+    kind: 'PROPERTY' | 'UNIT' = 'PROPERTY',
   ) => {
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/leads/${leadId}/whatsapp-proposal/${propertyId}`,
+        `${API_BASE_URL}/leads/${leadId}/whatsapp-proposal/${id}${kind === 'UNIT' ? '?kind=UNIT' : ''}`,
         {
           method: 'POST',
         },
@@ -873,52 +889,73 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </div>
                 ) : matches.length === 0 ? (
                   <div className="py-8 text-center text-sm text-slate-400 bg-surface rounded-xl border border-slate-100">
-                    No properties currently match this lead's requirements.
+                    No properties or project units currently match this lead's requirements.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {matches.map((m: MatchItem) => (
-                      <div
-                        key={m.propertyId}
-                        className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono font-semibold text-slate-500 text-xs">
-                              {m.propertyCode}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.matchScore >= 80 ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'}`}
-                            >
-                              {m.matchScore}% Match
-                            </span>
+                    {matches.map((m: MatchItem) => {
+                      const isUnit = m.kind === 'UNIT';
+                      return (
+                        <div
+                          key={`${m.kind ?? 'PROPERTY'}-${m.propertyId}`}
+                          className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-mono font-semibold text-slate-500 text-xs">
+                                {m.propertyCode}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.matchScore >= 80 ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'}`}
+                              >
+                                {m.matchScore}% Match
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <h4 className="font-bold text-navy-900 text-sm">{m.title}</h4>
+                              {isUnit && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-navy-100 text-navy-700 uppercase tracking-wide shrink-0">
+                                  Project Unit
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 mb-3">
+                              {m.location} • ₹{(m.price / 100000).toFixed(1)}L • {m.areaSqft} sqft
+                            </p>
                           </div>
-                          <h4 className="font-bold text-navy-900 text-sm mb-1">{m.title}</h4>
-                          <p className="text-xs text-slate-500 mb-3">
-                            {m.location} • ₹{(m.price / 100000).toFixed(1)}L • {m.areaSqft} sqft
-                          </p>
-                        </div>
 
-                        <div className="flex items-center gap-2 mt-auto">
-                          <button
-                            onClick={() => handleAddInterest(lead.id, m.propertyId)}
-                            disabled={lead.can_edit === false}
-                            className={`flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleSendWhatsAppProposal(lead.id, m.propertyId, m.whatsAppUrl)
-                            }
-                            disabled={lead.can_edit === false}
-                            className={`flex-1 py-1.5 bg-success-600 hover:bg-success-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            <PhoneCall className="w-3.5 h-3.5" /> WhatsApp
-                          </button>
+                          <div className="flex items-center gap-2 mt-auto">
+                            <button
+                              onClick={() =>
+                                handleAddInterest(
+                                  lead.id,
+                                  m.propertyId,
+                                  isUnit ? 'UNIT' : 'PROPERTY',
+                                )
+                              }
+                              disabled={lead.can_edit === false}
+                              className={`flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-navy-700 font-semibold text-xs rounded-lg transition-colors ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleSendWhatsAppProposal(
+                                  lead.id,
+                                  m.propertyId,
+                                  m.whatsAppUrl,
+                                  isUnit ? 'UNIT' : 'PROPERTY',
+                                )
+                              }
+                              disabled={lead.can_edit === false}
+                              className={`flex-1 py-1.5 bg-success-600 hover:bg-success-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              <PhoneCall className="w-3.5 h-3.5" /> WhatsApp
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -932,30 +969,53 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
-                    {savedInterests.map((interest: SavedInterestItem) => (
-                      <div
-                        key={interest.id}
-                        className="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between shadow-sm group"
-                      >
-                        <div>
-                          <span className="font-mono font-medium text-slate-400 text-xs">
-                            {interest.property.property_code}
-                          </span>
-                          <h4 className="font-bold text-navy-900 text-sm mt-0.5">
-                            {interest.property.title}
-                          </h4>
-                          <p className="text-xs text-slate-500 mt-1">
-                            Saved on {new Date(interest.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveInterest(lead.id, interest.property_id)}
-                          className="p-2 text-slate-400 hover:text-danger-600 bg-slate-50 hover:bg-danger-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    {savedInterests.map((interest: SavedInterestItem) => {
+                      const isUnit = !!interest.project_unit;
+                      const code = isUnit
+                        ? interest.project_unit!.unit_code
+                        : interest.property?.property_code;
+                      const title = isUnit
+                        ? `${interest.project_unit!.project.name} — Unit ${
+                            interest.project_unit!.flat_number ||
+                            interest.project_unit!.villa_number ||
+                            interest.project_unit!.plot_number ||
+                            interest.project_unit!.unit_number
+                          }`
+                        : interest.property?.title;
+                      const removeId = isUnit ? interest.project_unit_id : interest.property_id;
+                      return (
+                        <div
+                          key={interest.id}
+                          className="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between shadow-sm group"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-medium text-slate-400 text-xs">
+                                {code}
+                              </span>
+                              {isUnit && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-navy-100 text-navy-700 uppercase tracking-wide">
+                                  Project Unit
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-navy-900 text-sm mt-0.5">{title}</h4>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Saved on {new Date(interest.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              removeId != null &&
+                              handleRemoveInterest(lead.id, removeId, isUnit ? 'UNIT' : 'PROPERTY')
+                            }
+                            className="p-2 text-slate-400 hover:text-danger-600 bg-slate-50 hover:bg-danger-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1286,11 +1346,16 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                     className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
                   >
                     <option value="">-- No Property Attached --</option>
-                    {savedInterests.map((interest) => (
-                      <option key={interest.property_id} value={interest.property_id}>
-                        {interest.property.title} ({interest.property.property_code})
-                      </option>
-                    ))}
+                    {/* Demo/site-visit scheduling only accepts a property_id today
+                        (unit-aware scheduling is a separate item) — a saved unit
+                        interest simply doesn't appear here yet. */}
+                    {savedInterests
+                      .filter((interest) => interest.property)
+                      .map((interest) => (
+                        <option key={interest.property_id} value={interest.property_id ?? ''}>
+                          {interest.property!.title} ({interest.property!.property_code})
+                        </option>
+                      ))}
                   </select>
                 </div>
 

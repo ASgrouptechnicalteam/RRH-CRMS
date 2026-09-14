@@ -50,6 +50,22 @@ export async function distributeUnassignedPoolLeads(companyId: number) {
 export async function triggerLeadRecoveryForProperty(propertyId: number) {
   const { matchDroppedLeadsToProperty } = await import('../../utils/matchingEngine');
   const matchedLeadIds = await matchDroppedLeadsToProperty(propertyId);
+  await recoverMatchedDroppedLeads(matchedLeadIds, `Property ID: ${propertyId}`);
+}
+
+/**
+ * Unit twin of triggerLeadRecoveryForProperty: fires when a ProjectUnit
+ * becomes AVAILABLE, or when its project becomes VERIFIED (making
+ * already-AVAILABLE units visible for the first time) — see
+ * matchDroppedLeadsToUnit for why both call sites matter.
+ */
+export async function triggerLeadRecoveryForUnit(unitId: number) {
+  const { matchDroppedLeadsToUnit } = await import('../../utils/matchingEngine');
+  const matchedLeadIds = await matchDroppedLeadsToUnit(unitId);
+  await recoverMatchedDroppedLeads(matchedLeadIds, `Project Unit ID: ${unitId}`);
+}
+
+async function recoverMatchedDroppedLeads(matchedLeadIds: number[], sourceLabel: string) {
   if (!matchedLeadIds.length) return;
 
   for (const leadId of matchedLeadIds) {
@@ -124,7 +140,7 @@ export async function triggerLeadRecoveryForProperty(propertyId: number) {
             lead_id: leadId,
             actor_id: recoveredLead.assigned_to_id, // Attributing to the owner
             activity_type: 'LEAD_RECOVERED',
-            notes: `Lead automatically recovered due to new matching inventory (Property ID: ${propertyId}). Status set to ASSIGNED.`,
+            notes: `Lead automatically recovered due to new matching inventory (${sourceLabel}). Status set to ASSIGNED.`,
           },
         });
       }

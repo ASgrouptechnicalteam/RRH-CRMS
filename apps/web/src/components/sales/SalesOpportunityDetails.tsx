@@ -208,17 +208,22 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
                       const match = savedInterests.find(
                         (si) => String(si.property_id) === e.target.value,
                       );
-                      if (match?.property.final_price)
+                      if (match?.property?.final_price)
                         setDealValue(String(match.property.final_price));
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500"
                   >
                     <option value="">-- Select from customer's saved interests --</option>
-                    {savedInterests.map((si) => (
-                      <option key={si.property_id} value={si.property_id}>
-                        {si.property.title} ({si.property.property_code})
-                      </option>
-                    ))}
+                    {/* Opportunity.project_unit_id exists in the schema, but this
+                        deal form only writes property_id today — a saved unit
+                        interest simply doesn't appear here yet (separate item). */}
+                    {savedInterests
+                      .filter((si) => si.property)
+                      .map((si) => (
+                        <option key={si.property_id} value={si.property_id ?? ''}>
+                          {si.property!.title} ({si.property!.property_code})
+                        </option>
+                      ))}
                   </select>
                   {savedInterests.length === 0 && (
                     <p className="text-[11px] text-slate-400 mt-1">

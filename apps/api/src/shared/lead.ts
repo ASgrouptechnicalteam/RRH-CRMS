@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { blankAsAbsent } from './zodHelpers';
 
 // Lead Constants & Schemas
 export const LeadStatus = {
@@ -155,8 +156,8 @@ export const LeadStatusUpdateSchema = z
     // actually be validated against the real enum, not accept any string.
     exit_reason: z.enum(LEAD_EXIT_REASON_VALUES).optional(), // required when status -> DROPPED
     // Required (enforced below) only when exit_reason === 'OTHER'.
-    exit_reason_detail: z.string().trim().min(1).max(500).optional(),
-    demo_scheduled_at: z.string().datetime().optional(), // required when status -> DEMO_SCHEDULED
+    exit_reason_detail: blankAsAbsent(z.string().trim().min(1).max(500).optional()),
+    demo_scheduled_at: blankAsAbsent(z.string().datetime().optional()), // required when status -> DEMO_SCHEDULED
     demo_handler_id: z.number().int().positive().optional(), // required when status -> DEMO_SCHEDULED
     qualification: z
       .object({

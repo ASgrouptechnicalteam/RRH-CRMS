@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { blankAsAbsent } from './zodHelpers';
 
 // ─────────────────────────────────────────────────────────────
 // Site Visit Schemas (§2 Site Visit Sub-Workflow)
@@ -60,7 +61,7 @@ export type SiteVisitEscalateInput = z.infer<typeof SiteVisitEscalateSchema>;
 
 // Reschedule (customer requested a date/property change) or release
 export const SiteVisitRescheduleSchema = z.object({
-  scheduled_date: z.string().datetime().optional(),
+  scheduled_date: blankAsAbsent(z.string().datetime().optional()),
   property_ids: z.array(z.number().int().positive()).min(1).optional(),
 });
 export type SiteVisitRescheduleInput = z.infer<typeof SiteVisitRescheduleSchema>;
@@ -100,7 +101,7 @@ export type SiteVisitCancelConfirmInput = z.infer<typeof SiteVisitCancelConfirmS
 // Generic update (used by older/aux endpoints; status is free-form here but
 // routed through the §2 workflow engine in the service layer).
 export const SiteVisitUpdateSchema = z.object({
-  scheduled_date: z.string().datetime().optional(),
+  scheduled_date: blankAsAbsent(z.string().datetime().optional()),
   status: z.string().optional(),
   notes: z.string().optional(),
   confirmed: z.boolean().optional(),

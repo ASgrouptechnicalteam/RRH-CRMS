@@ -19,6 +19,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
+import { InventoryItem } from '../../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FACING_OPTIONS = [
@@ -287,8 +288,11 @@ export const BookingInitiationWizard: React.FC<BookingInitiationWizardProps> = (
   const [searchingCustomers, setSearchingCustomers] = useState(false);
 
   // ── Step 2: Property & Plot Details ──────────────────────────────────────
-  const [properties, setProperties] = useState<any[]>([]);
-  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  // "PROPERTY-123" or "UNIT-456" — a single <select> value that still
+  // disambiguates which id to send, since a property and a unit can share
+  // the same numeric id.
+  const [selectedInventoryKey, setSelectedInventoryKey] = useState('');
   const [form, setForm] = useState({
     serial_no: '',
     plot_no: '',
@@ -337,11 +341,11 @@ export const BookingInitiationWizard: React.FC<BookingInitiationWizardProps> = (
   const [tcAccepted, setTcAccepted] = useState(false);
   const [purchaserName, setPurchaserName] = useState('');
 
-  // ─── Load properties on mount ──────────────────────────────────────────────
+  // ─── Load bookable inventory on mount (properties + available project units) ──
   useEffect(() => {
-    fetchWithAuth(`${API_BASE_URL}/properties?status=LIVE`)
+    fetchWithAuth(`${API_BASE_URL}/inventory?limit=200`)
       .then((r) => r.json())
-      .then((d) => setProperties(Array.isArray(d) ? d : d.properties || []))
+      .then((d) => setInventory(d.items || []))
       .catch(() => {});
   }, []);
 
@@ -444,7 +448,7 @@ export const BookingInitiationWizard: React.FC<BookingInitiationWizardProps> = (
         return newCustomer.first_name.trim() && newCustomer.phone.trim().length >= 10;
       return !!selectedCustomer;
     }
-    if (step === 1) return !!selectedPropertyId;
+    if (step === 1) return !!selectedInventoryKey;
     if (step === 2) return !!financials.agreed_price && !!financials.booking_amount;
     if (step === 3) return tcAccepted && purchaserName.trim().length >= 2;
     return true;
@@ -454,8 +458,12 @@ export const BookingInitiationWizard: React.FC<BookingInitiationWizardProps> = (
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      const [inventoryKind, inventoryIdStr] = selectedInventoryKey.split('-');
+      const inventoryId = parseInt(inventoryIdStr, 10);
       const payload: any = {
-        property_id: parseInt(selectedPropertyId, 10),
+        ...(inventoryKind === 'UNIT'
+          ? { project_unit_id: inventoryId }
+          : { property_id: inventoryId }),
         agreed_price: parseFloat(financials.agreed_price),
         booking_amount: parseFloat(financials.booking_amount),
         notes: financials.notes || undefined,
@@ -751,20 +759,38 @@ export const BookingInitiationWizard: React.FC<BookingInitiationWizardProps> = (
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Select Property *
+                  Select Property or Project Unit *
                 </label>
                 <select
                   required
-                  value={selectedPropertyId}
-                  onChange={(e) => setSelectedPropertyId(e.target.value)}
+                  value={selectedInventoryKey}
+                  onChange={(e) => setSelectedInventoryKey(e.target.value)}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white"
                 >
-                  <option value="">-- Select a LIVE property --</option>
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title} {p.price ? `— ₹${p.price.toLocaleString()}` : ''}
-                    </option>
-                  ))}
+                  <option value="">-- Select available inventory --</option>
+                  {inventory.filter((i) => i.kind === 'PROPERTY').length > 0 && (
+                    <optgroup label="Individual Properties">
+                      {inventory
+                        .filter((i) => i.kind === 'PROPERTY')
+                        .map((p) => (
+                          <option key={`PROPERTY-${p.id}`} value={`PROPERTY-${p.id}`}>
+                            {p.title} {p.price ? `— ₹${p.price.toLocaleString()}` : ''}
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
+                  {inventory.filter((i) => i.kind === 'UNIT').length > 0 && (
+                    <optgroup label="Project Units">
+                      {inventory
+                        .filter((i) => i.kind === 'UNIT')
+                        .map((u) => (
+                          <option key={`UNIT-${u.id}`} value={`UNIT-${u.id}`}>
+                            {u.project_name} — Unit {u.unit_number}{' '}
+                            {u.price ? `— ₹${u.price.toLocaleString()}` : ''}
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 

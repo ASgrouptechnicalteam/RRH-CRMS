@@ -8,14 +8,23 @@ import { BookingService } from '../services/booking.service';
 const router = Router();
 
 // Zod schemas for validation
-const CreateBookingSchema = z.object({
-  customer_id: z.number().int().positive(),
-  property_id: z.number().int().positive(),
-  agreed_price: z.number().positive(),
-  booking_amount: z.number().positive(),
-  notes: z.string().optional(),
-  assigned_employee_id: z.number().int().positive().optional(),
-});
+// A booking is against exactly one of property_id / project_unit_id — the
+// XOR is enforced again (defense-in-depth) in resolveInventoryRef()
+// (services/inventory/reference.ts), which is what actually locks the row;
+// this schema-level refine just gives a clean 400 before that ever runs.
+const CreateBookingSchema = z
+  .object({
+    customer_id: z.number().int().positive(),
+    property_id: z.number().int().positive().optional(),
+    project_unit_id: z.number().int().positive().optional(),
+    agreed_price: z.number().positive(),
+    booking_amount: z.number().positive(),
+    notes: z.string().optional(),
+    assigned_employee_id: z.number().int().positive().optional(),
+  })
+  .refine((data) => !!data.property_id !== !!data.project_unit_id, {
+    message: 'Provide exactly one of property_id or project_unit_id',
+  });
 
 const UpdateBookingStatusSchema = z.object({
   status: z.enum(['TOKEN_RECEIVED', 'CONFIRMED', 'CANCELLED', 'COMPLETED']),

@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { X, Building } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import { PropertyListItem } from '../../types';
+import { InventoryItem } from '../../types';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 
 interface CreateBookingModalProps {
@@ -20,41 +20,47 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const { fetchWithAuth } = useAuth();
   const { showToast, showError } = useToast();
   const [loading, setLoading] = useState(false);
-  const [properties, setProperties] = useState<PropertyListItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [formData, setFormData] = useState({
-    property_id: '',
+    // "PROPERTY-123" or "UNIT-456" — a single <select> value that still
+    // disambiguates which id to send (a property and a unit can share the
+    // same numeric id).
+    inventory_key: '',
     agreed_price: '',
     booking_amount: '',
     notes: '',
   });
 
   useEffect(() => {
-    fetchProperties();
+    fetchInventory();
   }, []);
 
-  const fetchProperties = async () => {
+  const fetchInventory = async () => {
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/properties?status=LIVE`);
+      const res = await fetchWithAuth(`${API_BASE_URL}/inventory?limit=200`);
       if (res.ok) {
         const data = await res.json();
-        // Assume data returns an array or an object with properties
-        const props = Array.isArray(data) ? data : data.properties || [];
-        setProperties(props);
+        setInventory(data.items || []);
       }
     } catch (e) {
       console.error(e);
     }
   };
 
+  const properties = inventory.filter((i) => i.kind === 'PROPERTY');
+  const units = inventory.filter((i) => i.kind === 'UNIT');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const [kind, idStr] = formData.inventory_key.split('-');
+      const id = parseInt(idStr, 10);
       const res = await fetchWithAuth(`${API_BASE_URL}/bookings`, {
         method: 'POST',
         body: JSON.stringify({
           customer_id: customerId,
-          property_id: parseInt(formData.property_id, 10),
+          ...(kind === 'UNIT' ? { project_unit_id: id } : { property_id: id }),
           agreed_price: parseFloat(formData.agreed_price),
           booking_amount: parseFloat(formData.booking_amount),
           notes: formData.notes,
@@ -101,21 +107,37 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           className="p-6 space-y-4 text-left max-h-[70vh] overflow-y-auto"
         >
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Select Property</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Select Property or Project Unit
+            </label>
             <select
               required
-              value={formData.property_id}
-              onChange={(e) => setFormData({ ...formData, property_id: e.target.value })}
+              value={formData.inventory_key}
+              onChange={(e) => setFormData({ ...formData, inventory_key: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white"
             >
               <option value="" disabled>
-                -- Select a LIVE property --
+                -- Select available inventory --
               </option>
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title} (₹{p.final_price?.toLocaleString() || 'N/A'})
-                </option>
-              ))}
+              {properties.length > 0 && (
+                <optgroup label="Individual Properties">
+                  {properties.map((item) => (
+                    <option key={`PROPERTY-${item.id}`} value={`PROPERTY-${item.id}`}>
+                      {item.title} (₹{item.price?.toLocaleString() || 'N/A'})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {units.length > 0 && (
+                <optgroup label="Project Units">
+                  {units.map((item) => (
+                    <option key={`UNIT-${item.id}`} value={`UNIT-${item.id}`}>
+                      {item.project_name} — Unit {item.unit_number} (₹
+                      {item.price?.toLocaleString() || 'N/A'})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 
@@ -165,7 +187,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={loading || !formData.property_id}
+              disabled={loading || !formData.inventory_key}
               className="px-4 py-2 text-sm font-semibold text-white bg-navy-600 hover:bg-navy-700 rounded-lg disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Confirm Booking'}

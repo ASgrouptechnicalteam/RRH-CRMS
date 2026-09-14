@@ -122,6 +122,34 @@ export interface ProjectDossierData extends ProjectListItem {
   properties?: PropertyListItem[];
 }
 
+/**
+ * Unified property-or-project-unit row from GET /inventory — the single list
+ * every picker that used to be property-only (booking, matching, ...) now
+ * reads from, so a project's units show up everywhere a standalone property
+ * does. See apps/api/src/services/inventory.service.ts for the server side.
+ */
+export interface InventoryItem {
+  kind: 'PROPERTY' | 'UNIT';
+  id: number;
+  code: string;
+  title: string;
+  category: string;
+  location: string;
+  city: string | null;
+  price: number;
+  area_sqft: number | null;
+  bedrooms: number | null;
+  facing: string | null;
+  image_url: string | null;
+  sales_status: string;
+  project_id: number | null;
+  project_name: string | null;
+  unit_number: string | null;
+  tower: string | null;
+  floor: number | null;
+  created_at: ISODateTime;
+}
+
 /** Property as returned by GET /properties (list + detail). */
 export interface PropertyListItem {
   id: number;
@@ -200,7 +228,9 @@ export interface BookingItem {
   company_id?: number;
   branch_id?: number | null;
   customer_id?: number;
-  property_id?: number;
+  /** Exactly one of property_id / project_unit_id is set (never both). */
+  property_id?: number | null;
+  project_unit_id?: number | null;
   assigned_employee_id?: number | null;
   assigned_employee?: EmployeeListItem | null;
   status: string;
@@ -217,7 +247,24 @@ export interface BookingItem {
     last_name?: string | null;
     phone?: string;
   };
-  property?: PropertyListItem;
+  property?: PropertyListItem | null;
+  project_unit?: {
+    id: number;
+    unit_code: string;
+    unit_number: string;
+    flat_number?: string | null;
+    villa_number?: string | null;
+    plot_number?: string | null;
+    final_price?: number;
+    sales_status?: string;
+    project: {
+      id: number;
+      name: string;
+      project_code?: string;
+      location?: string;
+      city?: string | null;
+    };
+  } | null;
   payments?: PaymentItem[];
   created_at?: ISODateTime;
   updated_at?: ISODateTime;

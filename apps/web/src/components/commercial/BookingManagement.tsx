@@ -102,15 +102,30 @@ export const BookingManagement: React.FC = () => {
     {
       key: 'property',
       header: 'Property Details',
-      render: (b) => (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <Building className="w-3.5 h-3.5 text-slate-400" />
-            <span className="line-clamp-1">{b.property?.title}</span>
+      render: (b) => {
+        const unit = b.project_unit;
+        const unitLabel = unit
+          ? unit.flat_number || unit.villa_number || unit.plot_number || unit.unit_number
+          : null;
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <Building className="w-3.5 h-3.5 text-slate-400" />
+              <span className="line-clamp-1">
+                {unit ? `${unit.project.name} — Unit ${unitLabel}` : b.property?.title}
+              </span>
+              {unit && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-navy-100 text-navy-700 uppercase tracking-wide shrink-0">
+                  Project Unit
+                </span>
+              )}
+            </div>
+            <div className="text-[10px] font-mono text-slate-400">
+              {unit ? unit.unit_code : `Unit ID: ${b.property?.id ?? '—'}`}
+            </div>
           </div>
-          <div className="text-[10px] font-mono text-slate-400">Unit ID: {b.property?.id}</div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'financials',
@@ -150,9 +165,18 @@ export const BookingManagement: React.FC = () => {
                   e.stopPropagation();
                   const phone = b.customer?.phone;
                   if (phone) {
+                    const unit = b.project_unit;
+                    const unitLabel = unit
+                      ? unit.flat_number ||
+                        unit.villa_number ||
+                        unit.plot_number ||
+                        unit.unit_number
+                      : null;
                     sendWhatsAppMessage('BOOKING_CONFIRMED', phone, {
                       customer_name: b.customer?.first_name,
-                      property_name: b.property?.title,
+                      property_name: unit
+                        ? `${unit.project.name} — Unit ${unitLabel}`
+                        : b.property?.title,
                       booking_code: b.booking_code,
                     });
                   }

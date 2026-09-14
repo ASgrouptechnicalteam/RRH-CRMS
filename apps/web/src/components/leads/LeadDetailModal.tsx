@@ -76,6 +76,14 @@ interface LeadDetailModalProps {
   onUpdateStatus: (leadId: number, newStatus: string) => Promise<void>;
   onRefreshLeads: () => void;
   onDemoComplete?: (leadId: number, qualification: any, notes: string) => Promise<void>;
+  // Fired right after Schedule Demo / Complete Demo succeed, with just the
+  // fields that changed. onRefreshLeads() only refetches the parent's list —
+  // it doesn't touch whatever object THIS modal is still holding as its
+  // `lead` prop, so without this the badge and Next Actions kept showing the
+  // pre-action status until the modal was closed and reopened. Optional so
+  // callers that don't track a "selected lead" (e.g. dashboard widgets) can
+  // skip it with no regression from before.
+  onLeadPatched?: (patch: Partial<Lead>) => void;
   initialShowScheduleModal?: boolean;
 }
 
@@ -85,6 +93,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   onUpdateStatus,
   onRefreshLeads,
   onDemoComplete,
+  onLeadPatched,
   initialShowScheduleModal,
 }) => {
   const { user, fetchWithAuth } = useAuth();
@@ -466,6 +475,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       if (statusRes.ok) {
         showToast('Demo completed — lead moved to next stage', 'success');
         setShowDemoCompleteModal(false);
+        onLeadPatched?.({ status: 'DEMO_COMPLETED', ...qualification });
         onRefreshLeads();
       } else {
         throw new Error(data.message || 'Failed to complete demo');
@@ -1210,13 +1220,13 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
                   <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h4 className="text-xl font-bold text-navy-900">Demo Scheduled!</h4>
+                <h4 className="text-xl font-bold text-navy-900">Site Visit Scheduled!</h4>
                 <p className="text-sm text-slate-500">
                   The site visit has been successfully booked and routed.
                 </p>
                 <button
                   onClick={() => {
-                    sendWhatsAppMessage('DEMO_SCHEDULED', lead.phone, {
+                    sendWhatsAppMessage('SITE_VISIT_SCHEDULED', lead.phone, {
                       customer_name: lead.customer_name,
                       visit_date: new Date(scheduleDate).toLocaleDateString(),
                       visit_time: new Date(scheduleDate).toLocaleTimeString([], {
@@ -1229,7 +1239,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   className="mt-4 px-6 py-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   <Send className="w-4 h-4" />
-                  Send Demo Scheduled WhatsApp
+                  Send Site Visit Scheduled WhatsApp
                 </button>
                 <button
                   onClick={() => {
@@ -1418,6 +1428,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                       if (res.ok) {
                         showToast('Demo scheduled successfully', 'success');
                         setShowDemoScheduleModal(false);
+                        onLeadPatched?.({ status: 'DEMO_SCHEDULED' });
                         onRefreshLeads();
                       } else {
                         showToast(data.error || 'Failed to schedule demo', 'error');

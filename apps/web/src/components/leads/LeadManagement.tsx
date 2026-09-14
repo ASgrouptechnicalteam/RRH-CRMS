@@ -854,6 +854,9 @@ export const LeadManagement: React.FC = () => {
           onUpdateStatus={handleUpdateStatus}
           onRefreshLeads={fetchLeads}
           onDemoComplete={handleDemoCompletion}
+          onLeadPatched={(patch) =>
+            setSelectedLead((prev) => (prev ? { ...prev, ...patch } : prev))
+          }
         />
       )}
 

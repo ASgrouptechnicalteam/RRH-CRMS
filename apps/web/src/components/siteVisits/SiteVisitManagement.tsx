@@ -63,6 +63,7 @@ interface SiteVisit {
   project_manager?: { id: number; employee_code: string; full_name: string; phone: string };
   assigned_agent?: { id: number; employee_code: string; full_name: string; phone: string };
   property?: { id: number; property_code: string; title: string; status: string };
+  site_visit_properties?: { property_id: number }[];
 }
 
 const VISIT_STAGES = [
@@ -307,6 +308,20 @@ export const SiteVisitManagement: React.FC = () => {
     e.preventDefault();
     if (!selectedVisit || !feedbackNotes) return;
 
+    // Every linked property needs an outcome — the backend rejects the
+    // completion outright if any is missing. The single propertyOutcome/
+    // propertyOutcomeReason picker applies to all of them; for the common
+    // case (one property, or none) this is exactly one outcome or zero.
+    const linkedPropertyIds = new Set<number>(
+      (selectedVisit.site_visit_properties || []).map((sp) => sp.property_id),
+    );
+    if (selectedVisit.property) linkedPropertyIds.add(selectedVisit.property.id);
+    const outcomes = Array.from(linkedPropertyIds).map((property_id) => ({
+      property_id,
+      outcome: propertyOutcome,
+      outcome_reason: propertyOutcome === 'NOT_INTERESTED' ? propertyOutcomeReason : undefined,
+    }));
+
     setIsSubmitting(true);
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/site-visits/${selectedVisit.id}/complete`, {
@@ -316,12 +331,16 @@ export const SiteVisitManagement: React.FC = () => {
           feedback_notes: feedbackNotes,
           rating,
           proof_photo_url: proofPhotoUrl,
+          outcomes,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
         showToast(data.message, 'success');
+        if (data.cascadeNote) {
+          showToast(data.cascadeNote, 'info');
+        }
         setShowCompleteModal(false);
         fetchVisitsData();
       } else {
@@ -747,14 +766,24 @@ export const SiteVisitManagement: React.FC = () => {
                   onChange={(e) => setRating(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-extrabold text-slate-800"
                 >
-                  <option value="HOT_INTERESTED">
-                    🔥 Hot - Highly Interested (Move to Qualified)
-                  </option>
-                  <option value="WARM">☀️ Warm - Interested (Move to Negotiation)</option>
+                  <option value="HOT_INTERESTED">🔥 Hot - Highly Interested</option>
+                  <option value="WARM">☀️ Warm - Interested</option>
                   <option value="COLD">❄️ Cold - Low Interest</option>
                   <option value="NOT_INTERESTED">❌ Not Interested</option>
                 </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  For your records only — moving the lead forward is decided by the property outcome
+                  below.
+                </p>
               </div>
+
+              {!selectedVisit.property && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                  No property is attached to this visit, so it can't automatically advance to
+                  Negotiation — that needs a specific property to base the offer on. Attach one to
+                  the lead first if the customer is interested.
+                </p>
+              )}
 
               {selectedVisit.property && (
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">

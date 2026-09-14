@@ -7,6 +7,9 @@ import {
   ProjectUpdateSchema,
   ProjectReassignSchema,
   ProjectLayoutRegionsSchema,
+  ProjectDMPolishSchema,
+  ProjectDMVerifyAsIsSchema,
+  ProjectMDApprovalSchema,
   Permissions,
 } from '../../shared';
 import { validateRequestBody } from '../../middleware/validate';
@@ -37,11 +40,25 @@ router.get(
   requireAuthz(Permissions.PROJECTS_READ),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { status, unassigned } = req.query;
+      const { status, unassigned, dm_executive_id } = req.query;
       const filters = {
         status: typeof status === 'string' ? status : undefined,
         unassigned: unassigned === 'true',
+        dm_executive_id:
+          typeof dm_executive_id === 'string' ? parseInt(dm_executive_id, 10) : undefined,
       };
+
+      // A plain DM Executive automatically sees only their own assigned-to-
+      // polish projects — mirrors properties/crud.ts's isDMExecutiveOnly.
+      const userRoles: string[] = req.user!.roles || [];
+      const isDMExecutiveOnly =
+        userRoles.includes('digital marketing executive') &&
+        !userRoles.some((r: string) =>
+          ['Digital Marketing head(manager)', 'Marketing Director', 'md', 'admin'].includes(r),
+        );
+      if (isDMExecutiveOnly && !filters.dm_executive_id) {
+        filters.dm_executive_id = req.user!.employeeId;
+      }
 
       const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
       const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
@@ -208,10 +225,14 @@ router.post(
 // ─────────────────────────────────────────────────────────────
 
 // POST /api/v1/projects/:id/submit-for-review
-// PM submits their project for MD review (DRAFT|REJECTED → PENDING_VERIFICATION).
+// PM submits their project for DM review (DRAFT|REJECTED → PENDING_DM_POLISH).
 // Writes `verification_status` — the separate approval-gate field that
 // dataScope.ts actually checks for visibility — never the operational
 // `status` field (PLANNING/UNDER_CONSTRUCTION/...), which is unrelated.
+// Item 1.7 (2026-09-15): this used to go straight to PENDING_VERIFICATION
+// (MD-only review) — now routes through a DM polish step first, mirroring
+// Property's PM -> DM -> MD chain, since a Project's verification is the
+// only gate its units sit behind (no separate per-unit verification).
 router.post(
   '/:id/submit-for-review',
   authenticateToken,
@@ -230,7 +251,7 @@ router.post(
       const updated = await p.project.update({
         where: { id: projectId },
         data: {
-          verification_status: 'PENDING_VERIFICATION',
+          verification_status: 'PENDING_DM_POLISH',
           verified_by_id: null,
           verified_at: null,
           verification_notes: null,
@@ -239,7 +260,7 @@ router.post(
       logger.info(`Project ${projectId} submitted for review by employee ${req.user!.employeeId}`);
       return res
         .status(200)
-        .json({ message: 'Project submitted for MD review.', project: updated });
+        .json({ message: 'Project submitted for Marketing review.', project: updated });
     } catch (error: any) {
       logger.error('Submit project for review error:', error);
       return res.status(500).json({ error: 'Failed to submit project for review' });
@@ -247,28 +268,107 @@ router.post(
   },
 );
 
-// POST /api/v1/projects/:id/verify
-// MD approves or rejects: body { action: 'APPROVE' | 'REJECT', notes?: string }
+// POST /api/v1/projects/:id/dm-polish - Digital Marketing Polish & SEO Step
+// Mirrors properties/workflow.ts's /:id/dm-polish exactly.
 router.post(
-  '/:id/verify',
+  '/:id/dm-polish',
   authenticateToken,
-  requireAuthz(Permissions.PROJECTS_VERIFY),
+  requireAuthz(Permissions.PROJECTS_DM_POLISH, projectInScope()),
+  validateRequestBody(ProjectDMPolishSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const projectId = parseInt(req.params.id, 10);
       if (isNaN(projectId)) return res.status(400).json({ error: 'Invalid ID' });
-      const { action, notes } = req.body;
-      if (!['APPROVE', 'REJECT'].includes(action)) {
-        return res.status(400).json({ error: 'action must be APPROVE or REJECT' });
-      }
       const project = await p.project.findFirst({ where: { id: projectId } });
       if (!project) return res.status(404).json({ error: 'Project not found' });
-      if (project.verification_status !== 'PENDING_VERIFICATION') {
+      if (project.verification_status !== 'PENDING_DM_POLISH') {
         return res.status(400).json({
-          error: `Project is not pending verification (current: ${project.verification_status})`,
+          error: `Project is not pending DM polish (current: ${project.verification_status})`,
         });
       }
-      const newStatus = action === 'APPROVE' ? 'VERIFIED' : 'REJECTED';
+      const { digital_marketing_executive_id, seo_title, seo_keywords, notes } = req.body;
+      const updated = await p.project.update({
+        where: { id: projectId },
+        data: {
+          verification_status: 'PENDING_MD_APPROVAL',
+          digital_marketing_executive_id,
+          seo_title: seo_title || project.seo_title,
+          seo_keywords: seo_keywords || project.seo_keywords,
+          verification_notes: notes || null,
+        },
+      });
+      logger.info(`Project ${projectId} DM-polished by employee ${req.user!.employeeId}`);
+      return res.status(200).json({
+        message: `Project "${updated.name}" polished by DM team and submitted for MD Approval`,
+        project: updated,
+      });
+    } catch (error: any) {
+      logger.error('DM Polish project error:', error);
+      return res.status(500).json({ error: 'Failed to execute DM polish step' });
+    }
+  },
+);
+
+// POST /api/v1/projects/:id/dm-verify-as-is - Digital Marketing Head bypass
+// Skips polish assignment and advances directly to PENDING_MD_APPROVAL.
+// Uses the same PROJECTS_DM_POLISH permission gate as the standard polish
+// path (mirrors properties/workflow.ts's /:id/dm-verify-as-is exactly).
+router.post(
+  '/:id/dm-verify-as-is',
+  authenticateToken,
+  requireAuthz(Permissions.PROJECTS_DM_POLISH, projectInScope()),
+  validateRequestBody(ProjectDMVerifyAsIsSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      if (isNaN(projectId)) return res.status(400).json({ error: 'Invalid ID' });
+      const project = await p.project.findFirst({ where: { id: projectId } });
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      if (project.verification_status !== 'PENDING_DM_POLISH') {
+        return res.status(400).json({
+          error: `Project is not pending DM polish (current: ${project.verification_status})`,
+        });
+      }
+      const { notes } = req.body;
+      const updated = await p.project.update({
+        where: { id: projectId },
+        data: {
+          verification_status: 'PENDING_MD_APPROVAL',
+          verification_notes: notes || null,
+        },
+      });
+      logger.info(`Project ${projectId} DM-verified-as-is by employee ${req.user!.employeeId}`);
+      return res.status(200).json({
+        message: `Project "${updated.name}" verified as-is by DM Head and submitted for MD Approval`,
+        project: updated,
+      });
+    } catch (error: any) {
+      logger.error('DM Verify-as-is project error:', error);
+      return res.status(500).json({ error: 'Failed to execute DM verify-as-is step' });
+    }
+  },
+);
+
+// POST /api/v1/projects/:id/md-approve
+// MD final approval: body { approved: boolean, notes?: string }
+router.post(
+  '/:id/md-approve',
+  authenticateToken,
+  requireAuthz(Permissions.PROJECTS_VERIFY),
+  validateRequestBody(ProjectMDApprovalSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id, 10);
+      if (isNaN(projectId)) return res.status(400).json({ error: 'Invalid ID' });
+      const { approved, notes } = req.body;
+      const project = await p.project.findFirst({ where: { id: projectId } });
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      if (project.verification_status !== 'PENDING_MD_APPROVAL') {
+        return res.status(400).json({
+          error: `Project is not pending MD approval (current: ${project.verification_status})`,
+        });
+      }
+      const newStatus = approved ? 'VERIFIED' : 'REJECTED';
       const updated = await p.project.update({
         where: { id: projectId },
         data: {
@@ -306,14 +406,13 @@ router.post(
           );
       }
 
-      const msg =
-        action === 'APPROVE'
-          ? `Project "${project.name}" approved and is now visible to all staff.`
-          : `Project "${project.name}" rejected. The PM has been informed.`;
+      const msg = approved
+        ? `Project "${project.name}" approved and is now visible to all staff.`
+        : `Project "${project.name}" rejected. The PM has been informed.`;
       return res.status(200).json({ message: msg, project: updated });
     } catch (error: any) {
-      logger.error('Verify project error:', error);
-      return res.status(500).json({ error: 'Failed to verify project' });
+      logger.error('MD Approve project error:', error);
+      return res.status(500).json({ error: 'Failed to execute MD approval step' });
     }
   },
 );

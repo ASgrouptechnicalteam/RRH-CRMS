@@ -156,13 +156,29 @@ export async function buildProjectScope(user: TokenPayload): Promise<Prisma.Proj
     return baseScope;
   }
 
-  // 3. MANAGEMENT — only see VERIFIED projects (no drafts for non-MD)
+  // 3. DIGITAL MARKETING HEAD — also needs the PENDING_DM_POLISH queue (to
+  // assign/pick up work) and anything already assigned to them for polish,
+  // same as Property's DM step. Checked before the generic MANAGEMENT
+  // branch below (DM Head is also in MANAGEMENT_ROLES) so this carve-out
+  // isn't shadowed by the plain VERIFIED-only rule.
+  if (user.roles.includes(Roles.DIGITAL_MARKETING_HEAD)) {
+    return {
+      ...baseScope,
+      OR: [
+        { verification_status: 'VERIFIED' },
+        { verification_status: 'PENDING_DM_POLISH' },
+        { digital_marketing_executive_id: user.employeeId },
+      ],
+    };
+  }
+
+  // 4. MANAGEMENT — only see VERIFIED projects (no drafts for non-MD)
   const isManagement = user.roles.some((r) => MANAGEMENT_ROLES.includes(r as any));
   if (isManagement) {
     return { ...baseScope, verification_status: 'VERIFIED' };
   }
 
-  // 4. PROJECT MANAGER - sees all their assigned projects (any verification_status) AND all other VERIFIED projects
+  // 5. PROJECT MANAGER - sees all their assigned projects (any verification_status) AND all other VERIFIED projects
   if (user.roles.includes(Roles.PROJECT_MANAGER)) {
     return {
       ...baseScope,
@@ -170,7 +186,21 @@ export async function buildProjectScope(user: TokenPayload): Promise<Prisma.Proj
     };
   }
 
-  // 5. Everyone else — only see VERIFIED projects
+  // 6. DIGITAL MARKETING EXECUTIVE — VERIFIED projects plus any project
+  // currently assigned to them for content polish (not in MANAGEMENT_ROLES,
+  // so without this branch they'd fall to the generic VERIFIED-only rule
+  // below and never see their own polish queue).
+  if (user.roles.includes(Roles.DIGITAL_MARKETING_EXECUTIVE)) {
+    return {
+      ...baseScope,
+      OR: [
+        { verification_status: 'VERIFIED' },
+        { digital_marketing_executive_id: user.employeeId },
+      ],
+    };
+  }
+
+  // 7. Everyone else — only see VERIFIED projects
   return {
     ...baseScope,
     verification_status: 'VERIFIED',

@@ -128,7 +128,14 @@ export interface ProjectListItem {
   // PLANNING/UNDER_CONSTRUCTION/etc lifecycle). DRAFT/REJECTED projects are
   // only visible to MD/Admin and their assigned PM; everyone else only sees
   // VERIFIED projects (see apps/api/src/authz/dataScope.ts).
-  verification_status?: 'DRAFT' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+  verification_status?:
+    | 'DRAFT'
+    | 'PENDING_DM_POLISH'
+    | 'PENDING_MD_APPROVAL'
+    | 'VERIFIED'
+    | 'REJECTED'
+    // Legacy value -- see the enum's own comment in schema.prisma (item 1.7).
+    | 'PENDING_VERIFICATION';
   verified_by_id?: number | null;
   verified_by?: { id: number; full_name?: string | null } | null;
   verified_at?: ISODateTime | null;

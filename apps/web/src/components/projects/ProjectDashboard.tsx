@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -84,18 +84,27 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 // Verification is a separate gate from the operational status above: a
-// DRAFT/REJECTED/PENDING_VERIFICATION project is only visible to MD/Admin and
-// its assigned PM — everyone else only ever sees VERIFIED projects (see
+// DRAFT/REJECTED/PENDING_DM_POLISH/PENDING_MD_APPROVAL project is only
+// visible to MD/Admin, its assigned PM, and (for the DM stage) DM staff —
+// everyone else only ever sees VERIFIED projects (see
 // apps/api/src/authz/dataScope.ts). This badge makes that gate visible in the
 // UI it was previously invisible in.
+// Item 1.7 (2026-09-15): this used to be a direct PM-submit -> MD-approve
+// gate (PENDING_VERIFICATION). Now mirrors Property's PM -> DM -> MD chain —
+// PENDING_VERIFICATION is kept only for any pre-existing row still in that
+// legacy state.
 const VERIFICATION_BADGE: Record<string, string> = {
   DRAFT: 'bg-slate-700/60 text-slate-200 border-slate-500',
+  PENDING_DM_POLISH: 'bg-amber-900/40 text-amber-300 border-amber-700',
+  PENDING_MD_APPROVAL: 'bg-amber-900/40 text-amber-300 border-amber-700',
   PENDING_VERIFICATION: 'bg-amber-900/40 text-amber-300 border-amber-700',
   VERIFIED: 'bg-emerald-900/40 text-emerald-300 border-emerald-700',
   REJECTED: 'bg-rose-900/40 text-rose-300 border-rose-700',
 };
 const VERIFICATION_LABEL: Record<string, string> = {
   DRAFT: 'Not Submitted',
+  PENDING_DM_POLISH: 'Pending Marketing Review',
+  PENDING_MD_APPROVAL: 'Pending MD Review',
   PENDING_VERIFICATION: 'Pending MD Review',
   VERIFIED: 'Verified — Visible to All Staff',
   REJECTED: 'Rejected',
@@ -248,14 +257,29 @@ export const ProjectDashboard: React.FC = () => {
     }
   };
 
-  // Verification workflow (submit for review / MD approve-or-reject) — see
-  // the VERIFICATION_BADGE comment above for why this exists as a gate
+  // Verification workflow (submit -> DM polish -> MD approve-or-reject) —
+  // see the VERIFICATION_BADGE comment above for why this exists as a gate
   // separate from the operational status toggle.
   const canSubmitForVerification = user?.permissions?.includes(Permissions.PROJECTS_SUBMIT_VERIFY);
+  const canDMPolish = user?.permissions?.includes(Permissions.PROJECTS_DM_POLISH);
   const canVerifyProject = user?.permissions?.includes(Permissions.PROJECTS_VERIFY);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [showRejectPrompt, setShowRejectPrompt] = useState(false);
   const [rejectNotes, setRejectNotes] = useState('');
+  const [showDMPolishForm, setShowDMPolishForm] = useState(false);
+  const [dmExecutives, setDmExecutives] = useState<
+    { id: number; full_name?: string; employee_code?: string }[]
+  >([]);
+  const [dmExecutiveId, setDmExecutiveId] = useState('');
+
+  useEffect(() => {
+    if (!showDMPolishForm || dmExecutives.length > 0) return;
+    fetchWithAuth(`${API_BASE_URL}/employees?role=DIGITAL_MARKETING_EXECUTIVE`)
+      .then((res) => res.json())
+      .then((data) => setDmExecutives(data.employees || []))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDMPolishForm]);
 
   const handleSubmitForReview = async () => {
     if (!project) return;
@@ -269,7 +293,7 @@ export const ProjectDashboard: React.FC = () => {
         await handleApiError(res, showError, data);
         return;
       }
-      showToast('Submitted for MD review', 'success');
+      showToast('Submitted for Marketing review', 'success');
       invalidateAll();
     } catch (err) {
       showError(
@@ -280,24 +304,71 @@ export const ProjectDashboard: React.FC = () => {
     }
   };
 
-  const handleVerifyDecision = async (action: 'APPROVE' | 'REJECT', notes?: string) => {
-    if (!project) return;
+  const handleDMPolish = async () => {
+    if (!project || !dmExecutiveId) return;
     setVerifyBusy(true);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/projects/${projectId}/verify`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/projects/${projectId}/dm-polish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, notes }),
+        body: JSON.stringify({ digital_marketing_executive_id: parseInt(dmExecutiveId, 10) }),
       });
       const data = await res.json();
       if (!res.ok) {
         await handleApiError(res, showError, data);
         return;
       }
-      showToast(
-        action === 'APPROVE' ? 'Project approved and is now live' : 'Project rejected',
-        'success',
+      showToast('Assigned for content polish and forwarded to MD', 'success');
+      setShowDMPolishForm(false);
+      setDmExecutiveId('');
+      invalidateAll();
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
       );
+    } finally {
+      setVerifyBusy(false);
+    }
+  };
+
+  const handleDMVerifyAsIs = async () => {
+    if (!project) return;
+    setVerifyBusy(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/projects/${projectId}/dm-verify-as-is`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        await handleApiError(res, showError, data);
+        return;
+      }
+      showToast('Verified as-is and forwarded to MD', 'success');
+      invalidateAll();
+    } catch (err) {
+      showError(
+        toUserFacingError({ message: err instanceof Error ? err.message : String(err), body: err }),
+      );
+    } finally {
+      setVerifyBusy(false);
+    }
+  };
+
+  const handleVerifyDecision = async (approved: boolean, notes?: string) => {
+    if (!project) return;
+    setVerifyBusy(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/projects/${projectId}/md-approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved, notes }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        await handleApiError(res, showError, data);
+        return;
+      }
+      showToast(approved ? 'Project approved and is now live' : 'Project rejected', 'success');
       setShowRejectPrompt(false);
       setRejectNotes('');
       invalidateAll();
@@ -469,44 +540,101 @@ export const ProjectDashboard: React.FC = () => {
                   ) : (
                     <ShieldCheck className="w-3.5 h-3.5" />
                   )}
-                  Submit for MD Review
+                  Submit for Review
                 </button>
               )}
-            {canVerifyProject && project.verification_status === 'PENDING_VERIFICATION' && (
+            {canDMPolish && project.verification_status === 'PENDING_DM_POLISH' && (
               <>
                 <button
-                  onClick={() => setShowRejectPrompt(true)}
+                  onClick={handleDMVerifyAsIs}
                   disabled={verifyBusy}
-                  className="px-4 py-2 bg-rose-900/40 hover:bg-rose-900/60 text-rose-200 text-xs font-bold rounded-xl border border-rose-700 flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/20 flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  Reject
+                  Verify As-Is
                 </button>
                 <button
-                  onClick={() => handleVerifyDecision('APPROVE')}
+                  onClick={() => setShowDMPolishForm(true)}
                   disabled={verifyBusy}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl border border-emerald-600 flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 bg-gold-600 hover:bg-gold-500 text-white text-xs font-bold rounded-xl border border-gold-500 flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {verifyBusy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <ShieldCheck className="w-3.5 h-3.5" />
                   )}
-                  Approve — Make Visible
+                  Assign for Polish
                 </button>
               </>
             )}
+            {canVerifyProject &&
+              ['PENDING_MD_APPROVAL', 'PENDING_VERIFICATION'].includes(
+                project.verification_status || '',
+              ) && (
+                <>
+                  <button
+                    onClick={() => setShowRejectPrompt(true)}
+                    disabled={verifyBusy}
+                    className="px-4 py-2 bg-rose-900/40 hover:bg-rose-900/60 text-rose-200 text-xs font-bold rounded-xl border border-rose-700 flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    onClick={() => handleVerifyDecision(true)}
+                    disabled={verifyBusy}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl border border-emerald-600 flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {verifyBusy ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    )}
+                    Approve — Make Visible
+                  </button>
+                </>
+              )}
           </div>
         </div>
+
+        {showDMPolishForm && (
+          <div className="mt-4 p-3 bg-black/20 border border-white/20 rounded-xl text-xs text-navy-100 flex items-center gap-2">
+            <span className="font-bold shrink-0">Assign DM Executive:</span>
+            <select
+              value={dmExecutiveId}
+              onChange={(e) => setDmExecutiveId(e.target.value)}
+              className="flex-1 px-2 py-1.5 bg-white/10 border border-white/20 rounded-lg text-white text-xs"
+            >
+              <option value="">-- Select --</option>
+              {dmExecutives.map((dm) => (
+                <option key={dm.id} value={dm.id} className="text-slate-800">
+                  {dm.full_name || dm.employee_code}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleDMPolish}
+              disabled={verifyBusy || !dmExecutiveId}
+              className="px-3 py-1.5 bg-gold-600 hover:bg-gold-500 text-white font-bold rounded-lg disabled:opacity-50"
+            >
+              Assign
+            </button>
+            <button
+              onClick={() => setShowDMPolishForm(false)}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
 
         {project.verification_status === 'REJECTED' && project.verification_notes && (
           <div className="mt-4 p-3 bg-rose-900/30 border border-rose-700 rounded-xl text-xs text-rose-200 flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold">MD's rejection reason: </span>
+              <span className="font-bold">Rejection reason: </span>
               {project.verification_notes}
               {canSubmitForVerification && (
                 <span className="block mt-1 text-rose-300/80">
-                  Fix the issue above, then click "Submit for MD Review" to resend.
+                  Fix the issue above, then click "Submit for Review" to resend.
                 </span>
               )}
             </div>
@@ -1026,7 +1154,7 @@ export const ProjectDashboard: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleVerifyDecision('REJECT', rejectNotes)}
+                  onClick={() => handleVerifyDecision(false, rejectNotes)}
                   disabled={!rejectNotes.trim() || verifyBusy}
                   className="px-4 py-2 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white font-bold text-sm rounded-xl"
                 >

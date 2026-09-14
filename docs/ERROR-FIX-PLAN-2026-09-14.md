@@ -22,7 +22,7 @@ These are tiny fixes, but they block testing the lead and employee workflows, so
 - **Verify:** drop a lead with the reason box empty; create an employee with all bank fields blank; create one with a _valid_ IFSC (must still pass); create one with an _invalid_ IFSC (must still fail).
 - **Done 2026-09-14:** helper `apps/api/src/shared/zodHelpers.ts` (`blankAsAbsent`). Applied to employee PAN/Aadhaar/IFSC/email/initial_password, lead `exit_reason_detail`/`demo_scheduled_at`, customer email, KYC PAN/Aadhaar, price-override reason, site-visit reschedule date. Identity fields (name, phone) deliberately still reject blanks. Verified via 22 schema tests + 6 live API calls on local DB (blank → stored as NULL, invalid IFSC still 400, `OTHER` still requires a detail). Pre-existing unrelated failures in `leads.test.ts`/`phase4-*` (IDOR/duplicate tests) confirmed failing on baseline too — not caused by this change.
 
-### 0.2 `[ ]` Bulk upload produces garbage rows
+### 0.2 `[x]` Bulk upload produces garbage rows
 
 - **Reported as:** "Bulk upload works but the data is like a hashed password" (screenshot shows `xl/styles.xml` inside a lead name).
 - **Root cause:** `apps/web/src/components/leads/LeadManagement.tsx:264` reads the file with `FileReader.readAsText()`. When the user picks an `.xlsx` (a zip), the zip bytes become "leads". `accept=".csv,.txt"` doesn't stop this on Windows.
@@ -31,6 +31,7 @@ These are tiny fixes, but they block testing the lead and employee workflows, so
   - B. Keep CSV-only, but detect non-text (zip signature `PK`) and refuse with "Please upload CSV, not Excel".
 - **Also:** add a "Download sample CSV/XLSX" link next to the upload button so the column names are never guessed.
 - **Verify:** upload a real `.xlsx`, a `.csv`, and a `.txt`; confirm names/phones land in the right columns; confirm the garbage leads from the screenshot are deleted (they're real rows in the DB now).
+- **Done 2026-09-14:** option A. New `apps/web/src/utils/leadImportParser.ts` (SheetJS 0.20.3) parses .xlsx/.xls/.csv through one path: header-name matching with synonyms (falls back to the legacy positional order), phone normalisation (`+91`, `0`, Excel `.0`), per-row skip reasons with Excel row numbers, in-file duplicate detection. Leads page: accept list widened, **Template** button (downloads `lead-import-template.xlsx`), preview modal lists skipped rows, result toast now reports `Imported X of Y (N already existed, M failed)` instead of a blanket success. Silent `Miyapur` / `RESIDENTIAL_VILLA` defaults removed — blank cells stay blank. Server: `bulkUploadLeads` now sanitises every row (readable name, 10-digit phone, valid email) so garbage is rejected regardless of client. Verified: 19 parser tests, live API call with garbage/invalid/duplicate rows, and the real UI in the browser against the local API (xlsx → 2 imported/3 skipped; CSV with quoted commas intact; re-upload → "0 of 2 (2 already existed)"). **Still to do by you:** delete the garbage leads already in production (`RRH-LD-2026-0005` … `0013` in the screenshot).
 
 ### 0.3 `[ ]` Duplicate employees with same phone / email
 

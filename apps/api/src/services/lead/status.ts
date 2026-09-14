@@ -557,6 +557,58 @@ export async function updateLeadStatus(
   return finalLead;
 }
 
+/**
+ * Sanitise one bulk-upload row before it is considered at all.
+ *
+ * The route has no schema on the row array, and a client once read an .xlsx
+ * as plain text and posted its zip bytes as leads (names like
+ * `xl/styles.xml`, phones full of control characters). Whatever the client
+ * does, a row only gets in if it looks like a lead: a readable name and a
+ * 10-digit phone. Everything else is reported back as a failed row.
+ */
+const BULK_TEXT = (v: unknown, max: number) =>
+  typeof v === 'string' || typeof v === 'number' ? String(v).trim().slice(0, max) : '';
+// Control chars and U+FFFD (the replacement char produced by decoding binary
+// as text) never belong in a name.
+const BULK_GARBAGE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFD]/;
+
+function sanitiseBulkLeadRow(raw: any): { row: any; error?: string } {
+  if (!raw || typeof raw !== 'object') return { row: raw, error: 'Row is not an object' };
+  const customer_name = BULK_TEXT(raw.customer_name, 120);
+  let phone = BULK_TEXT(raw.phone, 20).replace(/\.0+$/, '').replace(/\D/g, '');
+  if (phone.length === 12 && phone.startsWith('91')) phone = phone.slice(2);
+  if (phone.length === 11 && phone.startsWith('0')) phone = phone.slice(1);
+
+  if (!customer_name || !phone) {
+    return { row: raw, error: 'Missing required fields: customer_name or phone' };
+  }
+  if (BULK_GARBAGE.test(customer_name)) {
+    return {
+      row: raw,
+      error: 'customer_name contains unreadable characters (is the file really a CSV/XLSX?)',
+    };
+  }
+  if (!/^\d{10}$/.test(phone)) {
+    return { row: raw, error: `Invalid phone "${BULK_TEXT(raw.phone, 20)}" (expected 10 digits)` };
+  }
+  const email = BULK_TEXT(raw.email, 254).toLowerCase();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { row: raw, error: `Invalid email "${email}"` };
+  }
+  return {
+    row: {
+      ...raw,
+      customer_name,
+      phone,
+      email: email || null,
+      property_type: BULK_TEXT(raw.property_type, 60) || null,
+      location: BULK_TEXT(raw.location, 120) || null,
+      notes: BULK_TEXT(raw.notes, 2000) || null,
+      source: BULK_TEXT(raw.source, 40) || null,
+    },
+  };
+}
+
 export async function bulkUploadLeads(user: TokenPayload, rawLeads: any[]) {
   // Phase 2.13: previously unbounded — a CSV/Excel import of any size ran
   // fully inline within one HTTP request (chunked only for the DB writes,
@@ -581,9 +633,11 @@ export async function bulkUploadLeads(user: TokenPayload, rawLeads: any[]) {
     errors: [] as any[],
   };
 
+  const sanitised = rawLeads.map(sanitiseBulkLeadRow);
+
   // Pre-fetch existing phones and emails to detect duplicates efficiently
-  const phones = rawLeads.map((l) => l.phone).filter(Boolean);
-  const emails = rawLeads.map((l) => l.email).filter(Boolean);
+  const phones = sanitised.filter((r) => !r.error).map((r) => r.row.phone);
+  const emails = sanitised.filter((r) => !r.error && r.row.email).map((r) => r.row.email);
 
   const existingLeads = await p.lead.findMany({
     where: {
@@ -607,18 +661,15 @@ export async function bulkUploadLeads(user: TokenPayload, rawLeads: any[]) {
   const CHUNK_SIZE = 50;
   let currentRow = 0;
 
-  for (let i = 0; i < rawLeads.length; i += CHUNK_SIZE) {
-    const chunk = rawLeads.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < sanitised.length; i += CHUNK_SIZE) {
+    const chunk = sanitised.slice(i, i + CHUNK_SIZE);
 
-    for (const item of chunk) {
+    for (const { row: item, error: rowError } of chunk) {
       currentRow++;
       try {
-        if (!item.customer_name || !item.phone) {
+        if (rowError) {
           results.failed_rows++;
-          results.errors.push({
-            row: currentRow,
-            reason: 'Missing required fields: customer_name or phone',
-          });
+          results.errors.push({ row: currentRow, reason: rowError });
           continue;
         }
 

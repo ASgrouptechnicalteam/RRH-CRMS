@@ -14,6 +14,7 @@ import {
   Home,
   IndianRupee,
   UserCircle2,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -29,6 +30,13 @@ import { MonitorData, EmployeeListItem, ParsedBulkLeadRow } from '../../types';
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatusPill } from '../ui/StatusPill';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
+import {
+  parseLeadImportFile,
+  buildLeadImportTemplate,
+  LeadImportError,
+  ACCEPT_ATTRIBUTE,
+  SkippedRow,
+} from '../../utils/leadImportParser';
 
 interface Lead {
   id: number;
@@ -201,6 +209,8 @@ export const LeadManagement: React.FC = () => {
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [parsedBulkLeads, setParsedBulkLeads] = useState<ParsedBulkLeadRow[]>([]);
+  const [bulkSkippedRows, setBulkSkippedRows] = useState<SkippedRow[]>([]);
+  const [bulkHeaderMatched, setBulkHeaderMatched] = useState(true);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
 
   const isOperatorOrAdmin = (
@@ -216,53 +226,53 @@ export const LeadManagement: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
-
-      const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-      if (lines.length === 0) {
-        showError({ message: 'Selected file is empty' });
+    try {
+      // .xlsx / .csv both go through SheetJS — see utils/leadImportParser.ts
+      // for why (Excel used to be read as plain text and imported as garbage).
+      const result = await parseLeadImportFile(file);
+      if (result.rows.length === 0) {
+        showError({
+          message:
+            result.skipped.length > 0
+              ? `No importable rows: ${result.skipped[0].reason} (row ${result.skipped[0].row})${
+                  result.skipped.length > 1 ? ` and ${result.skipped.length - 1} more` : ''
+                }.`
+              : 'No lead rows found. Expected columns: Name, Phone, Email, Property type, Location, Notes.',
+        });
         return;
       }
-
-      const parsedRows: ParsedBulkLeadRow[] = [];
-      const startIdx =
-        lines[0].toLowerCase().includes('phone') || lines[0].toLowerCase().includes('name') ? 1 : 0;
-
-      for (let i = startIdx; i < lines.length; i++) {
-        const parts = lines[i].split(',').map((p) => p.trim().replace(/^["']|["']$/g, ''));
-        if (parts.length >= 2 && parts[0] && parts[1]) {
-          parsedRows.push({
-            customer_name: parts[0],
-            phone: parts[1],
-            email: parts[2] || '',
-            property_type: parts[3] || 'RESIDENTIAL_VILLA',
-            location: parts[4] || 'Miyapur',
-            notes: parts[5] || 'Imported via Bulk CSV Upload',
-          });
-        }
-      }
-
-      if (parsedRows.length === 0) {
-        showToast(
-          'No valid lead rows found in CSV. Format: Name, Phone, Email, PropertyType, Location, Notes',
-          'error',
-        );
-        return;
-      }
-
-      setParsedBulkLeads(parsedRows);
+      setParsedBulkLeads(result.rows);
+      setBulkSkippedRows(result.skipped);
+      setBulkHeaderMatched(result.headerMatched);
       setShowBulkModal(true);
-    };
+    } catch (err) {
+      showError({
+        message:
+          err instanceof LeadImportError
+            ? err.message
+            : `Could not read "${file.name}". Please upload an Excel (.xlsx) or CSV file.`,
+      });
+    }
+  };
 
-    reader.readAsText(file);
-    e.target.value = '';
+  const handleDownloadTemplate = () => {
+    const url = URL.createObjectURL(buildLeadImportTemplate());
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lead-import-template.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const closeBulkModal = () => {
+    setShowBulkModal(false);
+    setParsedBulkLeads([]);
+    setBulkSkippedRows([]);
   };
 
   const handleConfirmBulkUpload = async () => {
@@ -276,9 +286,16 @@ export const LeadManagement: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast(`Successfully uploaded and auto-distributed ${data.count} leads!`, 'success');
-        setShowBulkModal(false);
-        setParsedBulkLeads([]);
+        const problems: string[] = [];
+        if (data.duplicates) problems.push(`${data.duplicates} already existed`);
+        if (data.failed_rows) problems.push(`${data.failed_rows} failed`);
+        showToast(
+          `Imported ${data.count} of ${data.total_rows ?? parsedBulkLeads.length} leads` +
+            (problems.length ? ` (${problems.join(', ')})` : '') +
+            '.',
+          problems.length ? 'info' : 'success',
+        );
+        closeBulkModal();
         fetchLeads();
       } else {
         await handleApiError(res, showError, data);
@@ -629,7 +646,7 @@ export const LeadManagement: React.FC = () => {
           <input
             type="file"
             ref={fileInputRef}
-            accept=".csv,.txt"
+            accept={ACCEPT_ATTRIBUTE}
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -640,7 +657,18 @@ export const LeadManagement: React.FC = () => {
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 shadow"
             >
               <Upload className="w-4 h-4 text-navy-300" />
-              <span>Bulk CSV Upload</span>
+              <span>Bulk Upload (Excel / CSV)</span>
+            </button>
+          )}
+
+          {isOperatorOrAdmin && (
+            <button
+              onClick={handleDownloadTemplate}
+              title="Download an Excel template with the expected columns"
+              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 shadow"
+            >
+              <Download className="w-4 h-4 text-navy-300" />
+              <span>Template</span>
             </button>
           )}
 
@@ -865,15 +893,12 @@ export const LeadManagement: React.FC = () => {
         <DropLeadModal onClose={() => setDropLeadId(null)} onConfirm={handleConfirmDrop} />
       )}
 
-      {/* Bulk CSV Lead Preview Modal */}
+      {/* Bulk lead import preview modal */}
       {showBulkModal && parsedBulkLeads.length > 0 && (
         <div className="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto space-y-4">
             <button
-              onClick={() => {
-                setShowBulkModal(false);
-                setParsedBulkLeads([]);
-              }}
+              onClick={closeBulkModal}
               className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
             >
               <X className="w-5 h-5" />
@@ -881,10 +906,25 @@ export const LeadManagement: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <Upload className="w-5 h-5 text-navy-700" />
-              <h3 className="font-extrabold text-slate-800 text-lg">Bulk CSV Lead Importer</h3>
+              <h3 className="font-extrabold text-slate-800 text-lg">Bulk Lead Importer</h3>
             </div>
             <p className="text-sm text-slate-600">
-              Parsed <strong className="text-slate-900">{parsedBulkLeads.length} leads</strong>.
+              Ready to import{' '}
+              <strong className="text-slate-900">{parsedBulkLeads.length} leads</strong>
+              {bulkSkippedRows.length > 0 && (
+                <>
+                  {' '}
+                  —{' '}
+                  <strong className="text-amber-700">{bulkSkippedRows.length} rows skipped</strong>
+                </>
+              )}
+              .
+              {!bulkHeaderMatched && (
+                <span className="block text-xs text-slate-500 mt-1">
+                  No header row was recognised, so columns were read in the order Name, Phone,
+                  Email, Property type, Location, Notes. Use the Template button for named columns.
+                </span>
+              )}
             </p>
 
             <div className="h-60">
@@ -900,13 +940,25 @@ export const LeadManagement: React.FC = () => {
               />
             </div>
 
+            {bulkSkippedRows.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 max-h-32 overflow-y-auto">
+                <p className="font-bold mb-1">
+                  Skipped rows (fix them in the file and upload again):
+                </p>
+                <ul className="space-y-0.5">
+                  {bulkSkippedRows.map((s) => (
+                    <li key={s.row}>
+                      Row {s.row}: {s.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
-                onClick={() => {
-                  setShowBulkModal(false);
-                  setParsedBulkLeads([]);
-                }}
+                onClick={closeBulkModal}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-lg"
               >
                 Cancel

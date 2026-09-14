@@ -220,11 +220,11 @@ export async function reconfirmCustomer(user: TokenPayload, visitId: number) {
   );
 }
 
-/** Customer requests reschedule (new date/property). */
+/** Customer requests reschedule (new date/property/unit). */
 export async function rescheduleVisit(
   user: TokenPayload,
   visitId: number,
-  data: { scheduled_date?: string; property_ids?: number[] },
+  data: { scheduled_date?: string; property_ids?: number[]; project_unit_ids?: number[] },
 ) {
   const visit = await p.siteVisitBooking.findFirst({
     where: { id: visitId, lead: {} },
@@ -249,13 +249,31 @@ export async function rescheduleVisit(
 
   const extra: any = {};
   if (data.scheduled_date) extra.scheduled_date = new Date(data.scheduled_date);
-  if (data.property_ids && data.property_ids.length > 0) {
-    // Replace property links.
+  const hasPropertyIds = !!data.property_ids?.length;
+  const hasUnitIds = !!data.project_unit_ids?.length;
+  if (hasPropertyIds || hasUnitIds) {
+    // Replace property/unit links entirely — a reschedule that changes the
+    // item swaps it out rather than accumulating old + new links.
     await p.siteVisitProperty.deleteMany({ where: { visit_id: visitId } });
     await p.siteVisitProperty.createMany({
-      data: data.property_ids.map((pid: number) => ({ visit_id: visitId, property_id: pid })),
+      data: [
+        ...(data.property_ids ?? []).map((pid: number) => ({
+          visit_id: visitId,
+          property_id: pid,
+        })),
+        ...(data.project_unit_ids ?? []).map((uid: number) => ({
+          visit_id: visitId,
+          project_unit_id: uid,
+        })),
+      ],
     });
-    if (data.property_ids[0]) extra.property_id = data.property_ids[0];
+    if (hasPropertyIds) {
+      extra.property_id = data.property_ids![0];
+      extra.project_unit_id = null;
+    } else {
+      extra.project_unit_id = data.project_unit_ids![0];
+      extra.property_id = null;
+    }
   }
 
   return applyTransition(
@@ -384,14 +402,33 @@ export async function completeVisit(
     throw { status: 403, message: 'Forbidden: Missing site_visits.complete permission' };
   }
 
-  // Validate outcomes: every linked property must have an outcome, with reason if NOT_INTERESTED.
-  const linked = visit.site_visit_properties.map((sp: any) => sp.property_id);
-  const provided = new Set(outcomes.map((o: any) => o.property_id));
-  for (const pid of linked) {
-    if (!provided.has(pid)) {
+  // Validate outcomes: every linked property/unit must have an outcome, with
+  // reason if NOT_INTERESTED.
+  const linkedProperties = visit.site_visit_properties
+    .map((sp: any) => sp.property_id)
+    .filter((id: number | null): id is number => id != null);
+  const linkedUnits = visit.site_visit_properties
+    .map((sp: any) => sp.project_unit_id)
+    .filter((id: number | null): id is number => id != null);
+  const providedProperties = new Set(
+    outcomes.filter((o: any) => o.property_id != null).map((o: any) => o.property_id),
+  );
+  const providedUnits = new Set(
+    outcomes.filter((o: any) => o.project_unit_id != null).map((o: any) => o.project_unit_id),
+  );
+  for (const pid of linkedProperties) {
+    if (!providedProperties.has(pid)) {
       throw {
         status: 400,
         message: `Outcome required for every linked property. Missing property ${pid}.`,
+      };
+    }
+  }
+  for (const uid of linkedUnits) {
+    if (!providedUnits.has(uid)) {
+      throw {
+        status: 400,
+        message: `Outcome required for every linked unit. Missing unit ${uid}.`,
       };
     }
   }
@@ -421,18 +458,36 @@ export async function completeVisit(
 
   const result = await p.$transaction(
     async (tx: import('@prisma/client').Prisma.TransactionClient) => {
-      // Persist outcomes.
+      // Persist outcomes. A compound-unique lookup needs a real (non-null)
+      // value for both halves of the key, so property vs. unit outcomes go
+      // through different unique keys — same reasoning as
+      // LeadPropertyInterest's lead_id_property_id / lead_id_project_unit_id split.
       for (const o of outcomes) {
-        await tx.siteVisitProperty.upsert({
-          where: { visit_id_property_id: { visit_id: visitId, property_id: o.property_id } },
-          update: { outcome: o.outcome, outcome_reason: o.outcome_reason ?? null },
-          create: {
-            visit_id: visitId,
-            property_id: o.property_id,
-            outcome: o.outcome,
-            outcome_reason: o.outcome_reason ?? null,
-          },
-        });
+        if (o.property_id != null) {
+          await tx.siteVisitProperty.upsert({
+            where: { visit_id_property_id: { visit_id: visitId, property_id: o.property_id } },
+            update: { outcome: o.outcome, outcome_reason: o.outcome_reason ?? null },
+            create: {
+              visit_id: visitId,
+              property_id: o.property_id,
+              outcome: o.outcome,
+              outcome_reason: o.outcome_reason ?? null,
+            },
+          });
+        } else {
+          await tx.siteVisitProperty.upsert({
+            where: {
+              visit_id_project_unit_id: { visit_id: visitId, project_unit_id: o.project_unit_id },
+            },
+            update: { outcome: o.outcome, outcome_reason: o.outcome_reason ?? null },
+            create: {
+              visit_id: visitId,
+              project_unit_id: o.project_unit_id,
+              outcome: o.outcome,
+              outcome_reason: o.outcome_reason ?? null,
+            },
+          });
+        }
       }
 
       const updated = await tx.siteVisitBooking.update({

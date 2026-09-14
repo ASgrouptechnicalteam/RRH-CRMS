@@ -13,6 +13,13 @@ interface SiteVisit {
   scheduled_date: string;
   lead?: { customer_name: string; phone: string; preferred_location?: string };
   property?: { title: string; property_code: string };
+  project_unit?: {
+    unit_number: string;
+    flat_number?: string | null;
+    villa_number?: string | null;
+    plot_number?: string | null;
+    project: { name: string };
+  };
 }
 
 export const ActiveSiteVisitsBanner: React.FC = () => {
@@ -51,7 +58,14 @@ export const ActiveSiteVisitsBanner: React.FC = () => {
   const items: ListItem[] = activeVisits.map((visit) => ({
     id: visit.id,
     icon: MapPin,
-    title: visit.property?.title || 'Unknown Property',
+    title: visit.project_unit
+      ? `${visit.project_unit.project.name} — Unit ${
+          visit.project_unit.flat_number ||
+          visit.project_unit.villa_number ||
+          visit.project_unit.plot_number ||
+          visit.project_unit.unit_number
+        }`
+      : visit.property?.title || 'Unknown Property',
     subtitle: [
       visit.lead?.customer_name || 'Unknown Client',
       visit.lead?.preferred_location,

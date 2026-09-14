@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { Router, Response , NextFunction} from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { authenticateToken, AuthenticatedRequest, requirePermission } from '../middleware/auth';
 import { Permissions } from '../shared';
 import { OpportunityCreateSchema, OpportunityUpdateSchema } from '../shared';
@@ -13,6 +13,13 @@ router.post(
   '/',
   authenticateToken,
   requirePermission([Permissions.LEADS_UPDATE]), // Assuming lead management permissions govern opportunity creation
+  // OpportunityCreateSchema/OpportunityUpdateSchema were imported below but
+  // never actually wired to either route — req.body reached the service
+  // layer completely unvalidated (no XOR check, no type coercion, arbitrary
+  // extra fields all passed through). Applying them now since adding
+  // project_unit_id support needs some validation gate; this also closes
+  // that pre-existing gap.
+  validateRequestBody(OpportunityCreateSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const opportunity = await OpportunityService.createFromLead(req.user!, req.body);
@@ -24,17 +31,30 @@ router.post(
       logger.error('Create opportunity error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // GET /api/v1/opportunities
 router.get(
   '/',
   authenticateToken,
-  requirePermission([Permissions.LEADS_READ]), 
+  requirePermission([Permissions.LEADS_READ]),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const { stage, owner_id, project_id, property_id, date_from, date_to, expected_close_from, expected_close_to, sort_by, sort_order, limit, offset } = req.query;
+      const {
+        stage,
+        owner_id,
+        project_id,
+        property_id,
+        date_from,
+        date_to,
+        expected_close_from,
+        expected_close_to,
+        sort_by,
+        sort_order,
+        limit,
+        offset,
+      } = req.query;
       const filters = {
         stage: stage as string,
         owner_id: owner_id as string,
@@ -56,7 +76,7 @@ router.get(
       logger.error('Fetch opportunities error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // GET /api/v1/opportunities/pipeline-metrics
@@ -72,7 +92,7 @@ router.get(
       logger.error('Fetch pipeline metrics error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // GET /api/v1/opportunities/:id
@@ -83,17 +103,21 @@ router.get(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const opportunity = await OpportunityService.getOpportunityById(req.user!, id);
       return res.status(200).json({ opportunity });
     } catch (error: any) {
       logger.error('Fetch opportunity dossier error:', error);
       next(error);
     }
-  }
+  },
 );
 
 // PATCH /api/v1/opportunities/:id
@@ -101,13 +125,18 @@ router.patch(
   '/:id',
   authenticateToken,
   requirePermission([Permissions.LEADS_UPDATE]),
+  validateRequestBody(OpportunityUpdateSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const opportunity = await OpportunityService.updateOpportunity(req.user!, id, req.body);
       return res.status(200).json({
         message: 'Opportunity updated successfully',
@@ -117,9 +146,8 @@ router.patch(
       logger.error('Update opportunity error:', error);
       next(error);
     }
-  }
+  },
 );
-
 
 // POST /api/v1/opportunities/:id/convert-to-booking
 router.post(
@@ -129,10 +157,14 @@ router.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      if (isNaN(id)) return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
+      if (isNaN(id))
+        return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
       const booking = await OpportunityService.convertToBooking(req.user!, id, req.body);
       return res.status(201).json({
         message: 'Opportunity converted to Booking successfully',
@@ -142,7 +174,7 @@ router.post(
       logger.error('Convert opportunity to booking error:', error);
       next(error);
     }
-  }
+  },
 );
 
 export default router;

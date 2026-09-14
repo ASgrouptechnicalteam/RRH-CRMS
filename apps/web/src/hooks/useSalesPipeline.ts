@@ -100,11 +100,19 @@ export function useSalesPipeline() {
   // from the customer's saved property interest on SITE_VISIT_COMPLETED→
   // NEGOTIATION, but this lets a sales exec set or correct them by hand when
   // that auto-fill didn't have a saved interest to work from.
-  const finalizeOpportunity = async (id: number, propertyId: number, expectedValue: number) => {
+  const finalizeOpportunity = async (
+    id: number,
+    inventoryId: number,
+    expectedValue: number,
+    kind: 'PROPERTY' | 'UNIT' = 'PROPERTY',
+  ) => {
     const res = await fetchWithAuth(`${API_BASE_URL}/opportunities/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ property_id: propertyId, expected_value: expectedValue }),
+      body: JSON.stringify({
+        ...(kind === 'UNIT' ? { project_unit_id: inventoryId } : { property_id: inventoryId }),
+        expected_value: expectedValue,
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to finalize opportunity');

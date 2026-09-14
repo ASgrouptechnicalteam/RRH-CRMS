@@ -42,7 +42,9 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
   // form only needs to be used when they're still missing.
   const [isEditingDeal, setIsEditingDeal] = useState(false);
   const [savedInterests, setSavedInterests] = useState<SavedInterestItem[]>([]);
-  const [dealPropertyId, setDealPropertyId] = useState('');
+  // "PROPERTY-123" or "UNIT-456" — matches the disambiguation pattern used
+  // by the booking pickers.
+  const [dealInventoryKey, setDealInventoryKey] = useState('');
   const [dealValue, setDealValue] = useState('');
   const [isSavingDeal, setIsSavingDeal] = useState(false);
 
@@ -69,7 +71,13 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
   }, [fetchDetails]);
 
   const startEditingDeal = async () => {
-    setDealPropertyId(opportunity?.property_id ? String(opportunity.property_id) : '');
+    setDealInventoryKey(
+      opportunity?.property_id
+        ? `PROPERTY-${opportunity.property_id}`
+        : opportunity?.project_unit_id
+          ? `UNIT-${opportunity.project_unit_id}`
+          : '',
+    );
     setDealValue(opportunity?.expected_value ? String(opportunity.expected_value) : '');
     setIsEditingDeal(true);
     if (!opportunity?.lead_id) return;
@@ -83,13 +91,19 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
   };
 
   const saveDeal = async () => {
-    if (!dealPropertyId || !dealValue) {
-      showError({ message: 'Select a property and enter a deal value.' });
+    if (!dealInventoryKey || !dealValue) {
+      showError({ message: 'Select a property or unit and enter a deal value.' });
       return;
     }
     setIsSavingDeal(true);
     try {
-      await finalizeOpportunity(opportunityId, parseInt(dealPropertyId, 10), parseFloat(dealValue));
+      const [kind, idStr] = dealInventoryKey.split('-');
+      await finalizeOpportunity(
+        opportunityId,
+        parseInt(idStr, 10),
+        parseFloat(dealValue),
+        kind === 'UNIT' ? 'UNIT' : 'PROPERTY',
+      );
       showToast('Deal finalized — this lead can now move to Booking Initiated.', 'success');
       setIsEditingDeal(false);
       await fetchDetails();
@@ -202,28 +216,57 @@ export const SalesOpportunityDetails: React.FC<SalesOpportunityDetailsProps> = (
                     Target Property
                   </label>
                   <select
-                    value={dealPropertyId}
+                    value={dealInventoryKey}
                     onChange={(e) => {
-                      setDealPropertyId(e.target.value);
-                      const match = savedInterests.find(
-                        (si) => String(si.property_id) === e.target.value,
-                      );
-                      if (match?.property?.final_price)
-                        setDealValue(String(match.property.final_price));
+                      setDealInventoryKey(e.target.value);
+                      const [kind, idStr] = e.target.value.split('-');
+                      const id = idStr ? parseInt(idStr, 10) : NaN;
+                      if (kind === 'PROPERTY') {
+                        const match = savedInterests.find((si) => si.property_id === id);
+                        if (match?.property?.final_price)
+                          setDealValue(String(match.property.final_price));
+                      } else if (kind === 'UNIT') {
+                        const match = savedInterests.find((si) => si.project_unit_id === id);
+                        if (match?.project_unit?.final_price)
+                          setDealValue(String(match.project_unit.final_price));
+                      }
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500"
                   >
                     <option value="">-- Select from customer's saved interests --</option>
-                    {/* Opportunity.project_unit_id exists in the schema, but this
-                        deal form only writes property_id today — a saved unit
-                        interest simply doesn't appear here yet (separate item). */}
-                    {savedInterests
-                      .filter((si) => si.property)
-                      .map((si) => (
-                        <option key={si.property_id} value={si.property_id ?? ''}>
-                          {si.property!.title} ({si.property!.property_code})
-                        </option>
-                      ))}
+                    {savedInterests.filter((si) => si.property).length > 0 && (
+                      <optgroup label="Saved Properties">
+                        {savedInterests
+                          .filter((si) => si.property)
+                          .map((si) => (
+                            <option
+                              key={`p-${si.property_id}`}
+                              value={`PROPERTY-${si.property_id}`}
+                            >
+                              {si.property!.title} ({si.property!.property_code})
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                    {savedInterests.filter((si) => si.project_unit).length > 0 && (
+                      <optgroup label="Saved Project Units">
+                        {savedInterests
+                          .filter((si) => si.project_unit)
+                          .map((si) => {
+                            const u = si.project_unit!;
+                            const unitLabel =
+                              u.flat_number || u.villa_number || u.plot_number || u.unit_number;
+                            return (
+                              <option
+                                key={`u-${si.project_unit_id}`}
+                                value={`UNIT-${si.project_unit_id}`}
+                              >
+                                {u.project?.name} — Unit {unitLabel}
+                              </option>
+                            );
+                          })}
+                      </optgroup>
+                    )}
                   </select>
                   {savedInterests.length === 0 && (
                     <p className="text-[11px] text-slate-400 mt-1">

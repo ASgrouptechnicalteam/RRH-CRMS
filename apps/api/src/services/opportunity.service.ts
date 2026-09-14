@@ -19,13 +19,14 @@ export class OpportunityService {
       owner_id?: number;
       project_id?: number;
       property_id?: number;
+      project_unit_id?: number;
       expected_value?: number;
       probability?: number;
       budget_min?: number;
       budget_max?: number;
     },
   ) {
-    const { lead_id, project_id, property_id, ...opportunityData } = data;
+    const { lead_id, project_id, property_id, project_unit_id, ...opportunityData } = data;
     const owner_id = data.owner_id || user.employeeId;
 
     // 1. Validate Lead and Company Association
@@ -73,6 +74,21 @@ export class OpportunityService {
       }
     }
 
+    // 4b. Validate Project Unit (if provided) — a unit always belongs to
+    // exactly one project, so it's simpler than the property case: no
+    // "project matches" check needed, its own project_id is authoritative.
+    if (project_unit_id) {
+      const unit = await prisma.projectUnit.findFirst({
+        where: { id: project_unit_id, company_id: user.companyId },
+      });
+      if (!unit) {
+        throw new AppError(404, 'Project unit not found');
+      }
+      if (project_id && unit.project_id !== project_id) {
+        throw new AppError(400, 'Project unit does not belong to the specified Project');
+      }
+    }
+
     // Proceed to create Opportunity within a transaction to also update Lead status and create History
     const result = await prisma.$transaction(async (tx) => {
       const opportunity = await tx.opportunity.create({
@@ -88,6 +104,7 @@ export class OpportunityService {
           owner_id: owner_id || 1,
           project_id: project_id,
           property_id: property_id,
+          project_unit_id: project_unit_id,
           budget_min: opportunityData.budget_min,
           budget_max: opportunityData.budget_max,
           expected_value: opportunityData.expected_value,
@@ -136,6 +153,7 @@ export class OpportunityService {
     },
     actingEmployeeId: number,
     interestedPropertyId?: number | null,
+    interestedProjectUnitId?: number | null,
   ) {
     // Avoid duplicates if an Opportunity was already created for this lead.
     const existing = await tx.opportunity.findFirst({ where: { lead_id: lead.id } });
@@ -143,6 +161,9 @@ export class OpportunityService {
 
     const property = interestedPropertyId
       ? await tx.property.findFirst({ where: { id: interestedPropertyId } })
+      : null;
+    const projectUnit = interestedProjectUnitId
+      ? await tx.projectUnit.findFirst({ where: { id: interestedProjectUnitId } })
       : null;
 
     const currentYear = new Date().getFullYear();
@@ -156,7 +177,7 @@ export class OpportunityService {
         company_id: lead.company_id,
         lead_id: lead.id,
         owner_id: actingEmployeeId,
-        expected_value: property?.final_price ?? null,
+        expected_value: property?.final_price ?? projectUnit?.final_price ?? null,
         probability: 30,
         expected_close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         source: lead.source ?? null,
@@ -164,7 +185,11 @@ export class OpportunityService {
         utm_source: lead.utm_source ?? null,
         utm_medium: lead.utm_medium ?? null,
         utm_campaign: lead.utm_campaign ?? null,
-        ...(interestedPropertyId ? { property_id: interestedPropertyId } : {}),
+        ...(interestedPropertyId
+          ? { property_id: interestedPropertyId }
+          : interestedProjectUnitId
+            ? { project_unit_id: interestedProjectUnitId }
+            : {}),
       },
     });
   }
@@ -178,6 +203,7 @@ export class OpportunityService {
     data: {
       project_id?: number;
       property_id?: number;
+      project_unit_id?: number;
       expected_value?: number;
       probability?: number;
       budget_min?: number;
@@ -212,11 +238,29 @@ export class OpportunityService {
       }
     }
 
+    // Validate Project Unit
+    if (data.project_unit_id) {
+      const unit = await prisma.projectUnit.findFirst({
+        where: { id: data.project_unit_id, company_id: user.companyId },
+      });
+      if (!unit) {
+        throw new AppError(404, 'Project unit not found');
+      }
+    }
+
     return await prisma.opportunity.update({
       where: { id },
       data: {
         project_id: data.project_id,
-        property_id: data.property_id,
+        // Switching the target (property <-> unit) clears whichever one
+        // wasn't just provided, so the record never ends up pointing at a
+        // stale item from before the switch.
+        ...(data.property_id !== undefined
+          ? { property_id: data.property_id, project_unit_id: null }
+          : {}),
+        ...(data.project_unit_id !== undefined
+          ? { project_unit_id: data.project_unit_id, property_id: null }
+          : {}),
         expected_value: data.expected_value,
         probability: data.probability,
         budget_min: data.budget_min,
@@ -238,6 +282,17 @@ export class OpportunityService {
       include: {
         project: { select: { id: true, name: true } },
         property: { select: { id: true, title: true, property_code: true } },
+        project_unit: {
+          select: {
+            id: true,
+            unit_code: true,
+            unit_number: true,
+            flat_number: true,
+            villa_number: true,
+            plot_number: true,
+            project: { select: { id: true, name: true } },
+          },
+        },
         owner: { select: { id: true, full_name: true, employee_code: true } },
       },
       orderBy: { created_at: 'desc' },
@@ -338,6 +393,7 @@ export class OpportunityService {
         owner: { select: { id: true, full_name: true, employee_code: true } },
         project: true,
         property: true,
+        project_unit: { include: { project: { select: { id: true, name: true } } } },
         tasks: true,
         site_visits: true,
       },
@@ -516,8 +572,11 @@ export class OpportunityService {
       return existingBooking; // safely return existing booking
     }
 
-    if (!opp.property_id) {
-      throw new AppError(400, 'Opportunity must have a property assigned before booking');
+    if (!opp.property_id && !opp.project_unit_id) {
+      throw new AppError(
+        400,
+        'Opportunity must have a property or project unit assigned before booking',
+      );
     }
 
     // 4. Atomic Transaction Envelope
@@ -525,11 +584,13 @@ export class OpportunityService {
       // Step A: Resolve Customer
       const customer = await CustomerService.upsertFromLead(user, opp.lead_id, tx);
 
-      // Step B: Create Booking (with Packet 2 property lock)
+      // Step B: Create Booking (with Packet 2 property/unit lock — see
+      // services/inventory/reference.ts's resolveInventoryRef for the XOR)
       const bookingDto = {
         ...dto,
         customer_id: customer.id,
         property_id: opp.property_id,
+        project_unit_id: opp.project_unit_id,
         // Phase 12-1: propagate the Opportunity's attribution onto the Booking
         // (DTO overrides if explicitly provided, else inherit from the Opportunity).
         source: dto.source ?? opp.source ?? null,

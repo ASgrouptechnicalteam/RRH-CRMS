@@ -137,7 +137,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const [scheduleNotes, setScheduleNotes] = useState(
     'Telecaller booked site visit for client discussion.',
   );
-  const [schedulePropertyId, setSchedulePropertyId] = useState<string>('');
+  // "PROPERTY-123" or "UNIT-456" — matches the same disambiguation pattern
+  // used by the booking pickers (CreateBookingModal, BookingInitiationWizard).
+  const [scheduleInventoryKey, setScheduleInventoryKey] = useState<string>('');
 
   // Demo completion modal (§1 row 4: demo handler may revise qualification fields)
   const [showDemoCompleteModal, setShowDemoCompleteModal] = useState(false);
@@ -1338,24 +1340,47 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-                    Attach Property
+                    Attach Property or Project Unit
                   </label>
                   <select
-                    value={schedulePropertyId}
-                    onChange={(e) => setSchedulePropertyId(e.target.value)}
+                    value={scheduleInventoryKey}
+                    onChange={(e) => setScheduleInventoryKey(e.target.value)}
                     className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
                   >
-                    <option value="">-- No Property Attached --</option>
-                    {/* Demo/site-visit scheduling only accepts a property_id today
-                        (unit-aware scheduling is a separate item) — a saved unit
-                        interest simply doesn't appear here yet. */}
-                    {savedInterests
-                      .filter((interest) => interest.property)
-                      .map((interest) => (
-                        <option key={interest.property_id} value={interest.property_id ?? ''}>
-                          {interest.property!.title} ({interest.property!.property_code})
-                        </option>
-                      ))}
+                    <option value="">-- Nothing Attached --</option>
+                    {savedInterests.filter((i) => i.property).length > 0 && (
+                      <optgroup label="Saved Properties">
+                        {savedInterests
+                          .filter((interest) => interest.property)
+                          .map((interest) => (
+                            <option
+                              key={`PROPERTY-${interest.property_id}`}
+                              value={`PROPERTY-${interest.property_id}`}
+                            >
+                              {interest.property!.title} ({interest.property!.property_code})
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                    {savedInterests.filter((i) => i.project_unit).length > 0 && (
+                      <optgroup label="Saved Project Units">
+                        {savedInterests
+                          .filter((interest) => interest.project_unit)
+                          .map((interest) => {
+                            const u = interest.project_unit!;
+                            const label =
+                              u.flat_number || u.villa_number || u.plot_number || u.unit_number;
+                            return (
+                              <option
+                                key={`UNIT-${interest.project_unit_id}`}
+                                value={`UNIT-${interest.project_unit_id}`}
+                              >
+                                {u.project.name} — Unit {label}
+                              </option>
+                            );
+                          })}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
@@ -1371,6 +1396,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                     type="button"
                     onClick={async () => {
                       if (!scheduleDate) return;
+                      const [kind, idStr] = scheduleInventoryKey.split('-');
+                      const id = idStr ? parseInt(idStr, 10) : undefined;
                       try {
                         const res = await fetchWithAuth(`${API_BASE_URL}/site-visits`, {
                           method: 'POST',
@@ -1379,9 +1406,14 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                             lead_id: lead.id,
                             scheduled_date: new Date(scheduleDate).toISOString(),
                             notes: scheduleNotes,
-                            property_id: schedulePropertyId
-                              ? parseInt(schedulePropertyId, 10)
-                              : undefined,
+                            // SiteVisitCreateSchema only recognises the plural
+                            // *_ids arrays — a bare property_id here was
+                            // previously silently stripped by zod's default
+                            // unknown-key handling before ever reaching
+                            // bookVisit(), so "Attach Property" never actually
+                            // attached anything.
+                            property_ids: kind === 'PROPERTY' && id ? [id] : undefined,
+                            project_unit_ids: kind === 'UNIT' && id ? [id] : undefined,
                           }),
                         });
                         const data = await res.json();

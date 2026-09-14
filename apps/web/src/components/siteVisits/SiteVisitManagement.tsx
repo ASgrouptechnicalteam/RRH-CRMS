@@ -63,7 +63,16 @@ interface SiteVisit {
   project_manager?: { id: number; employee_code: string; full_name: string; phone: string };
   assigned_agent?: { id: number; employee_code: string; full_name: string; phone: string };
   property?: { id: number; property_code: string; title: string; status: string };
-  site_visit_properties?: { property_id: number }[];
+  project_unit?: {
+    id: number;
+    unit_code: string;
+    unit_number: string;
+    flat_number?: string | null;
+    villa_number?: string | null;
+    plot_number?: string | null;
+    project: { id: number; name: string };
+  };
+  site_visit_properties?: { property_id: number | null; project_unit_id: number | null }[];
 }
 
 const VISIT_STAGES = [
@@ -308,19 +317,34 @@ export const SiteVisitManagement: React.FC = () => {
     e.preventDefault();
     if (!selectedVisit || !feedbackNotes) return;
 
-    // Every linked property needs an outcome — the backend rejects the
+    // Every linked property/unit needs an outcome — the backend rejects the
     // completion outright if any is missing. The single propertyOutcome/
     // propertyOutcomeReason picker applies to all of them; for the common
-    // case (one property, or none) this is exactly one outcome or zero.
+    // case (one item, or none) this is exactly one outcome or zero.
     const linkedPropertyIds = new Set<number>(
-      (selectedVisit.site_visit_properties || []).map((sp) => sp.property_id),
+      (selectedVisit.site_visit_properties || [])
+        .map((sp) => sp.property_id)
+        .filter((id): id is number => id != null),
     );
     if (selectedVisit.property) linkedPropertyIds.add(selectedVisit.property.id);
-    const outcomes = Array.from(linkedPropertyIds).map((property_id) => ({
-      property_id,
-      outcome: propertyOutcome,
-      outcome_reason: propertyOutcome === 'NOT_INTERESTED' ? propertyOutcomeReason : undefined,
-    }));
+    const linkedUnitIds = new Set<number>(
+      (selectedVisit.site_visit_properties || [])
+        .map((sp) => sp.project_unit_id)
+        .filter((id): id is number => id != null),
+    );
+    if (selectedVisit.project_unit) linkedUnitIds.add(selectedVisit.project_unit.id);
+    const outcomes = [
+      ...Array.from(linkedPropertyIds).map((property_id) => ({
+        property_id,
+        outcome: propertyOutcome,
+        outcome_reason: propertyOutcome === 'NOT_INTERESTED' ? propertyOutcomeReason : undefined,
+      })),
+      ...Array.from(linkedUnitIds).map((project_unit_id) => ({
+        project_unit_id,
+        outcome: propertyOutcome,
+        outcome_reason: propertyOutcome === 'NOT_INTERESTED' ? propertyOutcomeReason : undefined,
+      })),
+    ];
 
     setIsSubmitting(true);
     try {

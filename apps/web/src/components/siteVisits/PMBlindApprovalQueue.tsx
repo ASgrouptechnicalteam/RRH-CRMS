@@ -23,6 +23,14 @@ interface BlindSiteVisit {
   status: string;
   telecaller?: { id: number; full_name: string; employee_code: string };
   property?: { title: string; property_code: string };
+  project_unit?: {
+    unit_code: string;
+    unit_number: string;
+    flat_number?: string | null;
+    villa_number?: string | null;
+    plot_number?: string | null;
+    project: { name: string };
+  };
   lead?: { preferred_location?: string };
 }
 
@@ -187,10 +195,17 @@ export const PMBlindApprovalQueue: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5">
-                      Requested Property
+                      {visit.project_unit ? 'Requested Unit' : 'Requested Property'}
                     </p>
                     <p className="font-bold text-navy-900 leading-tight">
-                      {visit.property?.title || 'General Inquiry'}
+                      {visit.project_unit
+                        ? `${visit.project_unit.project.name} — Unit ${
+                            visit.project_unit.flat_number ||
+                            visit.project_unit.villa_number ||
+                            visit.project_unit.plot_number ||
+                            visit.project_unit.unit_number
+                          }`
+                        : visit.property?.title || 'General Inquiry'}
                     </p>
                   </div>
                 </div>

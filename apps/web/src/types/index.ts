@@ -505,6 +505,7 @@ export interface SalesOpportunity {
   lead_id?: number;
   project_id?: number | null;
   property_id?: number | null;
+  project_unit_id?: number | null;
   booking_id?: number | null;
 
   expected_value?: number | null;
@@ -524,6 +525,7 @@ export interface SalesOpportunity {
   };
   project?: { id: number; name?: string } | null;
   property?: PropertyListItem | null;
+  project_unit?: SavedInterestUnitItem | null;
   history: OpportunityHistoryEntry[];
   created_at: ISODateTime;
   updated_at?: ISODateTime;

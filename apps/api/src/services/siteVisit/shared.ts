@@ -85,16 +85,19 @@ export async function generateNextBookingCode(): Promise<string> {
 }
 
 /**
- * Resolve the authoritative project PM for the given property list.
- * §2 constraint: all properties in a single booking must belong to the SAME
- * project, so we validate that and take that project's assigned_pm_id.
+ * Resolve the authoritative project PM for the given property/unit list.
+ * §2 constraint: all linked items in a single booking must belong to the SAME
+ * project — extended for "every project is a property" to project units too,
+ * which always belong to exactly one project (unlike a standalone Property,
+ * whose project_id is optional).
  */
 export async function resolveVisitProject(
   data: any,
   companyId: number,
   lead?: { preferred_location?: string | null },
 ): Promise<{ projectId: number; pmId: number | null }> {
-  // Determine project from an explicit project_id or from the properties.
+  // Determine project from an explicit project_id, from the properties, or
+  // from the units.
   let projectId: number | null = data.project_id ?? null;
   const propertyIds: number[] =
     data.property_ids && Array.isArray(data.property_ids)
@@ -102,23 +105,35 @@ export async function resolveVisitProject(
       : data.property_id
         ? [data.property_id]
         : [];
+  const projectUnitIds: number[] =
+    data.project_unit_ids && Array.isArray(data.project_unit_ids)
+      ? data.project_unit_ids
+      : data.project_unit_id
+        ? [data.project_unit_id]
+        : [];
+
+  const projects = new Set<number>();
 
   if (propertyIds.length > 0) {
     const properties = await p.property.findMany({
       where: { id: { in: propertyIds }, company_id: companyId },
     });
-    const projects = new Set(
-      properties.map((pr: any) => pr.project_id).filter(Boolean) as number[],
-    );
-    if (projects.size > 1) {
-      throw {
-        status: 400,
-        message: '§2: All properties in a single site visit must belong to the same project.',
-      };
-    }
-    if (projects.size === 1) {
-      projectId = [...projects][0];
-    }
+    for (const pr of properties) if (pr.project_id) projects.add(pr.project_id);
+  }
+  if (projectUnitIds.length > 0) {
+    const units = await p.projectUnit.findMany({
+      where: { id: { in: projectUnitIds }, company_id: companyId },
+    });
+    for (const u of units) projects.add(u.project_id);
+  }
+  if (projects.size > 1) {
+    throw {
+      status: 400,
+      message: '§2: All properties/units in a single site visit must belong to the same project.',
+    };
+  }
+  if (projects.size === 1) {
+    projectId = [...projects][0];
   }
 
   if (!projectId) {

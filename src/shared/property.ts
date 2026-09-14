@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { blankAsAbsent } from './zodHelpers';
 import {
   AreaUnitEnum,
   PriceBasisEnum,
@@ -70,11 +71,13 @@ export type PropertyPricePreviewInput = z.infer<typeof PropertyPricePreviewSchem
 export const OverridePropertyPriceSchema = z
   .object({
     override_price: z.number().positive().nullable(),
-    override_reason: z
-      .string()
-      .min(3, 'A reason is required when overriding the calculated price')
-      .optional()
-      .nullable(),
+    override_reason: blankAsAbsent(
+      z
+        .string()
+        .min(3, 'A reason is required when overriding the calculated price')
+        .optional()
+        .nullable(),
+    ),
   })
   .refine((data) => data.override_price === null || !!data.override_reason, {
     message: 'A reason is required when setting an override price',

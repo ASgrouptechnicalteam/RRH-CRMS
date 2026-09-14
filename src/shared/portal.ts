@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { blankAsAbsent } from './zodHelpers';
 
 // ─────────────────────────────────────────────────────────────
 // CUSTOMER PORTAL INTEGRATION — Phase 11 Packet 3B
@@ -45,14 +46,18 @@ export const KYC_STATUSES = Object.values(KycStatus) as string[];
  * Raw PAN/Aadhaar NEVER cross the CRM ↔ Portal boundary (Packet 3C §3.4).
  */
 export const CustomerKycWriteSchema = z.object({
-  pan_number: z
-    .string()
-    .regex(/^[A-Z0-9]{10}$/, 'PAN must be 10 alphanumeric characters')
-    .optional(),
-  aadhaar_number: z
-    .string()
-    .regex(/^\d{12}$/, 'Aadhaar must be 12 digits')
-    .optional(),
+  pan_number: blankAsAbsent(
+    z
+      .string()
+      .regex(/^[A-Z0-9]{10}$/, 'PAN must be 10 alphanumeric characters')
+      .optional(),
+  ),
+  aadhaar_number: blankAsAbsent(
+    z
+      .string()
+      .regex(/^\d{12}$/, 'Aadhaar must be 12 digits')
+      .optional(),
+  ),
 });
 
 export type CustomerKycWriteInput = z.infer<typeof CustomerKycWriteSchema>;

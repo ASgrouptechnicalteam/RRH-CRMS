@@ -4,9 +4,16 @@ import { useAuth } from '../../context/AuthContext';
 import { ListWidget, ListItem } from '../ui';
 import { AlertCircle, Building } from 'lucide-react';
 
+// A Project has its own independent assigned_pm_id (not shared with its
+// units — see siteVisit routing, which resolves the PM from the Project),
+// so a widget that only ever looked at unassigned standalone Properties was
+// silently missing every unassigned Project (and, by extension, every unit
+// inside it left without a routed PM). Both kinds are now listed together.
+type UnassignedItem = { id: number; kind: 'PROPERTY' | 'PROJECT'; title: string; subtitle: string };
+
 export const UnassignedPropertiesWidget: React.FC = () => {
   const { fetchWithAuth } = useAuth();
-  const [properties, setProperties] = useState<any[]>([]);
+  const [items, setItems] = useState<UnassignedItem[]>([]);
   const [pms, setPms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningId, setAssigningId] = useState<number | null>(null);
@@ -18,14 +25,35 @@ export const UnassignedPropertiesWidget: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [propRes, pmRes] = await Promise.all([
+      const [propRes, projectRes, pmRes] = await Promise.all([
         fetchWithAuth(`${API_BASE_URL}/properties?unassigned=true&limit=10`),
+        fetchWithAuth(`${API_BASE_URL}/projects?unassigned=true&limit=10`),
         fetchWithAuth(`${API_BASE_URL}/employees?role=PROJECT_MANAGER`),
       ]);
+      const nextItems: UnassignedItem[] = [];
       if (propRes.ok) {
         const propData = await propRes.json();
-        setProperties(propData.properties || []);
+        (propData.properties || []).forEach((p: any) =>
+          nextItems.push({
+            id: p.id,
+            kind: 'PROPERTY',
+            title: `${p.title} (${p.property_code})`,
+            subtitle: `Location: ${p.city || p.location || 'Unknown'}`,
+          }),
+        );
       }
+      if (projectRes.ok) {
+        const projectData = await projectRes.json();
+        (projectData.projects || []).forEach((proj: any) =>
+          nextItems.push({
+            id: proj.id,
+            kind: 'PROJECT',
+            title: `${proj.name} (Project)`,
+            subtitle: `Location: ${proj.city || proj.location || 'Unknown'}`,
+          }),
+        );
+      }
+      setItems(nextItems);
       if (pmRes.ok) {
         const pmData = await pmRes.json();
         setPms(pmData.employees || []);
@@ -37,17 +65,21 @@ export const UnassignedPropertiesWidget: React.FC = () => {
     }
   };
 
-  const handleAssign = async (propertyId: number, pmId: string) => {
+  const handleAssign = async (item: UnassignedItem, pmId: string) => {
     if (!pmId) return;
-    setAssigningId(propertyId);
+    setAssigningId(item.id);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/properties/${propertyId}`, {
+      const endpoint =
+        item.kind === 'PROPERTY'
+          ? `${API_BASE_URL}/properties/${item.id}`
+          : `${API_BASE_URL}/projects/${item.id}`;
+      const res = await fetchWithAuth(endpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assigned_pm_id: parseInt(pmId, 10) }),
       });
       if (res.ok) {
-        setProperties((prev) => prev.filter((p) => p.id !== propertyId));
+        setItems((prev) => prev.filter((i) => !(i.id === item.id && i.kind === item.kind)));
       }
     } catch (e) {
       console.error(e);
@@ -56,18 +88,18 @@ export const UnassignedPropertiesWidget: React.FC = () => {
     }
   };
 
-  const listItems: ListItem[] = properties.map((p) => ({
-    id: p.id,
-    title: `${p.title} (${p.property_code})`,
-    subtitle: `Location: ${p.city || p.location || 'Unknown'}`,
+  const listItems: ListItem[] = items.map((item) => ({
+    id: `${item.kind}-${item.id}`,
+    title: item.title,
+    subtitle: item.subtitle,
     icon: Building,
     meta: (
       <div className="flex items-center gap-2">
         <select
           className="text-sm border border-slate-200 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-navy-500 disabled:opacity-50"
-          onChange={(e) => handleAssign(p.id, e.target.value)}
+          onChange={(e) => handleAssign(item, e.target.value)}
           defaultValue=""
-          disabled={assigningId === p.id}
+          disabled={assigningId === item.id}
         >
           <option value="" disabled>
             Assign PM...
@@ -78,16 +110,20 @@ export const UnassignedPropertiesWidget: React.FC = () => {
             </option>
           ))}
         </select>
-        {assigningId === p.id && <AlertCircle className="w-4 h-4 text-slate-400 animate-pulse" />}
+        {assigningId === item.id && (
+          <AlertCircle className="w-4 h-4 text-slate-400 animate-pulse" />
+        )}
       </div>
     ),
   }));
 
   return (
     <ListWidget
-      title="Unassigned Properties"
+      title="Unassigned Properties & Projects"
       items={listItems}
-      emptyStateMessage={loading ? 'Loading...' : 'All properties have an assigned PM.'}
+      emptyStateMessage={
+        loading ? 'Loading...' : 'All properties and projects have an assigned PM.'
+      }
     />
   );
 };

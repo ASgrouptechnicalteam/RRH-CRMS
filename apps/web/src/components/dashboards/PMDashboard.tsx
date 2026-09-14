@@ -125,7 +125,7 @@ export const PMDashboard: React.FC = () => {
           link="/projects"
         />
         <StatCard
-          label="Pending PM Verification"
+          label="Pending Property Verification"
           value={isLoading ? '...' : pendingPropertyAudits}
           icon={ClipboardList}
           link="/properties"

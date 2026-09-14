@@ -134,6 +134,31 @@ export const ProjectLayoutRegionsSchema = z.object({
 });
 export type ProjectLayoutRegionsInput = z.infer<typeof ProjectLayoutRegionsSchema>;
 
+// Item 1.7 (2026-09-15): Project verification chain, mirroring Property's
+// own PM -> DM -> MD schemas (PropertyDMUpdateSchema/PropertyDMVerifyAsIsSchema/
+// PropertyMDApprovalSchema in shared/property.ts) field-for-field.
+export const ProjectDMPolishSchema = z.object({
+  digital_marketing_executive_id: z
+    .number()
+    .int()
+    .positive('Must select a Digital Marketing Executive'),
+  seo_title: z.string().optional(),
+  seo_keywords: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type ProjectDMPolishInput = z.infer<typeof ProjectDMPolishSchema>;
+
+export const ProjectDMVerifyAsIsSchema = z.object({
+  notes: z.string().optional(),
+});
+export type ProjectDMVerifyAsIsInput = z.infer<typeof ProjectDMVerifyAsIsSchema>;
+
+export const ProjectMDApprovalSchema = z.object({
+  approved: z.boolean(),
+  notes: z.string().optional(),
+});
+export type ProjectMDApprovalInput = z.infer<typeof ProjectMDApprovalSchema>;
+
 // LeadPropertyInterest points at either a standalone Property or a
 // ProjectUnit — exactly one of the two (schema comment on the model).
 export const AddPropertyInterestSchema = z

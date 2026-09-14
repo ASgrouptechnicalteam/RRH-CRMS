@@ -343,6 +343,7 @@ model Employee {
   lead_activities               LeadActivity[]
   assigned_projects             Project[]                    @relation("AssignedPMProjects")
   verified_projects             Project[]                    @relation("ProjectVerifier")
+  dm_executive_projects         Project[]                    @relation("DMExecutiveProjects")
   assigned_properties           Property[]                   @relation("AssignedPMProperties")
   dm_executive_properties       Property[]                   @relation("DMExecutiveProperties")
   created_properties            Property[]                   @relation("CreatedProperties")
@@ -971,17 +972,31 @@ model Project {
   cover_image_url String? @db.Text
   is_published    Boolean @default(false)
 
-  // Verification workflow: DRAFT → PENDING_VERIFICATION → VERIFIED | REJECTED
-  // Only MD/Admin can approve. PM submits. Others only see VERIFIED projects.
-  verification_status  String    @default("DRAFT") // DRAFT | PENDING_VERIFICATION | VERIFIED | REJECTED
+  // Verification workflow (item 1.7, 2026-09-15): DRAFT → PENDING_DM_POLISH →
+  // PENDING_MD_APPROVAL → VERIFIED | REJECTED. Mirrors Property's own PM →
+  // DM → MD chain exactly (property.workflow.ts) rather than the old direct
+  // PM-submit → MD-approve, because a Project's verification is the ONLY
+  // gate its units sit behind — there is no separate per-unit verification,
+  // so this step carries the same weight Property's full chain does.
+  // PENDING_VERIFICATION is kept as a legacy value only (old rows already in
+  // that state map to PENDING_MD_APPROVAL, since they'd already passed PM
+  // submission under the old flow) — never written by new code.
+  verification_status  String    @default("DRAFT") // DRAFT | PENDING_DM_POLISH | PENDING_MD_APPROVAL | VERIFIED | REJECTED | PENDING_VERIFICATION (legacy)
   verified_by_id       Int?
   verified_at          DateTime?
   verification_notes   String?   @db.Text
 
-  company     Company   @relation(fields: [company_id], references: [id])
-  branch      Branch?   @relation(fields: [branch_id], references: [id])
-  assigned_pm Employee? @relation("AssignedPMProjects", fields: [assigned_pm_id], references: [id])
-  verified_by Employee? @relation("ProjectVerifier", fields: [verified_by_id], references: [id])
+  // Set during the DM polish step -- mirrors Property's own fields exactly
+  // (digital_marketing_executive_id/seo_title/seo_keywords on Property).
+  digital_marketing_executive_id Int?
+  seo_title                      String?
+  seo_keywords                   String?
+
+  company                     Company   @relation(fields: [company_id], references: [id])
+  branch                      Branch?   @relation(fields: [branch_id], references: [id])
+  assigned_pm                 Employee? @relation("AssignedPMProjects", fields: [assigned_pm_id], references: [id])
+  verified_by                 Employee? @relation("ProjectVerifier", fields: [verified_by_id], references: [id])
+  digital_marketing_executive Employee? @relation("DMExecutiveProjects", fields: [digital_marketing_executive_id], references: [id])
 
   properties    Property[]
   opportunities Opportunity[]
@@ -1004,6 +1019,7 @@ model Project {
   @@index([assigned_pm_id])
   @@index([project_type])
   @@index([city])
+  @@index([digital_marketing_executive_id])
 }
 
 /// An individual saleable unit inside a project — a plot, flat, villa or house.

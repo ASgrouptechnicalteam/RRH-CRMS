@@ -96,8 +96,9 @@ export const Permissions = {
   PROJECTS_READ: 'projects.read',
   PROJECTS_UPDATE: 'projects.update',
   PROJECTS_DELETE: 'projects.delete',
-  PROJECTS_SUBMIT_VERIFY: 'projects.submit_verify', // PM submits project for MD review
-  PROJECTS_VERIFY: 'projects.verify', // MD approves/rejects
+  PROJECTS_SUBMIT_VERIFY: 'projects.submit_verify', // PM submits project for DM polish
+  PROJECTS_DM_POLISH: 'projects.dm_polish', // DM polishes content or verifies as-is, forwards to MD
+  PROJECTS_VERIFY: 'projects.verify', // MD approves/rejects (final step)
 
   BOOKINGS_CREATE: 'bookings.create',
   BOOKINGS_READ: 'bookings.read',
@@ -361,6 +362,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
 
   [Roles.DIGITAL_MARKETING_HEAD]: [
     Permissions.PROJECTS_READ,
+    Permissions.PROJECTS_DM_POLISH,
     Permissions.PROPERTIES_DM_POLISH,
     Permissions.PROPERTIES_READ,
     Permissions.LEADS_READ,
@@ -424,6 +426,7 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.EXPENSES_CREATE,
     Permissions.EXPENSES_READ_OWN,
     Permissions.PROPERTIES_DM_POLISH,
+    Permissions.PROJECTS_DM_POLISH,
     Permissions.EMPLOYEES_READ,
   ],
 

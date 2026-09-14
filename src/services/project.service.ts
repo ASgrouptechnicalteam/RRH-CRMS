@@ -70,7 +70,7 @@ export class ProjectService {
 
   static async listProjects(
     user: TokenPayload,
-    filters: { status?: string; unassigned?: boolean },
+    filters: { status?: string; unassigned?: boolean; dm_executive_id?: number },
     take: number = 50,
     skip: number = 0,
   ) {
@@ -86,6 +86,9 @@ export class ProjectService {
     // Project, not per-unit).
     if (filters.unassigned) {
       whereCondition.assigned_pm_id = null;
+    }
+    if (filters.dm_executive_id) {
+      whereCondition.digital_marketing_executive_id = filters.dm_executive_id;
     }
 
     const cacheKey = `projects_${user.employeeId}_${JSON.stringify(filters)}_${take}_${skip}`;

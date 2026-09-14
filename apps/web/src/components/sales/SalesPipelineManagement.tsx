@@ -188,8 +188,11 @@ export const SalesPipelineManagement: React.FC = () => {
                   </div>
                   <div className="text-xs text-slate-500 space-y-0.5">
                     <div>
-                      {opp.project?.name || 'No Project'}
+                      {opp.project?.name || opp.project_unit?.project?.name || 'No Project'}
                       {opp.property?.title ? ` · ${opp.property.title}` : ''}
+                      {opp.project_unit
+                        ? ` · Unit ${opp.project_unit.flat_number || opp.project_unit.villa_number || opp.project_unit.plot_number || opp.project_unit.unit_number}`
+                        : ''}
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -250,8 +253,15 @@ export const SalesPipelineManagement: React.FC = () => {
                             'UNKNOWN'}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-600">{opp.project?.name || '—'}</td>
-                      <td className="py-2.5 px-3 text-slate-600">{opp.property?.title || '—'}</td>
+                      <td className="py-2.5 px-3 text-slate-600">
+                        {opp.project?.name || opp.project_unit?.project?.name || '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-600">
+                        {opp.property?.title ||
+                          (opp.project_unit
+                            ? `Unit ${opp.project_unit.flat_number || opp.project_unit.villa_number || opp.project_unit.plot_number || opp.project_unit.unit_number}`
+                            : '—')}
+                      </td>
                       <td className="py-2.5 px-3 text-right font-bold text-slate-700">
                         ₹{(Number(opp.expected_value || 0) / 100000).toFixed(1)}L
                       </td>

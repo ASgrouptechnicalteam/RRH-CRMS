@@ -371,6 +371,17 @@ export class OpportunityService {
           owner: { select: { id: true, full_name: true, employee_code: true } },
           project: { select: { id: true, name: true } },
           property: { select: { id: true, title: true, property_code: true } },
+          project_unit: {
+            select: {
+              id: true,
+              unit_code: true,
+              unit_number: true,
+              flat_number: true,
+              villa_number: true,
+              plot_number: true,
+              project: { select: { id: true, name: true } },
+            },
+          },
         },
         orderBy: { [sortBy]: sortOrder },
         take: limit,

@@ -53,12 +53,26 @@ export const SalesOpportunityCard: React.FC<SalesOpportunityCardProps> = ({
       <div className="flex flex-col gap-1.5 text-xs text-slate-500">
         <div className="flex items-center gap-1.5">
           <Building className="w-3.5 h-3.5 shrink-0" />
-          <span className="line-clamp-1">{opportunity.project?.name || 'No Project'}</span>
+          <span className="line-clamp-1">
+            {opportunity.project?.name || opportunity.project_unit?.project?.name || 'No Project'}
+          </span>
         </div>
         {opportunity.property?.title && (
           <div className="flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span className="line-clamp-1">{opportunity.property.title}</span>
+          </div>
+        )}
+        {opportunity.project_unit && (
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            <span className="line-clamp-1">
+              Unit{' '}
+              {opportunity.project_unit.flat_number ||
+                opportunity.project_unit.villa_number ||
+                opportunity.project_unit.plot_number ||
+                opportunity.project_unit.unit_number}
+            </span>
           </div>
         )}
       </div>

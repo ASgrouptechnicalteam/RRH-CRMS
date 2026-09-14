@@ -435,9 +435,37 @@ model Role {
   name         String  @unique
   is_system    Boolean @default(false)
   is_invisible Boolean @default(false)
+  // Where this role currently sits in its own permission_history timeline —
+  // 0 means "no history yet" / "undone all the way back to before the first
+  // recorded change". Undo moves this left, Redo moves it right; saving a
+  // fresh change from a non-tip position truncates everything past it first
+  // (the standard undo-stack rule: a new edit discards the abandoned redo
+  // branch, exactly like a text editor).
+  permission_history_position Int @default(0)
 
-  permissions RolePermission[]
-  employees   EmployeeRole[]
+  permissions       RolePermission[]
+  employees         EmployeeRole[]
+  permission_history RolePermissionHistory[]
+}
+
+// One row per saved change (UPDATE or RESET) to a role's permissions,
+// numbered per-role via `seq` so Undo/Redo can move Role.permission_history_position
+// along this timeline and know exactly which permission-name snapshot to
+// restore — see routes/admin/permissions.ts's applyPermissionState/recordHistory.
+model RolePermissionHistory {
+  id         Int      @id @default(autoincrement())
+  role_id    Int
+  seq        Int
+  action     String // 'UPDATE' | 'RESET'
+  before     String   @db.Text // JSON array of permission names, pre-change
+  after      String   @db.Text // JSON array of permission names, post-change
+  actor_id   Int?
+  created_at DateTime @default(now())
+
+  role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([role_id, seq])
+  @@index([role_id])
 }
 
 model Permission {

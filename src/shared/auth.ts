@@ -284,6 +284,10 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.CUSTOMERS_READ,
     Permissions.CUSTOMERS_UPDATE,
     Permissions.REPORTS_READ_OWN,
+    // PM is in TaskManager.tsx's canViewTeam role array, which fetches
+    // GET /tasks/all-team-tasks (requires REPORTS_READ_TEAM) — without this
+    // the "Team Tasks" tab silently stays empty for every PM.
+    Permissions.REPORTS_READ_TEAM,
     Permissions.BOOKINGS_READ,
     Permissions.PAYMENTS_READ,
     Permissions.DOCUMENTS_CREATE,
@@ -296,6 +300,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.COMPLAINTS_CLOSE,
     Permissions.EXPENSES_CREATE,
     Permissions.EXPENSES_READ_OWN,
+    // Without this, GET /employees 403s, which empties three unrelated
+    // dropdowns PM actually uses: PropertyManagement.tsx's "Assign to PM"
+    // list, PMBlindApprovalQueue.tsx's "Route" (reassign) list, and
+    // TaskManager.tsx's New Task assignee list.
+    Permissions.EMPLOYEES_READ,
   ],
 
   [Roles.DIGITAL_LEAD_OPERATOR]: [
@@ -329,6 +338,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.EXPENSES_CREATE,
     Permissions.EXPENSES_READ_OWN,
     Permissions.EMPLOYEES_READ,
+    // TaskManager.tsx's canCreateTask role array already includes this role
+    // (they see and can fill out the New Task form), but POST /tasks
+    // requires TASKS_CREATE, which was never actually granted here — every
+    // submission 403'd.
+    Permissions.TASKS_CREATE,
   ],
 
   [Roles.TELECALLER]: [
@@ -343,6 +357,10 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.CUSTOMERS_CONVERT,
     Permissions.SITE_VISITS_CREATE,
     Permissions.SITE_VISITS_READ,
+    // TelecallerDashboard.tsx fetches GET /demos unconditionally to populate
+    // a per-lead "N Demo(s)" badge — without this it 403'd silently and the
+    // badge never rendered even when a telecaller's own lead had one.
+    Permissions.DEMOS_READ,
     Permissions.TASKS_READ,
     Permissions.TASKS_UPDATE,
     Permissions.ATTENDANCE_READ_OWN,
@@ -449,6 +467,11 @@ export const RolePermissionsMatrix: Record<RoleName, string[]> = {
     Permissions.BOOKINGS_READ,
     Permissions.EXPENSES_CREATE,
     Permissions.EXPENSES_READ_OWN,
+    // Sales Manager has TASKS_CREATE/TASKS_ASSIGN, but TaskManager.tsx's New
+    // Task assignee dropdown is populated from GET /md/employees, which
+    // needs EMPLOYEES_READ — without it the dropdown was always empty, so
+    // there was no one to actually assign a created task to.
+    Permissions.EMPLOYEES_READ,
   ],
 
   [Roles.CHANNEL_PARTNER_MANAGER]: [

@@ -373,6 +373,7 @@ export async function completeVisit(
   outcomes: any[],
   feedback_notes?: string,
   proof_photo_url?: string,
+  rating?: string,
 ) {
   const visit = await p.siteVisitBooking.findFirst({
     where: { id: visitId, lead: {} },
@@ -440,6 +441,7 @@ export async function completeVisit(
           status: 'COMPLETED',
           feedback_notes,
           proof_photo_url: proof_photo_url || null,
+          rating: rating || null,
           completed_at: new Date(),
         },
       });

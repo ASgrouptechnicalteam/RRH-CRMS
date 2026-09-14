@@ -146,7 +146,7 @@ export async function bookVisit(user: TokenPayload, data: any) {
     }
   }
 
-  const { projectId, pmId } = await resolveVisitProject(data, user.companyId || 1);
+  const { projectId, pmId } = await resolveVisitProject(data, user.companyId || 1, lead);
 
   return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
     const bookingCode = await generateNextBookingCode();

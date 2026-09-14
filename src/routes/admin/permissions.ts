@@ -39,23 +39,100 @@ const UpdateRolePermissionsSchema = z.object({
  * Deletes all RolePermission rows for a role and recreates them from
  * RolePermissionsMatrix[role.name] — the actual "reset to default" a role's
  * permissions should mean. (The matrix is also what apps/api/prisma/seed.ts
- * and fix-pm-permissions.ts treat as canonical.) Returns the number of
- * default permissions restored.
+ * and fix-pm-permissions.ts treat as canonical.) Returns the permission
+ * names actually restored (a matrix entry with no matching Permission row
+ * yet is silently skipped, same as before).
  */
-async function resetRoleToDefaults(tx: any, role: { id: number; name: string }): Promise<number> {
+async function resetRoleToDefaults(
+  tx: any,
+  role: { id: number; name: string },
+): Promise<string[]> {
   await tx.rolePermission.deleteMany({ where: { role_id: role.id } });
 
   const defaults = RolePermissionsMatrix[role.name as keyof typeof RolePermissionsMatrix] || [];
-  if (defaults.length === 0) return 0;
+  if (defaults.length === 0) return [];
 
   const permRecords = await tx.permission.findMany({ where: { name: { in: defaults } } });
-  if (permRecords.length === 0) return 0;
+  if (permRecords.length === 0) return [];
 
   await tx.rolePermission.createMany({
     data: permRecords.map((perm: { id: number }) => ({ role_id: role.id, permission_id: perm.id })),
     skipDuplicates: true,
   });
-  return permRecords.length;
+  return permRecords.map((perm: { name: string }) => perm.name);
+}
+
+/**
+ * Replaces a role's entire RolePermission set with an exact permission-name
+ * list — the shared primitive Undo/Redo restore onto (a saved before/after
+ * snapshot), as opposed to resetRoleToDefaults which always targets the code
+ * matrix specifically.
+ */
+async function applyPermissionState(
+  tx: any,
+  role: { id: number },
+  permissionNames: string[],
+): Promise<void> {
+  await tx.rolePermission.deleteMany({ where: { role_id: role.id } });
+  if (permissionNames.length === 0) return;
+
+  const permRecords = await tx.permission.findMany({ where: { name: { in: permissionNames } } });
+  if (permRecords.length === 0) return;
+
+  await tx.rolePermission.createMany({
+    data: permRecords.map((perm: { id: number }) => ({ role_id: role.id, permission_id: perm.id })),
+    skipDuplicates: true,
+  });
+}
+
+/**
+ * Records one Undo/Redo-able step for a role: truncates any history past the
+ * role's current position (the standard undo-stack rule — a fresh change
+ * discards whatever redo branch was sitting ahead of it), appends the new
+ * before/after snapshot, and advances the role's position to point at it.
+ * Must run inside the same transaction as the permission write itself so the
+ * two can never drift apart.
+ */
+async function recordHistory(
+  tx: any,
+  role: { id: number },
+  action: 'UPDATE' | 'RESET',
+  beforeNames: string[],
+  afterNames: string[],
+  actorId: number,
+): Promise<void> {
+  const current = await tx.role.findUnique({
+    where: { id: role.id },
+    select: { permission_history_position: true },
+  });
+  const position = current?.permission_history_position ?? 0;
+
+  await tx.rolePermissionHistory.deleteMany({ where: { role_id: role.id, seq: { gt: position } } });
+
+  const newSeq = position + 1;
+  await tx.rolePermissionHistory.create({
+    data: {
+      role_id: role.id,
+      seq: newSeq,
+      action,
+      before: JSON.stringify(beforeNames),
+      after: JSON.stringify(afterNames),
+      actor_id: actorId,
+    },
+  });
+  await tx.role.update({ where: { id: role.id }, data: { permission_history_position: newSeq } });
+}
+
+/** canUndo/canRedo for a role, given its current position and history depth. */
+async function getHistoryStatus(
+  roleId: number,
+  position: number,
+): Promise<{ canUndo: boolean; canRedo: boolean }> {
+  const [hasEarlier, hasLater] = await Promise.all([
+    position > 0,
+    p.rolePermissionHistory.findFirst({ where: { role_id: roleId, seq: position + 1 } }),
+  ]);
+  return { canUndo: hasEarlier, canRedo: !!hasLater };
 }
 
 /**
@@ -104,12 +181,15 @@ router.get(
       // Also fetch all known permission keys from the shared enum for the UI dropdowns
       const allPermissionKeys = Object.values(Permissions);
 
-      const rolePerms = roles.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        is_system: r.is_system,
-        permissions: r.permissions.map((rp: any) => rp.permission.name),
-      }));
+      const rolePerms = await Promise.all(
+        roles.map(async (r: any) => ({
+          id: r.id,
+          name: r.name,
+          is_system: r.is_system,
+          permissions: r.permissions.map((rp: any) => rp.permission.name),
+          ...(await getHistoryStatus(r.id, r.permission_history_position)),
+        })),
+      );
 
       return res.status(200).json({
         roles: rolePerms,
@@ -149,6 +229,7 @@ router.get(
         name: role.name,
         is_system: role.is_system,
         permissions: role.permissions.map((rp: any) => rp.permission.name),
+        ...(await getHistoryStatus(role.id, role.permission_history_position)),
       });
     } catch (error) {
       logger.error('[Admin] Single role permissions fetch failed:', error);
@@ -188,6 +269,14 @@ router.patch(
       const toAdd = granted?.filter((p: string) => !existingPerms.has(p)) ?? [];
       const toRemove = denied?.filter((p: string) => existingPerms.has(p)) ?? [];
 
+      // toAdd/toRemove are already filtered against the real DB state above,
+      // so a request whose diff resolves to nothing real (e.g. the frontend
+      // asking to deny a permission that was never actually granted) must
+      // not write an audit entry or touch anyone's session — there is
+      // nothing to log or enforce.
+      const hasRealChange = toAdd.length > 0 || toRemove.length > 0;
+      const afterNames = [...existingPerms].filter((p) => !toRemove.includes(p)).concat(toAdd);
+
       // Look up permission records by name
       const permRecords = await p.permission.findMany({
         where: { name: { in: [...toAdd, ...toRemove] } },
@@ -222,14 +311,18 @@ router.patch(
             actions.push(`DENY ${permName}`);
           }
         }
-      });
 
-      // toAdd/toRemove are already filtered against the real DB state above,
-      // so a request whose diff resolves to nothing real (e.g. the frontend
-      // asking to deny a permission that was never actually granted) must
-      // not write an audit entry or touch anyone's session — there is
-      // nothing to log or enforce.
-      const hasRealChange = toAdd.length > 0 || toRemove.length > 0;
+        if (hasRealChange) {
+          await recordHistory(
+            tx,
+            role,
+            'UPDATE',
+            [...existingPerms],
+            afterNames,
+            req.user!.employeeId,
+          );
+        }
+      });
 
       if (hasRealChange) {
         await p.auditEvent.create({
@@ -282,6 +375,7 @@ router.patch(
           id: updated!.id,
           name: updated!.name,
           permissions: updated!.permissions.map((rp: any) => rp.permission.name),
+          ...(await getHistoryStatus(updated!.id, updated!.permission_history_position)),
         },
       });
     } catch (error: any) {
@@ -316,7 +410,12 @@ router.delete(
       });
       const previousPerms = previousPermRecords.map((rp: any) => rp.permission.name);
 
-      const restoredCount = await p.$transaction((tx: any) => resetRoleToDefaults(tx, role));
+      const restoredNames = await p.$transaction(async (tx: any) => {
+        const names = await resetRoleToDefaults(tx, role);
+        await recordHistory(tx, role, 'RESET', previousPerms, names, req.user!.employeeId);
+        return names;
+      });
+      const restoredCount = restoredNames.length;
 
       await p.auditEvent.create({
         data: {
@@ -346,13 +445,164 @@ router.delete(
         });
       }
 
+      const refreshed = await p.role.findUnique({ where: { id: role.id } });
+
       return res.status(200).json({
         message: `Permissions reset to defaults for role ${roleName}`,
         permissionsRestored: restoredCount,
+        ...(await getHistoryStatus(role.id, refreshed!.permission_history_position)),
       });
     } catch (error) {
       logger.error('[Admin] Role permissions reset failed:', error);
       return res.status(500).json({ error: 'Failed to reset role permissions' });
+    }
+  },
+);
+
+// POST /api/v1/admin/permissions/:roleName/undo — Step this role's permissions
+// back to the snapshot recorded before its most recent saved change (an
+// UPDATE or a RESET, or a previous REDO — anything that advanced its
+// position). A no-op with a 400 if there's nothing earlier to go back to.
+router.post(
+  '/permissions/:roleName/undo',
+  authenticateToken,
+  requireRole([Roles.MD, Roles.ADMIN]),
+  validateRequestBody(z.object({})),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const role = await p.role.findUnique({ where: { name: req.params.roleName } });
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+      if (role.permission_history_position <= 0) {
+        return res.status(400).json({ error: 'Nothing to undo for this role' });
+      }
+
+      const step = await p.rolePermissionHistory.findUnique({
+        where: {
+          role_id_seq: { role_id: role.id, seq: role.permission_history_position },
+        },
+      });
+      if (!step) {
+        return res.status(400).json({ error: 'Nothing to undo for this role' });
+      }
+      const restoreTo: string[] = JSON.parse(step.before);
+
+      await p.$transaction(async (tx: any) => {
+        await applyPermissionState(tx, role, restoreTo);
+        await tx.role.update({
+          where: { id: role.id },
+          data: { permission_history_position: role.permission_history_position - 1 },
+        });
+      });
+
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'UNDO_ROLE_PERMISSIONS',
+          entity_type: 'ROLE',
+          entity_id: role.id,
+          old_value: step.after,
+          new_value: step.before,
+        },
+      });
+
+      setRolePermissionOverrideCacheDirty();
+      const affectedEmployeeIds = await p.$transaction((tx: any) =>
+        invalidateSessionsForRole(tx, role.id),
+      );
+      if (affectedEmployeeIds.length > 0) {
+        await notifyEmployee(affectedEmployeeIds, {
+          type: 'ROLE_PERMISSIONS_CHANGED',
+          title: '🔐 Your Access Was Updated',
+          message: `Permissions for your role (${req.params.roleName}) were reverted by an administrator (Undo). Please log in again to apply the update.`,
+        });
+      }
+
+      return res.status(200).json({
+        message: `Undid the last permission change for role ${req.params.roleName}`,
+        role: {
+          id: role.id,
+          name: role.name,
+          permissions: restoreTo,
+          ...(await getHistoryStatus(role.id, role.permission_history_position - 1)),
+        },
+      });
+    } catch (error) {
+      logger.error('[Admin] Role permissions undo failed:', error);
+      return res.status(500).json({ error: 'Failed to undo role permission change' });
+    }
+  },
+);
+
+// POST /api/v1/admin/permissions/:roleName/redo — Re-apply the change that
+// was just Undone. A no-op with a 400 if there's nothing ahead to redo (this
+// naturally becomes true again the moment a fresh UPDATE/RESET is saved,
+// since that truncates the abandoned redo branch — see recordHistory).
+router.post(
+  '/permissions/:roleName/redo',
+  authenticateToken,
+  requireRole([Roles.MD, Roles.ADMIN]),
+  validateRequestBody(z.object({})),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const role = await p.role.findUnique({ where: { name: req.params.roleName } });
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      const nextSeq = role.permission_history_position + 1;
+      const step = await p.rolePermissionHistory.findUnique({
+        where: { role_id_seq: { role_id: role.id, seq: nextSeq } },
+      });
+      if (!step) {
+        return res.status(400).json({ error: 'Nothing to redo for this role' });
+      }
+      const restoreTo: string[] = JSON.parse(step.after);
+
+      await p.$transaction(async (tx: any) => {
+        await applyPermissionState(tx, role, restoreTo);
+        await tx.role.update({
+          where: { id: role.id },
+          data: { permission_history_position: nextSeq },
+        });
+      });
+
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'REDO_ROLE_PERMISSIONS',
+          entity_type: 'ROLE',
+          entity_id: role.id,
+          old_value: step.before,
+          new_value: step.after,
+        },
+      });
+
+      setRolePermissionOverrideCacheDirty();
+      const affectedEmployeeIds = await p.$transaction((tx: any) =>
+        invalidateSessionsForRole(tx, role.id),
+      );
+      if (affectedEmployeeIds.length > 0) {
+        await notifyEmployee(affectedEmployeeIds, {
+          type: 'ROLE_PERMISSIONS_CHANGED',
+          title: '🔐 Your Access Was Updated',
+          message: `Permissions for your role (${req.params.roleName}) were reapplied by an administrator (Redo). Please log in again to apply the update.`,
+        });
+      }
+
+      return res.status(200).json({
+        message: `Redid the last undone permission change for role ${req.params.roleName}`,
+        role: {
+          id: role.id,
+          name: role.name,
+          permissions: restoreTo,
+          ...(await getHistoryStatus(role.id, nextSeq)),
+        },
+      });
+    } catch (error) {
+      logger.error('[Admin] Role permissions redo failed:', error);
+      return res.status(500).json({ error: 'Failed to redo role permission change' });
     }
   },
 );

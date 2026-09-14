@@ -315,12 +315,21 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 import { initJobs } from './jobs/scheduler';
+import { syncRolePermissions } from './authz/syncRolePermissions';
 
 // In a Serverless environment (like Vercel), we must not call app.listen() or start background cron jobs
 // because Vercel handles the port binding and crons keep the event loop alive, causing timeouts/crashes.
 if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(port, () => {
     logger.info(`[server]: API running at http://localhost:${port}`);
+
+    // Additive DB sync of RolePermissionsMatrix — without this, adding a
+    // permission to a role in code has no effect until someone remembers to
+    // run it manually (see syncRolePermissions.ts). Non-fatal: a transient
+    // DB hiccup here shouldn't crash a server that's otherwise fine.
+    syncRolePermissions().catch((err) =>
+      logger.error('[authz] Role permission sync failed on startup:', err),
+    );
 
     // Initialize background jobs
     initJobs();

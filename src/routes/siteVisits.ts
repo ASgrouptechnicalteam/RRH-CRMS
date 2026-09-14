@@ -305,13 +305,14 @@ router.post(
       const visitId = parseInt(req.params.id, 10);
       if (isNaN(visitId))
         return next({ name: 'AppError', statusCode: 400, message: 'Invalid ID format' });
-      const { outcomes, feedback_notes, proof_photo_url } = req.body;
+      const { outcomes, feedback_notes, proof_photo_url, rating } = req.body;
       const visit = await SiteVisitService.completeVisit(
         req.user!,
         visitId,
         outcomes,
         feedback_notes,
         proof_photo_url,
+        rating,
       );
 
       // §1: SITE_VISIT_COMPLETED → NEGOTIATION (any INTERESTED) or DROPPED
@@ -331,6 +332,12 @@ router.post(
       // explicitly skipped for just this call (see updateLeadStatus's opts
       // doc comment).
       const outcomeBranch = (visit as any)._outcomeBranch as 'NEGOTIATE' | 'DROP' | undefined;
+      // Surfaced to the caller when the auto-advance can't complete (e.g. no
+      // property outcome was recorded, so there's nothing to base an
+      // Opportunity's expected_value on) — this used to be silently
+      // swallowed, so a telecaller had no idea the lead was still stuck at
+      // SITE_VISIT_COMPLETED after seeing a plain "completed" success toast.
+      let cascadeNote: string | undefined;
       if (outcomeBranch) {
         try {
           await LeadService.updateLeadStatus(
@@ -359,12 +366,17 @@ router.post(
             `[site-visits/complete] Lead ${visit.lead_id} cascade failed after visit ${visit.booking_code} completed:`,
             cascadeError,
           );
+          cascadeNote =
+            outcomeBranch === 'DROP'
+              ? 'Visit recorded, but the lead could not be auto-dropped — you can move it manually from the lead detail page.'
+              : "Visit recorded, but couldn't auto-advance to Negotiation (usually because no property was marked Interested). Attach a property outcome, or move the lead forward manually.";
         }
       }
 
       return res.status(200).json({
         message: `Site visit ${visit.booking_code} completed! Outcomes recorded.`,
         visit,
+        cascadeNote,
       });
     } catch (error: any) {
       logger.error('Complete site visit error:', error);

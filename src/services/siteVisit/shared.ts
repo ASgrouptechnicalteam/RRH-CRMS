@@ -3,8 +3,71 @@ import { TokenPayload } from '../../utils/jwt';
 import { WorkflowEngine } from '../../workflows/workflowEngine';
 import { WorkflowDomain } from '../../workflows/types';
 import { SiteVisitAction } from '../../workflows/siteVisit.workflow';
+import { Roles } from '../../shared';
 
 const p = prisma;
+
+/** Site visit statuses that count as "currently on this PM/Agent's plate"
+ * for load-balancing the fallback routing below. */
+const ACTIVE_VISIT_STATUSES = [
+  'PENDING_ACCEPTANCE',
+  'ACCEPTED',
+  'PENDING_CUSTOMER_RECONFIRMATION',
+  'RESCHEDULE_REQUESTED',
+  'PENDING_PM_RECONFIRMATION',
+  'CONFIRMED',
+  'ACTIVE',
+];
+
+/**
+ * A property-less visit (no project, no linked property) has no PM to
+ * inherit — previously this left `project_manager_id` at null, which
+ * SiteVisitPolicy.canAccept can never match (it requires
+ * project_manager_id === the accepting employee's own id), so the visit sat
+ * in the queue forever, un-acceptable by anyone. This routes it instead:
+ * first via the company's explicit PMLocationAssignment table (already
+ * built for exactly this purpose — see pm-routing.service.ts — but never
+ * previously consulted during booking), then, if no location match exists,
+ * to whichever active PM/Agent currently has the fewest open visits.
+ */
+async function resolveFallbackPm(
+  companyId: number,
+  preferredLocation?: string | null,
+): Promise<number | null> {
+  if (preferredLocation) {
+    const assignment = await p.pMLocationAssignment.findFirst({
+      where: { company_id: companyId, location: preferredLocation },
+      orderBy: { id: 'asc' },
+    });
+    if (assignment) return assignment.pm_id;
+  }
+
+  // Only PROJECT_MANAGER and SALES_MANAGER actually hold
+  // site_visits.assign_agent in RolePermissionsMatrix — Agent does not, so a
+  // visit routed to one would repeat the exact bug this function exists to
+  // fix (SiteVisitPolicy.canAccept fails its permission check before even
+  // reaching the project_manager_id match).
+  const candidates = await p.employee.findMany({
+    where: {
+      company_id: companyId,
+      status: 'ACTIVE',
+      roles: { some: { role: { name: { in: [Roles.PROJECT_MANAGER, Roles.SALES_MANAGER] } } } },
+    },
+    select: { id: true },
+  });
+  if (candidates.length === 0) return null;
+
+  const loads = await Promise.all(
+    candidates.map(async (c) => ({
+      id: c.id,
+      count: await p.siteVisitBooking.count({
+        where: { project_manager_id: c.id, status: { in: ACTIVE_VISIT_STATUSES as any } },
+      }),
+    })),
+  );
+  loads.sort((a, b) => a.count - b.count);
+  return loads[0].id;
+}
 
 export async function generateNextBookingCode(): Promise<string> {
   const currentYear = new Date().getFullYear();
@@ -29,6 +92,7 @@ export async function generateNextBookingCode(): Promise<string> {
 export async function resolveVisitProject(
   data: any,
   companyId: number,
+  lead?: { preferred_location?: string | null },
 ): Promise<{ projectId: number; pmId: number | null }> {
   // Determine project from an explicit project_id or from the properties.
   let projectId: number | null = data.project_id ?? null;
@@ -58,11 +122,14 @@ export async function resolveVisitProject(
   }
 
   if (!projectId) {
-    return { projectId: 0, pmId: null };
+    const pmId = await resolveFallbackPm(companyId, lead?.preferred_location);
+    return { projectId: 0, pmId };
   }
 
   const project = await p.project.findFirst({ where: { id: projectId } });
-  return { projectId, pmId: project?.assigned_pm_id ?? null };
+  const pmId =
+    project?.assigned_pm_id ?? (await resolveFallbackPm(companyId, lead?.preferred_location));
+  return { projectId, pmId };
 }
 
 /** Helper: run an action through the workflow engine and persist the next status. */

@@ -88,6 +88,7 @@ export const SiteVisitCompleteSchema = z.object({
   outcomes: z.array(SiteVisitOutcomeSchema).default([]),
   feedback_notes: z.string().optional(),
   proof_photo_url: z.string().optional(),
+  rating: z.string().optional(),
 });
 export type SiteVisitCompleteInput = z.infer<typeof SiteVisitCompleteSchema>;
 

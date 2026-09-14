@@ -70,7 +70,7 @@ export class ProjectService {
 
   static async listProjects(
     user: TokenPayload,
-    filters: { status?: string },
+    filters: { status?: string; unassigned?: boolean },
     take: number = 50,
     skip: number = 0,
   ) {
@@ -78,6 +78,14 @@ export class ProjectService {
 
     if (filters.status) {
       whereCondition.status = filters.status;
+    }
+    // Mirrors Property's own ?unassigned=true (property.service.ts) — a
+    // Project has its own independent assigned_pm_id, not shared with its
+    // units, so an unassigned Project leaves every unit inside it without a
+    // routed PM too (see siteVisit routing, which resolves PM from the
+    // Project, not per-unit).
+    if (filters.unassigned) {
+      whereCondition.assigned_pm_id = null;
     }
 
     const cacheKey = `projects_${user.employeeId}_${JSON.stringify(filters)}_${take}_${skip}`;

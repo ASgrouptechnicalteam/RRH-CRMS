@@ -6,6 +6,7 @@ import { BookingPolicy } from '../policies/booking.policy';
 import { Roles } from '../shared';
 import { randomBytes } from 'crypto';
 import { WorkflowEngine } from '../workflows/workflowEngine';
+import { notifyEmployee } from '../utils/notifyEmployee';
 import {
   assertClaimable,
   claimInventoryLock,
@@ -106,19 +107,43 @@ interface InitiateBookingInput extends CreateBookingInput, BookingFormInput {
   };
 }
 
+// "Every project is a property": a booking is against exactly one of Property
+// or ProjectUnit (see services/inventory/reference.ts), so both must be
+// included — every caller that reads booking.property expecting it to be
+// populated needs the equivalent booking.project_unit branch too. Neither
+// getBookings nor getBookingById included ANY relation before this (not even
+// customer), so the booking list/detail screens were rendering blank
+// customer/property/payment fields for every booking.
+const BOOKING_DISPLAY_INCLUDE = {
+  customer: {
+    select: { id: true, customer_code: true, first_name: true, last_name: true, phone: true },
+  },
+  property: true,
+  project_unit: {
+    include: {
+      project: { select: { id: true, name: true, project_code: true, location: true, city: true } },
+    },
+  },
+  assigned_employee: { select: { id: true, employee_code: true, full_name: true } },
+} satisfies Prisma.BookingInclude;
+
 export class BookingService {
   /** List bookings scoped to the user's company. */
   static async getBookings(user: TokenPayload) {
     const bookings = await prisma.booking.findMany({
       where: { company_id: user.companyId },
       orderBy: { id: 'desc' },
+      include: BOOKING_DISPLAY_INCLUDE,
     });
     return bookings;
   }
 
   /** Fetch a single booking with company + policy scoping. */
   static async getBookingById(user: TokenPayload, id: number) {
-    const booking = await prisma.booking.findFirst({ where: { id } });
+    const booking = await prisma.booking.findFirst({
+      where: { id },
+      include: { ...BOOKING_DISPLAY_INCLUDE, payments: { orderBy: { payment_date: 'desc' } } },
+    });
     if (!booking) {
       throw new AppError(404, 'Booking not found');
     }
@@ -435,10 +460,19 @@ export class BookingService {
         });
       }
 
-      return updated;
+      return { updated, contributorIds: [...contributorIds] };
     });
 
-    return result;
+    if (result.contributorIds.length > 0) {
+      await notifyEmployee(result.contributorIds, {
+        type: 'BOOKING_CONFIRMED',
+        title: '✅ Booking Confirmed',
+        message: `Booking ${booking.booking_code} has been confirmed.`,
+        link: '/bookings',
+      });
+    }
+
+    return result.updated;
   }
 
   static async cancelBooking(user: TokenPayload, id: number, reason: string = 'Booking cancelled') {
@@ -470,6 +504,16 @@ export class BookingService {
         { exit_reason: reason },
       );
     }
+
+    if (booking.assigned_employee_id) {
+      await notifyEmployee(booking.assigned_employee_id, {
+        type: 'BOOKING_CANCELLED',
+        title: '🚫 Booking Cancelled',
+        message: `Booking ${booking.booking_code} was cancelled: ${reason}`,
+        link: '/bookings',
+      });
+    }
+
     return updated;
   }
 
@@ -636,6 +680,26 @@ export class BookingService {
       },
     });
 
+    const mds = await prisma.employee.findMany({
+      where: {
+        company_id: user.companyId,
+        status: 'ACTIVE',
+        roles: { some: { role: { name: Roles.MD } } },
+      },
+      select: { id: true },
+    });
+    if (mds.length > 0) {
+      await notifyEmployee(
+        mds.map((m) => m.id),
+        {
+          type: 'BOOKING_FORM_SUBMITTED',
+          title: '📋 Booking Awaiting Your Approval',
+          message: `Booking ${updated.booking_code} was submitted and needs your review.`,
+          link: '/bookings',
+        },
+      );
+    }
+
     return updated;
   }
 
@@ -741,6 +805,19 @@ export class BookingService {
         created_at: now,
       },
     });
+
+    const rejectRecipients = new Set<number>();
+    if ((booking as any).form_submitted_by_id)
+      rejectRecipients.add((booking as any).form_submitted_by_id);
+    if (booking.assigned_employee_id) rejectRecipients.add(booking.assigned_employee_id);
+    if (rejectRecipients.size > 0) {
+      await notifyEmployee([...rejectRecipients], {
+        type: 'BOOKING_FORM_REJECTED',
+        title: '❌ Booking Form Rejected',
+        message: `Booking ${booking.booking_code} was rejected by the MD: ${reason}`,
+        link: '/bookings',
+      });
+    }
 
     return updated;
   }

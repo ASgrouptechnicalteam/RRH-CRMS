@@ -30,8 +30,11 @@ export type SiteVisitOutcomeType = (typeof SiteVisitOutcome)[keyof typeof SiteVi
 
 export const SiteVisitCreateSchema = z.object({
   lead_id: z.number().int().positive(),
-  // §2: all properties in a single booking must belong to the same project.
+  // §2: all linked items (properties and/or project units) in a single
+  // booking must belong to the same project — a project unit always has
+  // one (its own), a standalone property may have none.
   property_ids: z.array(z.number().int().positive()).min(1).optional(),
+  project_unit_ids: z.array(z.number().int().positive()).min(1).optional(),
   project_id: z.number().int().positive().optional(),
   scheduled_date: z.string().datetime(),
   opportunity_id: z.number().int().positive().optional(),
@@ -63,6 +66,7 @@ export type SiteVisitEscalateInput = z.infer<typeof SiteVisitEscalateSchema>;
 export const SiteVisitRescheduleSchema = z.object({
   scheduled_date: blankAsAbsent(z.string().datetime().optional()),
   property_ids: z.array(z.number().int().positive()).min(1).optional(),
+  project_unit_ids: z.array(z.number().int().positive()).min(1).optional(),
 });
 export type SiteVisitRescheduleInput = z.infer<typeof SiteVisitRescheduleSchema>;
 
@@ -72,12 +76,19 @@ export const SiteVisitReconfirmSchema = z.object({
 });
 export type SiteVisitReconfirmInput = z.infer<typeof SiteVisitReconfirmSchema>;
 
-// Complete — one outcome row per linked property (outcome_reason required if NOT_INTERESTED)
-export const SiteVisitOutcomeSchema = z.object({
-  property_id: z.number().int().positive(),
-  outcome: z.enum(['INTERESTED', 'NOT_INTERESTED']),
-  outcome_reason: z.string().optional(),
-});
+// Complete — one outcome row per linked property or project unit
+// (outcome_reason required if NOT_INTERESTED). Exactly one of property_id /
+// project_unit_id, matching whichever SiteVisitProperty row this outcome is for.
+export const SiteVisitOutcomeSchema = z
+  .object({
+    property_id: z.number().int().positive().optional(),
+    project_unit_id: z.number().int().positive().optional(),
+    outcome: z.enum(['INTERESTED', 'NOT_INTERESTED']),
+    outcome_reason: z.string().optional(),
+  })
+  .refine((data) => !!data.property_id !== !!data.project_unit_id, {
+    message: 'Provide exactly one of property_id or project_unit_id',
+  });
 export type SiteVisitOutcomeInput = z.infer<typeof SiteVisitOutcomeSchema>;
 
 export const SiteVisitCompleteSchema = z.object({

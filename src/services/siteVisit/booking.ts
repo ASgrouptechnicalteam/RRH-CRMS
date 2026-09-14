@@ -56,9 +56,34 @@ export async function listVisits(
       project_manager: { select: { id: true, employee_code: true, full_name: true, phone: true } },
       assigned_agent: { select: { id: true, employee_code: true, full_name: true, phone: true } },
       property: { select: { id: true, property_code: true, title: true, status: true } },
+      project_unit: {
+        select: {
+          id: true,
+          unit_code: true,
+          unit_number: true,
+          flat_number: true,
+          villa_number: true,
+          plot_number: true,
+          sales_status: true,
+          project: { select: { id: true, name: true } },
+        },
+      },
       project: { select: { id: true, project_code: true, name: true, status: true } },
       site_visit_properties: {
-        include: { property: { select: { id: true, property_code: true, title: true } } },
+        include: {
+          property: { select: { id: true, property_code: true, title: true } },
+          project_unit: {
+            select: {
+              id: true,
+              unit_code: true,
+              unit_number: true,
+              flat_number: true,
+              villa_number: true,
+              plot_number: true,
+              project: { select: { id: true, name: true } },
+            },
+          },
+        },
       },
       reassignments: {
         orderBy: { created_at: 'asc' },
@@ -129,6 +154,11 @@ export async function bookVisit(user: TokenPayload, data: any) {
     : data.property_id
       ? [data.property_id]
       : [];
+  const projectUnitIds: number[] = Array.isArray(data.project_unit_ids)
+    ? data.project_unit_ids
+    : data.project_unit_id
+      ? [data.project_unit_id]
+      : [];
   if (propertyIds.length > 0) {
     const props = await p.property.findMany({
       where: { id: { in: propertyIds }, company_id: user.companyId },
@@ -136,16 +166,18 @@ export async function bookVisit(user: TokenPayload, data: any) {
     if (props.length !== propertyIds.length) {
       throw { status: 404, message: 'One or more properties not found' };
     }
-    // §2 constraint: same project.
-    const projects = new Set(props.map((pr: any) => pr.project_id).filter(Boolean) as number[]);
-    if (projects.size > 1) {
-      throw {
-        status: 400,
-        message: '§2: All properties in a single site visit must belong to the same project.',
-      };
+  }
+  if (projectUnitIds.length > 0) {
+    const units = await p.projectUnit.findMany({
+      where: { id: { in: projectUnitIds }, company_id: user.companyId },
+    });
+    if (units.length !== projectUnitIds.length) {
+      throw { status: 404, message: 'One or more project units not found' };
     }
   }
 
+  // §2 constraint (properties and units must share one project) is validated
+  // inside resolveVisitProject, which also resolves the PM this visit routes to.
   const { projectId, pmId } = await resolveVisitProject(data, user.companyId || 1, lead);
 
   return await p.$transaction(async (tx: import('@prisma/client').Prisma.TransactionClient) => {
@@ -164,6 +196,10 @@ export async function bookVisit(user: TokenPayload, data: any) {
     if (propertyIds.length > 0) {
       // Single property column kept for backward compatibility (first property).
       bookingData.property = { connect: { id: propertyIds[0] } };
+    } else if (projectUnitIds.length > 0) {
+      // Same single-column convenience field, unit side (only set when no
+      // property is linked — the column is one-or-the-other, same as Booking).
+      bookingData.project_unit = { connect: { id: projectUnitIds[0] } };
     }
     if (projectId) {
       bookingData.project = { connect: { id: projectId } };
@@ -171,10 +207,13 @@ export async function bookVisit(user: TokenPayload, data: any) {
 
     const booking = await tx.siteVisitBooking.create({ data: bookingData });
 
-    // §2 property links (multi-property outcome capture)
-    if (propertyIds.length > 0) {
+    // §2 property/unit links (multi-item outcome capture)
+    if (propertyIds.length > 0 || projectUnitIds.length > 0) {
       await tx.siteVisitProperty.createMany({
-        data: propertyIds.map((pid: number) => ({ visit_id: booking.id, property_id: pid })),
+        data: [
+          ...propertyIds.map((pid: number) => ({ visit_id: booking.id, property_id: pid })),
+          ...projectUnitIds.map((uid: number) => ({ visit_id: booking.id, project_unit_id: uid })),
+        ],
       });
     }
 
@@ -199,6 +238,7 @@ export async function bookVisit(user: TokenPayload, data: any) {
       include: {
         lead: true,
         property: true,
+        project_unit: { include: { project: { select: { id: true, name: true } } } },
         project: true,
         telecaller: true,
         project_manager: true,

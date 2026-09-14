@@ -247,7 +247,8 @@ export class LeadWorkflow implements DomainWorkflow {
       const opp = Array.isArray(opps) && opps.length > 0 ? opps[0] : entity?.opportunity || null;
       const expected = opp && (opp.expected_value ?? opp.expectedValue);
       const propertyId = opp && (opp.property_id ?? opp.propertyId);
-      if (expected === undefined || expected === null || !propertyId) {
+      const projectUnitId = opp && (opp.project_unit_id ?? opp.projectUnitId);
+      if (expected === undefined || expected === null || !(propertyId || projectUnitId)) {
         return {
           allowed: false,
           reason:

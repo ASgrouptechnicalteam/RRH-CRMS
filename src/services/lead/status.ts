@@ -299,9 +299,14 @@ export async function updateLeadStatus(
     if (newStatus === 'NEGOTIATION' && entityContext.opportunities.length === 0) {
       const interested = await p.siteVisitProperty.findFirst({
         where: { outcome: 'INTERESTED', visit: { lead_id: leadId } },
-        include: { property: true },
+        include: { property: true, project_unit: true },
       });
-      entityContext.opportunities = [{ expected_value: interested?.property?.final_price ?? null }];
+      entityContext.opportunities = [
+        {
+          expected_value:
+            interested?.property?.final_price ?? interested?.project_unit?.final_price ?? null,
+        },
+      ];
     }
   }
 
@@ -471,10 +476,17 @@ export async function updateLeadStatus(
 
       // §4: auto-create Opportunity when entering NEGOTIATION
       if (newStatus === 'NEGOTIATION') {
-        // Find the INTERESTED property outcome that unlocked NEGOTIATION (§1:
-        // SITE_VISIT_COMPLETED → NEGOTIATION requires ≥1 INTERESTED property).
+        // Find the INTERESTED property/unit outcome that unlocked NEGOTIATION
+        // (§1: SITE_VISIT_COMPLETED → NEGOTIATION requires ≥1 INTERESTED
+        // property). This used to query `outcome: 'INTERESTED'` with no lead
+        // scope at all, so it fetched whichever INTERESTED row happened to be
+        // first in the whole table (any lead, any company) rather than this
+        // lead's — the interestedLeadId===leadId check below only ever
+        // matched if that happened to be this lead's own row, meaning any
+        // pre-existing INTERESTED history for other leads silently produced
+        // a blank Opportunity (no property/unit, no expected_value) here.
         const interested = await tx.siteVisitProperty.findFirst({
-          where: { outcome: 'INTERESTED' },
+          where: { outcome: 'INTERESTED', visit: { lead_id: leadId } },
           include: { visit: true },
         });
         const interestedLeadId = interested?.visit?.lead_id;
@@ -484,6 +496,7 @@ export async function updateLeadStatus(
             lead,
             user.employeeId || 1,
             interested.property_id,
+            interested.project_unit_id,
           );
         } else {
           await OpportunityService.createFromLeadTx(tx, lead, user.employeeId || 1);

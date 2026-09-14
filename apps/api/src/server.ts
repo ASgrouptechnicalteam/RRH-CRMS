@@ -34,6 +34,7 @@ import propertyRoutes from './routes/properties';
 import opportunityRoutes from './routes/opportunities';
 import installmentRoutes from './routes/installment.routes';
 import projectRoutes from './routes/projects';
+import inventoryRoutes from './routes/inventory';
 import kioskAuthRoutes from './routes/kiosk-auth';
 import webauthnRoutes from './routes/webauthn';
 import feedbackRoutes from './routes/feedback';
@@ -218,6 +219,7 @@ if (mountInternal) {
   app.use('/api/v1/opportunities', opportunityRoutes);
   app.use('/api/v1/installments', installmentRoutes);
   app.use('/api/v1/projects', projectRoutes);
+  app.use('/api/v1/inventory', inventoryRoutes);
   app.use('/api/v1/site-visits', siteVisitRoutes);
   app.use('/api/v1/demos', demoRoutes);
   app.use('/api/v1/admin', adminRoutes);
@@ -315,12 +317,21 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 import { initJobs } from './jobs/scheduler';
+import { syncRolePermissions } from './authz/syncRolePermissions';
 
 // In a Serverless environment (like Vercel), we must not call app.listen() or start background cron jobs
 // because Vercel handles the port binding and crons keep the event loop alive, causing timeouts/crashes.
 if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(port, () => {
     logger.info(`[server]: API running at http://localhost:${port}`);
+
+    // Additive DB sync of RolePermissionsMatrix — without this, adding a
+    // permission to a role in code has no effect until someone remembers to
+    // run it manually (see syncRolePermissions.ts). Non-fatal: a transient
+    // DB hiccup here shouldn't crash a server that's otherwise fine.
+    syncRolePermissions().catch((err) =>
+      logger.error('[authz] Role permission sync failed on startup:', err),
+    );
 
     // Initialize background jobs
     initJobs();

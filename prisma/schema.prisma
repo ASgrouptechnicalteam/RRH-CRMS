@@ -91,6 +91,21 @@ enum ProjectType {
   PLOTTED
   APARTMENT
   VILLA
+  INDEPENDENT_HOUSE
+  ROW_HOUSE
+  AGRICULTURAL_LAND
+  FARM_HOUSE
+  COMMERCIAL_SHOP
+  COMMERCIAL_OFFICE
+  MIXED_RESIDENTIAL
+  MIXED_USE
+  TOWNSHIP
+  GATED_COMMUNITY
+  // MIXED/COMMERCIAL kept for backward compatibility with existing rows —
+  // spec item 1.6 replaced them with the finer-grained values above for new
+  // projects, but an enum value already in use by an existing row can't be
+  // dropped without a verified data migration first (and production access
+  // is off-limits here — see docs/ERROR-FIX-PLAN-2026-09-14.md 1.6).
   MIXED
   COMMERCIAL
   OTHER

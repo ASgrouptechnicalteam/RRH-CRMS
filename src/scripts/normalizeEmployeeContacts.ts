@@ -50,27 +50,43 @@ async function main() {
     },
   });
 
-  const phoneChanges: { id: number; code: string; from: string; to: string }[] = [];
-  const emailChanges: { id: number; code: string; from: string; to: string }[] = [];
+  // `to` is `string | null`: an empty/whitespace-only stored value normalises
+  // to NULL (matching the app-layer fix), not to itself. This distinction
+  // matters for the eventual UNIQUE constraint — MySQL exempts multiple NULLs
+  // from a unique index but NOT multiple '' values, so leaving "" in place
+  // would make the constraint fail to add even though nothing here looked
+  // like a "duplicate" (an early version of this script missed this: it only
+  // flagged truthy values as needing a change, so blank strings were quietly
+  // left as "" instead of being converted to NULL).
+  const phoneChanges: { id: number; code: string; from: string; to: string | null }[] = [];
+  const emailChanges: { id: number; code: string; from: string; to: string | null }[] = [];
 
   for (const e of employees) {
-    const normPhone = normaliseEmployeePhone(e.phone);
-    if (e.phone && normPhone && normPhone !== e.phone) {
-      phoneChanges.push({ id: e.id, code: e.employee_code, from: e.phone, to: normPhone });
+    if (e.phone !== null && e.phone !== undefined) {
+      const normPhone = normaliseEmployeePhone(e.phone);
+      if (normPhone !== e.phone) {
+        phoneChanges.push({ id: e.id, code: e.employee_code, from: e.phone, to: normPhone });
+      }
     }
-    const normEmail = normaliseEmployeeEmail(e.email);
-    if (e.email && normEmail && normEmail !== e.email) {
-      emailChanges.push({ id: e.id, code: e.employee_code, from: e.email, to: normEmail });
+    if (e.email !== null && e.email !== undefined) {
+      const normEmail = normaliseEmployeeEmail(e.email);
+      if (normEmail !== e.email) {
+        emailChanges.push({ id: e.id, code: e.employee_code, from: e.email, to: normEmail });
+      }
     }
   }
 
+  const fmt = (v: string | null) => (v === null ? '(blank/NULL)' : `"${v}"`);
+
   console.log(`Scanned ${employees.length} employees.`);
   console.log(`Phone values to normalise: ${phoneChanges.length}`);
-  for (const c of phoneChanges.slice(0, 20)) console.log(`  ${c.code}: "${c.from}" -> "${c.to}"`);
+  for (const c of phoneChanges.slice(0, 20))
+    console.log(`  ${c.code}: "${c.from}" -> ${fmt(c.to)}`);
   if (phoneChanges.length > 20) console.log(`  ... and ${phoneChanges.length - 20} more`);
 
   console.log(`Email values to normalise: ${emailChanges.length}`);
-  for (const c of emailChanges.slice(0, 20)) console.log(`  ${c.code}: "${c.from}" -> "${c.to}"`);
+  for (const c of emailChanges.slice(0, 20))
+    console.log(`  ${c.code}: "${c.from}" -> ${fmt(c.to)}`);
   if (emailChanges.length > 20) console.log(`  ... and ${emailChanges.length - 20} more`);
 
   if (APPLY) {
@@ -89,15 +105,16 @@ async function main() {
   }
 
   // --- Duplicate report, using the post-normalisation values ---
+  // (Uses `find(...)`'s presence, not `??`, to tell "no change queued" apart
+  // from "the queued change's target is legitimately null" — `null ?? x`
+  // would silently fall through to `x` and miss the conversion.)
   const byCompanyPhone = new Map<string, typeof employees>();
   const byCompanyEmail = new Map<string, typeof employees>();
   for (const e of employees) {
-    const phone = APPLY
-      ? normaliseEmployeePhone(e.phone)
-      : (phoneChanges.find((c) => c.id === e.id)?.to ?? e.phone);
-    const email = APPLY
-      ? normaliseEmployeeEmail(e.email)
-      : (emailChanges.find((c) => c.id === e.id)?.to ?? e.email);
+    const phoneChange = phoneChanges.find((c) => c.id === e.id);
+    const phone = APPLY ? normaliseEmployeePhone(e.phone) : phoneChange ? phoneChange.to : e.phone;
+    const emailChange = emailChanges.find((c) => c.id === e.id);
+    const email = APPLY ? normaliseEmployeeEmail(e.email) : emailChange ? emailChange.to : e.email;
     if (phone) {
       const key = `${e.company_id}:${phone}`;
       (byCompanyPhone.get(key) ?? byCompanyPhone.set(key, []).get(key)!).push(e);

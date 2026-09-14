@@ -22,8 +22,20 @@ const PROJECT_TYPE_LABELS: Record<string, string> = {
   PLOTTED: 'Plotted Development',
   APARTMENT: 'Apartments',
   VILLA: 'Villas',
-  MIXED: 'Mixed',
-  COMMERCIAL: 'Commercial',
+  INDEPENDENT_HOUSE: 'Independent Houses',
+  ROW_HOUSE: 'Row Houses',
+  AGRICULTURAL_LAND: 'Agricultural / Farm Land',
+  FARM_HOUSE: 'Farm Houses',
+  COMMERCIAL_SHOP: 'Commercial Shops',
+  COMMERCIAL_OFFICE: 'Commercial Office Space',
+  MIXED_RESIDENTIAL: 'Mixed Residential',
+  MIXED_USE: 'Mixed Use',
+  TOWNSHIP: 'Township',
+  GATED_COMMUNITY: 'Gated Community',
+  // Kept for backward compatibility with existing rows -- see the enum's own
+  // comment in schema.prisma (spec item 1.6).
+  MIXED: 'Mixed (legacy)',
+  COMMERCIAL: 'Commercial (legacy)',
   OTHER: 'Other',
 };
 

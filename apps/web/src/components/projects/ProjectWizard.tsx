@@ -70,8 +70,16 @@ const PROJECT_TYPES = [
   { value: 'PLOTTED', label: 'Plotted Development' },
   { value: 'APARTMENT', label: 'Apartment / Flats' },
   { value: 'VILLA', label: 'Villas' },
-  { value: 'MIXED', label: 'Mixed (Flats + Villas)' },
-  { value: 'COMMERCIAL', label: 'Commercial' },
+  { value: 'INDEPENDENT_HOUSE', label: 'Independent Houses' },
+  { value: 'ROW_HOUSE', label: 'Row Houses' },
+  { value: 'AGRICULTURAL_LAND', label: 'Agricultural / Farm Land' },
+  { value: 'FARM_HOUSE', label: 'Farm Houses' },
+  { value: 'COMMERCIAL_SHOP', label: 'Commercial Shops' },
+  { value: 'COMMERCIAL_OFFICE', label: 'Commercial Office Space' },
+  { value: 'MIXED_RESIDENTIAL', label: 'Mixed Residential (Flats + Villas)' },
+  { value: 'MIXED_USE', label: 'Mixed Use (Residential + Commercial)' },
+  { value: 'TOWNSHIP', label: 'Township' },
+  { value: 'GATED_COMMUNITY', label: 'Gated Community' },
   { value: 'OTHER', label: 'Other' },
 ];
 

@@ -48,7 +48,25 @@ export interface EmployeeListItem {
 }
 
 /** Project as returned by GET /projects (list + detail). */
-export type ProjectType = 'PLOTTED' | 'APARTMENT' | 'VILLA' | 'MIXED' | 'COMMERCIAL';
+export type ProjectType =
+  | 'PLOTTED'
+  | 'APARTMENT'
+  | 'VILLA'
+  | 'INDEPENDENT_HOUSE'
+  | 'ROW_HOUSE'
+  | 'AGRICULTURAL_LAND'
+  | 'FARM_HOUSE'
+  | 'COMMERCIAL_SHOP'
+  | 'COMMERCIAL_OFFICE'
+  | 'MIXED_RESIDENTIAL'
+  | 'MIXED_USE'
+  | 'TOWNSHIP'
+  | 'GATED_COMMUNITY'
+  // Kept for backward compatibility with existing rows — see the enum's own
+  // comment in schema.prisma (spec item 1.6).
+  | 'MIXED'
+  | 'COMMERCIAL'
+  | 'OTHER';
 export type ProjectAreaUnit =
   'SQFT' | 'SQYD' | 'SQM' | 'ACRE' | 'GUNTA' | 'CENT' | 'ANKANAM' | 'HECTARE';
 export type ProjectPriceBasis = 'CARPET' | 'BUILT_UP' | 'SUPER_BUILT_UP' | 'PLOT_AREA' | 'LUMPSUM';

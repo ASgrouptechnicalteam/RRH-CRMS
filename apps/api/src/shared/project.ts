@@ -1,7 +1,26 @@
 import { z } from 'zod';
 
 // Project Constants & Schemas
-const ProjectTypeEnum = z.enum(['PLOTTED', 'APARTMENT', 'VILLA', 'MIXED', 'COMMERCIAL', 'OTHER']);
+// MIXED/COMMERCIAL kept for backward compatibility with existing rows — see
+// the ProjectType enum's own comment in schema.prisma (spec item 1.6).
+const ProjectTypeEnum = z.enum([
+  'PLOTTED',
+  'APARTMENT',
+  'VILLA',
+  'INDEPENDENT_HOUSE',
+  'ROW_HOUSE',
+  'AGRICULTURAL_LAND',
+  'FARM_HOUSE',
+  'COMMERCIAL_SHOP',
+  'COMMERCIAL_OFFICE',
+  'MIXED_RESIDENTIAL',
+  'MIXED_USE',
+  'TOWNSHIP',
+  'GATED_COMMUNITY',
+  'MIXED',
+  'COMMERCIAL',
+  'OTHER',
+]);
 const AreaUnitEnum = z.enum(['SQFT', 'SQYD', 'SQM', 'ACRE', 'GUNTA', 'CENT', 'ANKANAM', 'HECTARE']);
 const PriceBasisEnum = z.enum(['CARPET', 'BUILT_UP', 'SUPER_BUILT_UP', 'PLOT_AREA', 'LUMPSUM']);
 

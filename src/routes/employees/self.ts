@@ -6,6 +6,12 @@ import { EmployeeSelfUpdateSchema } from '../../shared';
 import { encryptData, decryptData } from '../../utils/crypto';
 import { publicAssetUrl } from '../../utils/media';
 import { validateRequestBody } from '../../middleware/validate';
+import {
+  findEmployeeContactConflict,
+  employeeContactConflictMessage,
+  normaliseEmployeePhone,
+  normaliseEmployeeEmail,
+} from '../../services/employeeContact.service';
 import { memoryUpload, getStorageService } from '../../services/storage.service';
 
 const router = Router();
@@ -43,7 +49,7 @@ router.patch(
 
       const currentEmp = await prisma.employee.findUnique({
         where: { id: employeeId },
-        select: { bank_account_number: true },
+        select: { bank_account_number: true, company_id: true },
       });
 
       if (!currentEmp) {
@@ -52,10 +58,10 @@ router.patch(
 
       const updateData: any = {};
       if (full_name !== undefined) updateData.full_name = full_name;
-      if (phone !== undefined) updateData.phone = phone;
+      if (phone !== undefined) updateData.phone = normaliseEmployeePhone(phone);
       if (secondary_phone !== undefined) updateData.secondary_phone = secondary_phone;
       if (whatsapp_number !== undefined) updateData.whatsapp_number = whatsapp_number;
-      if (email !== undefined) updateData.email = email;
+      if (email !== undefined) updateData.email = normaliseEmployeeEmail(email);
       if (current_address !== undefined) updateData.current_address = current_address;
       if (permanent_address !== undefined) updateData.permanent_address = permanent_address;
       if (emergency_contact_name !== undefined)
@@ -79,6 +85,22 @@ router.patch(
         updateData.bank_account_number = encryptData(bank_account_number);
       if (bank_ifsc !== undefined) updateData.bank_ifsc = encryptData(bank_ifsc);
       if (bank_branch !== undefined) updateData.bank_branch = encryptData(bank_branch);
+
+      // Phone/email must stay unique within the company (QA 2026-09-14).
+      if (updateData.phone || updateData.email) {
+        const conflict = await findEmployeeContactConflict(prisma, {
+          companyId: currentEmp.company_id,
+          phone: updateData.phone ?? null,
+          email: updateData.email ?? null,
+          excludeEmployeeId: employeeId,
+        });
+        if (conflict) {
+          return res.status(409).json({
+            error: employeeContactConflictMessage(conflict),
+            conflict: { field: conflict.field, employee_code: conflict.employee.employee_code },
+          });
+        }
+      }
 
       const updatedEmp = await prisma.employee.update({
         where: { id: employeeId },

@@ -7,6 +7,12 @@ import { can } from '../../authz/authorization';
 import { notifyEmployee } from '../../utils/notifyEmployee';
 import { encryptData, decryptData } from '../../utils/crypto';
 import { validateRequestBody } from '../../middleware/validate';
+import {
+  findEmployeeContactConflict,
+  employeeContactConflictMessage,
+  normaliseEmployeePhone,
+  normaliseEmployeeEmail,
+} from '../../services/employeeContact.service';
 
 const router = Router();
 
@@ -57,10 +63,10 @@ router.patch(
 
       const updateData: any = {};
       if (body.full_name !== undefined) updateData.full_name = body.full_name;
-      if (body.phone !== undefined) updateData.phone = body.phone;
+      if (body.phone !== undefined) updateData.phone = normaliseEmployeePhone(body.phone);
       if (body.secondary_phone !== undefined) updateData.secondary_phone = body.secondary_phone;
       if (body.whatsapp_number !== undefined) updateData.whatsapp_number = body.whatsapp_number;
-      if (body.email !== undefined) updateData.email = body.email;
+      if (body.email !== undefined) updateData.email = normaliseEmployeeEmail(body.email);
       if (body.blood_group !== undefined) updateData.blood_group = body.blood_group;
       if (body.social_links !== undefined) updateData.social_links = body.social_links;
       if (body.current_address !== undefined) updateData.current_address = body.current_address;
@@ -118,6 +124,22 @@ router.patch(
       if (body.status !== undefined) updateData.status = body.status;
       if (body.attendance_required !== undefined)
         updateData.attendance_required = Boolean(body.attendance_required);
+
+      // Phone/email must stay unique within the company (QA 2026-09-14).
+      if (updateData.phone || updateData.email) {
+        const conflict = await findEmployeeContactConflict(prisma, {
+          companyId: targetEmployee.company_id,
+          phone: updateData.phone ?? null,
+          email: updateData.email ?? null,
+          excludeEmployeeId: employeeId,
+        });
+        if (conflict) {
+          return res.status(409).json({
+            error: employeeContactConflictMessage(conflict),
+            conflict: { field: conflict.field, employee_code: conflict.employee.employee_code },
+          });
+        }
+      }
 
       let shouldRevokeSessions = false;
       if (body.status !== undefined && body.status !== targetEmployee.status) {

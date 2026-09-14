@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Phone, MapPin, Building, Briefcase, Mail, Edit3, Camera, QrCode, Maximize2, X, AlertTriangle, FileText, CreditCard } from 'lucide-react';
+import {
+  User,
+  Phone,
+  MapPin,
+  Building,
+  Briefcase,
+  Mail,
+  Edit3,
+  Camera,
+  QrCode,
+  Maximize2,
+  X,
+  AlertTriangle,
+  FileText,
+  CreditCard,
+} from 'lucide-react';
 import { PerformanceScoreWidget } from '../performance/PerformanceScoreWidget';
 import { PerformanceHistoryTimeline } from '../performance/PerformanceHistoryTimeline';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
@@ -27,6 +42,25 @@ export const UserProfile: React.FC = () => {
       .catch(() => console.error('Failed to load QR code'));
   }, [fetchWithAuth]);
 
+  // The `user` object in AuthContext is only refreshed on login and on the
+  // background token-refresh cycle (see AuthContext.tsx's initAuth) — not on
+  // every visit to this page. So if an admin fills in an employee's phone/
+  // email/address/bank details after that employee's session started, the
+  // employee's own Profile page kept showing a stale "Not provided" for data
+  // that genuinely exists in the DB (confirmed via the admin's own employee-
+  // detail view showing it correctly) until their access token happened to
+  // expire and silently refresh. Fetch fresh on mount instead of waiting for
+  // that.
+  useEffect(() => {
+    fetchWithAuth(`${API_BASE_URL}/auth/me`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) updateUser(data.user);
+      })
+      .catch(() => console.error('Failed to refresh profile'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsQRFullscreen(false);
@@ -44,7 +78,6 @@ export const UserProfile: React.FC = () => {
     if (str.length <= visibleCount) return '••••';
     return '•'.repeat(str.length - visibleCount) + str.slice(-visibleCount);
   };
-
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +117,11 @@ export const UserProfile: React.FC = () => {
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-white p-1.5 shadow-xl border border-slate-100 relative overflow-hidden">
                 <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-navy-800 overflow-hidden">
                   {user.profileImageUrl ? (
-                    <img src={mediaUrl(user.profileImageUrl)} alt={user.fullName} className="w-full h-full object-cover" />
+                    <img
+                      src={mediaUrl(user.profileImageUrl)}
+                      alt={user.fullName}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <User className="w-10 h-10 sm:w-12 sm:h-12" />
                   )}
@@ -97,7 +134,13 @@ export const UserProfile: React.FC = () => {
               >
                 <Camera className="w-4 h-4" />
               </button>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+              />
             </div>
             <div className="flex-1 text-center sm:text-left pt-2 sm:pt-0">
               <h1 className="text-2xl font-bold text-slate-900">{user.fullName || 'Employee'}</h1>
@@ -123,7 +166,9 @@ export const UserProfile: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Employment Details */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Employment Details</h3>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Employment Details
+              </h3>
               <div className="flex items-center gap-3 text-sm text-slate-700">
                 <div className="w-8 h-8 rounded-lg bg-navy-100 text-navy-700 flex items-center justify-center shrink-0">
                   <Briefcase className="w-4 h-4" />
@@ -155,7 +200,9 @@ export const UserProfile: React.FC = () => {
 
             {/* Contact Info */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Contact Info</h3>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Contact Info
+              </h3>
               <div className="flex items-center gap-3 text-sm text-slate-700">
                 <div className="w-8 h-8 rounded-lg bg-navy-100 text-navy-700 flex items-center justify-center shrink-0">
                   <Phone className="w-4 h-4" />
@@ -174,21 +221,27 @@ export const UserProfile: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-500 font-semibold">Email Address</p>
-                  <p className="font-semibold text-slate-800 text-xs">{user.email || 'Not provided'}</p>
+                  <p className="font-semibold text-slate-800 text-xs">
+                    {user.email || 'Not provided'}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Address & KYC Details */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Address & KYC</h3>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Address & KYC
+              </h3>
               <div className="flex items-center gap-3 text-sm text-slate-700">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-500 font-semibold">Current Address</p>
-                  <p className="font-semibold text-slate-800 text-xs">{user.currentAddress || 'Not provided'}</p>
+                  <p className="font-semibold text-slate-800 text-xs">
+                    {user.currentAddress || 'Not provided'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-700">
@@ -198,7 +251,8 @@ export const UserProfile: React.FC = () => {
                 <div>
                   <p className="text-[10px] text-slate-500 font-semibold">PAN / Aadhaar</p>
                   <p className="font-semibold text-slate-800 text-xs">
-                    {user.panNumber ? maskString(user.panNumber) : 'No PAN'} / {user.aadhaarNumber ? maskString(user.aadhaarNumber) : 'No Aadhaar'}
+                    {user.panNumber ? maskString(user.panNumber) : 'No PAN'} /{' '}
+                    {user.aadhaarNumber ? maskString(user.aadhaarNumber) : 'No Aadhaar'}
                   </p>
                 </div>
               </div>
@@ -206,7 +260,9 @@ export const UserProfile: React.FC = () => {
 
             {/* Bank Details */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Bank Details</h3>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Bank Details
+              </h3>
               <div className="flex items-center gap-3 text-sm text-slate-700">
                 <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
                   <Building className="w-4 h-4" />
@@ -214,7 +270,9 @@ export const UserProfile: React.FC = () => {
                 <div>
                   <p className="text-[10px] text-slate-500 font-semibold">Account Info</p>
                   <p className="font-semibold text-slate-800 text-xs">
-                    {user.bankName ? `${user.bankName} - ${maskString(user.bankAccountNumber)}` : 'Not provided'}
+                    {user.bankName
+                      ? `${user.bankName} - ${maskString(user.bankAccountNumber)}`
+                      : 'Not provided'}
                   </p>
                 </div>
               </div>
@@ -246,7 +304,7 @@ export const UserProfile: React.FC = () => {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-lg font-bold text-slate-800">Attendance QR</h2>
             {qrToken && (
-              <button 
+              <button
                 onClick={() => setIsQRFullscreen(true)}
                 className="flex items-center gap-1.5 text-xs font-bold text-navy-600 hover:text-navy-800 transition-colors"
               >
@@ -263,7 +321,7 @@ export const UserProfile: React.FC = () => {
                   Scan this code at the Kiosk terminal to mark your daily attendance.
                 </p>
                 <div className="mt-4 pt-4 border-t border-slate-100 w-full text-center">
-                  <button 
+                  <button
                     onClick={() => setIsEmergencyModalOpen(true)}
                     className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center justify-center gap-1.5 mx-auto transition-colors px-3 py-2 rounded-lg hover:bg-rose-50"
                   >
@@ -294,7 +352,7 @@ export const UserProfile: React.FC = () => {
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           onClick={() => setIsPasswordModalOpen(false)}
         >
-          <div onClick={e => e.stopPropagation()}>
+          <div onClick={(e) => e.stopPropagation()}>
             <ChangePasswordModal />
           </div>
         </div>
@@ -306,20 +364,20 @@ export const UserProfile: React.FC = () => {
 
       {/* Fullscreen QR Modal */}
       {isQRFullscreen && qrToken && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in duration-200"
           onClick={() => setIsQRFullscreen(false)}
         >
-          <button 
+          <button
             onClick={() => setIsQRFullscreen(false)}
             className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
-          
-          <div 
+
+          <div
             className="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* The QR is deliberately large to ensure it can be scanned easily from a distance */}
             <QRCodeVisual value={qrToken} size={300} />
@@ -330,7 +388,7 @@ export const UserProfile: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <p className="text-white/60 mt-8 text-sm text-center max-w-sm">
             Hold this QR code up to the camera on the Kiosk terminal.
           </p>

@@ -826,7 +826,8 @@ export const staleRescheduleSweepJob = async () => {
 // 10. Lead Recovery Job (Mechanism 1 Nightly Sweep)
 export const leadRecoveryJob = async () => {
   logger.info('Executing nightly Lead Recovery Sweep...');
-  const { matchDroppedLeadsToProperty } = await import('../utils/matchingEngine');
+  const { matchDroppedLeadsToProperty, matchDroppedLeadsToUnit } =
+    await import('../utils/matchingEngine');
   const { LeadService } = await import('../services/lead.service');
 
   // Fetch all LIVE properties
@@ -838,10 +839,29 @@ export const leadRecoveryJob = async () => {
   let recoveredCount = 0;
   for (const prop of liveProperties) {
     const matchedLeadIds = await matchDroppedLeadsToProperty(prop.id);
-    for (const leadId of matchedLeadIds) {
-      // Re-use the same recovery trigger logic with its atomic guards
+    if (matchedLeadIds.length > 0) {
+      // triggerLeadRecoveryForProperty re-derives the same match list and
+      // applies its own atomic per-lead guards, so one call per property
+      // (not one per matched lead — matchedLeadIds.length was previously
+      // used as a call counter, which redundantly re-ran the match query
+      // that many times over).
       await LeadService.triggerLeadRecoveryForProperty(prop.id);
-      recoveredCount++;
+      recoveredCount += matchedLeadIds.length;
+    }
+  }
+
+  // "Every project is a property": the same nightly sweep for AVAILABLE
+  // units in VERIFIED projects (see matchDroppedLeadsToUnit).
+  const availableUnits = await prisma.projectUnit.findMany({
+    where: { sales_status: 'AVAILABLE', project: { verification_status: 'VERIFIED' } },
+    select: { id: true },
+  });
+
+  for (const unit of availableUnits) {
+    const matchedLeadIds = await matchDroppedLeadsToUnit(unit.id);
+    if (matchedLeadIds.length > 0) {
+      await LeadService.triggerLeadRecoveryForUnit(unit.id);
+      recoveredCount += matchedLeadIds.length;
     }
   }
 

@@ -115,6 +115,13 @@ export const ProjectLayoutRegionsSchema = z.object({
 });
 export type ProjectLayoutRegionsInput = z.infer<typeof ProjectLayoutRegionsSchema>;
 
-export const AddPropertyInterestSchema = z.object({
-  property_id: z.number().int().positive(),
-});
+// LeadPropertyInterest points at either a standalone Property or a
+// ProjectUnit — exactly one of the two (schema comment on the model).
+export const AddPropertyInterestSchema = z
+  .object({
+    property_id: z.number().int().positive().optional(),
+    project_unit_id: z.number().int().positive().optional(),
+  })
+  .refine((data) => !!data.property_id !== !!data.project_unit_id, {
+    message: 'Provide exactly one of property_id or project_unit_id',
+  });

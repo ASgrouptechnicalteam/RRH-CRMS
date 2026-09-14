@@ -33,6 +33,7 @@ import { sendWhatsAppProposal, addPropertyInterest, removePropertyInterest } fro
 import {
   distributeUnassignedPoolLeads,
   triggerLeadRecoveryForProperty,
+  triggerLeadRecoveryForUnit,
   recoverManualLead,
   recoverFreshLead,
 } from './lead/recovery';
@@ -56,6 +57,7 @@ export class LeadService {
   static distributeUnassignedPoolLeads = distributeUnassignedPoolLeads;
   static getLeadTasks = getLeadTasks;
   static triggerLeadRecoveryForProperty = triggerLeadRecoveryForProperty;
+  static triggerLeadRecoveryForUnit = triggerLeadRecoveryForUnit;
   static recoverManualLead = recoverManualLead;
   static recoverFreshLead = recoverFreshLead;
 }

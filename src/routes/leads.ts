@@ -350,7 +350,9 @@ router.get(
   },
 );
 
-// POST /api/v1/leads/:id/whatsapp-proposal/:propertyId - Send WhatsApp Proposal Payload & Log Activity
+// POST /api/v1/leads/:id/whatsapp-proposal/:propertyId - Send WhatsApp Proposal Payload & Log Activity.
+// ?kind=UNIT treats :propertyId as a project_unit_id instead (Matches tab
+// now surfaces project units alongside properties — see matchingEngine.ts).
 router.post(
   '/:id/whatsapp-proposal/:propertyId',
   authenticateToken,
@@ -358,9 +360,14 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      const propertyId = parseInt(req.params.propertyId, 10);
+      const id = parseInt(req.params.propertyId, 10);
+      const isUnit = req.query.kind === 'UNIT';
 
-      const result = await LeadService.sendWhatsAppProposal(req.user!, leadId, propertyId);
+      const result = await LeadService.sendWhatsAppProposal(
+        req.user!,
+        leadId,
+        isUnit ? { projectUnitId: id } : { propertyId: id },
+      );
 
       return res.status(200).json({
         message: 'WhatsApp proposal generated',
@@ -372,7 +379,7 @@ router.post(
   },
 );
 
-// POST /api/v1/leads/:id/properties - Add a property interest
+// POST /api/v1/leads/:id/properties - Add a property (or project unit) interest
 router.post(
   '/:id/properties',
   authenticateToken,
@@ -381,9 +388,12 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      const { property_id } = req.body;
+      const { property_id, project_unit_id } = req.body;
 
-      const interest = await LeadService.addPropertyInterest(req.user!, leadId, property_id);
+      const interest = await LeadService.addPropertyInterest(req.user!, leadId, {
+        propertyId: property_id,
+        projectUnitId: project_unit_id,
+      });
 
       return res.status(201).json({
         message: 'Property interest added successfully',
@@ -395,7 +405,8 @@ router.post(
   },
 );
 
-// DELETE /api/v1/leads/:id/properties/:propertyId - Remove a property interest
+// DELETE /api/v1/leads/:id/properties/:propertyId - Remove a property (or, with
+// ?kind=UNIT, a project unit) interest
 router.delete(
   '/:id/properties/:propertyId',
   authenticateToken,
@@ -403,9 +414,14 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      const propertyId = parseInt(req.params.propertyId, 10);
+      const id = parseInt(req.params.propertyId, 10);
+      const isUnit = req.query.kind === 'UNIT';
 
-      const result = await LeadService.removePropertyInterest(req.user!, leadId, propertyId);
+      const result = await LeadService.removePropertyInterest(
+        req.user!,
+        leadId,
+        isUnit ? { projectUnitId: id } : { propertyId: id },
+      );
 
       return res.status(200).json(result);
     } catch (error: any) {

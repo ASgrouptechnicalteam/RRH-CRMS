@@ -43,7 +43,10 @@ const UpdateRolePermissionsSchema = z.object({
  * names actually restored (a matrix entry with no matching Permission row
  * yet is silently skipped, same as before).
  */
-async function resetRoleToDefaults(tx: any, role: { id: number; name: string }): Promise<string[]> {
+async function resetRoleToDefaults(
+  tx: any,
+  role: { id: number; name: string },
+): Promise<string[]> {
   await tx.rolePermission.deleteMany({ where: { role_id: role.id } });
 
   const defaults = RolePermissionsMatrix[role.name as keyof typeof RolePermissionsMatrix] || [];

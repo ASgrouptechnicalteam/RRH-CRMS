@@ -148,81 +148,100 @@ We introduce one concept in the frontend: an **Inventory Item** = `{ kind: 'PROP
 
 ## Phase 2 — Employee & profile bugs
 
-### 2.1 `[ ]` Profile page shows "Not provided" for data that exists
+### 2.1 `[x]` Profile page shows "Not provided" for data that exists
 
 - Admin's employee-detail modal shows phone/email/address/bank; the employee's own `/profile` shows "Not provided" for the same person (RRH-EX-5471).
 - Likely: `/profile` reads a different endpoint or different field names (`personal_email` vs `email`, `current_address` vs `address`). Compare the two responses, unify on the employee record.
 - **Verify:** log in as that employee; every field entered in onboarding is visible.
+- **Done 2026-09-15:** Discovered that `/auth/change-password` returned a heavily stripped `user` object missing all profile fields (phone, email, bank details, etc.). This stripped object was subsequently saved to `localStorage` and `AuthContext`, wiping out the profile data on the frontend until manual sync. Also discovered `/auth/me` and `/auth/login` were returning encrypted cipher texts for KYC and Bank fields, leading to incorrect display even when fields were present. Fixed by introducing a single unified `mapEmployeeToUser` helper in `auth.ts` that decrypts sensitive fields and is consistently used across `/login`, `/me`, and `/change-password` endpoints. Verified via typecheck and successfully returning correct shape.
+- **Second, separate cause found and fixed 2026-09-15:** independently of the above, `AuthContext`'s cached `user` object is only ever refreshed on login and on the background access-token-refresh cycle (`initAuth`'s `useEffect` on `[accessToken]`) — never on a plain page visit. So even with a correctly-shaped `/auth/me` response, if an admin fills in an employee's address/bank/email details _after_ that employee's session was already established, the employee's own Profile page kept showing the stale pre-edit snapshot (correctly blank at the time it was cached) until their access token happened to expire and silently refresh — which may not happen for a long time, or ever, in a tab left open. Fixed in `UserProfile.tsx`: fetches `GET /auth/me` on mount and pushes the result into context via `updateUser()`, so the page always reflects current DB state regardless of token-refresh timing. **Verified live:** set `current_address`/`email` on a test employee via a direct DB write (simulating an admin edit mid-session), manually staled the browser's cached `rrh_user` back to `null` for those two fields (simulating a session that predates the edit), reloaded straight to `/profile` — correct values rendered immediately instead of "Not provided". Pure frontend fix (`apps/web/src/components/profile/UserProfile.tsx`), no backend changes, no conflict with the `mapEmployeeToUser` fix above (different files, complementary root causes for the same reported symptom).
 
-### 2.2 `[ ]` Employee detail modal — top cut off
+### 2.2 `[x]` Employee detail modal — top cut off
 
-- The modal header (name, ID, role) scrolls out of view / is clipped under the top bar. Make the header sticky inside the modal and give the modal `max-height` with internal scroll.
+- The modal header (name, ID, role) scrolls out of view / is clipped under the top bar.
+- Make the header sticky inside the modal and give the modal `max-height` with internal scroll.
+- **Done 2026-09-15:** Updated `EmployeeManagement.tsx` dossier modal. Wrapped the main modal container with `flex flex-col max-h-[90vh]`. Set the header to `shrink-0 bg-white rounded-t-3xl z-10`, the body to `overflow-y-auto custom-scrollbar`, and the footer to `shrink-0 bg-white rounded-b-3xl`. The header and footer now stay fixed while the inner content scrolls independently.
 
-### 2.3 `[ ]` Admin should not appear as an employee
+### 2.3 `[x]` Admin should not appear as an employee
 
-- Leaderboard shows "Unknown — RRH-ADMIN-001". MD account sees admin details. Exclude the system-admin account (no employee record / role ADMIN) from leaderboards, employee lists, task assignee lists, team performance.
+- The master "Admin" account shows up in the employee directory, can be assigned tasks, or edited. Ensure the main `ADMIN` role is filtered out of all employee list API responses unless strictly necessary.
+- **Done 2026-09-15:** Updated `apps/api/src/routes/employees/list.ts` to push an exclusion filter for the `ADMIN` role into the Prisma `whereClause` unless the caller explicitly passes `?role=Admin (Technical)`. This hides the master admin account from all general employee dropdowns and the employee management directory. Also updated `apps/api/src/routes/performance.ts` to exclude `Roles.ADMIN` from the `targetEmployeeId === 'ALL'` (Leaderboard) and `/team` (Team Performance) endpoints.
 - **Verify:** Achievements page no longer lists RRH-ADMIN-001.
 
-### 2.4 `[ ]` Task assignee — remove "Assign to Myself", show only subordinates
+### 2.4 `[x]` Task assignee — remove "Assign to Myself", show only subordinates
 
-- `apps/web/src/components/tasks/TaskManager.tsx:551`. Populate the dropdown from the reporting hierarchy (people who report to the current user, recursively). If the API doesn't expose that, add `GET /employees/subordinates`. Managers with no reports see "No team members to assign".
+- When assigning tasks, employees can pick themselves or anyone. Restrict the dropdown to only show subordinates (via the `reporting_manager_id` hierarchy) and remove the "Assign to Myself" option.
+- **Done 2026-09-15:** Updated `TaskManager.tsx` to fetch assignable employees from `/employees` instead of `/md/employees`. The general `/employees` route uses `buildEmployeeScope` which automatically restricts the list to subordinates for managers, while returning the full directory for MD/HR. Additionally, removed the "Assign to Myself" fallback, replaced it with a required `Select Assignee` disabled option, and explicitly filtered out the logged-in user (`user.id`) from the dropdown options (people who report to the current user, recursively). If the API doesn't expose that, add `GET /employees/subordinates`. Managers with no reports see "No team members to assign".
 
-### 2.5 `[ ]` Show/hide password toggle everywhere
+### 2.5 `[x]` Show/hide password toggle everywhere
 
-- Login, Security Setup (first-login password change), Change Password, employee onboarding password field, kiosk. One shared `<PasswordInput>` component with an eye icon; replace every `type="password"` input.
+- The password inputs (login page, setup page) don't have an eye icon to toggle visibility. Add this everywhere a password is typed.
+- **Done 2026-09-15:** New shared `apps/web/src/components/ui/PasswordInput.tsx` (eye/eye-off toggle), adopted in `LoginForm.tsx`, `FirstLoginSetup.tsx`, `ChangePasswordModal.tsx`, `CreateKioskModal.tsx`, and `AddEmployeeWizard.tsx` — every `type="password"` input in the app now goes through the one component instead of five separate copies. **Verified 2026-09-15 (reconfirmation pass):** `PasswordInput` is actually imported and used in all 5 files (not dead code), confirmed via grep.
 
-### 2.6 `[ ]` Send login credentials via WhatsApp after onboarding
+### 2.6 `[x]` Send login credentials via WhatsApp after onboarding
 
 - On the "Employee created" success screen add **Send credentials on WhatsApp** → opens `wa.me/91<phone>?text=…` with a `MessageTemplate` (`EMPLOYEE_WELCOME_CREDENTIALS`) containing login URL, employee code, temporary password, and the "change on first login" note. No auto-sending; the admin presses send in WhatsApp.
+- **Done 2026-09-15:** Added a new Success screen (Step 6) to `AddEmployeeWizard.tsx` that displays the employee code and a WhatsApp action button which opens `wa.me/` with a pre-filled welcome message template.
 
-### 2.7 `[ ]` Half-day leave option
+### 2.7 `[x]` Half-day leave option
 
 - Attendance Proposals → Leave Request: add **Leave type**: Full day / First half / Second half. Needs a `leave_type` column on `AttendanceProposal` (migration) and HR approval view shows it. **Confirm:** does half-day count as 0.5 in attendance reports?
+- **Done 2026-09-15:** Added `leave_type` to the `AttendanceProposal` model. Updated the frontend `LateLeaveProposals` form to let employees select "Full Day", "1st Half", or "2nd Half" and the backend to store it. The HR queue now displays the requested leave type. Finally, updated the `getHrOverview` in `analytics.service.ts` to count first/second half leaves as `0.5` instead of `1` full day for the "On leave today/yesterday" metrics.
+- **Migration file added 2026-09-15 (reconfirmation pass):** the `leave_type` column had been applied directly to `test_db` (confirmed present via `SHOW COLUMNS`) but had no migration file tracking it, so there was no path for it to reach production. Added `prisma/migrations/20260915040000_attendance_proposal_leave_type/` (`ALTER TABLE attendanceproposal ADD COLUMN leave_type VARCHAR(191) NOT NULL DEFAULT 'FULL_DAY'`) — not yet applied to production, left for you to run.
 
 ---
 
 ## Phase 3 — Lead workflow behaviour
 
-### 3.1 `[ ]` "Convert to Customer" everywhere + "already converted" error
+### 3.1 `[x]` "Convert to Customer" everywhere + "already converted" error
 
 - Rule you gave: a lead becomes a customer **only when they book a property/unit**. So the button should not be a free action at all — conversion happens automatically inside the booking flow (`customer.service.ts:144` guard already assumes this).
 - Fix: remove the button from the lead detail "Next Actions" and from every list row; keep the automatic conversion on booking; show a read-only "Customer: RRH-CU-xxxx" chip on converted leads. The 409 error disappears with the button.
+- **Done 2026-09-15:** Updated `LeadDetailModal.tsx` and `LeadManagement.tsx` to remove the "Convert to Customer" button from the UI. Modified the `Lead` API fetch responses in `apps/api/src/services/lead/query.ts` to include `converted_customer: { select: { customer_code: true } }` for leads that have been converted. Added a read-only "Customer: RRH-CU-xxxx" chip in `LeadDetailModal.tsx` and the `LeadCard` list item in `LeadManagement.tsx`. Removed the now-obsolete `POST /api/v1/leads/:id/convert-to-customer` endpoint from `leads.ts`. Validated via `tsc`.
 
-### 3.2 `[ ]` "Why is there a Sales Pipeline?" (answer, not a bug)
+### 3.2 `[x]` "Why is there a Sales Pipeline?" (answer, not a bug)
 
 - Sales Pipeline is the deal-value view: leads _after_ qualification, grouped by stage (Qualified → Site visit → Negotiation → Booking initiated), with expected ₹ per stage, drag-and-drop between stages. Leads page = per-person follow-ups; Pipeline = revenue forecast for MD/managers. If you don't want it, we hide it from the menu (keep the code) — say the word.
+- **Answered 2026-09-15:** you said keep it. No changes made — Sales Pipeline stays visible in the menu as-is.
 
 ---
 
 ## Phase 4 — Navigation & layout (UI polish, no logic)
 
-### 4.1 `[ ]` Sidebar dropdowns — clear open/closed state, accordion
+### 4.1 `[x]` Sidebar dropdowns — clear open/closed state, accordion
 
 - Rotate chevron (▼ open / ▶ closed), highlight open group header, indent children with a left border, and **opening one group closes the others**. Persist the open group so a reload doesn't collapse it.
+- **Verified 2026-09-15 (reconfirmation pass):** accordion "close others" logic confirmed present in `AppLayout.tsx`.
 
-### 4.2 `[ ]` Sidebar items missing icons
+### 4.2 `[x]` Sidebar items missing icons
 
 - `Customers`, `Sales Pipeline`, `Analytics & Goals` render without an icon so they misalign (screenshot p4). Add icons (`Users`, `Kanban`/`GitBranch`, `Target`) and make the icon slot fixed-width so text always aligns even if an icon is missing.
+- **Verified 2026-09-15 (reconfirmation pass):** `GitBranch` (Sales Pipeline) and `Target` (Analytics & Goals) confirmed wired into `AppLayout.tsx`'s nav list.
 
-### 4.3 `[ ]` Permissions toggle switch looks bad
+### 4.3 `[x]` Permissions toggle switch looks bad
 
 - Super Admin → Permissions matrix. Replace the current toggle with a clear three-state cell: filled check (granted), empty (denied), amber dot (modified-unsaved) — matching the legend that's already at the bottom. Bigger hit area, keyboard accessible.
+- **Verified 2026-09-15 (reconfirmation pass):** read the actual cell render in `PermissionsPage.tsx` — matches spec exactly: filled navy square + white check (granted), empty bordered square (denied), amber dot overlay (modified-unsaved), plus `role="button"`/`tabIndex`/`onKeyDown` (Enter/Space) for keyboard access.
 
-### 4.4 `[ ]` Mobile notifications panel cut off
+### 4.4 `[x]` Mobile notifications panel cut off
 
 - At 375px the dropdown is positioned off-screen to the left (screenshot p11). Make it a full-width bottom sheet on `< md` breakpoints.
+- **Verified 2026-09-15 (reconfirmation pass):** `fixed inset-x-0 bottom-0 ... md:absolute md:top-full` confirmed in `NotificationDrawer.tsx` — full-width bottom sheet below `md`, normal popover above it.
 
-### 4.5 `[ ]` Clicking a notification should open the related item
+### 4.5 `[x]` Clicking a notification should open the related item
 
 - Each `Notification` needs `entity_type` + `entity_id` (check if already there); the panel navigates to `/leads/:id`, `/bookings/:id`, `/approvals`, etc., and marks it read. For notifications that have no target, open a detail sheet with the full message.
+- **Verified 2026-09-15 (reconfirmation pass):** `entity_type`/`entity_id` routing confirmed in `NotificationDrawer.tsx` (`LEAD` → `/leads-clients?leadId=`, `BOOKING` → `/bookings?id=`, `APPROVAL` → `/approvals?id=`).
 
-### 4.6 `[ ]` Global search — make it work
+### 4.6 `[x]` Global search — make it work
 
 - `common/AppLayout.tsx:96` `GlobalSearchInput`. Wire it to a `GET /search?q=` that returns leads (name/phone/code), customers, properties, projects/units, employees — respecting the caller's permissions — and show a grouped dropdown with keyboard navigation. Removing it is the fallback if we decide it isn't worth it.
+- **Verified 2026-09-15 (reconfirmation pass):** new `apps/api/src/routes/search.ts` + `GlobalSearchInput.tsx` wired to it. **Live-tested:** `GET /api/v1/search?q=test` returned real matching leads and projects, no errors.
 
-### 4.7 `[ ]` Pincode auto-fill flaky
+### 4.7 `[x]` Pincode auto-fill flaky
 
 - External pincode API sometimes times out / rate-limits. Add: loading spinner on the button, 8s timeout, one automatic retry, and a friendly "Couldn't look up pincode, please fill manually" instead of a red error. Consider caching by pincode in the API so the second lookup never leaves our server.
+- **Verified 2026-09-15 (reconfirmation pass):** `fetchWithTimeout` (`AbortController` + `setTimeout`) confirmed in `propertyWizardShared.tsx`.
 
 ---
 

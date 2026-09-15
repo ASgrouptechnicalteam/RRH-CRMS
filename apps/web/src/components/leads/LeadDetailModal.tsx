@@ -162,6 +162,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const [isLoadingDemoAssignees, setIsLoadingDemoAssignees] = useState(false);
   const [demoHandlerId, setDemoHandlerId] = useState('');
   const [showDemoScheduleModal, setShowDemoScheduleModal] = useState(false);
+  const [demoScheduleSuccess, setDemoScheduleSuccess] = useState(false);
   const [demoScheduleDate, setDemoScheduleDate] = useState(
     new Date(Date.now() + 86400000).toISOString().slice(0, 16),
   );
@@ -199,6 +200,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   useEffect(() => {
     if (showDemoScheduleModal) {
       setDemoHandlerId('');
+      setDemoScheduleSuccess(false);
       fetchDemoAssignees();
     }
   }, [showDemoScheduleModal]);
@@ -1422,6 +1424,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                           showToast('Site visit booked successfully', 'success');
                           setScheduleSuccess(true);
                           onRefreshLeads();
+                          fetchLeadVisits(lead.id);
                         } else {
                           showToast(data.error || 'Failed to book site visit', 'error');
                         }
@@ -1446,105 +1449,151 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Schedule Demo</h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Pick a date and (optionally) who will run it.
-                </p>
+                <p className="text-sm text-slate-500 mt-1">Pick a date and who will run it.</p>
               </div>
               <button
-                onClick={() => setShowDemoScheduleModal(false)}
+                onClick={() => {
+                  setShowDemoScheduleModal(false);
+                  setDemoScheduleSuccess(false);
+                }}
                 className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-white border border-transparent hover:border-slate-200 transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-navy-500" />
-                  Date &amp; Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={demoScheduleDate}
-                  onChange={(e) => setDemoScheduleDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-navy-500" />
-                  Handler (optional)
-                </label>
-                <select
-                  value={demoHandlerId}
-                  onChange={(e) => setDemoHandlerId(e.target.value)}
-                  disabled={isLoadingDemoAssignees}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none disabled:opacity-50"
-                >
-                  <option value="" className="text-slate-800 bg-white">
-                    Auto-assign from project PM
-                  </option>
-                  {demoAssignees.map((a) => (
-                    <option key={a.id} value={a.id} className="text-slate-800 bg-white">
-                      {formatEmployeeLabel(a)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-2">
+            {demoScheduleSuccess ? (
+              <div className="p-8 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                </div>
+                <h4 className="text-xl font-bold text-navy-900">Demo Scheduled!</h4>
+                <p className="text-sm text-slate-500">
+                  The demo has been booked and is awaiting the handler's acceptance.
+                </p>
                 <button
-                  type="button"
-                  onClick={() => setShowDemoScheduleModal(false)}
-                  disabled={isSchedulingDemo}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-2xl transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={isSchedulingDemo}
-                  onClick={async () => {
-                    if (!demoScheduleDate) {
-                      showToast('Please select a date and time for this demo', 'error');
-                      return;
-                    }
-                    // demoHandlerId is optional — if not selected, backend auto-resolves
-                    // from the lead's project PM (territory-based auto-assign).
-                    setIsSchedulingDemo(true);
-                    try {
-                      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}/status`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          status: 'DEMO_SCHEDULED',
-                          demo_scheduled_at: new Date(demoScheduleDate).toISOString(),
-                          demo_handler_id: demoHandlerId ? parseInt(demoHandlerId, 10) : undefined,
-                        }),
-                      });
-                      const data = await res.json();
-                      if (res.ok) {
-                        showToast('Demo scheduled successfully', 'success');
-                        setShowDemoScheduleModal(false);
-                        onLeadPatched?.({ status: 'DEMO_SCHEDULED' });
-                        onRefreshLeads();
-                      } else {
-                        showToast(data.error || 'Failed to schedule demo', 'error');
-                      }
-                    } catch (err) {
-                      showToast('Error scheduling demo', 'error');
-                    } finally {
-                      setIsSchedulingDemo(false);
-                    }
+                  onClick={() => {
+                    sendWhatsAppMessage('DEMO_SCHEDULED', lead.phone, {
+                      customer_name: lead.customer_name,
+                      visit_date: new Date(demoScheduleDate).toLocaleDateString(),
+                      visit_time: new Date(demoScheduleDate).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
+                      lead_code: lead.lead_code,
+                    });
                   }}
-                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-2xl shadow-md transition-colors disabled:opacity-50"
+                  className="mt-4 px-6 py-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                 >
-                  {isSchedulingDemo ? 'Scheduling...' : 'Confirm Schedule'}
+                  <Send className="w-4 h-4" />
+                  Send Demo Scheduled WhatsApp
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDemoScheduleModal(false);
+                    setDemoScheduleSuccess(false);
+                  }}
+                  className="mt-2 px-6 py-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all"
+                >
+                  Close
                 </button>
               </div>
-            </div>
+            ) : (
+              <div className="p-6 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-navy-500" />
+                    Date &amp; Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={demoScheduleDate}
+                    onChange={(e) => setDemoScheduleDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-navy-500" />
+                    Handler <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={demoHandlerId}
+                    onChange={(e) => setDemoHandlerId(e.target.value)}
+                    disabled={isLoadingDemoAssignees}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none disabled:opacity-50"
+                  >
+                    <option value="" className="text-slate-800 bg-white">
+                      Select who will run this demo...
+                    </option>
+                    {demoAssignees.map((a) => (
+                      <option key={a.id} value={a.id} className="text-slate-800 bg-white">
+                        {formatEmployeeLabel(a)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDemoScheduleModal(false);
+                      setDemoScheduleSuccess(false);
+                    }}
+                    disabled={isSchedulingDemo}
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-2xl transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSchedulingDemo}
+                    onClick={async () => {
+                      if (!demoScheduleDate) {
+                        showToast('Please select a date and time for this demo', 'error');
+                        return;
+                      }
+                      if (!demoHandlerId) {
+                        showToast('Please select who will handle this demo', 'error');
+                        return;
+                      }
+                      setIsSchedulingDemo(true);
+                      try {
+                        const res = await fetchWithAuth(`${API_BASE_URL}/leads/${lead.id}/status`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            status: 'DEMO_SCHEDULED',
+                            demo_scheduled_at: new Date(demoScheduleDate).toISOString(),
+                            demo_handler_id: parseInt(demoHandlerId, 10),
+                          }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          showToast('Demo scheduled successfully', 'success');
+                          setDemoScheduleSuccess(true);
+                          onLeadPatched?.({ status: 'DEMO_SCHEDULED' });
+                          onRefreshLeads();
+                          fetchLeadDemos(lead.id);
+                          setDossierTab('DEMOS');
+                        } else {
+                          showToast(data.error || 'Failed to schedule demo', 'error');
+                        }
+                      } catch (err) {
+                        showToast('Error scheduling demo', 'error');
+                      } finally {
+                        setIsSchedulingDemo(false);
+                      }
+                    }}
+                    className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-2xl shadow-md transition-colors disabled:opacity-50"
+                  >
+                    {isSchedulingDemo ? 'Scheduling...' : 'Confirm Schedule'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -251,6 +251,13 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     path: '/pm/approvals',
     requiredAnyRole: [Roles.PROJECT_MANAGER, Roles.MD, Roles.ADMIN],
   },
+  {
+    id: 'action-center',
+    label: 'Action Center',
+    icon: ShieldCheck,
+    path: '/action-center',
+    requiredAnyRole: [Roles.MD, Roles.ADMIN],
+  },
   { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
   { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties' },
   { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects' },

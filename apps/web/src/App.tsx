@@ -110,6 +110,9 @@ const ComplaintManagement = lazy(() =>
 const PMApprovalsHub = lazy(() =>
   import('./components/approvals/PMApprovalsHub').then((m) => ({ default: m.PMApprovalsHub })),
 );
+const ActionCenter = lazy(() =>
+  import('./components/md/ActionCenter').then((m) => ({ default: m.ActionCenter })),
+);
 const TaskManager = lazy(() =>
   import('./components/tasks/TaskManager').then((m) => ({ default: m.TaskManager })),
 );
@@ -557,6 +560,10 @@ const AppShell: React.FC = () => {
       <Route path="/properties" element={<PropertyManagement />} />
       <Route path="/site-visits" element={<SiteVisitManagement />} />
       <Route path="/demos" element={<DemoManagement />} />
+      <Route
+        path="/action-center"
+        element={isMD ? <ActionCenter /> : <Navigate to="/" replace />}
+      />
       <Route path="/pm/approvals" element={<PMApprovalsHub />} />
       <Route path="/pm/site-visits/approvals" element={<PMApprovalsHub />} />
       <Route path="/pm/demos/approvals" element={<PMApprovalsHub />} />
@@ -724,6 +731,7 @@ const AppShell: React.FC = () => {
     '/system-control': 'System Control',
     '/kiosk-management': 'Kiosk Management',
     '/finance': 'Payments & Refunds',
+    '/action-center': 'Action Center',
     '/pm/approvals': 'PM Approvals',
     '/pm/site-visits/approvals': 'PM Approvals',
     '/complaints': 'Complaints Management',

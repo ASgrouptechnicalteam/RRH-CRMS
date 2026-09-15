@@ -99,6 +99,7 @@ export const Permissions = {
   BOOKINGS_UPDATE: 'bookings.update',
   BOOKINGS_CANCEL: 'bookings.cancel',
   BOOKINGS_CONFIRM: 'bookings.confirm',
+  BOOKINGS_MD_APPROVE: 'bookings.md_approve',
 
   PAYMENTS_CREATE: 'payments.create',
   PAYMENTS_READ: 'payments.read',
@@ -116,6 +117,7 @@ export const Permissions = {
   ATTENDANCE_LEAVE_PROPOSAL: 'attendance.leave_proposal',
   ATTENDANCE_PROPOSALS_QUEUE: 'attendance.proposals_queue',
   ATTENDANCE_LIVE_MONITOR: 'attendance.live_monitor',
+  ATTENDANCE_MANAGE: 'attendance.manage',
 
   REPORTS_CREATE: 'reports.create',
   REPORTS_READ_OWN: 'reports.read_own',

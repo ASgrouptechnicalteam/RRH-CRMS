@@ -219,19 +219,41 @@ export async function lookupPincode(
     showError({ message: 'Please enter a valid 6-digit pincode' });
     return;
   }
-  try {
-    const res = await fetch(`${PINCODE_API_BASE}/${pin}`);
-    const data = await res.json();
-    if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
-      const po = data[0].PostOffice[0];
-      onFound(po.State, po.District, po.Name, `${po.Name}, ${po.District}, ${po.State}`);
-      showToast('Location auto-filled from pincode', 'success');
-    } else {
-      showError({ message: 'Invalid pincode or no details found' });
+
+  const fetchWithTimeout = async (url: string, timeoutMs: number) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(id);
+      return response;
+    } catch (err) {
+      clearTimeout(id);
+      throw err;
     }
-  } catch {
-    showError({ message: 'Failed to fetch pincode details' });
-  }
+  };
+
+  const attemptFetch = async (retries = 1): Promise<void> => {
+    try {
+      const res = await fetchWithTimeout(`${PINCODE_API_BASE}/${pin}`, 8000);
+      const data = await res.json();
+      if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
+        const po = data[0].PostOffice[0];
+        onFound(po.State, po.District, po.Name, `${po.Name}, ${po.District}, ${po.State}`);
+        showToast('Location auto-filled from pincode', 'success');
+      } else {
+        showError({ message: 'Invalid pincode or no details found. Please enter manually.' });
+      }
+    } catch (err) {
+      if (retries > 0) {
+        await attemptFetch(retries - 1);
+      } else {
+        showError({ message: 'Failed to fetch pincode details. Please enter manually.' });
+      }
+    }
+  };
+
+  await attemptFetch();
 }
 
 export const SectionCard: React.FC<{

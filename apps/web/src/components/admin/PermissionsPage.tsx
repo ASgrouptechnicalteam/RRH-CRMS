@@ -20,6 +20,9 @@ import {
   Receipt,
   Shield,
   MoreHorizontal,
+  Undo2,
+  Redo2,
+  Check,
 } from 'lucide-react';
 import { Permissions, Roles } from '../../shared';
 
@@ -28,6 +31,13 @@ interface RolePermissions {
   name: string;
   is_system: boolean;
   permissions: string[];
+  // Whether this role has an earlier/later saved snapshot to step to —
+  // Undo/Redo work per role, on what's already been saved to the database,
+  // independent of "Save Changes" (which only ever moves FORWARD from the
+  // live state) and independent of "Reset to default" (which discards the
+  // whole history instead of stepping through it).
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 interface PermissionGroup {
@@ -265,6 +275,7 @@ export const PermissionsPage: React.FC = () => {
   >({});
   const [resettingRole, setResettingRole] = useState<string | null>(null);
   const [confirmResetRole, setConfirmResetRole] = useState<string | null>(null);
+  const [historyBusyRole, setHistoryBusyRole] = useState<string | null>(null);
 
   const fetchRoles = useCallback(async () => {
     setLoading(true);
@@ -437,6 +448,39 @@ export const PermissionsPage: React.FC = () => {
     }
   };
 
+  // Shared by undoRole/redoRole — same request shape, opposite direction and
+  // wording. Both act on what's already saved in the database (via the
+  // role's history of past Save/Reset actions), so they always re-fetch
+  // afterward exactly like resetRole does.
+  const stepRoleHistory = async (roleName: string, direction: 'undo' | 'redo') => {
+    setHistoryBusyRole(roleName);
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/admin/permissions/${encodeURIComponent(roleName)}/${direction}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        },
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Failed to ${direction}`);
+      }
+      await fetchRoles();
+      showToast(
+        direction === 'undo'
+          ? `Undid the last permission change for ${roleName}. Anyone in this role will need to log in again.`
+          : `Redid the last undone change for ${roleName}. Anyone in this role will need to log in again.`,
+        'success',
+      );
+    } catch (e: any) {
+      showError({ message: e.message });
+    } finally {
+      setHistoryBusyRole(null);
+    }
+  };
+
   const matchesSearch = (key: string): boolean => {
     if (!searchFilter) return true;
     const q = searchFilter.toLowerCase();
@@ -579,6 +623,34 @@ export const PermissionsPage: React.FC = () => {
                         <span className="text-[10px] font-semibold text-slate-400 normal-case tracking-normal">
                           {grantedCount}/{allPermissionKeys.length} granted
                         </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => stepRoleHistory(rn, 'undo')}
+                            disabled={!role?.canUndo || historyBusyRole === rn}
+                            title={
+                              role?.canUndo
+                                ? `Undo the last saved change to ${rn}`
+                                : 'No saved change to undo'
+                            }
+                            className="flex items-center gap-0.5 text-[10px] font-semibold text-slate-400 hover:text-navy-600 transition-colors disabled:opacity-30 disabled:hover:text-slate-400"
+                          >
+                            <Undo2 className="w-3 h-3" />
+                            Undo
+                          </button>
+                          <button
+                            onClick={() => stepRoleHistory(rn, 'redo')}
+                            disabled={!role?.canRedo || historyBusyRole === rn}
+                            title={
+                              role?.canRedo
+                                ? `Redo the last undone change to ${rn}`
+                                : 'Nothing to redo'
+                            }
+                            className="flex items-center gap-0.5 text-[10px] font-semibold text-slate-400 hover:text-navy-600 transition-colors disabled:opacity-30 disabled:hover:text-slate-400"
+                          >
+                            <Redo2 className="w-3 h-3" />
+                            Redo
+                          </button>
+                        </div>
                         <button
                           onClick={() => setConfirmResetRole(rn)}
                           disabled={resettingRole === rn}
@@ -641,36 +713,38 @@ export const PermissionsPage: React.FC = () => {
                             return (
                               <td
                                 key={rn}
-                                className="text-center py-2 px-1 border-b border-slate-100"
+                                onClick={() => {
+                                  if (!(role?.is_system && rn === Roles.ADMIN)) {
+                                    handleToggle(rn, permKey, !hasPerm);
+                                  }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    if (!(role?.is_system && rn === Roles.ADMIN)) {
+                                      handleToggle(rn, permKey, !hasPerm);
+                                    }
+                                  }
+                                }}
+                                className={`text-center py-1 px-1 border-b border-slate-100 group outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-navy-500 cursor-pointer hover:bg-slate-100 transition-colors ${
+                                  role?.is_system && rn === Roles.ADMIN
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : ''
+                                } ${isRoleModified ? 'bg-amber-50/50' : ''}`}
                               >
-                                <div className="flex justify-center">
-                                  <label className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors">
-                                    <input
-                                      type="checkbox"
-                                      checked={hasPerm}
-                                      onChange={(e) => handleToggle(rn, permKey, e.target.checked)}
-                                      className="sr-only"
-                                      disabled={role?.is_system && rn === Roles.ADMIN}
-                                    />
-                                    <span
-                                      className={`inline-block h-5 w-9 rounded-full transition-colors ${
-                                        hasPerm ? 'bg-navy-600' : 'bg-slate-300'
-                                      } ${isRoleModified ? 'ring-2 ring-amber-400' : ''} ${
-                                        role?.is_system && rn === Roles.ADMIN
-                                          ? 'opacity-50 cursor-not-allowed'
-                                          : ''
-                                      }`}
-                                    >
-                                      <span
-                                        className="inline-block h-4 w-4 transform rounded-full bg-white shadow ring-1 transition-transform"
-                                        style={{
-                                          transform: hasPerm
-                                            ? 'translateX(20px)'
-                                            : 'translateX(4px)',
-                                        }}
-                                      />
-                                    </span>
-                                  </label>
+                                <div className="flex justify-center items-center h-full w-full relative py-1">
+                                  {hasPerm ? (
+                                    <div className="w-5 h-5 rounded bg-navy-600 flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 group-active:scale-95">
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-5 h-5 rounded border-2 border-slate-300 bg-white transition-transform group-hover:scale-105 group-active:scale-95" />
+                                  )}
+                                  {isRoleModified && (
+                                    <div className="absolute top-1/2 right-2 -translate-y-1/2 w-2 h-2 rounded-full bg-amber-500 shadow-sm" />
+                                  )}
                                 </div>
                               </td>
                             );
@@ -695,17 +769,19 @@ export const PermissionsPage: React.FC = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-slate-500">
+      <div className="flex items-center gap-4 text-xs text-slate-500 mt-4">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-navy-600 rounded-full"></div>
+          <div className="w-4 h-4 rounded bg-navy-600 flex items-center justify-center text-white">
+            <Check className="w-3 h-3 stroke-[3]" />
+          </div>
           <span>Granted</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-slate-300 rounded-full"></div>
+          <div className="w-4 h-4 rounded border-2 border-slate-300 bg-white"></div>
           <span>Denied / Default</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-amber-400 rounded-full ring-2 ring-amber-300"></div>
+          <div className="w-2 h-2 rounded-full bg-amber-500 shadow-sm"></div>
           <span>Modified (not saved)</span>
         </div>
       </div>

@@ -75,7 +75,7 @@ router.post(
   validateRequestBody(LeaveProposalSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { start_date, end_date, reason } = req.body;
+      const { start_date, end_date, reason, leave_type = 'FULL_DAY' } = req.body;
       if (!start_date || !reason) {
         return res.status(400).json({ error: 'Start date and reason are required' });
       }
@@ -96,6 +96,7 @@ router.post(
         data: {
           employee_id: req.user!.employeeId,
           type: 'LEAVE',
+          leave_type,
           target_date: new Date(`${start_date}T00:00:00+05:30`),
           reason: reason,
           status: 'PENDING',
@@ -111,6 +112,7 @@ router.post(
           entity_id: proposal.id,
           new_value: JSON.stringify({
             type: 'LEAVE',
+            leave_type,
             target_date: proposal.target_date,
             end_date,
             reason,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Building } from 'lucide-react';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
@@ -10,10 +11,14 @@ interface CreateKioskModalProps {
   onSuccess: () => void;
 }
 
-export const CreateKioskModal: React.FC<CreateKioskModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const CreateKioskModal: React.FC<CreateKioskModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}) => {
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
-  
+
   const [branches, setBranches] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingBranches, setFetchingBranches] = useState(false);
@@ -86,16 +91,20 @@ export const CreateKioskModal: React.FC<CreateKioskModalProps> = ({ isOpen, onCl
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <h2 className="text-lg font-bold text-slate-800">Create Kiosk Terminal</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto">
           <form id="create-kiosk-form" onSubmit={handleSubmit} className="space-y-4">
-            
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Branch <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Branch <span className="text-rose-500">*</span>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Building className="h-4 w-4 text-slate-400" />
@@ -108,15 +117,19 @@ export const CreateKioskModal: React.FC<CreateKioskModalProps> = ({ isOpen, onCl
                   disabled={fetchingBranches}
                 >
                   <option value="">Select a branch</option>
-                  {branches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Terminal Label <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Terminal Label <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="text"
                 required
@@ -128,7 +141,9 @@ export const CreateKioskModal: React.FC<CreateKioskModalProps> = ({ isOpen, onCl
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Username <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Username <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="text"
                 required
@@ -140,18 +155,18 @@ export const CreateKioskModal: React.FC<CreateKioskModalProps> = ({ isOpen, onCl
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password <span className="text-rose-500">*</span></label>
-              <input
-                type="password"
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Password <span className="text-rose-500">*</span>
+              </label>
+              <PasswordInput
                 required
                 minLength={8}
                 placeholder="Minimum 8 characters"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500 focus:border-navy-500 text-sm outline-none transition-all"
+                className="w-full px-3 py-2 pr-10 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500 focus:border-navy-500 text-sm outline-none transition-all"
               />
             </div>
-
           </form>
         </div>
 

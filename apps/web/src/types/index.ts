@@ -379,6 +379,7 @@ export interface LeadListItem {
   referral_person_name?: string | null;
   activities?: LeadActivity[];
   can_edit?: boolean;
+  converted_customer?: { customer_code: string } | null;
 }
 
 export interface LeadActivity {
@@ -798,13 +799,14 @@ export interface PendingVerificationItem extends PropertyListItem {}
 /** Notifications for the notification drawer. */
 export interface NotificationItem {
   id: number;
-  employee_id?: number;
-  type?: string;
-  title?: string;
-  message?: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
   link?: string;
-  is_read?: boolean;
-  created_at?: ISODateTime;
+  entity_type?: string;
+  entity_id?: number;
+  created_at: string;
 }
 
 /** Kiosk QR scan result. */

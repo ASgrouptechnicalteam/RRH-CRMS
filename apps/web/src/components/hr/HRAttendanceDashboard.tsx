@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, History, Activity, Search, ChevronRight } from 'lucide-react';
+import { CalendarCheck, History, Activity, Search, ChevronRight, Settings2 } from 'lucide-react';
 import { LiveAttendanceMonitor } from './LiveAttendanceMonitor';
 import { AttendanceHistoryLog } from './AttendanceHistoryLog';
+import { AttendanceManagement } from './AttendanceManagement';
 import { EmployeeAttendanceSummary } from './EmployeeAttendanceSummary';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { EmployeeListItem } from '../../types';
+import { Permissions } from '../../shared';
 
 export const HRAttendanceDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'LIVE_TODAY' | 'HISTORY'>('LIVE_TODAY');
+  const { user, fetchWithAuth } = useAuth();
+  const canManage = user?.permissions?.includes(Permissions.ATTENDANCE_MANAGE);
+  const [activeTab, setActiveTab] = useState<'LIVE_TODAY' | 'HISTORY' | 'MANAGE'>('LIVE_TODAY');
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState<{id: number; name: string} | null>(null);
-  const { fetchWithAuth } = useAuth();
+  const [selectedEmployee, setSelectedEmployee] = useState<{ id: number; name: string } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,10 +37,13 @@ export const HRAttendanceDashboard: React.FC = () => {
     fetchEmployees();
   }, []);
 
-  const filteredEmployees = employees.filter(e => {
+  const filteredEmployees = employees.filter((e) => {
     const name = e.full_name || e.fullName || '';
     const code = e.employee_code || e.employeeCode || '';
-    return name.toLowerCase().includes(search.toLowerCase()) || code.toLowerCase().includes(search.toLowerCase());
+    return (
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      code.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
   return (
@@ -47,7 +55,8 @@ export const HRAttendanceDashboard: React.FC = () => {
           <h1 className="text-2xl font-extrabold tracking-tight">Attendance Hub</h1>
         </div>
         <p className="text-sm text-navy-200/80 max-w-2xl">
-          Monitor real-time punches, view individual monthly attendance summaries, and search the global history log.
+          Monitor real-time punches, view individual monthly attendance summaries, and search the
+          global history log.
         </p>
       </div>
 
@@ -67,6 +76,15 @@ export const HRAttendanceDashboard: React.FC = () => {
           <History className="w-4 h-4" />
           Global History Log
         </button>
+        {canManage && (
+          <button
+            onClick={() => setActiveTab('MANAGE')}
+            className={`pb-4 px-4 font-semibold text-sm transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'MANAGE' ? 'border-navy-600 text-navy-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <Settings2 className="w-4 h-4" />
+            Manage Records
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -80,7 +98,9 @@ export const HRAttendanceDashboard: React.FC = () => {
               <div className="p-5 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-slate-800 text-lg">Employee Directory</h3>
-                  <p className="text-xs text-slate-500">Select an employee to view their individual monthly attendance calculations.</p>
+                  <p className="text-xs text-slate-500">
+                    Select an employee to view their individual monthly attendance calculations.
+                  </p>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
@@ -88,7 +108,7 @@ export const HRAttendanceDashboard: React.FC = () => {
                     type="text"
                     placeholder="Search by name or code..."
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                     className="pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 outline-none w-full sm:w-64"
                   />
                 </div>
@@ -96,20 +116,36 @@ export const HRAttendanceDashboard: React.FC = () => {
 
               <div className="p-0">
                 {loading ? (
-                  <div className="p-8 text-center text-slate-500 animate-pulse">Loading employees...</div>
+                  <div className="p-8 text-center text-slate-500 animate-pulse">
+                    Loading employees...
+                  </div>
                 ) : filteredEmployees.length === 0 ? (
                   <div className="p-8 text-center text-slate-500">No employees found.</div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 border-t border-slate-100">
-                    {filteredEmployees.map(emp => (
+                    {filteredEmployees.map((emp) => (
                       <button
                         key={emp.id}
-                        onClick={() => setSelectedEmployee({ id: emp.id, name: emp.full_name || emp.fullName || emp.employee_code || emp.employeeCode || 'Unknown' })}
+                        onClick={() =>
+                          setSelectedEmployee({
+                            id: emp.id,
+                            name:
+                              emp.full_name ||
+                              emp.fullName ||
+                              emp.employee_code ||
+                              emp.employeeCode ||
+                              'Unknown',
+                          })
+                        }
                         className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors md:border-b md:border-r border-slate-100 last:border-b-0 text-left"
                       >
                         <div>
-                          <p className="font-bold text-slate-800">{emp.full_name || emp.fullName}</p>
-                          <p className="text-xs text-slate-500 font-mono mt-0.5">{emp.employee_code || emp.employeeCode}</p>
+                          <p className="font-bold text-slate-800">
+                            {emp.full_name || emp.fullName}
+                          </p>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">
+                            {emp.employee_code || emp.employeeCode}
+                          </p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-slate-300" />
                       </button>
@@ -121,9 +157,9 @@ export const HRAttendanceDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'HISTORY' && (
-          <AttendanceHistoryLog />
-        )}
+        {activeTab === 'HISTORY' && <AttendanceHistoryLog />}
+
+        {activeTab === 'MANAGE' && canManage && <AttendanceManagement />}
       </div>
 
       {/* Modal */}

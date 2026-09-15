@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Lock, User, Key, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, Key, ShieldCheck, AlertCircle } from 'lucide-react';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
@@ -11,7 +12,7 @@ export const FirstLoginSetup: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +34,7 @@ export const FirstLoginSetup: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/auth/change-password`, {
         method: 'POST',
@@ -57,7 +58,7 @@ export const FirstLoginSetup: React.FC = () => {
         toUserFacingError({ message: e instanceof Error ? e.message : String(e), body: e }),
       );
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -82,35 +83,29 @@ export const FirstLoginSetup: React.FC = () => {
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
               Current (Default) Password
             </label>
-            <div className="relative">
-              <Key className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
-                placeholder="Enter current password"
-              />
-            </div>
+            <PasswordInput
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full p-3 pl-11 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+              placeholder="Enter current password"
+              icon={<Key className="w-5 h-5" />}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
               New Password
             </label>
-            <div className="relative">
-              <Lock className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
-                placeholder="8+ chars, upper, lower, number, symbol"
-                minLength={8}
-              />
-            </div>
+            <PasswordInput
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full p-3 pl-11 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+              placeholder="8+ chars, upper, lower, number, symbol"
+              minLength={8}
+              icon={<Lock className="w-5 h-5" />}
+            />
             <p className="text-[11px] text-slate-400 mt-1">
               Must include an uppercase letter, a lowercase letter, a number, and a special
               character.
@@ -121,27 +116,24 @@ export const FirstLoginSetup: React.FC = () => {
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
               Confirm New Password
             </label>
-            <div className="relative">
-              <CheckCircle2 className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
-                placeholder="Type new password again"
-                minLength={8}
-              />
-            </div>
+            <PasswordInput
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-3 pl-11 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500"
+              placeholder="Confirm new password"
+              minLength={8}
+              icon={<Lock className="w-5 h-5" />}
+            />
           </div>
 
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full py-3 bg-navy-700 hover:bg-navy-800 text-white font-bold rounded-xl shadow-md transition-colors disabled:opacity-70 flex justify-center items-center gap-2"
             >
-              {isLoading ? 'Updating...' : 'Update Password & Continue'}
+              {loading ? 'Updating...' : 'Update Password & Continue'}
             </button>
           </div>
         </form>

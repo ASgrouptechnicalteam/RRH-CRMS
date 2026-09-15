@@ -268,14 +268,16 @@ const AppShell: React.FC = () => {
     if (accessToken) {
       prefetchMainModules();
     }
-    // Auto-prompt push notifications on login if not already decided
-    if (accessToken && isSupported && permission === 'default') {
-      const timer = setTimeout(() => {
-        subscribe();
-      }, 2000); // Wait 2s after login so it's not immediately jarring
-      return () => clearTimeout(timer);
-    }
-  }, [accessToken, isSupported, permission, subscribe]);
+    // Deliberately NOT auto-calling subscribe() here. Notification.
+    // requestPermission() only shows the real browser prompt when it's
+    // triggered by a genuine user gesture (a click) — called from a timer
+    // like this, browsers either silently no-op it or downgrade it to a
+    // barely-visible address-bar chip instead of the actual dialog, and can
+    // even penalize the origin's future *real* gesture-triggered requests
+    // for looking automated. The amber "Enable Notifications" banner below
+    // (rendered whenever permission === 'default') is what actually asks —
+    // its onClick={subscribe} is a real user gesture.
+  }, [accessToken]);
 
   // Report Exemption Logic (for logout gate only — attendance gating removed)
   const isExemptFromReport = user?.roles?.some(

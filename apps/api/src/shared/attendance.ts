@@ -41,7 +41,8 @@ export type LateProposalInput = z.infer<typeof LateProposalSchema>;
 // Leave Proposal Schema (>= 1 day advance)
 export const LeaveProposalSchema = z.object({
   start_date: z.string().min(1, 'Start date is required'),
-  end_date: z.string().min(1, 'End date is required'),
+  end_date: z.string().nullable().optional(),
+  leave_type: z.enum(['FULL_DAY', 'FIRST_HALF', 'SECOND_HALF']).optional(),
   reason: z.string().min(5, 'Reason must be at least 5 characters'),
 });
 
@@ -58,3 +59,27 @@ export const AttendanceHolidaySchema = z.object({
   name: z.string(),
   description: z.string().optional(),
 });
+
+const attendanceStatusValues = Object.values(AttendanceStatus) as [string, ...string[]];
+
+// Manual attendance record creation — the kiosk-is-down fallback. Requires a
+// reason so there's always an audit trail explaining why a record exists
+// with no QR scan behind it.
+export const AdminAttendanceCreateSchema = z.object({
+  employee_id: z.number().int().positive(),
+  check_in_at: z.string().min(1, 'Check-in time is required'),
+  check_out_at: z.string().optional(),
+  status: z.enum(attendanceStatusValues),
+  notes: z.string().min(1, 'A reason is required when adding a record manually'),
+});
+export type AdminAttendanceCreateInput = z.infer<typeof AdminAttendanceCreateSchema>;
+
+// Manual attendance record correction — same "kiosk is down / kiosk got it
+// wrong" fallback, applied to an existing record instead of a new one.
+export const AdminAttendanceUpdateSchema = z.object({
+  status: z.enum(attendanceStatusValues).optional(),
+  check_in_at: z.string().optional(),
+  check_out_at: z.string().nullable().optional(),
+  notes: z.string().optional(),
+});
+export type AdminAttendanceUpdateInput = z.infer<typeof AdminAttendanceUpdateSchema>;

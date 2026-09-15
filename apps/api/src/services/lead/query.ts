@@ -49,6 +49,7 @@ export async function getLeads(user: TokenPayload, take: number = 20, skip: numb
         include: { actor: { select: { id: true, employee_code: true, full_name: true } } },
       },
       preferred_locations: { orderBy: { sort_order: 'asc' } },
+      converted_customer: { select: { customer_code: true } },
     },
     orderBy: { created_at: 'desc' },
   });
@@ -86,6 +87,7 @@ export async function getLeadById(user: TokenPayload, leadId: number) {
         include: { actor: { select: { id: true, employee_code: true, full_name: true } } },
       },
       preferred_locations: { orderBy: { sort_order: 'asc' } },
+      converted_customer: { select: { customer_code: true } },
     },
   });
   if (!lead) {

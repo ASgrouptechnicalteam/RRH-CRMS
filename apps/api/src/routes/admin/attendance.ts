@@ -1,9 +1,14 @@
 import { logger } from '../../utils/logger';
 import { Router, Response } from 'express';
 import { prisma } from '../../lib/prisma';
-import { authenticateToken, AuthenticatedRequest, requireRole } from '../../middleware/auth';
-import { Roles, AttendanceStatus, AttendanceStatusType } from '../../shared';
-import { getISTComponents } from '../../utils/time';
+import { authenticateToken, AuthenticatedRequest } from '../../middleware/auth';
+import { requireAuthz } from '../../middleware/authz';
+import { validateRequestBody } from '../../middleware/validate';
+import {
+  Permissions,
+  AdminAttendanceCreateSchema,
+  AdminAttendanceUpdateSchema,
+} from '../../shared';
 
 const router = Router();
 const p = prisma;
@@ -12,7 +17,7 @@ const p = prisma;
 router.get(
   '/attendance/search',
   authenticateToken,
-  requireRole([Roles.MD, Roles.ADMIN]),
+  requireAuthz(Permissions.ATTENDANCE_MANAGE),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { search, status, startDate, endDate, page = '1', limit = '50' } = req.query;
@@ -78,11 +83,74 @@ router.get(
   },
 );
 
+// POST /api/v1/admin/attendance — create a manual attendance record. The
+// kiosk-is-down fallback: HR/MD/Admin can log a punch by hand for an
+// employee who has no record at all for that day, instead of the day just
+// showing as an unexplained absence.
+router.post(
+  '/attendance',
+  authenticateToken,
+  requireAuthz(Permissions.ATTENDANCE_MANAGE),
+  validateRequestBody(AdminAttendanceCreateSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { employee_id, check_in_at, check_out_at, status, notes } = req.body;
+
+      const employee = await p.employee.findFirst({
+        where: { id: employee_id, company_id: req.user!.companyId },
+        select: { id: true, full_name: true },
+      });
+      if (!employee) {
+        return res.status(404).json({ error: 'Employee not found' });
+      }
+
+      const checkInDate = new Date(check_in_at);
+      const checkOutDate = check_out_at ? new Date(check_out_at) : null;
+      const workingDurationMinutes = checkOutDate
+        ? Math.max(0, Math.round((checkOutDate.getTime() - checkInDate.getTime()) / 60000))
+        : null;
+
+      const created = await p.attendanceLog.create({
+        data: {
+          employee_id,
+          check_in_at: checkInDate,
+          check_out_at: checkOutDate,
+          working_duration_minutes: workingDurationMinutes,
+          status,
+          source: 'MANUAL',
+          notes,
+        },
+      });
+
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'ADMIN_ATTENDANCE_CREATE',
+          entity_type: 'ATTENDANCE_LOG',
+          entity_id: created.id,
+          old_value: null,
+          new_value: JSON.stringify({ employee_id, check_in_at, check_out_at, status, notes }),
+        },
+      });
+
+      return res.status(201).json({
+        message: `Manual attendance record created for ${employee.full_name}`,
+        log: created,
+      });
+    } catch (error: any) {
+      logger.error('[Admin] Attendance create failed:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to create attendance record', detail: error?.message });
+    }
+  },
+);
+
 // GET /api/v1/admin/attendance/:id — single attendance log detail
 router.get(
   '/attendance/:id',
   authenticateToken,
-  requireRole([Roles.MD, Roles.ADMIN]),
+  requireAuthz(Permissions.ATTENDANCE_MANAGE),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const log = await p.attendanceLog.findFirst({
@@ -114,15 +182,16 @@ router.get(
   },
 );
 
-// PATCH /api/v1/admin/attendance/:id — correct attendance status, checkout, notes
+// PATCH /api/v1/admin/attendance/:id — correct attendance status, timings, notes
 router.patch(
   '/attendance/:id',
   authenticateToken,
-  requireRole([Roles.MD, Roles.ADMIN]),
+  requireAuthz(Permissions.ATTENDANCE_MANAGE),
+  validateRequestBody(AdminAttendanceUpdateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const logId = Number(req.params.id);
-      const { status, check_out_at, notes } = req.body;
+      const { status, check_in_at, check_out_at, notes } = req.body;
 
       const log = await p.attendanceLog.findFirst({
         where: {
@@ -139,6 +208,7 @@ router.patch(
       // Record old values for audit
       const oldData = {
         status: log.status,
+        check_in_at: log.check_in_at,
         check_out_at: log.check_out_at,
         notes: log.notes,
       };
@@ -151,17 +221,29 @@ router.patch(
         auditActions.push(`status: ${oldData.status} → ${status}`);
       }
 
+      if (check_in_at !== undefined) {
+        updateData.check_in_at = new Date(check_in_at);
+        auditActions.push(`check-in: ${oldData.check_in_at.toISOString()} → ${check_in_at}`);
+      }
+
       if (check_out_at !== undefined) {
         updateData.check_out_at = check_out_at ? new Date(check_out_at) : null;
-
-        // Recalculate working_duration_minutes
-        const checkInTime = new Date(log.check_in_at).getTime();
-        const checkOutTime = check_out_at ? new Date(check_out_at).getTime() : Date.now();
-        const durationMinutes = Math.max(0, Math.round((checkOutTime - checkInTime) / 60000));
-        updateData.working_duration_minutes = durationMinutes;
-
         auditActions.push(
           `checkout: ${oldData.check_out_at || 'None'} → ${check_out_at || 'Cleared'}`,
+        );
+      }
+
+      // Recalculate working_duration_minutes whenever either timestamp moved
+      // — not just on check_out_at, since editing check_in_at alone (e.g.
+      // correcting a wrong kiosk punch time) should also update the total.
+      if (updateData.check_in_at !== undefined || updateData.check_out_at !== undefined) {
+        const checkInTime = (updateData.check_in_at ?? log.check_in_at).getTime();
+        const resolvedCheckOut =
+          updateData.check_out_at !== undefined ? updateData.check_out_at : log.check_out_at;
+        const checkOutTime = resolvedCheckOut ? resolvedCheckOut.getTime() : Date.now();
+        updateData.working_duration_minutes = Math.max(
+          0,
+          Math.round((checkOutTime - checkInTime) / 60000),
         );
       }
 
@@ -198,11 +280,59 @@ router.patch(
   },
 );
 
+// DELETE /api/v1/admin/attendance/:id — remove a manually-created record
+// entered in error. Restricted to source: 'MANUAL' — a real kiosk/QR scan is
+// never deletable this way, only correctable via PATCH, so a mis-clicked
+// delete can't erase actual punch evidence.
+router.delete(
+  '/attendance/:id',
+  authenticateToken,
+  requireAuthz(Permissions.ATTENDANCE_MANAGE),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const logId = Number(req.params.id);
+      const log = await p.attendanceLog.findFirst({
+        where: { id: logId, employee: { company_id: req.user!.companyId } },
+      });
+
+      if (!log) {
+        return res.status(404).json({ error: 'Attendance log not found' });
+      }
+      if (log.source !== 'MANUAL') {
+        return res.status(409).json({
+          error:
+            'Only manually-created records can be deleted. Correct a scanned record with an edit instead.',
+        });
+      }
+
+      await p.attendanceLog.delete({ where: { id: logId } });
+
+      await p.auditEvent.create({
+        data: {
+          actor_id: req.user!.employeeId,
+          action: 'ADMIN_ATTENDANCE_DELETE',
+          entity_type: 'ATTENDANCE_LOG',
+          entity_id: logId,
+          old_value: JSON.stringify(log),
+          new_value: null,
+        },
+      });
+
+      return res.status(200).json({ message: 'Manual attendance record deleted' });
+    } catch (error: any) {
+      logger.error('[Admin] Attendance delete failed:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to delete attendance record', detail: error?.message });
+    }
+  },
+);
+
 // GET /api/v1/admin/attendance/:id/log — audit trail for a specific attendance log
 router.get(
   '/attendance/:id/log',
   authenticateToken,
-  requireRole([Roles.MD, Roles.ADMIN]),
+  requireAuthz(Permissions.ATTENDANCE_MANAGE),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const auditLogs = await p.auditEvent.findMany({

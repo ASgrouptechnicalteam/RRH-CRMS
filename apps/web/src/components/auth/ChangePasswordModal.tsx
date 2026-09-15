@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, ShieldAlert, ArrowRight } from 'lucide-react';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 
@@ -100,49 +101,41 @@ export const ChangePasswordModal: React.FC = () => {
             <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
               Current Password
             </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
-              />
-            </div>
+            <PasswordInput
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+              className="w-full pl-9 pr-10 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
+              icon={<Lock className="w-4 h-4 text-slate-400" />}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
               New Password
             </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                placeholder="8+ chars, upper, lower, number, symbol"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
-              />
-            </div>
+            <PasswordInput
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              placeholder="8+ chars, upper, lower, number, symbol"
+              className="w-full pl-9 pr-10 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
+              icon={<Lock className="w-4 h-4 text-slate-400" />}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
               Confirm New Password
             </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
-              />
-            </div>
+            <PasswordInput
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              placeholder="Confirm new password"
+              className="w-full pl-9 pr-10 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all"
+              icon={<Lock className="w-4 h-4 text-slate-400" />}
+            />
           </div>
 
           <button

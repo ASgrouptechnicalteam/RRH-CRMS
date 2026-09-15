@@ -413,7 +413,10 @@ router.get('/team', authenticateToken, async (req: AuthenticatedRequest, res: Re
     const whereClause: any = {
       company_id: req.user!.companyId,
       deleted_at: null,
-      roles: { none: { role: { is_invisible: true } } },
+      AND: [
+        { roles: { none: { role: { is_invisible: true } } } },
+        { roles: { none: { role: { name: Roles.ADMIN } } } },
+      ],
     };
     if (!isMD && !isAdmin && !isHR) whereClause.reporting_manager_id = req.user!.employeeId;
 
@@ -719,7 +722,12 @@ router.get('/achievements', authenticateToken, async (req: AuthenticatedRequest,
       if (!isMDOrAdmin) return res.status(403).json({ error: 'Forbidden' });
 
       const allEmployees = await p.employee.findMany({
-        where: { status: 'ACTIVE' },
+        where: {
+          status: 'ACTIVE',
+          roles: {
+            none: { role: { name: Roles.ADMIN } },
+          },
+        },
         select: {
           id: true,
           full_name: true,

@@ -16,6 +16,7 @@ import {
   IndianRupee,
   UserCircle2,
   Download,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -64,6 +65,7 @@ interface Lead {
   utm_campaign?: string | null;
   referral_person_name?: string | null;
   can_edit?: boolean;
+  converted_customer?: { customer_code: string } | null;
 }
 
 // Compact list-card for the Lead Pipeline section. Borrows the Telecaller
@@ -135,6 +137,12 @@ const LeadCard: React.FC<LeadCardProps> = ({
           <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <IndianRupee className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <span className="font-medium">{budgetText}</span>
+          </div>
+        )}
+        {lead.converted_customer && (
+          <div className="flex items-center gap-1.5 text-[11px] text-green-700 font-bold bg-green-50 px-2 py-1 rounded w-fit border border-green-200 mt-1">
+            <Building2 className="w-3.5 h-3.5" />
+            Customer: {lead.converted_customer.customer_code}
           </div>
         )}
       </div>

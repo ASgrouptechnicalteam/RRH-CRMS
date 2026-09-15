@@ -1,45 +1,15 @@
-const CACHE_NAME = 'rrh-ems-pwa-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
-});
-
 // ─────────────────────────────────────────────────────────────
 // Web Push Notifications Handling
+//
+// Pulled into the Workbox-generated service worker via the `workbox.
+// importScripts` option in vite.config.ts, instead of living in its own
+// sw.js — VitePWA's default `generateSW` strategy replaces
+// dist/sw.js with a wholly auto-generated file on every build, so a
+// hand-written sw.js containing this same logic would get silently
+// discarded (which is exactly what happened before: push notifications
+// were "sent" successfully by the backend, arrived at the browser, and
+// were dropped on the floor because the shipped service worker had no
+// `push` listener to catch them).
 // ─────────────────────────────────────────────────────────────
 
 self.addEventListener('push', (event) => {
@@ -47,24 +17,27 @@ self.addEventListener('push', (event) => {
 
   try {
     const data = event.data.json();
-    
+
     const title = data.title || 'New Notification';
     const options = {
       body: data.message,
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
+      // Prefer whatever icon/badge the payload sent (notifyEmployee.ts on
+      // the backend sets both to /logo.svg) — fall back to a file that
+      // actually exists in public/ rather than the old hardcoded
+      // /icons/icon-*.png paths, which pointed at a directory that was
+      // never created.
+      icon: data.icon || '/icon-192.png',
+      badge: data.badge || '/icon-192.png',
       vibrate: [100, 50, 100],
       data: {
         url: data.link || '/',
-        type: data.type
+        type: data.type,
       },
       tag: data.type || 'rrh-alert',
       renotify: true, // If we get another of the same type, alert the user again
     };
 
-    event.waitUntil(
-      self.registration.showNotification(title, options)
-    );
+    event.waitUntil(self.registration.showNotification(title, options));
   } catch (error) {
     console.error('[SW] Error parsing push data:', error);
   }
@@ -88,6 +61,6 @@ self.addEventListener('notificationclick', (event) => {
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
-    })
+    }),
   );
 });

@@ -1,19 +1,10 @@
 import React, { useState } from 'react';
-import {
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  ArrowRight,
-  AlertCircle,
-  Sparkles,
-  Bug,
-} from 'lucide-react';
+import { Lock, User, ShieldCheck, ArrowRight, AlertCircle, Sparkles, Bug } from 'lucide-react';
 import { EMPLOYEE_CODE_REGEX } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { LoginResponseData } from '../../types';
+import { PasswordInput } from '../ui/PasswordInput';
 
 interface LoginFormProps {
   onSuccess?: (data: LoginResponseData) => void;
@@ -23,7 +14,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const { login } = useAuth();
   const [employeeCode, setEmployeeCode] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [debugDetails, setDebugDetails] = useState<string | null>(null);
@@ -195,25 +185,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5">
             Password
           </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Lock className="w-4 h-4" />
-            </div>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all text-slate-800 font-bold"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
+          <PasswordInput
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className="w-full pl-11 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 focus:bg-white transition-all text-slate-800 font-bold"
+            icon={<Lock className="w-4 h-4" />}
+          />
         </div>
 
         {/* Submit Button */}

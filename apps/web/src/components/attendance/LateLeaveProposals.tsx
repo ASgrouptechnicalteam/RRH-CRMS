@@ -5,7 +5,6 @@ import { API_BASE_URL } from '../../config';
 import { Roles } from '../../shared';
 import { ProposalItem } from '../../types';
 
-
 interface LateLeaveProposalsProps {
   hrViewOnly?: boolean;
 }
@@ -21,6 +20,7 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
   const [reason, setReason] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [leaveType, setLeaveType] = useState('FULL_DAY');
 
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -103,6 +103,7 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
         body: JSON.stringify({
           start_date: startDate,
           end_date: endDate || null,
+          leave_type: leaveType,
           reason,
         }),
       });
@@ -160,10 +161,18 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
 
       {/* Content */}
       {message && (
-        <div className={`p-4 rounded-xl mb-6 text-sm flex flex-col items-center justify-center text-center border ${
-          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-        }`}>
-          {message.type === 'success' ? <span className="text-2xl mb-2">🎉</span> : <span className="text-2xl mb-2">⚠️</span>}
+        <div
+          className={`p-4 rounded-xl mb-6 text-sm flex flex-col items-center justify-center text-center border ${
+            message.type === 'success'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-red-50 text-red-700 border-red-200'
+          }`}
+        >
+          {message.type === 'success' ? (
+            <span className="text-2xl mb-2">🎉</span>
+          ) : (
+            <span className="text-2xl mb-2">⚠️</span>
+          )}
           {message.text}
         </div>
       )}
@@ -223,7 +232,9 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Expected Arrival Time</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Expected Arrival Time
+                  </label>
                   <input
                     type="time"
                     value={expectedTime}
@@ -235,7 +246,9 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Reason for Late Arrival</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Reason for Late Arrival
+                </label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -259,7 +272,9 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
             <form onSubmit={handleSubmitLeave} className="space-y-4 max-w-lg">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Start Date
+                  </label>
                   <input
                     type="date"
                     value={startDate}
@@ -269,7 +284,9 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">End Date (Optional)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    End Date (Optional)
+                  </label>
                   <input
                     type="date"
                     value={endDate}
@@ -280,18 +297,61 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Reason for Leave</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Leave Type
+                </label>
+                <div className="flex bg-slate-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setLeaveType('FULL_DAY')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                      leaveType === 'FULL_DAY'
+                        ? 'bg-white shadow-sm text-navy-800'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    Full Day
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeaveType('FIRST_HALF')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                      leaveType === 'FIRST_HALF'
+                        ? 'bg-white shadow-sm text-navy-800'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    1st Half
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeaveType('SECOND_HALF')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                      leaveType === 'SECOND_HALF'
+                        ? 'bg-white shadow-sm text-navy-800'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    2nd Half
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Reason for Leave
+                </label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
                   rows={3}
-                  placeholder="e.g. Family emergency, sick leave..."
+                  placeholder="e.g. Vacation, sick leave..."
                   className="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl"
                 />
               </div>
 
-              {startDate && new Date(startDate) <= new Date(new Date().setHours(0,0,0,0)) && (
+              {startDate && new Date(startDate) <= new Date(new Date().setHours(0, 0, 0, 0)) && (
                 <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>Leave requests must be submitted at least 1 day in advance.</span>
@@ -300,7 +360,10 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
 
               <button
                 type="submit"
-                disabled={isLoading || (!!startDate && new Date(startDate) <= new Date(new Date().setHours(0,0,0,0)))}
+                disabled={
+                  isLoading ||
+                  (!!startDate && new Date(startDate) <= new Date(new Date().setHours(0, 0, 0, 0)))
+                }
                 className="px-5 py-2.5 bg-navy-700 hover:bg-navy-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center gap-2"
               >
                 <Send className="w-4 h-4" />
@@ -312,30 +375,36 @@ export const LateLeaveProposals: React.FC<LateLeaveProposalsProps> = ({ hrViewOn
       ) : (
         /* HR Queue View */
         <div className="space-y-3">
-          <h4 className="text-sm font-bold text-slate-700">Pending Requests Queue ({queue.length})</h4>
+          <h4 className="text-sm font-bold text-slate-700">
+            Pending Requests Queue ({queue.length})
+          </h4>
           {queue.length === 0 ? (
-            <p className="text-xs text-slate-400 py-4 text-center">No pending late or leave proposals.</p>
+            <p className="text-xs text-slate-400 py-4 text-center">
+              No pending late or leave proposals.
+            </p>
           ) : (
             <div className="divide-y divide-slate-100">
               {queue.map((item) => (
                 <div key={item.id} className="py-3 flex items-center justify-between text-xs">
                   <div>
                     <span className="font-bold text-slate-800">
-                      {item.employee?.full_name || 'Unknown Employee'} ({item.employee?.employee_code || '---'})
+                      {item.employee?.full_name || 'Unknown Employee'} (
+                      {item.employee?.employee_code || '---'})
                     </span>
                     <span className="ml-2 text-slate-500 font-mono">
-                      {item.type} {item.target_date ? new Date(item.target_date).toLocaleDateString() : ''}
+                      {item.type}{' '}
+                      {item.target_date ? new Date(item.target_date).toLocaleDateString() : ''}
                     </span>
                     <p className="text-slate-600 mt-0.5 font-medium">{item.reason}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => handleAction(item.id, 'approve')}
                       className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 font-medium transition-colors"
                     >
                       Approve
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleAction(item.id, 'reject')}
                       className="p-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 font-medium transition-colors"
                     >

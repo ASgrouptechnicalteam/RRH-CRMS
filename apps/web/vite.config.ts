@@ -130,6 +130,18 @@ export default defineConfig({
         'icon-192.png',
         'icon-512.png',
       ],
+      // The 'generateSW' strategy (this plugin's default) replaces dist/sw.js
+      // with a wholly auto-generated Workbox file on every build — a
+      // hand-written service worker in public/sw.js would just get
+      // overwritten and never ship. importScripts is generateSW's supported
+      // way to pull in extra script content (here: push-notifications-sw.js,
+      // just the push/notificationclick handlers) via an `importScripts()`
+      // call inside the generated worker, without switching to the more
+      // invasive 'injectManifest' strategy and re-deriving the whole
+      // precache/routing setup by hand.
+      workbox: {
+        importScripts: ['push-notifications-sw.js'],
+      },
       manifest: {
         name: 'RS CRM',
         short_name: 'RS CRM',

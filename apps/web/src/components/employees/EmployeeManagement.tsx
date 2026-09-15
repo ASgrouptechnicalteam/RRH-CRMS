@@ -721,9 +721,10 @@ export const EmployeeManagement: React.FC = () => {
 
       {/* FULL INDUSTRIAL EMPLOYEE DOSSIER VIEW MODAL */}
       {dossierEmp && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-3xl bg-white rounded-3xl p-6 shadow-xl border border-slate-100 my-8 animate-scaleUp">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-slate-100 flex flex-col max-h-[90vh] animate-scaleUp">
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 p-6 pb-4 shrink-0 bg-white rounded-t-3xl z-10">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-navy-700 text-white font-bold text-lg flex items-center justify-center shadow-md">
                   {dossierEmp.employeeCode.split('-')[1] || 'EMP'}
@@ -764,233 +765,238 @@ export const EmployeeManagement: React.FC = () => {
               </div>
             </div>
 
-            {/* Dossier Grid Sections */}
-            <div className="space-y-4 text-xs">
-              {/* Section 1: Contact & Personal */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-navy-700" />
-                  <span>Personal & Contact Information</span>
-                </h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Primary Phone
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.phone}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Official Email
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.email}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Blood Group
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.bloodGroup}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Secondary Phone
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {dossierEmp.secondaryPhone || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      WhatsApp
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {dossierEmp.whatsappNumber || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Social Links
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {dossierEmp.socialLinks || 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 2: Addresses & Emergency */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-navy-700" />
-                  <span>Addresses & Emergency Contacts</span>
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Current Address
-                    </span>
-                    <span className="font-semibold text-slate-800">
-                      {dossierEmp.currentAddress}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Permanent Address
-                    </span>
-                    <span className="font-semibold text-slate-800">
-                      {dossierEmp.permanentAddress}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200/60 grid grid-cols-3 gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Emergency Person
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {dossierEmp.emergencyContactName}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Relationship
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {dossierEmp.emergencyContactRelation}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Emergency Phone
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {dossierEmp.emergencyContactPhone}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 3: Government KYC & Payroll Bank */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5 m-0">
-                    <CreditCard className="w-4 h-4 text-navy-700" />
-                    <span>Government KYC & Payroll Bank Details</span>
+            {/* Scrollable Content */}
+            <div className="p-6 pt-4 overflow-y-auto custom-scrollbar">
+              <div className="space-y-4 text-xs">
+                {/* Section 1: Contact & Personal */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                  <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-navy-700" />
+                    <span>Personal & Contact Information</span>
                   </h4>
-                  <button
-                    onClick={() => setShowSensitive(!showSensitive)}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors text-[10px] font-bold shadow-sm"
-                  >
-                    {showSensitive ? (
-                      <EyeOff className="w-3.5 h-3.5" />
-                    ) : (
-                      <Eye className="w-3.5 h-3.5" />
-                    )}
-                    {showSensitive ? 'Hide Details' : 'Reveal Details'}
-                  </button>
-                </div>
-                <div className="grid grid-cols-4 gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      PAN Number
-                    </span>
-                    <span className="font-mono font-bold text-slate-800">
-                      {showSensitive
-                        ? dossierEmp.panNumber || 'N/A'
-                        : maskPAN(dossierEmp.panNumber)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Aadhaar UID
-                    </span>
-                    <span className="font-mono font-bold text-slate-800">
-                      {showSensitive
-                        ? dossierEmp.aadhaarNumber || 'N/A'
-                        : maskAadhaar(dossierEmp.aadhaarNumber)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Bank Name
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.bankName || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Account Number
-                    </span>
-                    <span className="font-mono font-bold text-slate-800">
-                      {showSensitive
-                        ? dossierEmp.bankAccountNumber || 'N/A'
-                        : maskBankAccount(dossierEmp.bankAccountNumber)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      IFSC Code
-                    </span>
-                    <span className="font-mono font-bold text-slate-800">
-                      {dossierEmp.bankIfsc || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Bank Branch
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.bankBranch}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 4: Employment & Salary CTC */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <Briefcase className="w-4 h-4 text-navy-700" />
-                  <span>Employment Terms & Salary CTC</span>
-                </h4>
-                <div className="grid grid-cols-4 gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Work Location
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.branch}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Employment Type
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.employmentType}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Date of Joining
-                    </span>
-                    <span className="font-bold text-slate-800">{dossierEmp.dateOfJoining}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                      Monthly Salary CTC
-                    </span>
-                    <span className="font-mono font-extrabold text-navy-800 text-sm">
-                      {formatSalaryRange(dossierEmp.salaryCtc)}
-                    </span>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Primary Phone
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.phone}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Official Email
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.email}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Blood Group
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.bloodGroup}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Secondary Phone
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.secondaryPhone || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        WhatsApp
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.whatsappNumber || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Social Links
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.socialLinks || 'N/A'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-200/60">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                    Background & Education
-                  </span>
-                  <span className="font-semibold text-slate-800">
-                    {dossierEmp.backgroundEducation || 'N/A'}
-                  </span>
+                {/* Section 2: Addresses & Emergency */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                  <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-navy-700" />
+                    <span>Addresses & Emergency Contacts</span>
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Current Address
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {dossierEmp.currentAddress}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Permanent Address
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {dossierEmp.permanentAddress}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/60 grid grid-cols-3 gap-3">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Emergency Person
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.emergencyContactName}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Relationship
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.emergencyContactRelation}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Emergency Phone
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.emergencyContactPhone}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Government KYC & Payroll Bank */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5 m-0">
+                      <CreditCard className="w-4 h-4 text-navy-700" />
+                      <span>Government KYC & Payroll Bank Details</span>
+                    </h4>
+                    <button
+                      onClick={() => setShowSensitive(!showSensitive)}
+                      className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors text-[10px] font-bold shadow-sm"
+                    >
+                      {showSensitive ? (
+                        <EyeOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                      {showSensitive ? 'Hide Details' : 'Reveal Details'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        PAN Number
+                      </span>
+                      <span className="font-mono font-bold text-slate-800">
+                        {showSensitive
+                          ? dossierEmp.panNumber || 'N/A'
+                          : maskPAN(dossierEmp.panNumber)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Aadhaar UID
+                      </span>
+                      <span className="font-mono font-bold text-slate-800">
+                        {showSensitive
+                          ? dossierEmp.aadhaarNumber || 'N/A'
+                          : maskAadhaar(dossierEmp.aadhaarNumber)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Bank Name
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {dossierEmp.bankName || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Account Number
+                      </span>
+                      <span className="font-mono font-bold text-slate-800">
+                        {showSensitive
+                          ? dossierEmp.bankAccountNumber || 'N/A'
+                          : maskBankAccount(dossierEmp.bankAccountNumber)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        IFSC Code
+                      </span>
+                      <span className="font-mono font-bold text-slate-800">
+                        {dossierEmp.bankIfsc || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Bank Branch
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.bankBranch}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Employment & Salary CTC */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                  <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4 text-navy-700" />
+                    <span>Employment Terms & Salary CTC</span>
+                  </h4>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Work Location
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.branch}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Employment Type
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.employmentType}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Date of Joining
+                      </span>
+                      <span className="font-bold text-slate-800">{dossierEmp.dateOfJoining}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Monthly Salary CTC
+                      </span>
+                      <span className="font-mono font-extrabold text-navy-800 text-sm">
+                        {formatSalaryRange(dossierEmp.salaryCtc)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                      Background & Education
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {dossierEmp.backgroundEducation || 'N/A'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2">
+            {/* Sticky Footer */}
+            <div className="p-6 pt-4 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl flex flex-wrap justify-between items-center gap-2">
               <div className="flex flex-wrap gap-2">
                 {dossierEmp.status !== 'RESIGNED' && (
                   <button

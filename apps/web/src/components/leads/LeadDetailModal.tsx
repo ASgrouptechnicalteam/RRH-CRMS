@@ -69,6 +69,7 @@ interface Lead {
   external_agent_associate_id?: string | null;
   external_agent_company?: string | null;
   can_edit?: boolean;
+  converted_customer?: { customer_code: string } | null;
 }
 
 interface LeadDetailModalProps {
@@ -409,30 +410,6 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     }
   };
 
-  const handleConvertToCustomer = async (leadId: number) => {
-    setIsConverting(true);
-    try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/leads/${leadId}/convert-to-customer`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-
-      if (res.status === 409) {
-        showToast('Lead has already been converted to a customer.', 'error');
-      } else if (res.ok) {
-        showToast('Successfully converted to Customer!', 'success');
-        onClose();
-        navigate('/customers');
-      } else {
-        showToast(data.error || 'Failed to convert to customer', 'error');
-      }
-    } catch (e) {
-      showToast('Network error converting to customer', 'error');
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
   /**
    * Demo completion handler (§1 row 4).
    * Submits revised qualification fields + DEMO_COMPLETED transition in one flow:
@@ -749,15 +726,11 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-bold text-navy-900 text-sm">Next Actions</h4>
-                    {user?.permissions?.includes(Permissions.CUSTOMERS_CONVERT) && (
-                      <button
-                        onClick={() => handleConvertToCustomer(lead.id)}
-                        disabled={isConverting || lead.can_edit === false}
-                        className={`px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 ${lead.can_edit === false ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <Building2 className="w-4 h-4" />
-                        {isConverting ? 'Converting...' : 'Convert to Customer'}
-                      </button>
+                    {lead.converted_customer && (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-lg flex items-center gap-1.5 border border-green-200">
+                        <Building2 className="w-3.5 h-3.5" />
+                        Customer: {lead.converted_customer.customer_code}
+                      </span>
                     )}
                   </div>
 

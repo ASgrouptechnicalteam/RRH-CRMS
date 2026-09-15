@@ -20,7 +20,10 @@ import {
   ShieldAlert,
   CreditCardIcon,
   Briefcase,
+  EyeOff,
+  MessageCircle,
 } from 'lucide-react';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { useToast } from '../../context/ToastContext';
@@ -70,6 +73,7 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [createdEmployeeCode, setCreatedEmployeeCode] = useState<string | null>(null);
 
   // Step 1: Basic & Login
   const [fullName, setFullName] = useState('');
@@ -162,11 +166,8 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
 
       const data = await res.json();
       if (res.ok) {
-        showToast(
-          `Employee Onboarded Successfully! Code: ${data.employee.employee_code}`,
-          'success',
-        );
-        onSuccess();
+        setCreatedEmployeeCode(data.employee.employee_code);
+        setStep(6); // Move to Success screen
       } else {
         await handleApiError(res, showError, data);
       }
@@ -663,13 +664,12 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
                   Account Number
                 </label>
                 <div className="relative">
-                  <CreditCardIcon className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="password"
+                  <PasswordInput
                     value={bankAccountNumber}
                     onChange={(e) => setBankAccountNumber(e.target.value)}
-                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest"
+                    className="w-full p-3 pl-11 pr-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 font-mono tracking-widest"
                     placeholder="●●●●●●●●●●●●"
+                    icon={<CreditCardIcon className="w-5 h-5 text-slate-400" />}
                   />
                 </div>
               </div>
@@ -763,6 +763,47 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
             </div>
           </div>
         );
+
+      case 6:
+        const whatsappText = encodeURIComponent(
+          `Hi ${fullName},\n\nWelcome to Radha Real Homes! Your CRM account has been created.\n\n` +
+            `*Login URL:* https://erp.radharealhomes.com\n` +
+            `*Employee Code:* ${createdEmployeeCode}\n` +
+            `*Temporary Password:* ${initialPassword}\n\n` +
+            `Please log in. You will be required to change this password on your first login for security purposes.\n\nBest Regards,\nHR Team`,
+        );
+        const whatsappUrl = `https://wa.me/91${phone.replace(/\D/g, '').slice(-10)}?text=${whatsappText}`;
+
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-fadeIn py-10">
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-800">Employee Onboarded!</h2>
+            <p className="text-slate-500 text-center max-w-md">
+              {fullName} has been successfully added to the system. Their employee code is{' '}
+              <span className="font-bold text-navy-700">{createdEmployeeCode}</span>.
+            </p>
+
+            <div className="pt-6 w-full max-w-sm flex flex-col gap-4">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-4 bg-[#25D366] hover:bg-[#1ebe5d] text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 hover:-translate-y-0.5"
+              >
+                <MessageCircle className="w-6 h-6" />
+                Send Credentials on WhatsApp
+              </a>
+              <button
+                onClick={onSuccess}
+                className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all"
+              >
+                Close & Return to Directory
+              </button>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -791,33 +832,35 @@ export const AddEmployeeWizard: React.FC<AddEmployeeWizardProps> = ({
         </div>
 
         {/* Footer Navigation */}
-        <div className="p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between sticky bottom-0">
-          <button
-            onClick={handleBack}
-            disabled={step === 1}
-            className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-0"
-          >
-            Back
-          </button>
+        {step < 6 && (
+          <div className="p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between sticky bottom-0">
+            <button
+              onClick={handleBack}
+              disabled={step === 1}
+              className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-0"
+            >
+              Back
+            </button>
 
-          {step < 5 ? (
-            <button
-              onClick={handleNext}
-              disabled={step === 1 && (!fullName || !phone || !addBranchId)}
-              className="px-8 py-3 bg-navy-700 text-white font-bold rounded-xl shadow-md hover:bg-navy-800 transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              Continue <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="px-8 py-3 bg-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-70"
-            >
-              {isLoading ? 'Creating...' : 'Create Employee Account'}
-            </button>
-          )}
-        </div>
+            {step < 5 ? (
+              <button
+                onClick={handleNext}
+                disabled={step === 1 && (!fullName || !phone || !addBranchId)}
+                className="px-8 py-3 bg-navy-700 text-white font-bold rounded-xl shadow-md hover:bg-navy-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                Continue <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="px-8 py-3 bg-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+              >
+                {isLoading ? 'Creating...' : 'Create Employee Account'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

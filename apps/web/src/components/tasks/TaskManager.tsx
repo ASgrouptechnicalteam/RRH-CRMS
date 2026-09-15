@@ -96,7 +96,7 @@ export const TaskManager: React.FC = () => {
   const fetchEmployees = async () => {
     if (!canCreateTask) return;
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/md/employees`);
+      const res = await fetchWithAuth(`${API_BASE_URL}/employees`);
       const data = await res.json();
       if (res.ok) {
         setEmployees(data.employees || []);
@@ -142,7 +142,7 @@ export const TaskManager: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const selectedAssignee = assigneeId ? parseInt(assigneeId, 10) : user?.id;
+      const selectedAssignee = parseInt(assigneeId, 10);
 
       const res = await fetchWithAuth(`${API_BASE_URL}/tasks`, {
         method: 'POST',
@@ -547,14 +547,19 @@ export const TaskManager: React.FC = () => {
                   <select
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
+                    required
                     className="w-full px-3 py-2 bg-surface border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-600 text-sm font-semibold text-slate-700"
                   >
-                    <option value="">Assign to Myself ({user?.employeeCode})</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.employeeCode} - {emp.roles.join(', ')}
-                      </option>
-                    ))}
+                    <option value="" disabled className="text-slate-700 bg-white">
+                      Select Assignee
+                    </option>
+                    {employees
+                      .filter((emp) => emp.id !== user?.id)
+                      .map((emp) => (
+                        <option key={emp.id} value={emp.id} className="text-slate-700 bg-white">
+                          {formatEmployeeLabel(emp)} - {emp.roles.join(', ')}
+                        </option>
+                      ))}
                   </select>
                 </div>
 

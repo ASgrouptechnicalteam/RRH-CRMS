@@ -27,6 +27,8 @@ import {
   HelpCircle,
   BookOpen,
   Trophy,
+  GitBranch,
+  Target,
 } from 'lucide-react';
 import { Roles, Permissions } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
@@ -229,6 +231,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   {
     id: 'customers',
     label: 'Customers',
+    icon: Users,
     path: '/customers',
     requiredAnyRole: [
       Roles.MD,
@@ -258,7 +261,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     path: '/action-center',
     requiredAnyRole: [Roles.MD, Roles.ADMIN],
   },
-  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: undefined, path: '/sales-pipeline' },
+  { id: 'sales-pipeline', label: 'Sales Pipeline', icon: GitBranch, path: '/sales-pipeline' },
   { id: 'property-inventory', label: 'Properties', icon: Building2, path: '/properties' },
   { id: 'projects-sites', label: 'Projects', icon: MapPinned, path: '/projects' },
   {
@@ -366,7 +369,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   {
     id: 'analytics',
     label: 'Analytics & Goals',
-    icon: undefined,
+    icon: Target,
     path: '/analytics',
     requiredAnyRole: [
       Roles.MD,
@@ -490,6 +493,10 @@ const SidebarNav: React.FC = () => {
       if (node.isGroup && node.children) {
         if (node.children.some((child) => child.path && location.pathname.startsWith(child.path))) {
           if (!newExpanded[node.groupItem!.id]) {
+            // Close others (accordion behavior)
+            for (const key of Object.keys(newExpanded)) {
+              newExpanded[key] = false;
+            }
             newExpanded[node.groupItem!.id] = true;
             shouldUpdate = true;
           }
@@ -507,7 +514,8 @@ const SidebarNav: React.FC = () => {
   }, [location.pathname, nodes, storageKey, user?.id]);
 
   const toggleGroup = (groupId: string) => {
-    const newExpanded = { ...expandedGroups, [groupId]: !expandedGroups[groupId] };
+    // Accordion behavior: closing others
+    const newExpanded = { [groupId]: !expandedGroups[groupId] };
     setExpandedGroups(newExpanded);
     const persistenceOff =
       localStorage.getItem(`rrh_sidebar_persist_off_${user?.id || 'default'}`) === 'true';
@@ -534,7 +542,9 @@ const SidebarNav: React.FC = () => {
                 }`
               }
             >
-              {item.icon && <item.icon className="w-4 h-4 shrink-0 opacity-80" />}
+              <div className="w-4 h-4 flex items-center justify-center shrink-0 opacity-80">
+                {item.icon && <item.icon className="w-4 h-4" />}
+              </div>
               <span className="truncate">{item.label}</span>
             </NavLink>
           );
@@ -547,7 +557,9 @@ const SidebarNav: React.FC = () => {
               onClick={() => toggleGroup(node.groupItem!.id)}
               aria-expanded={isExpanded}
               aria-controls={`group-${node.groupItem!.id}`}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors rounded-md hover:bg-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-navy-900"
+              className={`w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider hover:text-white transition-colors rounded-md hover:bg-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-navy-900 ${
+                isExpanded ? 'text-white bg-navy-900/50 shadow-sm' : 'text-slate-400'
+              }`}
             >
               <span>{node.groupItem!.label}</span>
               {isExpanded ? (
@@ -557,7 +569,10 @@ const SidebarNav: React.FC = () => {
               )}
             </button>
             {isExpanded && (
-              <div id={`group-${node.groupItem!.id}`} className="space-y-1 mt-1">
+              <div
+                id={`group-${node.groupItem!.id}`}
+                className="space-y-1 mt-1 ml-3 pl-3 border-l border-navy-800"
+              >
                 {node.children!.map((item) => (
                   <NavLink
                     key={item.id}
@@ -571,7 +586,9 @@ const SidebarNav: React.FC = () => {
                       }`
                     }
                   >
-                    {item.icon && <item.icon className="w-4 h-4 shrink-0 opacity-80" />}
+                    <div className="w-4 h-4 flex items-center justify-center shrink-0 opacity-80">
+                      {item.icon && <item.icon className="w-4 h-4" />}
+                    </div>
                     <span className="truncate">{item.label}</span>
                   </NavLink>
                 ))}

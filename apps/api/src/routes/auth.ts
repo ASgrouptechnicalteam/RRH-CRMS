@@ -10,10 +10,42 @@ import { LoginSchema, ChangePasswordSchema, Roles } from '../shared';
 import { validateRequestBody } from '../middleware/validate';
 import { loginRateLimiter, refreshRateLimiter } from '../middleware/rateLimiter';
 import { publicAssetUrl } from '../utils/media';
+import { decryptData } from '../utils/crypto';
 
 const router = Router();
 
 const p = prisma;
+
+const mapEmployeeToUser = (employee: any, roleNames: string[], permissions: string[]) => ({
+  id: employee.id,
+  employeeCode: employee.employee_code,
+  fullName: employee.full_name,
+  department: employee.department,
+  company: employee.company?.name || 'RS CRM',
+  branch: employee.branch?.name || 'All Branches',
+  roles: roleNames,
+  permissions,
+  attendanceRequired: employee.attendance_required,
+  firstLoginDone: employee.first_login_done,
+  phone: employee.phone,
+  secondaryPhone: employee.secondary_phone,
+  whatsappNumber: employee.whatsapp_number,
+  email: employee.email,
+  bloodGroup: employee.blood_group,
+  socialLinks: employee.social_links,
+  currentAddress: employee.current_address,
+  permanentAddress: employee.permanent_address,
+  emergencyContactName: employee.emergency_contact_name,
+  emergencyContactRelation: employee.emergency_contact_relation,
+  emergencyContactPhone: employee.emergency_contact_phone,
+  profileImageUrl: publicAssetUrl(employee.profile_image_url),
+  panNumber: decryptData(employee.pan_number),
+  aadhaarNumber: decryptData(employee.aadhaar_number),
+  bankName: decryptData(employee.bank_name),
+  bankAccountNumber: decryptData(employee.bank_account_number),
+  bankIfsc: decryptData(employee.bank_ifsc),
+  bankBranch: decryptData(employee.bank_branch),
+});
 
 // POST /api/v1/auth/login
 router.post(
@@ -126,36 +158,7 @@ router.post(
         refreshToken, // Return in body for IndexedDB storage fallback
         firstLoginDone: employee.first_login_done,
         attendanceRequired: employee.attendance_required,
-        user: {
-          id: employee.id,
-          employeeCode: employee.employee_code,
-          fullName: employee.full_name,
-          department: employee.department,
-          company: employee.company?.name || 'RS CRM',
-          branch: employee.branch?.name || 'All Branches',
-          roles: roleNames,
-          permissions,
-          attendanceRequired: employee.attendance_required,
-          firstLoginDone: employee.first_login_done,
-          phone: employee.phone,
-          secondaryPhone: employee.secondary_phone,
-          whatsappNumber: employee.whatsapp_number,
-          email: employee.email,
-          bloodGroup: employee.blood_group,
-          socialLinks: employee.social_links,
-          currentAddress: employee.current_address,
-          permanentAddress: employee.permanent_address,
-          emergencyContactName: employee.emergency_contact_name,
-          emergencyContactRelation: employee.emergency_contact_relation,
-          emergencyContactPhone: employee.emergency_contact_phone,
-          profileImageUrl: publicAssetUrl(employee.profile_image_url),
-          panNumber: employee.pan_number,
-          aadhaarNumber: employee.aadhaar_number,
-          bankName: employee.bank_name,
-          bankAccountNumber: employee.bank_account_number,
-          bankIfsc: employee.bank_ifsc,
-          bankBranch: employee.bank_branch,
-        },
+        user: mapEmployeeToUser(employee, roleNames, permissions),
       });
     } catch (error) {
       logger.error('Login error:', error);
@@ -275,18 +278,7 @@ router.post(
         accessToken,
         refreshToken, // Return in body for IndexedDB storage fallback
         firstLoginDone: true,
-        user: {
-          id: updatedEmployee.id,
-          employeeCode: updatedEmployee.employee_code,
-          fullName: updatedEmployee.full_name,
-          department: updatedEmployee.department,
-          company: updatedEmployee.company?.name || 'RS CRM',
-          branch: updatedEmployee.branch?.name || 'All Branches',
-          roles: roleNames,
-          permissions,
-          attendanceRequired: updatedEmployee.attendance_required,
-          firstLoginDone: updatedEmployee.first_login_done,
-        },
+        user: mapEmployeeToUser(updatedEmployee, roleNames, permissions),
       });
     } catch (error) {
       logger.error('Change password error:', error);
@@ -330,36 +322,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
     const permissions = Array.from(permissionsSet);
 
     return res.status(200).json({
-      user: {
-        id: employee.id,
-        employeeCode: employee.employee_code,
-        fullName: employee.full_name,
-        company: employee.company.name,
-        branch: employee.branch?.name || 'All Branches',
-        department: employee.department,
-        roles: roleNames,
-        permissions,
-        attendanceRequired: employee.attendance_required,
-        firstLoginDone: employee.first_login_done,
-        phone: employee.phone,
-        secondaryPhone: employee.secondary_phone,
-        whatsappNumber: employee.whatsapp_number,
-        email: employee.email,
-        bloodGroup: employee.blood_group,
-        socialLinks: employee.social_links,
-        currentAddress: employee.current_address,
-        permanentAddress: employee.permanent_address,
-        emergencyContactName: employee.emergency_contact_name,
-        emergencyContactRelation: employee.emergency_contact_relation,
-        emergencyContactPhone: employee.emergency_contact_phone,
-        profileImageUrl: publicAssetUrl(employee.profile_image_url),
-        panNumber: employee.pan_number,
-        aadhaarNumber: employee.aadhaar_number,
-        bankName: employee.bank_name,
-        bankAccountNumber: employee.bank_account_number,
-        bankIfsc: employee.bank_ifsc,
-        bankBranch: employee.bank_branch,
-      },
+      user: mapEmployeeToUser(employee, roleNames, permissions),
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch user profile' });

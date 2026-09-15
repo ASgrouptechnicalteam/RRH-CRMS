@@ -200,25 +200,37 @@ export const LeadReassignSchema = z.object({
 export type LeadReassignInput = z.infer<typeof LeadReassignSchema>;
 
 // Opportunity Schemas
-export const OpportunityCreateSchema = z.object({
-  lead_id: z.number().int().positive(),
-  owner_id: z.number().int().positive().optional(),
-  project_id: z.number().int().positive().optional(),
-  property_id: z.number().int().positive().optional(),
-  expected_value: z.number().nonnegative().optional(),
-  probability: z.number().min(0).max(100).optional(),
-  budget_min: z.number().nonnegative().optional(),
-  budget_max: z.number().nonnegative().optional(),
-});
+export const OpportunityCreateSchema = z
+  .object({
+    lead_id: z.number().int().positive(),
+    owner_id: z.number().int().positive().optional(),
+    project_id: z.number().int().positive().optional(),
+    // At most one of property_id / project_unit_id — an Opportunity is
+    // allowed to have neither yet (target undecided), unlike a Booking.
+    property_id: z.number().int().positive().optional(),
+    project_unit_id: z.number().int().positive().optional(),
+    expected_value: z.number().nonnegative().optional(),
+    probability: z.number().min(0).max(100).optional(),
+    budget_min: z.number().nonnegative().optional(),
+    budget_max: z.number().nonnegative().optional(),
+  })
+  .refine((data) => !(data.property_id && data.project_unit_id), {
+    message: 'Provide at most one of property_id or project_unit_id',
+  });
 export type OpportunityCreateInput = z.infer<typeof OpportunityCreateSchema>;
 
-export const OpportunityUpdateSchema = z.object({
-  expected_value: z.number().nonnegative().optional(),
-  probability: z.number().min(0).max(100).optional(),
-  stage: z.string().optional(),
-  drop_reason: z.string().optional(),
-  budget_min: z.number().nonnegative().optional(),
-  budget_max: z.number().nonnegative().optional(),
-  property_id: z.number().int().positive().optional(),
-});
+export const OpportunityUpdateSchema = z
+  .object({
+    expected_value: z.number().nonnegative().optional(),
+    probability: z.number().min(0).max(100).optional(),
+    stage: z.string().optional(),
+    drop_reason: z.string().optional(),
+    budget_min: z.number().nonnegative().optional(),
+    budget_max: z.number().nonnegative().optional(),
+    property_id: z.number().int().positive().optional(),
+    project_unit_id: z.number().int().positive().optional(),
+  })
+  .refine((data) => !(data.property_id && data.project_unit_id), {
+    message: 'Provide at most one of property_id or project_unit_id',
+  });
 export type OpportunityUpdateInput = z.infer<typeof OpportunityUpdateSchema>;

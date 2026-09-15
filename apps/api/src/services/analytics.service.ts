@@ -846,21 +846,23 @@ export class AnalyticsService {
       p.employee.count({
         where: { company_id: companyId, created_at: { gte: startOfMonth, lte: endOfMonth } },
       }),
-      p.attendanceProposal.count({
+      p.attendanceProposal.findMany({
         where: {
           type: 'LEAVE',
           status: 'APPROVED',
           target_date: getISTMidnightInstant(todayStr),
           employee_id: { in: companyEmployeeIds },
         },
+        select: { leave_type: true },
       }),
-      p.attendanceProposal.count({
+      p.attendanceProposal.findMany({
         where: {
           type: 'LEAVE',
           status: 'APPROVED',
           target_date: getISTMidnightInstant(yesterdayStr),
           employee_id: { in: companyEmployeeIds },
         },
+        select: { leave_type: true },
       }),
       p.lead.findMany({
         where: { company_id: companyId, created_at: { gte: startOfMonth, lte: endOfMonth } },
@@ -880,13 +882,20 @@ export class AnalyticsService {
         ? (leads.filter((l) => l.status === 'BOOKED').length / leads.length) * 100
         : 0;
 
+    const calculateLeaveValue = (proposals: { leave_type: string }[]) => {
+      return proposals.reduce((acc, p) => acc + (p.leave_type === 'FULL_DAY' ? 1 : 0.5), 0);
+    };
+
+    const currentConversion = conversionRate(leadsThisMonth);
+    const prevConversion = conversionRate(leadsLastMonth);
+
     return {
       headcount,
       newHiresThisMonth,
-      onLeaveToday,
-      onLeaveYesterday,
-      conversionThisMonth: conversionRate(leadsThisMonth),
-      conversionLastMonth: conversionRate(leadsLastMonth),
+      onLeaveToday: calculateLeaveValue(onLeaveToday),
+      onLeaveYesterday: calculateLeaveValue(onLeaveYesterday),
+      conversionThisMonth: currentConversion,
+      conversionLastMonth: prevConversion,
     };
   }
 }

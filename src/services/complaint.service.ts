@@ -5,14 +5,19 @@
 import { prisma } from '../lib/prisma';
 import { TokenPayload } from '../utils/jwt';
 import { AppError } from './lead.service';
+import { notifyEmployee } from '../utils/notifyEmployee';
 import crypto from 'crypto';
-
 
 const p = prisma;
 
 // ---- Authorized constants (Packet 14-1) ----
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'] as const;
-const CLOSURE_REASONS = ['RESOLVED', 'CUSTOMER_UNSATISFIED', 'NOT_APPLICABLE', 'CUSTOMER_WITHDRAWN'] as const;
+const CLOSURE_REASONS = [
+  'RESOLVED',
+  'CUSTOMER_UNSATISFIED',
+  'NOT_APPLICABLE',
+  'CUSTOMER_WITHDRAWN',
+] as const;
 
 // ---- Single centralized lifecycle transition map (no SLA / no auto-transitions) ----
 const TRANSITIONS: Record<string, string[]> = {
@@ -37,7 +42,14 @@ export class ComplaintService {
     return `RRH-CMP-${year}-${String(count + 1).padStart(4, '0')}-${hex}`;
   }
 
-  private static async audit(tx: any, user: TokenPayload, action: string, entityId: number, oldValue: string | null, newValue: string | null) {
+  private static async audit(
+    tx: any,
+    user: TokenPayload,
+    action: string,
+    entityId: number,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
     await tx.auditEvent.create({
       data: {
         actor_id: user.employeeId,
@@ -75,27 +87,35 @@ export class ComplaintService {
       booking_id?: number | null;
       property_id?: number | null;
       assigned_employee_id?: number | null;
-    }
+    },
   ) {
     // Company ownership validation for every linked entity
-    const customer = await prisma.customer.findFirst({ where: { id: data.customer_id, company_id: user.companyId } });
+    const customer = await prisma.customer.findFirst({
+      where: { id: data.customer_id, company_id: user.companyId },
+    });
     if (!customer) {
       throw new AppError(403, 'Customer not found or cross-company access');
     }
     if (data.booking_id) {
-      const b = await prisma.booking.findFirst({ where: { id: data.booking_id, company_id: user.companyId } });
+      const b = await prisma.booking.findFirst({
+        where: { id: data.booking_id, company_id: user.companyId },
+      });
       if (!b) {
         throw new AppError(403, 'Booking not found or cross-company access');
       }
     }
     if (data.property_id) {
-      const prop = await prisma.property.findFirst({ where: { id: data.property_id, company_id: user.companyId } });
+      const prop = await prisma.property.findFirst({
+        where: { id: data.property_id, company_id: user.companyId },
+      });
       if (!prop) {
         throw new AppError(403, 'Property not found or cross-company access');
       }
     }
     if (data.assigned_employee_id) {
-      const emp = await prisma.employee.findFirst({ where: { id: data.assigned_employee_id, company_id: user.companyId } });
+      const emp = await prisma.employee.findFirst({
+        where: { id: data.assigned_employee_id, company_id: user.companyId },
+      });
       if (!emp) {
         throw new AppError(403, 'Employee not found or cross-company assignment');
       }
@@ -125,7 +145,14 @@ export class ComplaintService {
               assigned_employee_id: data.assigned_employee_id ?? null,
             },
           });
-          await ComplaintService.audit(tx, user, 'created', complaint.id, null, complaint.complaint_code);
+          await ComplaintService.audit(
+            tx,
+            user,
+            'created',
+            complaint.id,
+            null,
+            complaint.complaint_code,
+          );
           return complaint;
         });
       } catch (err: any) {
@@ -139,7 +166,7 @@ export class ComplaintService {
   // ------------------------------------------------------------------- list
   static async list(
     user: TokenPayload,
-    options?: { status?: string; priority?: string; category?: string; customer_id?: number }
+    options?: { status?: string; priority?: string; category?: string; customer_id?: number },
   ) {
     // Hard company scope on every list query
     const where: any = { company_id: user.companyId };
@@ -147,7 +174,9 @@ export class ComplaintService {
     if (options?.priority) where.priority = options.priority;
     if (options?.category) where.category = options.category;
     if (options?.customer_id) {
-      const c = await prisma.customer.findFirst({ where: { id: options.customer_id, company_id: user.companyId } });
+      const c = await prisma.customer.findFirst({
+        where: { id: options.customer_id, company_id: user.companyId },
+      });
       if (!c) {
         throw new AppError(403, 'Cross-company customer filter');
       }
@@ -169,7 +198,12 @@ export class ComplaintService {
   static async update(
     user: TokenPayload,
     id: number,
-    data: { title?: string; description?: string | null; category?: string | null; priority?: string | null }
+    data: {
+      title?: string;
+      description?: string | null;
+      category?: string | null;
+      priority?: string | null;
+    },
   ) {
     await ComplaintService.scopedGet(user, id);
     const next: any = {};
@@ -188,18 +222,43 @@ export class ComplaintService {
   // ----------------------------------------------------------------- assign
   static async assign(user: TokenPayload, id: number, employeeId: number) {
     const c = await ComplaintService.scopedGet(user, id);
-    const emp = await prisma.employee.findFirst({ where: { id: employeeId, company_id: user.companyId } });
+    const emp = await prisma.employee.findFirst({
+      where: { id: employeeId, company_id: user.companyId },
+    });
     if (!emp) {
       throw new AppError(403, 'Employee not found or cross-company assignment');
     }
     if (!['OPEN', 'IN_PROGRESS', 'REOPENED'].includes(c.status)) {
       throw new AppError(400, `Cannot assign complaint in ${c.status} status`);
     }
-    return prisma.$transaction(async (tx) => {
-      const updated = await tx.complaint.update({ where: { id }, data: { assigned_employee_id: employeeId } });
-      await ComplaintService.audit(tx, user, 'assigned', id, c.assigned_employee_id?.toString() ?? null, String(employeeId));
-      return updated;
+    const updated = await prisma.$transaction(async (tx) => {
+      const result = await tx.complaint.update({
+        where: { id },
+        data: { assigned_employee_id: employeeId },
+      });
+      await ComplaintService.audit(
+        tx,
+        user,
+        'assigned',
+        id,
+        c.assigned_employee_id?.toString() ?? null,
+        String(employeeId),
+      );
+      return result;
     });
+
+    // Was previously a silent DB write — the assignee had no way to know a
+    // complaint had landed on them short of manually checking the list.
+    if (employeeId !== c.assigned_employee_id) {
+      await notifyEmployee(employeeId, {
+        type: 'COMPLAINT_ASSIGNED',
+        title: '📮 Complaint Assigned to You',
+        message: `${c.complaint_code}: ${c.title}`,
+        link: '/complaints',
+      });
+    }
+
+    return updated;
   }
 
   // ------------------------------------------------------------ changeStatus
@@ -227,7 +286,12 @@ export class ComplaintService {
     return prisma.$transaction(async (tx) => {
       const updated = await tx.complaint.update({
         where: { id },
-        data: { status: 'RESOLVED', resolution_description: resolutionDescription, resolved_by: user.employeeId, resolved_at: new Date() },
+        data: {
+          status: 'RESOLVED',
+          resolution_description: resolutionDescription,
+          resolved_by: user.employeeId,
+          resolved_at: new Date(),
+        },
       });
       await ComplaintService.audit(tx, user, 'resolved', id, c.status, 'RESOLVED');
       return updated;

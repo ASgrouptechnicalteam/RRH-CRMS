@@ -115,26 +115,6 @@ router.post(
   },
 );
 
-// POST /api/v1/leads/:id/convert-to-customer
-router.post(
-  '/:id/convert-to-customer',
-  authenticateToken,
-  requireAuthz(Permissions.CUSTOMERS_CONVERT),
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      // We delegate to CustomerService to handle the transaction
-      const { CustomerService } = await import('../services/customer.service');
-      const result = await CustomerService.convertFromLead(req.user!, parseInt(req.params.id));
-      return res.status(201).json({
-        message: 'Lead converted to customer successfully',
-        customer: result,
-      });
-    } catch (error: any) {
-      return handleServiceError(error, res);
-    }
-  },
-);
-
 // POST /api/v1/leads/bulk-upload - Bulk CSV/Excel importer (Digital Lead Operator / MD / Admin)
 router.post(
   '/bulk-upload',

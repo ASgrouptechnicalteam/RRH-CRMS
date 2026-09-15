@@ -19,7 +19,10 @@ const p = prisma;
 // Then put them in your .env file
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
-const VAPID_EMAIL = process.env.VAPID_EMAIL || 'mailto:admin@radharealhomes.com';
+// The actual env var set in .env/.env.example is VAPID_SUBJECT — this read
+// VAPID_EMAIL, which is never set anywhere, so it silently fell back to the
+// hardcoded default on every deploy instead of the real configured value.
+const VAPID_EMAIL = process.env.VAPID_SUBJECT || 'mailto:admin@radharealhomes.com';
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
   try {

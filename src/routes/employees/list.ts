@@ -38,6 +38,32 @@ router.get(
       const whereClause: any = await buildEmployeeScope(req.user!);
 
       const roleQuery = req.query.role as string;
+      let resolvedRoleName: string | null = null;
+
+      if (roleQuery) {
+        resolvedRoleName = (Roles as Record<string, string>)[roleQuery] || roleQuery;
+      }
+
+      // Filter out ADMIN from general employee list unless explicitly requested.
+      if (resolvedRoleName !== Roles.ADMIN) {
+        const adminRoleExclude = {
+          roles: {
+            none: {
+              role: {
+                name: {
+                  equals: Roles.ADMIN,
+                },
+              },
+            },
+          },
+        };
+        if (whereClause.AND) {
+          whereClause.AND.push(adminRoleExclude);
+        } else {
+          whereClause.AND = [adminRoleExclude];
+        }
+      }
+
       if (roleQuery) {
         // Callers may send either the enum KEY (e.g. "PROJECT_MANAGER", as
         // PropertyAssignmentsWidget.tsx does) or the actual Roles.* VALUE
@@ -45,7 +71,6 @@ router.get(
         // not the same string for most roles). Resolve the key to its value
         // when possible, so a caller using the more natural enum key isn't
         // silently matched against nothing.
-        const resolvedRoleName = (Roles as Record<string, string>)[roleQuery] || roleQuery;
         const roleCondition = {
           roles: {
             some: {

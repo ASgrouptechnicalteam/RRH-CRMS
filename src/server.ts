@@ -56,6 +56,7 @@ import analyticsRoutes from './routes/analytics';
 import aiSearchRoutes from './routes/aiSearch';
 import messageTemplateRoutes from './routes/messageTemplates';
 import pmRoutingRoutes from './routes/pm-routing';
+import searchRoutes from './routes/search';
 import whatsappRoutes from './routes/whatsapp';
 import rolesRoutes from './routes/roles';
 import amenityRoutes from './routes/amenities';
@@ -232,6 +233,7 @@ if (mountInternal) {
   app.use('/api/v1/complaints', complaintRoutes);
   app.use('/api/v1/analytics', analyticsRoutes);
   app.use('/api/v1/ai', aiSearchRoutes);
+  app.use('/api/v1/search', searchRoutes);
   app.use('/api/v1/message-templates', messageTemplateRoutes);
   app.use('/api/v1/pm-routing', pmRoutingRoutes);
   app.use('/api/v1/whatsapp', whatsappRoutes);

@@ -617,6 +617,7 @@ model AttendanceProposal {
   id          Int       @id @default(autoincrement())
   employee_id Int
   type        String // LATE_CHECKIN, LEAVE_DAY
+  leave_type  String    @default("FULL_DAY") // FULL_DAY, FIRST_HALF, SECOND_HALF
   target_date DateTime
   reason      String
   status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
@@ -705,6 +706,8 @@ model Notification {
   title       String
   message     String
   is_read     Boolean  @default(false)
+  entity_type String?
+  entity_id   Int?
   created_at  DateTime @default(now())
 
   employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)

@@ -157,4 +157,23 @@ router.get(
   },
 );
 
+// GET /api/v1/md/lead-pipeline-counts - Per-stage lead counts (NEW..BOOKED) for
+// the MD/Admin dashboard's pipeline tabs. Polled by the frontend for a
+// near-real-time count without requiring a manual page refresh.
+router.get(
+  '/lead-pipeline-counts',
+  authenticateToken,
+  requireAuthz(Permissions.ADMIN_SYSTEM_METRICS),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const companyId = req.user?.companyId || 1;
+      const stages = await AnalyticsService.getLeadPipelineCounts(companyId);
+      return res.status(200).json({ stages });
+    } catch (error: any) {
+      logger.error('Fetch lead pipeline counts error:', error);
+      return res.status(500).json({ error: 'Failed to fetch lead pipeline counts' });
+    }
+  },
+);
+
 export default router;

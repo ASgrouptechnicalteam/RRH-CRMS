@@ -411,6 +411,37 @@ export class AnalyticsService {
     return res;
   }
 
+  /**
+   * Lead counts per funnel stage (NEW through BOOKED), for the MD/Admin
+   * dashboard's pipeline tabs. One groupBy query rather than one count() per
+   * stage — cheap enough to poll on an interval for a near-real-time view
+   * without the frontend needing a full page refresh.
+   */
+  static async getLeadPipelineCounts(
+    companyId: number,
+  ): Promise<{ status: string; count: number }[]> {
+    const stages = [
+      'NEW',
+      'ASSIGNED',
+      'CONTACTED',
+      'QUALIFIED',
+      'DEMO_SCHEDULED',
+      'DEMO_COMPLETED',
+      'SITE_VISIT_SCHEDULED',
+      'SITE_VISIT_COMPLETED',
+      'NEGOTIATION',
+      'BOOKING_INITIATED',
+      'BOOKED',
+    ];
+    const groups = await p.lead.groupBy({
+      by: ['status'],
+      where: { company_id: companyId, status: { in: stages } },
+      _count: { _all: true },
+    });
+    const countsByStatus = new Map(groups.map((g) => [g.status, g._count._all]));
+    return stages.map((status) => ({ status, count: countsByStatus.get(status) || 0 }));
+  }
+
   // ---- public: md.ts executive-metrics (delegated, contract-preserving) ----
   static async getExecutiveMetrics(companyId: number): Promise<ExecutiveMetricsResponse> {
     const [

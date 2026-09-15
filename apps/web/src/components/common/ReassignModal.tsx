@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { EmployeeListItem } from '../../types';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 
 interface ReassignModalProps {
   entityType: 'lead' | 'property' | 'project' | 'customer';
@@ -168,7 +169,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
                 </option>
                 {employees.map((emp) => (
                   <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
-                    {emp.full_name} ({emp.employee_code}) - {emp.role?.name || emp.department}
+                    {formatEmployeeLabel(emp)} - {emp.roles?.join(', ') || emp.department}
                   </option>
                 ))}
               </select>

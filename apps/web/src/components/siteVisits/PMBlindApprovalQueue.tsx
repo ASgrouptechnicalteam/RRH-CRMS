@@ -15,6 +15,7 @@ import { API_BASE_URL } from '../../config';
 import { SiteVisitCountdownBadge } from './SiteVisitCountdownBadge';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 import { EmployeeListItem } from '../../types';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 
 interface BlindSiteVisit {
   id: number;
@@ -294,7 +295,7 @@ export const PMBlindApprovalQueue: React.FC = () => {
                   </option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
-                      {emp.full_name} ({emp.employee_code}) - {emp.roles?.join(', ')}
+                      {formatEmployeeLabel(emp)} - {emp.roles?.join(', ')}
                     </option>
                   ))}
                 </select>

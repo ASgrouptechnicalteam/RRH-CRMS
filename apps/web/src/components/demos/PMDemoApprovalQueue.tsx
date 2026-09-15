@@ -14,6 +14,7 @@ import { API_BASE_URL } from '../../config';
 import { StatusPill } from '../ui/StatusPill';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 import { EmployeeListItem } from '../../types';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 
 interface BlindDemo {
   id: number;
@@ -396,7 +397,7 @@ export const PMDemoApprovalQueue: React.FC = () => {
                   </option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
-                      {emp.full_name} ({emp.employee_code}) - {emp.roles?.join(', ')}
+                      {formatEmployeeLabel(emp)} - {emp.roles?.join(', ')}
                     </option>
                   ))}
                 </select>

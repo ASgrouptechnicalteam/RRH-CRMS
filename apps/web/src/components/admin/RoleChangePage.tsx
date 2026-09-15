@@ -269,9 +269,11 @@ export const RoleChangePage: React.FC = () => {
                 }}
                 className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-500 focus:border-navy-500 outline-none transition-all"
               >
-                <option value="">-- Choose an Employee --</option>
+                <option value="" className="text-slate-800 bg-white">
+                  -- Choose an Employee --
+                </option>
                 {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
+                  <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
                     {emp.fullName} ({emp.employeeCode}) - Current: {emp.roles.join(', ') || 'None'}
                   </option>
                 ))}

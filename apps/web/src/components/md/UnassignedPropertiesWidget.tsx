@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { ListWidget, ListItem } from '../ui';
 import { AlertCircle, Building } from 'lucide-react';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 
 // A Project has its own independent assigned_pm_id (not shared with its
 // units — see siteVisit routing, which resolves the PM from the Project),
@@ -96,17 +97,17 @@ export const UnassignedPropertiesWidget: React.FC = () => {
     meta: (
       <div className="flex items-center gap-2">
         <select
-          className="text-sm border border-slate-200 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-navy-500 disabled:opacity-50"
+          className="text-sm text-slate-800 bg-white border border-slate-200 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-navy-500 disabled:opacity-50"
           onChange={(e) => handleAssign(item, e.target.value)}
           defaultValue=""
           disabled={assigningId === item.id}
         >
-          <option value="" disabled>
+          <option value="" disabled className="text-slate-800 bg-white">
             Assign PM...
           </option>
           {pms.map((pm) => (
-            <option key={pm.id} value={pm.id}>
-              {pm.full_name || pm.employee_code}
+            <option key={pm.id} value={pm.id} className="text-slate-800 bg-white">
+              {formatEmployeeLabel(pm)}
             </option>
           ))}
         </select>

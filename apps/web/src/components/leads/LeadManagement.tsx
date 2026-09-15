@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 import {
   Users,
   Plus,
@@ -151,10 +152,12 @@ const LeadCard: React.FC<LeadCardProps> = ({
               onChange={(e) => onAssign(lead.id, e.target.value)}
               className="min-w-0 flex-1 py-1 px-1.5 text-[11px] font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-navy-500"
             >
-              <option value="">Unassigned Pool</option>
+              <option value="" className="text-slate-700 bg-white">
+                Unassigned Pool
+              </option>
               {employees.map((emp: any) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.fullName || emp.employeeCode}
+                <option key={emp.id} value={emp.id} className="text-slate-700 bg-white">
+                  {formatEmployeeLabel(emp)}
                 </option>
               ))}
             </select>
@@ -560,10 +563,12 @@ export const LeadManagement: React.FC = () => {
                 onChange={(e) => handleUpdateLeadAssignment(l.id, e.target.value)}
                 className="w-full max-w-[140px] py-2 px-1.5 text-xs font-semibold bg-surface border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-navy-500"
               >
-                <option value="">Unassigned Pool</option>
+                <option value="" className="text-slate-700 bg-white">
+                  Unassigned Pool
+                </option>
                 {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name || emp.employee_code}
+                  <option key={emp.id} value={emp.id} className="text-slate-700 bg-white">
+                    {formatEmployeeLabel(emp)}
                   </option>
                 ))}
               </select>

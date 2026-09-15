@@ -20,6 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Roles } from '../../shared';
 import { TargetListItem, EmployeeListItem, DailyReportPreset } from '../../types';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 
 type FieldType = 'SHORT_TEXT' | 'LONG_TEXT' | 'COUNT' | 'CHECKLIST' | string;
 
@@ -279,10 +280,12 @@ export const TargetConfigurator: React.FC = () => {
                 onChange={(e) => setSelectedEmployeeId(e.target.value)}
                 className="w-full p-3 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-navy-600 font-bold text-slate-800 shadow-sm"
               >
-                <option value="">Apply to ALL {selectedRole}s</option>
+                <option value="" className="text-slate-800 bg-white">
+                  Apply to ALL {selectedRole}s
+                </option>
                 {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.employeeCode} - {emp.roles.join(', ')} ({emp.branch})
+                  <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
+                    {formatEmployeeLabel(emp)} - {emp.roles.join(', ')} ({emp.branch})
                   </option>
                 ))}
               </select>

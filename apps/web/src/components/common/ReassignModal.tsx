@@ -163,9 +163,11 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
                 onChange={(e) => setSelectedEmployeeId(e.target.value)}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500 text-sm font-medium"
               >
-                <option value="">-- Select Employee --</option>
+                <option value="" className="text-slate-800 bg-white">
+                  -- Select Employee --
+                </option>
                 {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
+                  <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
                     {emp.full_name} ({emp.employee_code}) - {emp.role?.name || emp.department}
                   </option>
                 ))}

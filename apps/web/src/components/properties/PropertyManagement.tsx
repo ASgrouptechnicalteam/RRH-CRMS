@@ -31,6 +31,7 @@ import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Permissions } from '../../shared';
 import { Roles } from '../../shared';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 import { PropertyForm } from './PropertyForm';
 import { CATEGORY_TAB_GROUPS, CategoryTabGroup, categoryTabGroupOf } from './propertyWizardShared';
 import { CostSheet } from '../shared/CostSheet';
@@ -1151,12 +1152,12 @@ export const PropertyManagement: React.FC = () => {
                         onChange={(e) => setDmExecutiveId(e.target.value)}
                         className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:ring-1 focus:ring-navy-500"
                       >
-                        <option value="" disabled>
+                        <option value="" disabled className="text-slate-800 bg-white">
                           Select DM Executive...
                         </option>
                         {dmExecutives.map((dm) => (
-                          <option key={dm.id} value={dm.id}>
-                            {dm.full_name || dm.employee_code}
+                          <option key={dm.id} value={dm.id} className="text-slate-800 bg-white">
+                            {formatEmployeeLabel(dm)}
                           </option>
                         ))}
                       </select>

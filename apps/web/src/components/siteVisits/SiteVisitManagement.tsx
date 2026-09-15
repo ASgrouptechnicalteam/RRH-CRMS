@@ -720,9 +720,11 @@ export const SiteVisitManagement: React.FC = () => {
                   onChange={(e) => setAssignedAgentId(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold text-slate-800"
                 >
-                  <option value="">Select Agent</option>
+                  <option value="" className="text-slate-800 bg-white">
+                    Select Agent
+                  </option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
+                    <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
                       {emp.full_name || emp.employeeCode} ({emp.employeeCode})
                     </option>
                   ))}

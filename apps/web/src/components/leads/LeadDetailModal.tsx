@@ -21,6 +21,7 @@ import { useToast } from '../../context/ToastContext';
 import { useWhatsApp } from '../../hooks/useWhatsApp';
 import { API_BASE_URL } from '../../config';
 import { Permissions } from '../../shared';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 import {
   LeadActivity,
   MatchItem,
@@ -1482,10 +1483,12 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   disabled={isLoadingDemoAssignees}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500 transition-all appearance-none disabled:opacity-50"
                 >
-                  <option value="">Auto-assign from project PM</option>
+                  <option value="" className="text-slate-800 bg-white">
+                    Auto-assign from project PM
+                  </option>
                   {demoAssignees.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.full_name || a.employee_code}
+                    <option key={a.id} value={a.id} className="text-slate-800 bg-white">
+                      {formatEmployeeLabel(a)}
                     </option>
                   ))}
                 </select>

@@ -148,6 +148,7 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
   const [locality, setLocality] = useState(initialData?.locality || '');
   const [address, setAddress] = useState(initialData?.address || '');
   const [pincode, setPincode] = useState(initialData?.pincode || '');
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const [latitude, setLatitude] = useState(
     initialData?.latitude != null ? String(initialData.latitude) : '',
   );
@@ -370,6 +371,7 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
   };
 
   const handlePincodeLookup = () => {
+    setIsLookingUp(true);
     lookupPincode(
       pincode,
       (st, dist, loc, full) => {
@@ -380,7 +382,7 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
       },
       showError,
       showToast,
-    );
+    ).finally(() => setIsLookingUp(false));
   };
 
   const toggleAmenity = (label: string) => {
@@ -488,9 +490,10 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
                   <button
                     type="button"
                     onClick={handlePincodeLookup}
-                    className="px-3 py-2 bg-navy-600 hover:bg-navy-700 text-white text-xs font-bold rounded-xl shrink-0"
+                    disabled={isLookingUp || pincode.length !== 6}
+                    className="px-3 py-2 bg-navy-600 hover:bg-navy-700 text-white text-xs font-bold rounded-xl shrink-0 disabled:opacity-50"
                   >
-                    Auto-fill
+                    {isLookingUp ? '...' : 'Auto-fill'}
                   </button>
                 </div>
               </div>
@@ -898,9 +901,11 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
                   value={assignedPmId}
                   onChange={(e) => setAssignedPmId(e.target.value)}
                 >
-                  <option value="">-- No PM Assigned --</option>
+                  <option value="" className="text-slate-800 bg-white">
+                    -- No PM Assigned --
+                  </option>
                   {pms.map((pm) => (
-                    <option key={pm.id} value={pm.id}>
+                    <option key={pm.id} value={pm.id} className="text-slate-800 bg-white">
                       {pm.full_name || pm.fullName} ({pm.employee_code || pm.employeeCode})
                     </option>
                   ))}

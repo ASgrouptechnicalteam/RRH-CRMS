@@ -30,6 +30,7 @@ import { useToast } from '../../context/ToastContext';
 import { API_BASE_URL } from '../../config';
 import { Permissions } from '../../shared';
 import { ProjectListItem } from '../../types';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 import { handleApiError, toUserFacingError } from '../../utils/userFacingError';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ProjectWizard } from './ProjectWizard';
@@ -603,10 +604,12 @@ export const ProjectDashboard: React.FC = () => {
               onChange={(e) => setDmExecutiveId(e.target.value)}
               className="flex-1 px-2 py-1.5 bg-white/10 border border-white/20 rounded-lg text-white text-xs"
             >
-              <option value="">-- Select --</option>
+              <option value="" className="text-slate-800 bg-white">
+                -- Select --
+              </option>
               {dmExecutives.map((dm) => (
-                <option key={dm.id} value={dm.id} className="text-slate-800">
-                  {dm.full_name || dm.employee_code}
+                <option key={dm.id} value={dm.id} className="text-slate-800 bg-white">
+                  {formatEmployeeLabel(dm)}
                 </option>
               ))}
             </select>

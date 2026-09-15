@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Roles } from '../../shared';
 import { API_BASE_URL } from '../../config';
 import { TaskItem, EmployeeListItem } from '../../types';
+import { formatEmployeeLabel } from '../../utils/employeeLabel';
 import { DataTable, ColumnDef } from '../ui/DataTable';
 import { StatusPill } from '../ui/StatusPill';
 import { StatCard } from '../ui/StatCard';
@@ -322,7 +323,7 @@ export const TaskManager: React.FC = () => {
               {(t.assignee.employee_code || '').slice(-3)}
             </div>
             <span className="text-xs font-semibold text-slate-700">
-              {t.assignee.full_name || t.assignee.employee_code}
+              {formatEmployeeLabel(t.assignee)}
             </span>
           </div>
         ) : (

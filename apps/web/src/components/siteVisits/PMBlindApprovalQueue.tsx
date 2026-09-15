@@ -289,9 +289,11 @@ export const PMBlindApprovalQueue: React.FC = () => {
                   onChange={(e) => setReassignTargetId(e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-navy-500/20 focus:border-navy-500"
                 >
-                  <option value="">-- Choose Colleague --</option>
+                  <option value="" className="text-slate-800 bg-white">
+                    -- Choose Colleague --
+                  </option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
+                    <option key={emp.id} value={emp.id} className="text-slate-800 bg-white">
                       {emp.full_name} ({emp.employee_code}) - {emp.roles?.join(', ')}
                     </option>
                   ))}

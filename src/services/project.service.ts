@@ -70,7 +70,12 @@ export class ProjectService {
 
   static async listProjects(
     user: TokenPayload,
-    filters: { status?: string; unassigned?: boolean; dm_executive_id?: number },
+    filters: {
+      status?: string;
+      verification_status?: string;
+      unassigned?: boolean;
+      dm_executive_id?: number;
+    },
     take: number = 50,
     skip: number = 0,
   ) {
@@ -78,6 +83,9 @@ export class ProjectService {
 
     if (filters.status) {
       whereCondition.status = filters.status;
+    }
+    if (filters.verification_status) {
+      whereCondition.verification_status = filters.verification_status;
     }
     // Mirrors Property's own ?unassigned=true (property.service.ts) — a
     // Project has its own independent assigned_pm_id, not shared with its

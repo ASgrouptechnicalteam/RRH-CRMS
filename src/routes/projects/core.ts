@@ -40,9 +40,16 @@ router.get(
   requireAuthz(Permissions.PROJECTS_READ),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { status, unassigned, dm_executive_id } = req.query;
+      const { status, verification_status, unassigned, dm_executive_id } = req.query;
       const filters = {
         status: typeof status === 'string' ? status : undefined,
+        // Separate from `status` (the PLANNING/UNDER_CONSTRUCTION/... operational
+        // lifecycle) -- this filters Project.verification_status (the
+        // DRAFT/PENDING_DM_POLISH/PENDING_MD_APPROVAL/VERIFIED/REJECTED
+        // approval-gate field, item 1.7), needed for an MD "pending my
+        // approval" queue that has no other way to list itself.
+        verification_status:
+          typeof verification_status === 'string' ? verification_status : undefined,
         unassigned: unassigned === 'true',
         dm_executive_id:
           typeof dm_executive_id === 'string' ? parseInt(dm_executive_id, 10) : undefined,

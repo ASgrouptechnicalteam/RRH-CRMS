@@ -184,11 +184,14 @@ const LeadCard: React.FC<LeadCardProps> = ({
 export const LeadManagement: React.FC = () => {
   const { user, fetchWithAuth, activeRole } = useAuth();
   const { showToast, showError } = useToast();
+  const [searchParams] = useSearchParams();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [monitorData, setMonitorData] = useState<MonitorData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  // Lets dashboard widgets (e.g. the MD/Admin Lead Pipeline cards) deep-link
+  // straight into a pre-filtered view via /leads?status=X.
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'ALL');
   const [leadSearchQuery, setLeadSearchQuery] = useState<string>('');
   const [leadViewTab, setLeadViewTab] = useState<'pipeline' | 'added_by_me'>('pipeline');
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
